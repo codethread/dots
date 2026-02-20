@@ -55,7 +55,12 @@ def clone_tools [
 		[git@github.com:nushell/nu_scripts.git, ~/dev/vendor, {||}]
 		[git@github.com:gitwatch/gitwatch.git, ~/dev/vendor, {|| ln -f -s ~/dev/vendor/gitwatch/gitwatch.sh ~/.local/bin/gitwatch }]
 		[git@github.com:codethread/alfred.git, ~/sync, {|| }]
-		[git@github.com:codethread/todoist-cli.git, ~/dev/vendor, {|| try { go install }}]
+		[git@github.com:codethread/todoist.git, ~/dev/vendor, {||
+			try {
+				git checkout codethread
+				go install
+			}
+		}]
 		[git@github.com:apple/container.git, ~/dev/vendor, {||
 			# only needed till they fix --publish and stopping
 			# kitty @ launch --type=os-window sh -c "BUILD_CONFIGURATION=release make all test integration && BUILD_CONFIGURATION=release make install"
