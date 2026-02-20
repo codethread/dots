@@ -49,6 +49,8 @@ export extern "yarn workspace" [
 	^yarn workspace $workspace
 }
 
+export alias devbox = kitten ssh -t codethread@192.168.68.108 "tmux attach -t main || tmux new -s main"
+
 #---------------------------------------------#
 # AEROSPACE
 # -------------------------------------------#
