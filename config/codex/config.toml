@@ -1,3 +1,4 @@
+#:schema https://developers.openai.com/codex/config-schema.json
 project_doc_fallback_filenames = ["CLAUDE.md"]
 
 personality = "pragmatic"

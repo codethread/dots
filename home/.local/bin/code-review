@@ -1,25 +1,24 @@
-#!/bin/bash
-# :module: Run OpenCode reviewer with prompt passthrough
-# Debug notes (future tweaks):
-# - Verify resolved agent config: opencode debug agent reviewer
-# - Verify merged config: opencode debug config
-# - List agents + mode: opencode agent list
-# - Smoke test reviewer directly: opencode run --agent reviewer "ping"
-# - Model effort is via variant in config/opencode/opencode.json (provider.models.*.variants)
-#   and agent selects it via `variant:` in config/opencode/agents/reviewer.md
+#!/usr/bin/env bash
+# :module: Minimal Codex review wrapper
 
 set -euo pipefail
 
-if [[ $# -eq 0 ]]; then
-  echo "Usage: code-review \"your prompt\"" >&2
+usage() {
+  echo 'Usage: code-review "your review prompt"' >&2
+}
+
+if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+if [[ $# -lt 1 ]]; then
+  usage
   exit 1
 fi
 
-# opencode writes output to stderr; redirect to stdout so callers get normal output
-if opencode run --agent reviewer -- "$@" 2>&1; then
-  exit 0
-else
-  rc=$?
-  echo "code-review failed (exit $rc): opencode run --agent reviewer" >&2
-  exit "$rc"
-fi
+prompt="$*"
+
+echo "$prompt" \
+  | codex exec --json --sandbox read-only review - \
+  | jq -rs '[.[] | select(.type=="item.completed" and .item.type=="agent_message") | .item.text] | last // ""'
