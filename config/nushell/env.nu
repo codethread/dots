@@ -136,11 +136,6 @@ $env.PYTHONDONTWRITEBYTECODE = "1"  # Don't create .pyc files
 $env.PIP_REQUIRE_VIRTUALENV = "false"  # Allow pip outside virtualenv (set to "true" to be stricter)
 
 #: }}}
-#: claude {{{
-
-$env.CT_PLUGINS_DIR = echo "~/dev/learn/claude-plugins/plugins" | path expand
-
-#: }}}
 #: kitty {{{
 
 let kitty = "/Applications/kitty.app"
@@ -149,6 +144,14 @@ if ($kitty | path exists) {
     let kitty_man = "/Applications/kitty.app/Contents/Resources/man:"
 	$env.MANPATH = ([($env | get --optional MANPATH) $kitty_man] | str join)
 }
+
+#: }}}
+#: agents {{{
+
+# claude plugins
+$env.CT_PLUGINS_DIR = echo "~/dev/learn/claude-plugins/plugins" | path expand
+
+$env.CODEX_HOME = (home ".config/codex")
 
 #: }}}
 #: nushell {{{

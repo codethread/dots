@@ -1,0 +1,11 @@
+project_doc_fallback_filenames = ["CLAUDE.md"]
+
+personality = "pragmatic"
+model = "gpt-5.3-codex"
+model_reasoning_effort = "medium"
+
+[projects."/Users/codethread/PersonalConfigs"]
+trust_level = "trusted"
+
+[projects."/Users/codethread/dev/projects/cc-inspect"]
+trust_level = "trusted"
