@@ -3,7 +3,7 @@
 ## Ways of working
 
 - read relavent README.md files when working in nested directories
-- always check CLAUDE.md files after completing work to ensure they remain in sync with changes
+- always check CLAUDE.md files after completing work to ensure they remain in sync with your changes
 - When reporting information to me, be extremely concise and sacrifice grammar for sake of concision.
 
 ## Mandatory final review step
