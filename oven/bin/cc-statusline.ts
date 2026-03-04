@@ -80,11 +80,17 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 	const dirDisplay = `${prefix}${dirName}`;
 	parts.push(isGitRoot ? colorize.cyan(dirDisplay) : colorize.red(dirDisplay));
 
-	// Fetch git branch and last prompt in parallel
-	const [branch, transcriptData] = await Promise.all([
+	// Fetch git branch, container status, and last prompt in parallel
+	const [branch, inContainer, transcriptData] = await Promise.all([
 		getGitBranch(currentDir),
+		isInsideContainer(),
 		getTranscriptData(input.transcript_path),
 	]);
+
+	// Container indicator
+	if (inContainer) {
+		parts.push(colorize.dimBlue(" "));
+	}
 
 	// Git branch
 	if (branch) {
@@ -117,19 +123,9 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 	);
 
 	// Last user prompt (truncated)
-	if (transcriptData.lastPrompt) {
-		const truncated = truncateText(transcriptData.lastPrompt, 100);
-		parts.push(colorize.dimItalic(`"${truncated}"`));
-	}
-
-	// // Lines added (green with +, dimmed)
-	// if (input.cost.total_lines_added > 0) {
-	//   parts.push(colorize.dimGreen(`+${input.cost.total_lines_added}`));
-	// }
-	//
-	// // Lines removed (red with -, dimmed)
-	// if (input.cost.total_lines_removed > 0) {
-	//   parts.push(colorize.dimRed(`-${input.cost.total_lines_removed}`));
+	// if (transcriptData.lastPrompt) {
+	//   const truncated = truncateText(transcriptData.lastPrompt, 100);
+	//   parts.push(colorize.dimItalic(`"${truncated}"`));
 	// }
 
 	return parts.join(" ");
@@ -141,6 +137,25 @@ async function getGitBranch(_cwd: string): Promise<string | null> {
 		return result.trim() || null;
 	} catch {
 		return null;
+	}
+}
+
+async function isInsideContainer(): Promise<boolean> {
+	// Podman/systemd-nspawn set the "container" env var (e.g. "podman", "oci")
+	if (process.env.container) return true;
+
+	try {
+		const [containerenv, dockerenv] = await Promise.all([
+			Bun.file("/.containerenv").exists(),
+			Bun.file("/.dockerenv").exists(),
+		]);
+		if (containerenv || dockerenv) return true;
+
+		// cgroup v1: /proc/1/cgroup contains /docker/ or container hash paths
+		const cgroup = await Bun.file("/proc/1/cgroup").text();
+		return /\/(docker|podman|kubepods|lxc)\//i.test(cgroup);
+	} catch {
+		return false;
 	}
 }
 
@@ -186,7 +201,7 @@ async function getTranscriptData(transcriptPath: string): Promise<TranscriptData
 	}
 }
 
-function truncateText(text: string, maxLength: number): string {
+function _truncateText(text: string, maxLength: number): string {
 	// Remove newlines and extra whitespace
 	const cleaned = text.replace(/\s+/g, " ").trim();
 	if (cleaned.length <= maxLength) {

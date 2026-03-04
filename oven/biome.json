@@ -10,7 +10,9 @@
 			"nursery": {
 				"useMaxParams": {
 					"level": "error",
-					"options": { "max": 3 }
+					"options": {
+						"max": 3
+					}
 				}
 			},
 			"style": {
@@ -24,6 +26,7 @@
 				"useAsConstAssertion": "error"
 			},
 			"suspicious": {
+				"noExplicitAny": "error",
 				"noConsole": "off",
 				"noFocusedTests": "error",
 				"noSkippedTests": "error"

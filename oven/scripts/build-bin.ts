@@ -1,95 +1,88 @@
 #!/usr/bin/env bun
 
-import {chmod, readdir} from "fs/promises";
+import {chmod, mkdir, readdir} from "fs/promises";
+import {homedir} from "os";
 import {basename, join} from "path";
 import {parseArgs} from "util";
 import {cleanBuilds} from "./clean";
 
+type CompileTarget = Bun.Build.Target;
+
+const home = homedir();
 const BIN_SRC_DIR = join(import.meta.dir, "..", "bin");
-const BIN_DEST_DIR = join(import.meta.dir, "..", "..", "..", ".local", "bin");
+const LOCAL_DEST_DIR = join(home, ".local", "bin");
+const LINUX_DEST_DIR = join(home, ".local", "state", "oven");
 
-async function buildExecutables(verbose = false) {
+interface BuildTarget {
+	label: string;
+	target: CompileTarget;
+	destDir: string;
+}
+
+function getLocalTarget(): CompileTarget {
+	if (process.platform === "darwin") {
+		return process.arch === "arm64" ? "bun-darwin-arm64" : "bun-darwin-x64";
+	}
+	return process.arch === "arm64" ? "bun-linux-arm64" : "bun-linux-x64";
+}
+
+function getLinuxTarget(): CompileTarget {
+	return process.arch === "arm64" ? "bun-linux-arm64" : "bun-linux-x64";
+}
+
+async function buildForTarget(tsFiles: string[], buildTarget: BuildTarget, verbose: boolean) {
+	const {label, target, destDir} = buildTarget;
+
 	if (verbose) {
-		console.log("Building executables from oven/bin to ~/.local/bin...");
+		console.log(`Building ${label}...`);
 	}
 
-	// Get all .ts files from bin directory (exclude workspace directories)
-	const files = await readdir(BIN_SRC_DIR, {withFileTypes: true});
-	const tsFiles = files.filter((f) => f.isFile() && f.name.endsWith(".ts")).map((f) => f.name);
+	await mkdir(destDir, {recursive: true});
 
-	if (verbose) {
-		console.log(`Found ${tsFiles.length} TypeScript files to build\n`);
-	}
-
-	// Build all files in parallel
 	const buildPromises = tsFiles.map(async (file) => {
 		const srcPath = join(BIN_SRC_DIR, file);
-		const destName = basename(file, ".ts"); // Remove .ts extension
-		const destPath = join(BIN_DEST_DIR, destName);
+		const destName = basename(file, ".ts");
+		const destPath = join(destDir, destName);
 
 		try {
-			// Use Bun.build API to create standalone executable
 			const result = await Bun.build({
 				entrypoints: [srcPath],
 				compile: {
-					target:
-						process.platform === "darwin"
-							? process.arch === "arm64"
-								? "bun-darwin-arm64"
-								: "bun-darwin-x64"
-							: process.platform === "linux"
-								? "bun-linux-x64"
-								: "bun-linux-x64", // fallback
+					target,
 					outfile: destPath,
 				},
-				// Optimization options
 				minify: true,
-				bytecode: true, // Faster startup
+				bytecode: true,
 				sourcemap: "inline",
 			});
 
 			if (!result.success) {
 				const errors = result.logs.map((msg) => `  ${msg}`).join("\n");
-				return {
-					file,
-					destName,
-					success: false,
-					error: `Build failed:\n${errors}`,
-				};
+				return {file, destName, success: false, error: `Build failed:\n${errors}`};
 			}
 
-			// Make the file executable
 			await chmod(destPath, 0o755);
 			return {file, destName, success: true};
 		} catch (error) {
-			return {
-				file,
-				destName,
-				success: false,
-				error: `Exception: ${error}`,
-			};
+			return {file, destName, success: false, error: `Exception: ${error}`};
 		}
 	});
 
-	// Wait for all builds to complete
 	const results = await Promise.all(buildPromises);
-
-	// Separate successes and failures
 	const successes = results.filter((r) => r.success);
 	const failures = results.filter((r) => !r.success);
 
-	// Display results
 	if (verbose && successes.length > 0) {
-		console.log("✅ Successfully built:");
+		console.log("Successfully built:");
 		for (const {file, destName} of successes) {
-			console.log(`  • ${file} -> ${destName}`);
+			console.log(`  ${file} -> ${destName}`);
 		}
 	}
 
 	if (failures.length > 0) {
-		console.log(failures.length > 0 && !verbose ? "❌ Failed to build:" : "\n❌ Failed to build:");
+		console.log(failures.length > 0 && !verbose ? "Failed to build:" : "\nFailed to build:");
 		for (const {file, destName, error} of failures) {
-			console.log(`  • ${file} -> ${destName}`);
+			console.log(`  ${file} -> ${destName}`);
 			console.error(`    ${error}`);
 		}
 	}
@@ -100,14 +93,45 @@ async function buildExecutables(verbose = false) {
 		);
 	}
 
+	return failures.length;
+}
+
+async function buildExecutables(verbose = false) {
+	const files = await readdir(BIN_SRC_DIR, {withFileTypes: true});
+	const tsFiles = files.filter((f) => f.isFile() && f.name.endsWith(".ts")).map((f) => f.name);
+
+	if (verbose) {
+		console.log(`Found ${tsFiles.length} TypeScript files to build\n`);
+	}
+
+	const targets: BuildTarget[] = [
+		{label: "executables to ~/.local/bin", target: getLocalTarget(), destDir: LOCAL_DEST_DIR},
+		{
+			label: `linux (${getLinuxTarget()}) executables to ~/.local/state/oven`,
+			target: getLinuxTarget(),
+			destDir: LINUX_DEST_DIR,
+		},
+	];
+
+	let totalFailures = 0;
+	for (const buildTarget of targets) {
+		totalFailures += await buildForTarget(tsFiles, buildTarget, verbose);
+		if (verbose) {
+			console.log("");
+		}
+	}
+
 	await cleanBuilds(verbose);
 
 	if (verbose) {
 		console.log("\nBuild complete!");
 	}
+
+	if (totalFailures > 0) {
+		process.exit(1);
+	}
 }
 
-// Parse command line arguments
 if (import.meta.main) {
 	const {values} = parseArgs({
 		args: Bun.argv.slice(2),
@@ -116,6 +140,5 @@ if (import.meta.main) {
 		},
 	});
 
-	// Run the build
 	await buildExecutables(values.verbose);
 }

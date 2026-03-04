@@ -1,6 +1,4 @@
-# Bun cli tools - Agentic documentation
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# Oven Docs
 
 ## Build System
 
@@ -9,6 +7,7 @@ The build process uses Bun's native compilation to create standalone executables
 - Targets the appropriate platform (darwin-arm64, darwin-x64, linux-x64)
 - Outputs to `~/.local/bin` for system-wide availability
 - during development run code with `bun run ./bin/<file name>`
+- also builds to `~/.local/state/oven` with a linux build to bind into containers for local development
 
 ### Commands
 
