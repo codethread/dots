@@ -1,9 +1,0 @@
-# Specification Documents
-
-This directory contains technical specifications for features and architectural decisions.
-
-## Naming Convention
-`YYYY-MM-DD-kebab-cased-feature.md`
-
-## Structure
-Each specification follows the template defined in `.claude/commands/prime.md`
