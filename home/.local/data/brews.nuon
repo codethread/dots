@@ -78,6 +78,7 @@
 
 	tap "nikitabobko/tap"
 	cask "aerospace"
+	cask "ghostty"
 
 	brew "opencode"
 
