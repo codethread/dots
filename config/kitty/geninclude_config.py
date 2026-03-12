@@ -86,7 +86,7 @@ def _get_display_info() -> Tuple[Optional[int], Optional[int], int]:
 
         return None, None, 1
 
-    except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError, ValueError):
+    except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError, KeyError, ValueError):
         return None, None, 1
 
 

@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+#:module: Tmux session switcher using shared sessions.toml config
+#:
+#: Usage: tmux-session [number|--interactive]
+#:
+#: Maps numbered keys (0-9) to project sessions via sessions.toml (shared with kitty).
+#: Without arguments, launches interactive fzf project picker.
+#:
+#: Options:
+#:   0-9             Jump to numbered project session
+#:   (no args)       Interactive project discovery via fzf
+
+set -euo pipefail
+
+SESSIONS_TOML="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/sessions.toml"
+
+if [[ ! -f "$SESSIONS_TOML" ]]; then
+	echo "Error: sessions.toml not found at $SESSIONS_TOML" >&2
+	exit 1
+fi
+
+# Resolve active profile from auto_profile.rules in sessions.toml
+# Returns profile name (e.g. "work", "homelab") or empty for default
+resolve_profile() {
+	local hostname
+	hostname=$(hostname)
+	local rules_len
+	rules_len=$(cat "$SESSIONS_TOML" | fx --toml '.auto_profile.rules.length' 2>/dev/null || echo "0")
+
+	for ((i = 0; i < rules_len; i++)); do
+		local regex env_key env_val profile
+		regex=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].hostname_regex" 2>/dev/null || echo "")
+		profile=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].profile" 2>/dev/null || echo "")
+
+		if [[ -n "$regex" ]] && [[ "$hostname" =~ $regex ]]; then
+			echo "$profile"
+			return
+		fi
+
+		# Check env-based rules: iterate keys of the env object
+		local env_keys
+		env_keys=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].env" 'Object.keys(x).join("\n")' 2>/dev/null || echo "")
+		while IFS= read -r env_key; do
+			[[ -z "$env_key" ]] && continue
+			env_val=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].env.$env_key" 2>/dev/null || echo "")
+			if [[ "${!env_key:-}" == "$env_val" ]]; then
+				echo "$profile"
+				return
+			fi
+		done <<< "$env_keys"
+	done
+}
+
+_PROFILE=$(resolve_profile)
+
+get_keys_section() {
+	if [[ -n "$_PROFILE" ]]; then
+		echo "profiles.$_PROFILE.keys"
+	else
+		echo "keys"
+	fi
+}
+
+get_projects_section() {
+	if [[ -n "$_PROFILE" ]]; then
+		echo "profiles.$_PROFILE.projects"
+	else
+		echo "projects"
+	fi
+}
+
+# Resolve a numbered project (0-9) to its filesystem path
+resolve_project_path() {
+	local num=$1
+	local keys_section projects_section project path
+
+	keys_section=$(get_keys_section)
+	projects_section=$(get_projects_section)
+
+	project=$(cat "$SESSIONS_TOML" | fx --toml ".$keys_section.P$num" 2>/dev/null || echo "")
+	if [[ -z "$project" ]]; then
+		echo "Error: No mapping for P$num" >&2
+		exit 1
+	fi
+
+	path=$(cat "$SESSIONS_TOML" | fx --toml ".$projects_section.$project" 2>/dev/null || echo "")
+
+	# Fall back to base projects section
+	if [[ -z "$path" ]] && [[ "$projects_section" != "projects" ]]; then
+		path=$(cat "$SESSIONS_TOML" | fx --toml ".projects.$project" 2>/dev/null || echo "")
+	fi
+
+	if [[ -z "$path" ]]; then
+		echo "Error: No path for '$project'" >&2
+		exit 1
+	fi
+
+	echo "${path/#\~/$HOME}"
+}
+
+# Create or switch to a tmux session for a given project path
+switch_to_project() {
+	local project_path=$1
+	local session_name
+
+	session_name=$(basename "$project_path" | tr '.' '_')
+
+	# Check if there's an active tmux server with clients
+	local has_clients
+	has_clients=$(tmux list-clients 2>/dev/null | head -1)
+
+	if [[ -z "$has_clients" ]] && [[ -z "${TMUX:-}" ]]; then
+		# No tmux clients and not inside tmux - start fresh
+		exec tmux new-session -s "$session_name" -c "$project_path"
+	fi
+
+	if ! tmux has-session -t "=$session_name" 2>/dev/null; then
+		tmux new-session -d -s "$session_name" -c "$project_path"
+	fi
+
+	# run-shell from tmux keybindings doesn't set $TMUX, so check for clients
+	if [[ -n "${TMUX:-}" ]] || [[ -n "$has_clients" ]]; then
+		tmux switch-client -t "$session_name"
+	else
+		tmux attach-session -t "$session_name"
+	fi
+}
+
+# Interactive project discovery using fd + fzf-tmux
+# Reads search roots from sessions.toml [search] section
+interactive_select() {
+	local dirs=()
+
+	# Read vsc dirs (git-walked roots) from sessions.toml (profile-specific overrides base)
+	local search_section="search"
+	if [[ -n "$_PROFILE" ]]; then
+		local profile_vsc
+		profile_vsc=$(cat "$SESSIONS_TOML" | fx --toml ".profiles.$_PROFILE.search.vsc" 2>/dev/null || echo "")
+		[[ -n "$profile_vsc" ]] && search_section="profiles.$_PROFILE.search"
+	fi
+	local vsc_json
+	vsc_json=$(cat "$SESSIONS_TOML" | fx --toml ".$search_section.vsc" 2>/dev/null || echo "[]")
+	while IFS= read -r root; do
+		root="${root/#\~/$HOME}"
+		[[ -d "$root" ]] && dirs+=("$root")
+	done < <(echo "$vsc_json" | fx '.map(x=>x).join("\n")')
+
+	# Read static dirs from sessions.toml (uses same section as vsc)
+	local static_dirs=()
+	local dirs_json
+	dirs_json=$(cat "$SESSIONS_TOML" | fx --toml ".$search_section.dirs" 2>/dev/null || echo "[]")
+	while IFS= read -r d; do
+		d="${d/#\~/$HOME}"
+		# expand globs
+		if [[ "$d" == *"*"* ]]; then
+			for expanded in $d; do
+				[[ -d "$expanded" ]] && static_dirs+=("$expanded")
+			done
+		else
+			[[ -d "$d" ]] && static_dirs+=("$d")
+		fi
+	done < <(echo "$dirs_json" | fx '.map(x=>x).join("\n")')
+
+	if [[ ${#dirs[@]} -eq 0 ]] && [[ ${#static_dirs[@]} -eq 0 ]]; then
+		echo "No search directories found" >&2
+		exit 1
+	fi
+
+	# Discover git projects from vsc roots + include static dirs
+	local selected
+	selected=$({
+		if [[ ${#dirs[@]} -gt 0 ]]; then
+			fd -H --no-ignore -t d '^\.git$' "${dirs[@]}" --max-depth 5 \
+				-E node_modules -E target -E .cargo -E .next -E dist -E build -E coverage \
+				| sed 's|/\.git/\?$||'
+		fi
+		printf '%s\n' "${static_dirs[@]}"
+	} | sort -u \
+		| fzf-tmux -p -w 80% -h 70% --prompt='Select project: ') || exit 0
+
+	if [[ -n "$selected" ]]; then
+		switch_to_project "$selected"
+	fi
+}
+
+case "${1:-}" in
+[0-9])
+	project_path=$(resolve_project_path "$1")
+	switch_to_project "$project_path"
+	;;
+*)
+	interactive_select
+	;;
+esac

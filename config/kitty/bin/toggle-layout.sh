@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 current_layout=$(kitten @ ls --match-tab recent:0 | jq -r '.[0].tabs.[0].layout')

@@ -1,6 +1,5 @@
 # :module: Tmux management module with utility functions for pane interaction and process selection
 
-export use sessionizer.nu
 export use switch.nu
 export use open-link.nu
 export use notes.nu

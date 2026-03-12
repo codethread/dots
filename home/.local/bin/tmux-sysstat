@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# :module: intermittent cpu/mem for tmux status bar (5s on, 30s off)
+
+CYCLE=35
+ON=5
+
+now=$(date +%s)
+phase=$(( now % CYCLE ))
+
+if (( phase >= ON )); then
+	exit 0
+fi
+
+# --- CPU usage from /proc/stat delta ---
+# per-client cache avoids bogus deltas when multiple tmux clients poll
+CACHE="/tmp/tmux-sysstat-cpu-${1:-$$}"
+read -r _ user nice system idle iowait irq softirq steal _ < /proc/stat 2>/dev/null || exit 0
+total=$(( user + nice + system + idle + iowait + irq + softirq + steal ))
+busy=$(( total - idle - iowait ))
+
+if [[ -f "$CACHE" ]]; then
+	read -r prev_busy prev_total < "$CACHE"
+	d_busy=$(( busy - prev_busy ))
+	d_total=$(( total - prev_total ))
+	if (( d_total > 0 )); then
+		cpu_pct=$(( d_busy * 100 / d_total ))
+	else
+		cpu_pct=0
+	fi
+else
+	cpu_pct=0
+fi
+echo "$busy $total" > "$CACHE"
+
+# --- Memory from /proc/meminfo ---
+while IFS=': ' read -r key val _; do
+	case "$key" in
+		MemTotal)     mem_total=$val ;;
+		MemAvailable) mem_avail=$val ;;
+	esac
+done < /proc/meminfo
+
+if (( mem_total > 0 )); then
+	mem_pct=$(( (mem_total - mem_avail) * 100 / mem_total ))
+else
+	mem_pct=0
+fi
+
+# --- color by severity ---
+color() {
+	local pct=$1
+	if (( pct >= 80 )); then
+		printf '#[fg=red]'
+	elif (( pct >= 50 )); then
+		printf '#[fg=yellow]'
+	else
+		printf '#[fg=#686868]'
+	fi
+}
+
+printf 'c:%s%d%% #[fg=default]m:%s%d%% ' \
+	"$(color $cpu_pct)" "$cpu_pct" \
+	"$(color $mem_pct)" "$mem_pct"

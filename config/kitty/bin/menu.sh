@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 export PATH="$HOME/.config/kitty/bin:$PATH"

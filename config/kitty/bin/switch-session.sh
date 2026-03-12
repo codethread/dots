@@ -47,14 +47,43 @@ if [[ ! -f "$SESSIONS_TOML" ]]; then
   exit 1
 fi
 
-# Determine which profile to use based on hostname or environment
-HOSTNAME=$(hostname)
+# Resolve active profile from auto_profile.rules in sessions.toml
+resolve_profile() {
+  local hostname
+  hostname=$(hostname)
+  local rules_len
+  rules_len=$(cat "$SESSIONS_TOML" | fx --toml '.auto_profile.rules.length' 2>/dev/null || echo "0")
+
+  for ((i = 0; i < rules_len; i++)); do
+    local regex env_key env_val profile
+    regex=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].hostname_regex" 2>/dev/null || echo "")
+    profile=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].profile" 2>/dev/null || echo "")
+
+    if [[ -n "$regex" ]] && [[ "$hostname" =~ $regex ]]; then
+      echo "$profile"
+      return
+    fi
+
+    local env_keys
+    env_keys=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].env" 'Object.keys(x).join("\n")' 2>/dev/null || echo "")
+    while IFS= read -r env_key; do
+      [[ -z "$env_key" ]] && continue
+      env_val=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].env.$env_key" 2>/dev/null || echo "")
+      if [[ "${!env_key:-}" == "$env_val" ]]; then
+        echo "$profile"
+        return
+      fi
+    done <<< "$env_keys"
+  done
+}
+
+_PROFILE=$(resolve_profile)
 KEYS_SECTION="keys"
 PROJECTS_SECTION="projects"
 
-if [[ "$HOSTNAME" =~ ^PB-.* ]] || [[ "${CT_USER:-}" == "work" ]]; then
-  KEYS_SECTION="profiles.work.keys"
-  PROJECTS_SECTION="profiles.work.projects"
+if [[ -n "$_PROFILE" ]]; then
+  KEYS_SECTION="profiles.$_PROFILE.keys"
+  PROJECTS_SECTION="profiles.$_PROFILE.projects"
 fi
 
 # Get the project name from the keys section

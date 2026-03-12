@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 OPTIONAL_ORIGIN=$1
 
@@ -10,6 +10,12 @@ if ! thumbs --regexp "[^:]+:\d+:\d+:" -u -t /tmp/thumbs.txt; then
   exit 0
 fi
 
-pbcopy </tmp/thumbs.txt &
+if command -v pbcopy >/dev/null 2>&1; then
+  pbcopy </tmp/thumbs.txt &
+elif command -v wl-copy >/dev/null 2>&1; then
+  wl-copy </tmp/thumbs.txt &
+elif command -v xclip >/dev/null 2>&1; then
+  xclip -selection clipboard </tmp/thumbs.txt &
+fi
 
 ~/.config/kitty/bin/open-in-vim.sh "$(</tmp/thumbs.txt)"
