@@ -1,5 +1,7 @@
 if _G.ts2 then return {} end
 
+local is_nixos = vim.env.IS_NIXOS == 'true'
+
 ---@diagnostic disable: missing-fields
 return {
 	{
@@ -24,9 +26,16 @@ return {
 			-- during startup.
 			require('lazy.core.loader').add_to_rtp(plugin)
 			require 'nvim-treesitter.query_predicates'
+
+			if is_nixos then
+				local nix_parsers = vim.fn.stdpath('data') .. '/nix-treesitter-parsers'
+				if vim.uv.fs_stat(nix_parsers) then
+					vim.opt.runtimepath:prepend(nix_parsers)
+				end
+			end
 		end,
 		cmd = { 'TSUpdateSync', 'TSUpdate', 'TSInstall' },
-		build = ':TSUpdate',
+		build = not is_nixos and ':TSUpdate' or false,
 		dependencies = { 'andymass/vim-matchup' },
 		keys = {
 			{ '<c-space>', desc = 'Increment Selection' },
@@ -50,8 +59,10 @@ return {
 				},
 			},
 
+			-- on NixOS parsers come from nix (see nix/features/common.nix)
+			auto_install = not is_nixos,
 			-- stylua: ignore
-			ensure_installed = vim.iter({
+			ensure_installed = is_nixos and {} or vim.iter({
 				-- scripting
 				{ 'awk', 'bash', 'jq', 'nu' },
 				-- langs

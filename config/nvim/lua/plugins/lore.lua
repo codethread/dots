@@ -40,7 +40,7 @@ return U.F {
 
 	{
 		'wakatime/vim-wakatime',
-		cond = os.getenv 'WAKATIME_HOME' ~= nil and not vim.g.vscode,
+		cond = os.getenv 'IS_NIXOS' == nil and os.getenv 'WAKATIME_HOME' ~= nil and not vim.g.vscode,
 		event = U.LazyFile,
 	},
 

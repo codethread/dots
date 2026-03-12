@@ -46,17 +46,30 @@ return {
 		'WhoIsSethDaniel/mason-tool-installer.nvim',
 		dependencies = { 'williamboman/mason.nvim' },
 		event = { 'BufReadPre', 'BufNewFile' },
-		opts = {
-			ensure_installed = {
-				-- LSP servers managed by mason-lspconfig are defined in lspconfig.lua
-				-- Add formatters, linters, and other tools here
-				'stylua', -- Lua formatter (if you use it)
-			},
-			auto_update = false, -- Don't auto-update on startup (can be slow)
-			run_on_start = true, -- Install missing tools on startup
-			start_delay = 3000, -- Delay before starting installation (ms)
-			debounce_hours = 24, -- Only check for updates once per day
-		},
+		opts = (function()
+			-- On NixOS, tools are managed by nix packages in PATH; Mason should not install them
+			local is_nixos = vim.fn.filereadable('/etc/NIXOS') == 1
+			if is_nixos then
+				return {
+					ensure_installed = {},
+					auto_update = false,
+					run_on_start = false,
+					start_delay = 3000,
+					debounce_hours = 24,
+				}
+			end
+			return {
+				ensure_installed = {
+					-- LSP servers managed by mason-lspconfig are defined in lspconfig.lua
+					-- Add formatters, linters, and other tools here
+					'stylua', -- Lua formatter (if you use it)
+				},
+				auto_update = false, -- Don't auto-update on startup (can be slow)
+				run_on_start = true, -- Install missing tools on startup
+				start_delay = 3000, -- Delay before starting installation (ms)
+				debounce_hours = 24, -- Only check for updates once per day
+			}
+		end)(),
 		config = function(_, opts)
 			require('mason-tool-installer').setup(opts)
 

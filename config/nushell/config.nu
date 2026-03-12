@@ -3,7 +3,6 @@ use ct/themes.nu themes
 use ct/config [keybindings menus hooks]
 use ct/core *
 use ct/tmux
-use ct/brew
 use ct/dotty
 use ct/cursor.nu *
 use ct/macos.nu *
@@ -13,6 +12,8 @@ use ct/editor.nu *
 use ct/terminal.nu *
 use ct/onepassword.nu *
 use ct/system.nu *
+use ct/nix.nu *
+use ct/nixos.nu *
 use ct/search.nu *
 use ct/purge.nu
 

@@ -93,9 +93,9 @@ parse_os_info() {
   case "$uname_str" in
   Linux)
     if [ "$arch" == "x86_64" ]; then
-      echo "x86_64-unknown-linux-gnu.tar.gz"
-    elif [ "$arch" == "x86_64" ]; then
-      echo "aarch64-unknown-linux-gnu.tar.gz"
+      echo "x86_64-unknown-linux-gnu"
+    elif [ "$arch" == "aarch64" ]; then
+      echo "aarch64-unknown-linux-gnu"
     else
       error "Releases this architecture is not currently written or supported"
       return 1
@@ -238,6 +238,9 @@ check_architecture() {
   x86_64)
     return 0
     ;;
+  aarch64)
+    return 0
+    ;;
   arm64)
     if [ "$(uname -s)" = "Darwin" ]; then
       return 0
@@ -245,7 +248,7 @@ check_architecture() {
     ;;
   esac
 
-  error "Sorry! nu currently only provides pre-built binaries for x86_64 architectures."
+  error "Sorry! nu currently only provides pre-built binaries for x86_64 and aarch64 architectures."
   return 1
 }
 

@@ -1,7 +1,9 @@
 -- :module: Neovim global editor configuration settings
 -- TODO: change cursor, line is easy to miss
 -- terminal
-vim.opt.shell = 'zsh'
+-- vim.opt.shell = vim.env.SHELL or 'sh'
+vim.opt.shell = 'bash'
+vim.env.SHELL = 'bash'
 vim.opt.termguicolors = true -- adds more colors
 vim.opt.hidden = true -- Required to keep multiple buffers open multiple buffers
 vim.opt.encoding = 'utf-8' -- The encoding displayed

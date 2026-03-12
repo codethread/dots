@@ -74,12 +74,23 @@ return {
 		config = function()
 			local dap = require 'dap'
 
+			local function find_js_debug()
+				-- Mason location
+				local mason_path = vim.fn.stdpath('data') .. '/mason/packages/js-debug-adapter/js-debug/src/dapDebugServer.js'
+				if vim.fn.filereadable(mason_path) == 1 then return mason_path end
+				-- nix: js-debug-adapter puts the entry point at the bin path
+				local nix_bin = vim.fn.exepath('js-debug-adapter')
+				if nix_bin ~= '' then return nix_bin end
+				return mason_path -- fallback
+			end
+
 			-- codelldb adapter (Zig, C, C++, Rust)
+			-- exepath resolves from PATH, works whether installed by Mason or nix
 			dap.adapters.codelldb = {
 				type = 'server',
 				port = '${port}',
 				executable = {
-					command = vim.fn.stdpath 'data' .. '/mason/bin/codelldb',
+					command = vim.fn.exepath('codelldb'),
 					args = { '--port', '${port}' },
 				},
 			}
@@ -111,8 +122,7 @@ return {
 				executable = {
 					command = 'node',
 					args = {
-						vim.fn.stdpath 'data'
-							.. '/mason/packages/js-debug-adapter/js-debug/src/dapDebugServer.js',
+						find_js_debug(),
 						'${port}',
 					},
 				},
@@ -156,10 +166,12 @@ return {
 		end,
 	},
 
-	-- Ensure debug adapters are installed via Mason
+	-- Ensure debug adapters are installed via Mason (skipped on NixOS where they come from nix)
 	{
 		'WhoIsSethDaniel/mason-tool-installer.nvim',
 		opts = function(_, opts)
+			local is_nixos = vim.fn.filereadable('/etc/NIXOS') == 1
+			if is_nixos then return end
 			opts.ensure_installed = vim.list_extend(opts.ensure_installed or {}, {
 				'codelldb',
 				'js-debug-adapter',

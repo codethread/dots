@@ -3,6 +3,14 @@ source ct/interactive/mod.nu
 alias p = ^p
 alias als = scope aliases
 
+alias yy = yazi
+
+# linux clipboard equivalents for pbcopy/pbpaste (wayland)
+if ($env.IS_NIXOS) {
+	alias pbcopy = wl-copy
+	alias pbpaste = wl-paste
+}
+
 const atuin = ("~/.local/share/atuin/init.nu" | path expand)
 source (if ($atuin | path exists) { $atuin } else { null })
 
@@ -48,8 +56,6 @@ export extern "yarn workspace" [
 ] {
 	^yarn workspace $workspace
 }
-
-export alias devbox = kitten ssh -t codethread@192.168.68.108 "tmux attach -t main || tmux new -s main"
 
 #---------------------------------------------#
 # AEROSPACE

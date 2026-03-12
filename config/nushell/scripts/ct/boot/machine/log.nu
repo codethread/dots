@@ -21,5 +21,5 @@ export def skip [title: string, ...msg: string] {
 }
 
 export def warn [...msg:string --indent] {
-	print $"($indent and $pad or "")(ansi yellow)WARN:(ansi reset) ($msg|str join ' ')"
+	print $"(if $indent { $pad } else { "" })(ansi yellow)WARN:(ansi reset) ($msg|str join ' ')"
 }
