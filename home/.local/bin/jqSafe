@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # :module: Safe JSON parsing and manipulation wrapper
 
 jq -R -r '

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # git-show: Show commits around a specific commit
 # Usage: git-show <sha> [number]

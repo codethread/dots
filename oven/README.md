@@ -12,17 +12,23 @@ Bun workspace for managing TypeScript/JavaScript executables, all `bin` files wi
 ## Commands
 
 ```bash
+# Enter the project shell on Nix/NixOS (pins bun/biome/typescript for this repo)
+nix develop
+
 # Format and lint all code with Biome
 bun run fix
 
 # Check type definitions are correct
-bun run fix
+bun run typecheck
 
 # Build all executables to ~/.local/bin
 bun run build
 
 # Run the full verification and build process
 bun run verify
+
+# One-shot run without opening an interactive shell
+nix develop --command bun run verify
 ```
 
 ## Adding New Tools

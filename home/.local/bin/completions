@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # :module: Handles shell command completions setup
 
 # add completions to this folder with format _example

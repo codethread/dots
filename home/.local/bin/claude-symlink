@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # :module: Create CLAUDE.md symlinks pointing to AGENTS.md files
 
 set -euo pipefail

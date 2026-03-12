@@ -20,5 +20,5 @@ fi
 prompt="$*"
 
 echo "$prompt" \
-  | codex exec --json --sandbox read-only review - \
+  | codex exec --json --sandbox read-only review --skip-git-repo-check - \
   | jq -rs '[.[] | select(.type=="item.completed" and .item.type=="agent_message") | .item.text] | last // ""'

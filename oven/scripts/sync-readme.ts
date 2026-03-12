@@ -1,5 +1,5 @@
 import {$} from "bun";
-import {readdir, readFile, writeFile} from "fs/promises";
+import {access, readdir, readFile, writeFile} from "fs/promises";
 import {basename, join} from "path";
 import {parseArgs} from "util";
 
@@ -63,9 +63,9 @@ async function main(verbose = false) {
 
 async function extractHelpInfo(toolName: string): Promise<ToolInfo | null> {
 	try {
-		// Run the tool with -h flag to get help text
-		// Use nothrow() and suppress output to prevent it from showing during extraction
-		const result = await $`${toolName} -h`.nothrow().quiet();
+		// Prefer the built executable path to avoid PATH differences across shells/devshells.
+		const commandPath = await resolveToolPath(toolName);
+		const result = await $`${commandPath} -h`.nothrow().quiet();
 
 		// Check if the command was found
 		if (result.stderr?.toString().includes("command not found")) {
@@ -114,6 +114,20 @@ async function extractHelpInfo(toolName: string): Promise<ToolInfo | null> {
 			description: "No description available",
 		};
 	}
+}
+
+async function resolveToolPath(toolName: string): Promise<string> {
+	if (process.env.HOME) {
+		const userBinaryPath = join(process.env.HOME, ".local", "bin", toolName);
+		try {
+			await access(userBinaryPath);
+			return userBinaryPath;
+		} catch {
+			// Fall through to PATH lookup.
+		}
+	}
+
+	return toolName;
 }
 
 async function updateReadme(tools: ToolInfo[], verbose = false): Promise<void> {

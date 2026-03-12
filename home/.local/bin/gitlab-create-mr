@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # :module: Automates GitLab merge request creation
 
 # Pre-push hook converted from Nushell script

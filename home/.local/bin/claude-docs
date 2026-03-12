@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # :module: Generates and manages Claude documentation resources
 set -euo pipefail
 

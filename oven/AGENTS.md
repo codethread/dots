@@ -2,12 +2,10 @@
 
 ## Build System
 
-The build process uses Bun's native compilation to create standalone executables:
+The build process generates thin bash wrapper scripts that `exec bun run <source>`:
 
-- Targets the appropriate platform (darwin-arm64, darwin-x64, linux-x64)
-- Outputs to `~/.local/bin` for system-wide availability
+- Outputs to `~/.local/bin` for system-wide PATH availability
 - during development run code with `bun run ./bin/<file name>`
-- also builds to `~/.local/state/oven` with a linux build to bind into containers for local development
 
 ### Commands
 

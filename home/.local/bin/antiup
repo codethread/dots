@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh
 # :module: Zsh plugin manager that updates and sorts zsh plugin configurations
 
 # embeds a check for compinit taken from

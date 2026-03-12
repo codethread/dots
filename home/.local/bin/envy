@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh
 # :module: Environment variable management and configuration utility
 # vim:fileencoding=utf-8:foldmethod=marker:foldlevel=0
 # setup PATH

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # :module: Nushell shell configuration and initialization script
 
 joinBySpace() {
