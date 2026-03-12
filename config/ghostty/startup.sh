@@ -1,21 +1,48 @@
 #!/usr/bin/env bash
+# :module: Ghostty shell bootstrap
 
 set -euo pipefail
 
-# XDG Base Directory Specification
-export XDG_CONFIG_HOME=~/.config
-export XDG_DATA_HOME=~/.local/share
-export XDG_STATE_HOME=~/.local/state
-export XDG_CACHE_HOME=~/.local/cache
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.local/cache}"
+export DOTFILES="${DOTFILES:-$HOME/PersonalConfigs}"
+export EDITOR="${EDITOR:-nvim}"
+export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
+export VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
+export CARGO_HOME="${CARGO_HOME:-$XDG_DATA_HOME/cargo}"
+export CARGO_BIN="${CARGO_BIN:-$CARGO_HOME/bin}"
+export CODEX_HOME="${CODEX_HOME:-$XDG_CONFIG_HOME/codex}"
 
-# Build tools
-export CARGO_BIN=~/.local/share/cargo/bin
-export VOLTA_HOME=~/.volta
-export PATH=~/.local/bin:/opt/homebrew/bin:${CARGO_BIN}:~/.volta/bin:${PATH}
+bootstrap_path=(
+  "$HOME/.local/bin"
+  "$CARGO_BIN"
+  "$VOLTA_HOME/bin"
+  "$HOME/.bun/bin"
+  "/etc/profiles/per-user/${USER}/bin"
+  "/run/current-system/sw/bin"
+  "/nix/var/nix/profiles/default/bin"
+  "/opt/homebrew/bin"
+  "/opt/homebrew/sbin"
+  "/usr/local/bin"
+  "/usr/bin"
+  "/bin"
+  "/usr/sbin"
+  "/sbin"
+)
 
-# Custom flags
-export KSM_WORK=1
-export FZF_DEFAULT_OPTS="--color=fg+:#e0def4,bg+:#393552,hl+:#ea9a97,border:#44415a,header:#3e8fb0,gutter:#232136,spinner:#f6c177,info:#9ccfd8,pointer:#c4a7e7,marker:#eb6f92,prompt:#908caa"
+PATH="$(IFS=:; echo "${bootstrap_path[*]}")${PATH:+:$PATH}"
+export PATH
 
-# Exec into shell with login/interactive flags
-exec ~/.local/bin/nu --login --interactive
+if command -v nu >/dev/null 2>&1; then
+  exec nu --login --interactive
+fi
+
+if [[ -n "${SHELL:-}" ]] && [[ -x "${SHELL}" ]]; then
+  echo "nu not found; falling back to SHELL=${SHELL}" >&2
+  exec "${SHELL}" -l
+fi
+
+echo "nu not found in expected locations or PATH" >&2
+exit 1

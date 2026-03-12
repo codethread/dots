@@ -137,7 +137,7 @@
       "icon": "terminal-tmux"
     },
     "nu": {
-      "path": "${env:HOME}/.local/bin/nu",
+      "path": "nu",
       "args": ["-l", "-i"],
       "icon": "chevron-right",
       "env": {

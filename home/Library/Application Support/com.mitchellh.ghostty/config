@@ -50,8 +50,8 @@
 theme = Rose pine moon
 shell-integration-features = ssh-terminfo,ssh-env
 
-# Pass through to tmux for tab navigation
-keybind = unconsumed:super+shift+left_bracket=unbind
-keybind = unconsumed:super+shift+right_bracket=unbind
+# Remap Cmd+Shift+[ / ] to Ctrl+Alt+z / Ctrl+Alt+x for tmux prev/next window
+keybind = super+shift+left_bracket=text:\x1b\x1a
+keybind = super+shift+right_bracket=text:\x1b\x18
 
 command = ~/.config/ghostty/startup.sh
