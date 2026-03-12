@@ -5,6 +5,7 @@
 - read relavent README.md files when working in nested directories
 - always check CLAUDE.md files after completing work to ensure they remain in sync with your changes
 - When reporting information to me, be extremely concise and sacrifice grammar for sake of concision.
+- Sub-agent concurrency: spawn multiple read-only agents freely (explore, research, browser), but only ever one mutating agent (e.g. coding) at a time. Don't run read-only agents alongside a mutating agent — they may read stale data.
 
 ## Mandatory final review step
 

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# :module: Cancels a pending cc-notify notification for this session.
+# Reads hook JSON from stdin, extracts session_id.
+# Fails silently if cc-notify is not running.
+
+PORT="${CC_NOTIFY_PORT:-$(cat "${XDG_RUNTIME_DIR:-/tmp}/cc-notify.port" 2>/dev/null)}" || exit 0
+[[ -z "$PORT" ]] && exit 0
+jq -c '{session_id: .session_id}' \
+  | curl -s -X POST "http://${CC_NOTIFY_HOST:-localhost}:$PORT/activity" \
+    -H 'Content-Type: application/json' -d @- >/dev/null 2>&1 || true

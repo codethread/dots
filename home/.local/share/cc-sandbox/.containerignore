@@ -1,0 +1,13 @@
+**
+!claude/
+!claude/**
+!config/
+!config/**
+!home/
+!home/**
+!oven/
+!oven/**
+!.gitignore
+!CLAUDE.md
+!Makefile
+!README.md

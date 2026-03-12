@@ -1,0 +1,224 @@
+#!/usr/bin/env bash
+# :module: Run Claude Code in a sandboxed Podman container for the current project
+#
+# Mounts cwd as /project, forwards SSH agent + git config + ~/.claude into the
+# container. Runs as non-root user with UID remapping (--userns=keep-id).
+#
+# See the Containerfile header for debugging commands and programmatic usage.
+
+set -euo pipefail
+
+IMAGE_NAME="cc-sandbox"
+CLAUDE_VERSION_DEFAULT="2.1.71"
+NODE_VERSION_DEFAULT="22"
+NUSHELL_VERSION_DEFAULT="0.111.0"
+PLAYWRIGHT_CLI_VERSION_DEFAULT="latest"
+CODEX_VERSION_DEFAULT="0.111.0"
+CONTAINER_NAME="cc-sandbox-$(head -c4 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+# Resolve symlinks portably (readlink -f is GNU-only, unavailable on macOS)
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "$SOURCE" ]]; do
+    DIR="$(cd -- "$(dirname -- "$SOURCE")" && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -- "$(dirname -- "$SOURCE")" && pwd)"
+REPO_ROOT="$SCRIPT_DIR/../../.."
+CONTAINERFILE="$SCRIPT_DIR/../share/cc-sandbox/Containerfile"
+CONTAINERIGNORE="$(dirname "$CONTAINERFILE")/.containerignore"
+
+show_help() {
+    cat <<EOF
+cc-sandbox - Run Claude Code in a sandboxed Podman container
+
+Usage: cc-sandbox [options] [-- claude-args...]
+
+Options:
+  -n, --no-cache     Rebuild container image without cache
+  -i, --interactive  Start an interactive bash shell instead of claude
+  -r, --run CMD      Run a specific command instead of claude
+  -a, --auth SITE    Mount playwright auth state (e.g. -a ocado), repeatable
+  -p PORT            Forward a port (e.g. -p 3000:3000), repeatable
+  -h, --help         Show this help message
+  --                 Pass remaining args to claude (e.g. -- --model=haiku)
+
+Versions (override with env vars):
+  CLAUDE_VERSION     Claude Code binary (default: ${CLAUDE_VERSION_DEFAULT})
+  NODE_VERSION       Node.js base image (default: ${NODE_VERSION_DEFAULT})
+  NUSHELL_VERSION    Nushell for dotty link (default: ${NUSHELL_VERSION_DEFAULT})
+  PLAYWRIGHT_CLI_VERSION
+                     Playwright CLI npm package (default: ${PLAYWRIGHT_CLI_VERSION_DEFAULT})
+  CODEX_VERSION      Codex CLI npm package (default: ${CODEX_VERSION_DEFAULT})
+
+Runs claude --dangerously-skip-permissions in a podman container with the
+current directory mounted as /project. Forwards SSH agent, git config,
+claude settings into the container.
+EOF
+    exit 0
+}
+
+NO_CACHE=false
+INTERACTIVE=false
+RUN_CMD=""
+PORT_ARGS=()
+AUTH_ARGS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -n|--no-cache) NO_CACHE=true; shift ;;
+        -i|--interactive) INTERACTIVE=true; shift ;;
+        -r|--run) RUN_CMD="$2"; shift 2 ;;
+        -a|--auth)
+            AUTH_FILE="$HOME/.config/playwright/states/$2.json"
+            if [[ ! -f "$AUTH_FILE" ]]; then
+                echo "Auth state not found: $AUTH_FILE" >&2; exit 1
+            fi
+            AUTH_ARGS+=(-v "$AUTH_FILE:/home/user/.config/playwright/states/$2.json:ro")
+            shift 2 ;;
+        -p) PORT_ARGS+=(-p "$2"); shift 2 ;;
+        -h|--help) show_help ;;
+        --) shift; break ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+done
+
+CACHE_FLAG=()
+if [[ "$NO_CACHE" == true ]]; then
+    CACHE_FLAG=(--no-cache)
+fi
+case "$(uname -m)" in
+    aarch64) ARCH_GNU="aarch64"; ARCH_NODE="arm64" ;;
+    x86_64)  ARCH_GNU="x86_64";  ARCH_NODE="x64"   ;;
+    *) echo "Unsupported arch: $(uname -m)" >&2; exit 1 ;;
+esac
+podman build "${CACHE_FLAG[@]}" \
+    --build-arg "CLAUDE_VERSION=${CLAUDE_VERSION:-$CLAUDE_VERSION_DEFAULT}" \
+    --build-arg "NODE_VERSION=${NODE_VERSION:-$NODE_VERSION_DEFAULT}" \
+    --build-arg "NUSHELL_VERSION=${NUSHELL_VERSION:-$NUSHELL_VERSION_DEFAULT}" \
+    --build-arg "PLAYWRIGHT_CLI_VERSION=${PLAYWRIGHT_CLI_VERSION:-$PLAYWRIGHT_CLI_VERSION_DEFAULT}" \
+    --build-arg "CODEX_VERSION=${CODEX_VERSION:-$CODEX_VERSION_DEFAULT}" \
+    --build-arg "ARCH_GNU=$ARCH_GNU" \
+    --build-arg "ARCH_NODE=$ARCH_NODE" \
+    -t "$IMAGE_NAME" -f "$CONTAINERFILE" --ignorefile "$CONTAINERIGNORE" "$REPO_ROOT"
+
+TEMP_CLAUDE_SETTINGS="$(mktemp)"
+cp "$HOME/.claude/settings.json" "$TEMP_CLAUDE_SETTINGS"
+
+TEMP_SSH_CONFIG="$(mktemp)"
+if [[ -f "$HOME/.ssh/config" ]]; then
+    # Strip macOS-only options that OpenSSH on Linux rejects; grep exits 1 on no match
+    grep -iv 'usekeychain' "$HOME/.ssh/config" > "$TEMP_SSH_CONFIG" || true
+fi
+
+cleanup() {
+    rm -f "$TEMP_CLAUDE_SETTINGS" "$TEMP_SSH_CONFIG"
+    [[ -n "${SSH_TUNNEL_PID:-}" ]] && kill "$SSH_TUNNEL_PID" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+GIT_CONFIG_DIR=""
+if [[ -f "$HOME/.config/git/config" ]]; then
+    GIT_CONFIG_DIR="$(dirname "$(realpath "$HOME/.config/git/config")")"
+fi
+
+CODEX_HOME_CONTAINER="/home/user/.config/codex"
+CODEX_AUTH_TARGET="$CODEX_HOME_CONTAINER/auth.json"
+CODEX_ARGS=(-e "CODEX_HOME=$CODEX_HOME_CONTAINER")
+if [[ -f "$HOME/.codex/auth.json" ]]; then
+    CODEX_ARGS+=(
+        -v "$HOME/.codex/auth.json:$CODEX_AUTH_TARGET"
+    )
+fi
+
+VM_SSH_SOCK="/tmp/host-ssh-agent.sock"
+SSH_TUNNEL_PID=""
+SSH_ARGS=()
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    if [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
+        # macOS: reverse-tunnel host SSH agent into the Podman VM (virtiofs can't share sockets)
+        podman machine ssh -- rm -f "$VM_SSH_SOCK"
+        podman machine ssh -- -R "$VM_SSH_SOCK:$SSH_AUTH_SOCK" -N &
+        SSH_TUNNEL_PID=$!
+        sleep 0.5
+        podman machine ssh -- chmod 777 "$VM_SSH_SOCK"
+        SSH_ARGS+=(
+            -v "$VM_SSH_SOCK:/tmp/ssh-agent.sock"
+            -e "SSH_AUTH_SOCK=/tmp/ssh-agent.sock"
+        )
+    fi
+    # Mount filtered SSH config for host entries (IdentityFile directives, etc.)
+    if [[ -f "$HOME/.ssh/config" ]]; then
+        SSH_ARGS+=(-v "$TEMP_SSH_CONFIG:/home/user/.ssh/config:ro")
+    fi
+elif [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
+    # Linux: bind-mount the agent socket directly
+    SSH_ARGS+=(
+        -v "$SSH_AUTH_SOCK:/tmp/ssh-agent.sock"
+        -e "SSH_AUTH_SOCK=/tmp/ssh-agent.sock"
+    )
+fi
+
+PROJECT_DIR="$(basename "$(pwd)")"
+
+# Session persistence: map host project sessions into container's expected path
+# Claude derives project key from cwd; container sees /vm/$PROJECT_DIR so uses
+# key "-vm-$PROJECT_DIR", but host stores sessions under the real path key.
+HOST_PROJECT_KEY="$(pwd -P | tr '/' '-')"
+CONTAINER_PROJECT_KEY="-vm-${PROJECT_DIR}"
+HOST_SESSIONS_DIR="$HOME/.claude/projects/${HOST_PROJECT_KEY}"
+mkdir -p "$HOST_SESSIONS_DIR"
+SESSION_ARGS=(
+    -v "$HOST_SESSIONS_DIR:/home/user/.claude/projects/${CONTAINER_PROJECT_KEY}"
+)
+
+# Todoist CLI auth: only needed for the notes project
+TODOIST_ARGS=()
+NOTES_DIR="$HOME/dev/projects/notes"
+if [[ "$(pwd -P)" == "$NOTES_DIR" || "$(pwd -P)" == "$NOTES_DIR"/* ]] && [[ -f "$HOME/.config/todoist/config.json" ]]; then
+    TODOIST_ARGS+=(-v "$HOME/.config/todoist/config.json:/home/user/.config/todoist/config.json:ro")
+fi
+
+# cc-notify: mount port file so container hooks can reach host daemon
+NOTIFY_ARGS=()
+NOTIFY_PORT_FILE="${XDG_RUNTIME_DIR:-/tmp}/cc-notify.port"
+if [[ -f "$NOTIFY_PORT_FILE" ]]; then
+    CC_NOTIFY_PORT=$(cat "$NOTIFY_PORT_FILE")
+    NOTIFY_ARGS+=(
+        -e "CC_NOTIFY_HOST=host.containers.internal"
+        -e "CC_NOTIFY_PORT=$CC_NOTIFY_PORT"
+    )
+fi
+
+CONTAINER_CMD=()
+TTY_FLAGS="-it"
+if [[ -n "$RUN_CMD" ]]; then
+    CONTAINER_CMD=(bash -c "$RUN_CMD")
+    TTY_FLAGS="-i"
+elif [[ "$INTERACTIVE" == true ]]; then
+    CONTAINER_CMD=(bash)
+else
+    CONTAINER_CMD=(claude --dangerously-skip-permissions "$@")
+fi
+
+podman run $TTY_FLAGS --rm \
+    --name "$CONTAINER_NAME" \
+    --userns=keep-id \
+    --shm-size=2g \
+    --security-opt seccomp=unconfined \
+    --add-host=host.containers.internal:host-gateway \
+    -e TERM="${TERM:-xterm-256color}" \
+    -e COLORTERM="${COLORTERM:-truecolor}" \
+    -v "$(pwd):/vm/${PROJECT_DIR}" \
+    -w "/vm/${PROJECT_DIR}" \
+    -v "$HOME/.claude/.credentials.json:/home/user/.claude/.credentials.json" \
+    -v "$TEMP_CLAUDE_SETTINGS:/home/user/.claude/settings.json" \
+    -v "$HOME/.claude.json:/home/user/.claude.json" \
+    "${SESSION_ARGS[@]}" \
+    ${GIT_CONFIG_DIR:+-v "$GIT_CONFIG_DIR:/home/user/.config/git:ro"} \
+    "${CODEX_ARGS[@]}" \
+    "${SSH_ARGS[@]}" \
+    "${NOTIFY_ARGS[@]}" \
+    "${TODOIST_ARGS[@]}" \
+    "${PORT_ARGS[@]}" \
+    "${AUTH_ARGS[@]}" \
+    "$IMAGE_NAME" \
+    "${CONTAINER_CMD[@]}"

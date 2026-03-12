@@ -1,0 +1,140 @@
+# cc-sandbox Containerfile
+#
+# Provides a sandboxed environment for running Claude Code non-interactively.
+# Includes: Node.js, Bun, Chromium + playwright-cli for browser automation,
+# and codex CLI for code-review.
+#
+# The wrapping script (cc-sandbox) handles:
+#   - Building this image via podman
+#   - Bind-mounting the project dir, claude credentials, git config, SSH agent
+#   - UID remapping (--userns=keep-id) so file ownership matches the host
+#
+# ## Debugging the container
+#
+#   # Interactive shell to poke around:
+#   cc-sandbox -i
+#
+#   # Verify tools are installed:
+#   cc-sandbox --run 'chromium --version && playwright-cli --version && claude --version'
+#
+#   # Check bind-mounted configs are visible:
+#   cc-sandbox --run 'ls -la ~/.claude/settings.json ~/.claude/agents/ && ls /project/'
+#
+#   # Check env vars:
+#   cc-sandbox --run 'env | grep -iE "playwright|chromium"'
+#
+# ## Running Claude programmatically
+#
+#   # Basic non-interactive run (text output):
+#   cc-sandbox --run 'claude -p "describe this project" --output-format text --dangerously-skip-permissions'
+#
+#   # JSON output (parseable with jq/node):
+#   cc-sandbox --run 'claude -p "list files" --output-format json --dangerously-skip-permissions'
+#
+#   # Stream JSON for real-time output:
+#   cc-sandbox --run 'claude -p "explain main.ts" --output-format stream-json --dangerously-skip-permissions'
+#
+#   # Limit turns to control cost (default is unlimited; 10-15 is reasonable for most tasks):
+#   cc-sandbox --run 'claude -p "run tests and fix failures" --dangerously-skip-permissions --max-turns 15'
+#
+#   # Pre-approve specific tools only:
+#   cc-sandbox --run 'claude -p "fix the bug" --allowedTools "Bash,Read,Edit" --max-turns 10'
+#
+# ## Caveats
+#
+#   - Hooks that talk to the host (cc-hook--notify, cc-hook--activity) need cc-notify daemon running
+#   - --max-turns is critical: without it Claude can loop indefinitely burning API credits
+#   - playwright-cli daemon persists between commands in the same session (faster reuse);
+#     call `playwright-cli close` when done to clean up
+#   - PLAYWRIGHT_MCP_EXECUTABLE_PATH prevents playwright-cli from auto-generating
+#     .playwright/cli.config.json in the project dir; without it, that file leaks to host
+#     via bind mount and can silently alter browser settings on future runs
+
+ARG NODE_VERSION=22
+
+# Build todoist-cli from source (Go, needs goyacc)
+FROM docker.io/library/golang:1.24-bookworm AS todoist-build
+RUN go install golang.org/x/tools/cmd/goyacc@latest
+ARG TODOIST_REPO=https://github.com/codethread/todoist.git
+ARG TODOIST_BRANCH=codethread
+RUN git clone --depth 1 -b "$TODOIST_BRANCH" "$TODOIST_REPO" /src
+WORKDIR /src
+RUN goyacc -o filter_parser.go filter_parser.y \
+    && GOTOOLCHAIN=auto go build -o /todoist .
+
+FROM docker.io/library/node:${NODE_VERSION}-slim
+
+# System deps + Chromium for headless browser automation via playwright-cli.
+# Lib list from playwright's nativeDeps.js for debian12-x64.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl git jq openssh-client gnupg unzip \
+    chromium \
+    libasound2 libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libcairo2 \
+    libcups2 libdbus-1-3 libdrm2 libgbm1 libglib2.0-0 libnspr4 libnss3 \
+    libpango-1.0-0 libx11-6 libxcb1 libxcomposite1 libxdamage1 libxext6 \
+    libxfixes3 libxkbcommon0 libxrandr2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Non-root user — UID remapped by --userns=keep-id at runtime
+RUN useradd -m -s /bin/bash user
+USER user
+RUN mkdir -p ~/.ssh && chmod 700 ~/.ssh \
+    && ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/home/user/.bun/bin:/home/user/.local/bin:${PATH}"
+
+# Claude Code — download binary directly, skip self-installer (OOMs at 2GB).
+# Pinned version avoids cache-busting curl to /latest on every build.
+ARG CLAUDE_VERSION=2.1.71
+ARG ARCH_NODE=x64
+RUN BUCKET="https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases" \
+    && mkdir -p "$HOME/.local/bin" \
+    && curl -fsSL "$BUCKET/${CLAUDE_VERSION}/linux-${ARCH_NODE}/claude" -o "$HOME/.local/bin/claude" \
+    && chmod +x "$HOME/.local/bin/claude"
+
+# Todoist CLI — built from Go source in earlier stage
+COPY --from=todoist-build /todoist /home/user/.local/bin/todoist
+
+# Playwright CLI + Codex CLI — browser automation and code-review support.
+# Installed to ~/.local/bin via npm prefix (user can't write /usr/lib).
+ARG PLAYWRIGHT_CLI_VERSION=latest
+ARG CODEX_VERSION=0.111.0
+RUN npm config set prefix "$HOME/.local" \
+    && npm install -g "@playwright/cli@${PLAYWRIGHT_CLI_VERSION}" "@openai/codex@${CODEX_VERSION}"
+# Point playwright-cli at the Debian chromium; without this it tries to find
+# Chrome/Edge and auto-generates .playwright/cli.config.json in the project dir.
+ENV PLAYWRIGHT_MCP_EXECUTABLE_PATH="/usr/bin/chromium"
+
+# Nushell — needed by dotty link (same curl pattern as claude install above)
+ARG NUSHELL_VERSION=0.111.0
+ARG ARCH_GNU=x86_64
+RUN curl -fsSL "https://github.com/nushell/nushell/releases/download/${NUSHELL_VERSION}/nu-${NUSHELL_VERSION}-${ARCH_GNU}-unknown-linux-gnu.tar.gz" \
+       | tar xz --strip-components=1 -C "$HOME/.local/bin" "nu-${NUSHELL_VERSION}-${ARCH_GNU}-unknown-linux-gnu/nu"
+
+# PersonalConfigs — build hooks and CLI tools natively inside the container.
+# Copy oven first so dependency installation is cached unless oven/ changes.
+COPY --chown=user:user oven /home/user/PersonalConfigs/oven
+ENV DOTFILES=/home/user/PersonalConfigs
+
+# Pre-install oven dependencies before the rest of the repo invalidates later layers.
+RUN cd $DOTFILES/oven && bun install
+
+# Copy the rest of the repo after oven deps are cached.
+# The repo is COPY'd (not bind-mounted) so binaries link against container glibc.
+COPY --chown=user:user . /home/user/PersonalConfigs
+
+# Git context for dotty — list-files.nu uses git ls-files / git check-ignore.
+# Only need an index (not history), so init fresh rather than copying .git.
+RUN cd $DOTFILES && git init --initial-branch main && git add .
+
+# Dotty link — creates all symlinks (hooks, ~/.claude agents/commands/CLAUDE.md)
+RUN mkdir -p ~/.local/data \
+    && nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --no-cache "/home/user/PersonalConfigs/config/dotty/dotty.toml" | ignore'
+
+# Generate oven wrapper scripts (thin bash shims that exec bun run <source>).
+# Runs after dotty link which creates the ~/.local/bin/ directory structure.
+RUN cd $DOTFILES/oven && bun run build --verbose
+
+WORKDIR /project
+
+CMD ["bash"]

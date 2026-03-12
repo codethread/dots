@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# :module: Schedules a delayed push notification via cc-notify.
+# Reads hook JSON from stdin, builds title/message from hook event context.
+# Fails silently if cc-notify is not running.
+
+PORT="${CC_NOTIFY_PORT:-$(cat "${XDG_RUNTIME_DIR:-/tmp}/cc-notify.port" 2>/dev/null)}" || exit 0
+[[ -z "$PORT" ]] && exit 0
+
+STDIN=$(cat)
+EVENT=$(echo "$STDIN" | jq -r '.hook_event_name // empty')
+SESSION_ID=$(echo "$STDIN" | jq -r '.session_id // empty')
+CWD=$(echo "$STDIN" | jq -r '.cwd // empty')
+
+# derive project name from cwd (last path component)
+PROJECT=""
+if [[ -n "$CWD" ]]; then
+  PROJECT=$(basename "$CWD")
+fi
+
+case "$EVENT" in
+  Stop)
+    TITLE="Done · ${PROJECT:-unknown}"
+    # extract a useful snippet from the last assistant message
+    SNIPPET=$(echo "$STDIN" | jq -r '
+      .last_assistant_message // empty
+      | gsub("\n"; " ")
+      | gsub("\\s+"; " ")
+      | if length > 120 then .[:120] + "…" else . end
+    ')
+    if [[ -n "$SNIPPET" ]]; then
+      MESSAGE="$SNIPPET"
+    else
+      MESSAGE="Claude has finished responding"
+    fi
+    ;;
+  PermissionRequest)
+    TOOL=$(echo "$STDIN" | jq -r '.tool_name // empty')
+    # build a concise description of what needs approval
+    case "$TOOL" in
+      Bash)
+        CMD=$(echo "$STDIN" | jq -r '.tool_input.command // empty' | head -c 100)
+        DETAIL="$ ${CMD}"
+        ;;
+      Write|Edit)
+        FPATH=$(echo "$STDIN" | jq -r '.tool_input.file_path // empty')
+        DETAIL="${TOOL}: $(basename "$FPATH" 2>/dev/null || echo "$FPATH")"
+        ;;
+      Read)
+        FPATH=$(echo "$STDIN" | jq -r '.tool_input.file_path // empty')
+        DETAIL="Read: $(basename "$FPATH" 2>/dev/null || echo "$FPATH")"
+        ;;
+      *)
+        DETAIL="${TOOL}"
+        ;;
+    esac
+    TITLE="Permission · ${PROJECT:-unknown}"
+    MESSAGE="${DETAIL:-Claude is waiting for approval}"
+    ;;
+  *)
+    TITLE="Attention · ${PROJECT:-unknown}"
+    MESSAGE="Claude Code needs you"
+    ;;
+esac
+
+jq -nc \
+  --arg title "$TITLE" \
+  --arg message "$MESSAGE" \
+  --arg session_id "$SESSION_ID" \
+  '{title: $title, message: $message, session_id: $session_id}' \
+  | curl -s -X POST "http://${CC_NOTIFY_HOST:-localhost}:$PORT/notify" \
+    -H 'Content-Type: application/json' -d @- >/dev/null 2>&1 || true

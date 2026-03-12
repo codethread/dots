@@ -146,11 +146,11 @@ def load-config-from-toml [config_file: path]: nothing -> table<name: string, or
 		# Combine project-specific excludes with global excludes and apply lazy filtering
 		$projects
 		| each { |project|
-			$project | upsert excludes { |proj|
-				if $proj.link_directory {
+			$project | upsert excludes {
+				if $project.link_directory {
 					[]  # No excludes for directory symlinks
 				} else {
-					$proj.excludes ++ $global_excludes
+					$project.excludes ++ $global_excludes
 				}
 			}
 		}

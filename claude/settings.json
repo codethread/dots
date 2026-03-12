@@ -66,17 +66,6 @@
         ]
       }
     ],
-    "PreCompact": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bd prime"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
@@ -84,6 +73,37 @@
           {
             "type": "command",
             "command": "cc-hook--npm-redirect"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cc-hook--notify"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cc-hook--notify"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cc-hook--activity"
           }
         ]
       }
@@ -96,6 +116,14 @@
             "command": "cc-hook--context-injector session-end"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cc-hook--activity"
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -104,15 +132,6 @@
           {
             "type": "command",
             "command": "cc-hook--context-injector session-start"
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bd prime"
           }
         ]
       }
@@ -124,7 +143,6 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "beads@beads-marketplace": true,
     "code-review@ai-tools-marketplace": true,
     "logger@codethread-plugins": false,
     "frontend-design@claude-plugins-official": true,

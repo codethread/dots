@@ -276,7 +276,11 @@ def get-project-files-to-link [proj, no_cache] {
 	cd $proj.origin
 	let cache = cache load $proj.name
 
-	let files = list-files $proj.origin --excludes $proj.excludes
+	let files = if ($cache | is-empty) {
+		list-files $proj.origin --excludes $proj.excludes --fresh
+	} else {
+		list-files $proj.origin --excludes $proj.excludes
+	}
 
 	let $new_files = $files | match ($no_cache) {
 		true => { $in },

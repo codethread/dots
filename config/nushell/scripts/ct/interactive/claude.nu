@@ -9,27 +9,27 @@
 # them as well as any default claude code args
 export def cl --wrapped [
 	--dangerously-skip-permissions(-d) # ahhhhh
-	--ui # add a ui based mcp config
 	...rest
 ] {
-	let args = {
-		ui: $ui,
-		dangerously-skip-permissions: $dangerously_skip_permissions
+	let custom = if $dangerously_skip_permissions {
+		["--dangerously-skip-permissions"]
+	} else {
+		[]
 	}
 
-	let custom = $args
-	| items {|key, value| match [$key $value] {
-		["ui", true] => { $"--mcp-config=(echo ~/.claude/x-mcp/ui.json | path expand)" }
-		["dangerously-skip-permissions", true] => { "--dangerously-skip-permissions" }
-	}}
-	| compact
-
-	let all_args: list<string> = ([
-		# --no-chrome
-	] ++ $custom ++ $rest)
+	let all_args: list<string> = ($custom ++ $rest)
 	print $all_args
 	claude ...$all_args
 }
+
+# cl with opus model
+export def clo --wrapped [--dangerously-skip-permissions(-d) ...rest] { cl --dangerously-skip-permissions=$dangerously_skip_permissions --model opus ...$rest }
+
+# cl with sonnet model
+export def cls --wrapped [--dangerously-skip-permissions(-d) ...rest] { cl --dangerously-skip-permissions=$dangerously_skip_permissions --model sonnet ...$rest }
+
+# cl with haiku model
+export def clh --wrapped [--dangerously-skip-permissions(-d) ...rest] { cl --dangerously-skip-permissions=$dangerously_skip_permissions --model haiku ...$rest }
 
 export alias _claude-session = jq 'select(.event == "PreToolUse")' .logs/claude-session-*.jsonl
 export alias _claude-prompts = jq 'select(.event == "UserPromptSubmit") | {prompt: .raw_data.prompt, transcript: .raw_data.transcript_path, timestamp}' .logs/claude-session-*.jsonl

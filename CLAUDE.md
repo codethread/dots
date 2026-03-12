@@ -1,6 +1,8 @@
-# Dotfiles Monorepo (Agent instructions via CLAUDE.md)
+# Dotfiles Monorepo
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Bootstrap Flow
+
+New machine → `boot/boot.sh`. Existing clone → `make system`. Optional local tool rebuild → `make build`.
 
 ## Directories
 
@@ -10,20 +12,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **home/** - Files that belong in home directory. Go here for home-specific scripts and configs.
 - **oven/** - TypeScript/Bun workspace for CLI tools. Go here for active development.
 - **specs/** - Feature specifications. Go here to write or review specs before implementation.
+- **nix/** - nix configs for NixOS and nix-darwin. When scripting for NixOS or not, env `$IS_NIXOS='true'` if running NixOS.
 
 ### Makefile (Root)
 
 ```bash
 make         # Run link then build (default) - quiet output, errors only
 make link    # Link dotfiles via dotty
-make build   # Build oven executables
+make build   # Build oven executables through `nix develop`
+make system  # Rebuild nix-darwin or NixOS (override with `PROFILE=work`, etc)
 ```
 
 ## Tool Development Workflow
 
 ### Development Hierarchy
 
-Build tools in order of increasing complexity:
+Build tools in order of increasing complexity
 
 1. **Nushell alias** (1 line)
    - Location: `config/nushell/scripts/ct/alias/*.nu`
@@ -59,9 +63,11 @@ Start simple → Graduate as needed:
 1. Try as nushell alias first
 2. Expand to nushell function if needed
 3. Create bash script in `home/.local/bin/` for standalone tools
+   - `make link` to add script to PATH
 4. Migrate to `oven/` when exceeding 200 lines or needing TypeScript
-5. Build with `make build` (or `bun run build` inside `oven/`) to create executable
+   - Build with `make build` (or `bun run build` inside `oven/`) to create executable
 
-## Claude code integrations
+## Claude Code integrations
 
-This repo defined claude code configurations such as commands and agents at `claude/`. These include hooks, commands and agents, and the `claude/README.md` gives a compressive overview of all aspects, including the dependencies on any scripts from the `oven` module.
+This repo defines Claude Code configurations such as commands and agents at `claude/`. These include hooks, commands and agents, and the `claude/README.md` gives a comprehensive overview of all aspects, including the dependencies on any scripts from the `oven` module.
+

@@ -1,9 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Run `make` and ask the agent to fix errors if appropriate
 # This hook runs once per Stop event to avoid endless loops
 
 # Read input from stdin
+command -v jq >/dev/null 2>&1 || exit 0
+command -v make >/dev/null 2>&1 || exit 0
 input=$(cat)
 
 # Parse the JSON input to check if this is already from a stop hook
@@ -14,5 +16,5 @@ if [ "$stop_hook_active" = "true" ]; then
     exit 0
 fi
 
-# run make
-make >&2 || exit 2
+# run make (link + build only; system requires sudo which can't run non-interactively)
+make link build >&2 || exit 2
