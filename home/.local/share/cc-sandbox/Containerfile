@@ -54,7 +54,7 @@ ARG NODE_VERSION=22
 
 # Build todoist-cli from source (Go, needs goyacc)
 FROM docker.io/library/golang:1.24-bookworm AS todoist-build
-RUN go install golang.org/x/tools/cmd/goyacc@latest
+RUN GOTOOLCHAIN=auto go install golang.org/x/tools/cmd/goyacc@latest
 ARG TODOIST_REPO=https://github.com/codethread/todoist.git
 ARG TODOIST_BRANCH=codethread
 RUN git clone --depth 1 -b "$TODOIST_BRANCH" "$TODOIST_REPO" /src

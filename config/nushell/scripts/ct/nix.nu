@@ -30,6 +30,64 @@ def _flake_ref [profile: string] {
 	$"path:($env.HOME)/PersonalConfigs/nix#($profile)"
 }
 
+def _hm_user_for_profile [profile: string] {
+	match $profile {
+		"work" => "adam.hall",
+		"work-adamhall" => "adamhall",
+		_ => "codethread",
+	}
+}
+
+def _smoke-check [check: string, ok: bool, detail: string] {
+	{
+		check: $check
+		ok: $ok
+		detail: ($detail | str trim)
+	}
+}
+
+def _which-path [cmd: string] {
+	try {
+		(which $cmd | get 0.path)
+	} catch {
+		null
+	}
+}
+
+def _path-has [entry: string] {
+	let want = ($entry | path expand)
+	($env.path | any {|p| ($p | path expand) == $want })
+}
+
+def _expected-config-check [check: string, actual: string, expected: string] {
+	if not ($actual | path exists) {
+		(_smoke-check $check false $"missing: ($actual)")
+	} else {
+		let resolved = ($actual | path expand)
+		let want = ($expected | path expand)
+		(_smoke-check $check ($resolved == $want) $resolved)
+	}
+}
+
+def _nix_eval_check [check: string, attr: string] {
+	let result = (do {
+		^nix eval $attr --apply "map (p: p.name)" --json
+	} | complete)
+
+	if $result.exit_code == 0 {
+		let count = ($result.stdout | from json | length)
+		(_smoke-check $check true $"count=($count)")
+	} else {
+		let detail = (
+			[$result.stdout $result.stderr]
+			| each {|s| ($s | default "" | str trim) }
+			| where {|s| $s != "" }
+			| str join " / "
+		)
+		(_smoke-check $check false $detail)
+	}
+}
+
 # Rebuild and switch system configuration (nixos-rebuild or darwin-rebuild)
 export def nrs [profile?: string] {
 	let p = (_resolve_profile ($profile | default (_default_profile)))
@@ -128,4 +186,98 @@ export def nrs-check [profile?: string] {
 # Show all flake outputs
 export def nix-outputs [] {
 	^nix flake show $"path:($env.HOME)/PersonalConfigs/nix"
+}
+
+# Smoke-test that the local Nix-managed environment and linked configs are present.
+export def nix-smoke [
+	profile?: string # defaults to the current machine profile
+	--skip-flake # skip nix eval checks against the flake
+] {
+	let p = (_resolve_profile ($profile | default (_default_profile)))
+	let flake = $"path:($env.HOME)/PersonalConfigs/nix"
+	let config_type = if ($p in ["home" "work" "work-adamhall"]) { "darwinConfigurations" } else { "nixosConfigurations" }
+	let hm_user = (_hm_user_for_profile $p)
+	let dotfiles = ($env.DOTFILES? | default ($env.HOME | path join "PersonalConfigs"))
+	let xdg_config = ($env.XDG_CONFIG_HOME? | default ($env.HOME | path join ".config"))
+	let is_nixos = ("/etc/NIXOS" | path exists)
+
+	mut checks = [
+		(_smoke-check "PATH has ~/.local/bin" (_path-has ($env.HOME | path join ".local/bin")) ($env.HOME | path join ".local/bin"))
+		(_smoke-check "PATH has /nix/var/nix/profiles/default/bin" (_path-has "/nix/var/nix/profiles/default/bin") "/nix/var/nix/profiles/default/bin")
+		(_smoke-check $"PATH has /etc/profiles/per-user/($env.USER)/bin" (_path-has $"/etc/profiles/per-user/($env.USER)/bin") $"/etc/profiles/per-user/($env.USER)/bin")
+	]
+
+	if $is_nixos {
+		$checks = ($checks ++ [
+			(_smoke-check "PATH has /run/current-system/sw/bin" (_path-has "/run/current-system/sw/bin") "/run/current-system/sw/bin")
+			(_smoke-check "PATH has /run/wrappers/bin" (_path-has "/run/wrappers/bin") "/run/wrappers/bin")
+		])
+	}
+
+	for cmd in [nix nu nvim tmux git rg fd jq bun claude codex playwright-cli cc-sandbox] {
+		let resolved = (_which-path $cmd)
+		$checks = ($checks | append (_smoke-check $"binary: ($cmd)" ($resolved != null) ($resolved | default "missing")))
+	}
+
+	let platform_cmd = if $is_nixos { "nixos-rebuild" } else { "darwin-rebuild" }
+	let platform_path = (_which-path $platform_cmd)
+	$checks = ($checks | append (_smoke-check $"binary: ($platform_cmd)" ($platform_path != null) ($platform_path | default "missing")))
+
+	for file_check in [
+		{
+			check: "config: nushell env"
+			actual: ($xdg_config | path join "nushell/env.nu")
+			expected: ($dotfiles | path join "config/nushell/env.nu")
+		}
+		{
+			check: "config: nushell config"
+			actual: ($xdg_config | path join "nushell/config.nu")
+			expected: ($dotfiles | path join "config/nushell/config.nu")
+		}
+		{
+			check: "config: codex"
+			actual: ($xdg_config | path join "codex/config.toml")
+			expected: ($dotfiles | path join "config/codex/config.toml")
+		}
+		{
+			check: "config: kitty"
+			actual: ($xdg_config | path join "kitty/kitty.conf")
+			expected: ($dotfiles | path join "config/kitty/kitty.conf")
+		}
+		{
+			check: "config: ghostty startup"
+			actual: ($xdg_config | path join "ghostty/startup.sh")
+			expected: ($dotfiles | path join "config/ghostty/startup.sh")
+		}
+		{
+			check: "config: claude settings"
+			actual: ($env.HOME | path join ".claude/settings.json")
+			expected: ($dotfiles | path join "claude/settings.json")
+		}
+	] {
+		$checks = ($checks | append (_expected-config-check $file_check.check $file_check.actual $file_check.expected))
+	}
+
+	if not $skip_flake {
+		let home_attr = $"($flake)#($config_type).($p).config.home-manager.users.($hm_user).home.packages"
+		let sys_attr = $"($flake)#($config_type).($p).config.environment.systemPackages"
+		$checks = ($checks ++ [
+			(_nix_eval_check "flake eval: home packages" $home_attr)
+			(_nix_eval_check "flake eval: system packages" $sys_attr)
+		])
+	}
+
+	let report = (
+		$checks
+		| each {|check| $check | upsert status (if $check.ok { "ok" } else { "fail" }) }
+		| select check status detail
+	)
+
+	$report | table -e
+
+	if ($checks | where ok == false | is-not-empty) {
+		error make { msg: "nix smoke failed" }
+	}
+
+	$report
 }
