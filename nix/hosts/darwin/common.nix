@@ -142,12 +142,10 @@ in {
       "alfred"
       "google-chrome"
       "kitty"
-      "ghostty"
       "visual-studio-code"
-      "cursor"
+      "ghostty"
       "spotify"
       "zed"
-      "ticktick"
       "todoist-app"
       "font-fira-code"
       "font-victor-mono"
@@ -155,7 +153,6 @@ in {
     ];
     masApps = {
       "DaisyDisk" = 411643860;
-      "Magnet" = 441258766;
       "Spokenly" = 6740315592;
     };
     # shared extensions (work-specific ones live in hosts/darwin/work/)
@@ -164,25 +161,32 @@ in {
       "cunbidun.flash-vscode"
       "haphazarddev.oil-code"
       "vscodevim.vim"
-      # format
+
+      # linting
       "dbaeumer.vscode-eslint"
       "esbenp.prettier-vscode"
+      "biomejs.biome"
+
       # quality of life
       "davidsanders.search-under-cursor"
-      "jgclark.vscode-todo-highlight"
-      "kamikillerto.vscode-colorize"
       "usernamehw.commands"
       "wraith13.unsaved-files-vscode"
       "formulahendry.auto-close-tag"
       "formulahendry.auto-rename-tag"
-      # theme
+
+      # theme and ui
       "mvllow.rose-pine"
-      # tools
-      "wakatime.vscode-wakatime"
+      "jgclark.vscode-todo-highlight"
+      "kamikillerto.vscode-colorize"
+
+      # lang
       "rust-lang.rust-analyzer"
       "bradlc.vscode-tailwindcss"
+
+      # tools
+      "wakatime.vscode-wakatime"
       "ms-playwright.playwright"
-      "biomejs.biome"
+      "github.copilot-chat"
     ];
   };
 

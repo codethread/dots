@@ -4,7 +4,6 @@ cli_auth_credentials_store = "file"
 
 personality = "pragmatic"
 model = "gpt-5.4"
-model_reasoning_effort = "high"
 
 [projects."/Users/codethread/PersonalConfigs"]
 trust_level = "trusted"
@@ -28,6 +27,9 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/home/codethread/PersonalConfigs"]
+trust_level = "trusted"
+
+[projects."/Users/adamhall/dev/projects/cc-inspect"]
 trust_level = "trusted"
 
 [tui.model_availability_nux]

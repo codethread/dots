@@ -3,7 +3,6 @@
   "env": {
     "CLAUDECODE": "1",
     "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "true",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
     "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "true",
     "ENABLE_LSP_TOOL": "true",
     "MANPAGER": "cat",
@@ -54,6 +53,7 @@
       "~/workfiles"
     ]
   },
+  "model": "opusplan",
   "hooks": {
     "PostToolUse": [
       {
@@ -153,6 +153,5 @@
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754027278114
-  },
-  "effortLevel": "medium"
+  }
 }

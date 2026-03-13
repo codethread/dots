@@ -17,7 +17,7 @@
   // https://github.com/mishamyrt/Lilex
   "editor.fontFamily": "'Victor Mono','FiraCode Nerd Font','Roboto Mono', Menlo, Monaco, 'Courier New', monospace",
   "editor.fontLigatures": true,
-  "editor.fontSize": 13,
+  "editor.fontSize": 14,
   "editor.fontWeight": "500",
   "editor.formatOnSave": true,
   "editor.formatOnType": true,
@@ -33,7 +33,7 @@
   "editor.quickSuggestions": {
     "other": "on",
     "comments": "off",
-    "strings": true
+    "strings": true,
   },
   "editor.renderLineHighlight": "all",
   // "editor.rulers": [100],
@@ -55,7 +55,7 @@
     "*.css": "tailwindcss",
     "*.xml": "html",
     "*.svg": "html",
-    "*.snapshot": "json"
+    "*.snapshot": "json",
   },
   "files.autoSave": "onWindowChange",
   "files.autoSaveWhenNoErrors": true,
@@ -66,7 +66,7 @@
     ".tags": true,
     ".vscode/": false,
     "**/*.swp": true,
-    "**/*~": true
+    "**/*~": true,
   },
   "files.insertFinalNewline": true,
 
@@ -81,7 +81,7 @@
     "**/.svn": true,
     "**/.hg": true,
     "**/CVS": true,
-    "**/.DS_Store": true
+    "**/.DS_Store": true,
   },
 
   "window.newWindowDimensions": "maximized",
@@ -90,7 +90,7 @@
   "window.title": "${rootName}${separator}${activeEditorMedium}",
   "window.titleBarStyle": "custom",
   "workbench.editor.customLabels.patterns": {
-    "**/index.*": "(${dirname}) ${filename}.${extname}"
+    "**/index.*": "(${dirname}) ${filename}.${extname}",
   },
   // these settings get a bit upset between vscode and cursor so sometimes comment out and retry
   "workbench.editor.labelFormat": "short",
@@ -117,7 +117,7 @@
     "javascript",
     "javascriptreact",
     "typescript",
-    "typescriptreact"
+    "typescriptreact",
   ],
 
   "scss.validate": false,
@@ -130,11 +130,11 @@
   "terminal.integrated.profiles.osx": {
     "zsh": {
       "path": "zsh",
-      "args": ["-l"]
+      "args": ["-l"],
     },
     "tmux": {
       "path": "tmux",
-      "icon": "terminal-tmux"
+      "icon": "terminal-tmux",
     },
     "nu": {
       "path": "nu",
@@ -144,9 +144,9 @@
         "XDG_CONFIG_HOME": "${env:HOME}/.config",
         "XDG_DATA_HOME": "${env:HOME}/.local/share",
         "XDG_STATE_HOME": "${env:HOME}/.local/state",
-        "XDG_CACHE_HOME": "${env:HOME}/.local/cache"
-      }
-    }
+        "XDG_CACHE_HOME": "${env:HOME}/.local/cache",
+      },
+    },
   },
 
   // MARK: vim
@@ -163,7 +163,7 @@
   "vim.replaceWithRegister": true, // "xgr{motion} https://github.com/vim-scripts/ReplaceWithRegister
 
   "vim.insertModeKeyBindings": [
-    { "before": ["j", "k"], "after": ["<Esc>"] }
+    { "before": ["j", "k"], "after": ["<Esc>"] },
     // { "before": ["ctrl+e"], "after": ["cursorLineEnd"] } // not working
   ],
 
@@ -172,136 +172,136 @@
     // MARK: v.global
     {
       "before": ["<leader>", ";"],
-      "commands": ["workbench.action.showCommands"]
+      "commands": ["workbench.action.showCommands"],
     },
     {
       "before": ["<leader>", "<leader>"],
-      "commands": ["workbench.action.quickOpen"]
+      "commands": ["workbench.action.quickOpen"],
     },
     {
       "before": ["ctrl+f"],
       "when": "editorTextFocus",
-      "commands": ["flash-vscode.start"]
+      "commands": ["flash-vscode.start"],
     },
     {
       "before": ["#"], // annoyingly can't figure out how to not clash with %
       "when": "editorTextFocus",
-      "commands": ["editor.emmet.action.matchTag"]
+      "commands": ["editor.emmet.action.matchTag"],
     },
     // ────────────────────────────────────────────────────────────────*
     // Remap to regular undo, which is a shame but probably less risky https://github.com/VSCodeVim/Vim/issues/2007
     {
       "before": ["u"],
-      "commands": ["undo"]
+      "commands": ["undo"],
     },
     {
       "before": ["<C-r>"],
-      "commands": ["redo"]
+      "commands": ["redo"],
     },
     // ────────────────────────────────────────────────────────────────*
     // MARK: v.files
     {
       "before": ["<leader>", "f", "l"],
-      "commands": ["workbench.action.showAllEditorsByMostRecentlyUsed"]
+      "commands": ["workbench.action.showAllEditorsByMostRecentlyUsed"],
     },
     {
       "before": ["<leader>", "f", "k"],
-      "commands": ["workbench.action.closeActiveEditor"]
+      "commands": ["workbench.action.closeActiveEditor"],
     },
     {
       "before": ["<leader>", "f", "u"],
-      "commands": ["unsaved-files.show"]
+      "commands": ["unsaved-files.show"],
     },
     {
       "before": ["<leader>", "f", "s"],
-      "commands": ["workbench.action.files.save"]
+      "commands": ["workbench.action.files.save"],
     },
     // ────────────────────────────────────────────────────────────────*
     // MARK: v.open
     {
       "before": ["<leader>", "o", "a"],
-      "commands": ["outline.focus"]
+      "commands": ["outline.focus"],
     },
     {
       "before": ["<leader>", "o", "f"],
       "when": "editorFocus",
-      "commands": ["workbench.files.action.showActiveFileInExplorer"]
+      "commands": ["workbench.files.action.showActiveFileInExplorer"],
     },
     {
       "before": ["<leader>", "o", "d"],
       "when": "editorFocus",
       // "commands": ["oil-code.open"]
-      "commands": ["vsnetrw.open"]
+      "commands": ["vsnetrw.open"],
     },
     {
       "before": ["<leader>", "o", "v", "s"],
-      "commands": ["workbench.action.openSettingsJson"]
+      "commands": ["workbench.action.openSettingsJson"],
     },
     {
       "before": ["<leader>", "o", "v", "k"],
-      "commands": ["workbench.action.openGlobalKeybindingsFile"]
+      "commands": ["workbench.action.openGlobalKeybindingsFile"],
     },
     // ────────────────────────────────────────────────────────────────*
     // MARK: v.errors
     {
       "before": ["<leader>", "e", "f"],
-      "commands": ["eslint.executeAutofix"]
+      "commands": ["eslint.executeAutofix"],
     },
     {
       "before": ["<leader>", "e", "n"],
-      "commands": ["editor.action.marker.next"]
+      "commands": ["editor.action.marker.next"],
     },
     {
       "before": ["<leader>", "e", "p"],
-      "commands": ["editor.action.marker.prev"]
+      "commands": ["editor.action.marker.prev"],
     },
     {
       "before": ["<leader>", "e", "l"],
-      "commands": ["workbench.action.showErrorsWarnings"]
+      "commands": ["workbench.action.showErrorsWarnings"],
     },
     // ────────────────────────────────────────────────────────────────*
     // MARK: v.files
     {
       "before": ["<leader>", "f", "r"],
-      "commands": ["renameFile"]
+      "commands": ["renameFile"],
     },
     {
       "before": ["<leader>", "f", "s"],
-      "commands": ["workbench.action.files.save"]
+      "commands": ["workbench.action.files.save"],
     },
     // ────────────────────────────────────────────────────────────────*
     // MARK: v.search
     {
       "before": ["<leader>", "s", "w"],
-      "commands": ["extension.searchUnderCursor"]
+      "commands": ["extension.searchUnderCursor"],
     },
     // ────────────────────────────────────────────────────────────────*
     // MARK: v.utils
     {
       "before": ["<leader>", "u", "f"],
-      "commands": ["editor.action.formatDocument"]
+      "commands": ["editor.action.formatDocument"],
     },
     // ────────────────────────────────────────────────────────────────*
     // MARK: v.windows
     {
       "before": ["<leader>", "w", "k"],
-      "commands": ["workbench.action.closeEditorsInGroup"]
+      "commands": ["workbench.action.closeEditorsInGroup"],
     },
     {
       "before": ["<leader>", "w", "o"],
-      "commands": ["workbench.action.closeOtherEditors"]
+      "commands": ["workbench.action.closeOtherEditors"],
     },
     {
       "before": ["ctrl+w", "shift+h"],
-      "commands": ["workbench.action.moveEditorToLeftGroup"]
+      "commands": ["workbench.action.moveEditorToLeftGroup"],
     },
     {
       "before": ["ctrl+w", "shift+l"],
-      "commands": ["workbench.action.moveEditorToRightGroup"]
+      "commands": ["workbench.action.moveEditorToRightGroup"],
     },
     {
       "before": ["ctrl+w", "o"],
-      "commands": ["workbench.action.editorLayoutSingle"]
+      "commands": ["workbench.action.editorLayoutSingle"],
     },
     // {
     //   "before": ["ctrl+w", "o"],
@@ -310,48 +310,48 @@
     // },
     {
       "before": ["<leader>", "w", "w"],
-      "commands": ["workbench.action.splitEditor"]
+      "commands": ["workbench.action.splitEditor"],
     },
     // ────────────────────────────────────────────────────────────────*
     // MARK: v.lsp
     {
       "before": ["leader", "l", "a"],
       "commands": ["editor.action.quickFix"],
-      "when": "editorHasCodeActionsProvider && editorTextFocus && !editorReadonly"
+      "when": "editorHasCodeActionsProvider && editorTextFocus && !editorReadonly",
     },
     {
       "before": ["leader", "l", "r"],
-      "commands": ["editor.action.rename"]
+      "commands": ["editor.action.rename"],
     },
     {
       "before": ["g", "r"],
-      "commands": ["editor.action.goToReferences"]
+      "commands": ["editor.action.goToReferences"],
     },
     {
       "before": ["K"],
-      "commands": ["editor.action.showHover"]
+      "commands": ["editor.action.showHover"],
     },
     {
       "before": ["<leader>", "r", "r"],
       "commands": ["editor.action.refactor"],
-      "when": "editorHasCodeActionsProvider && editorTextFocus && !editorReadonly"
+      "when": "editorHasCodeActionsProvider && editorTextFocus && !editorReadonly",
     },
     // ────────────────────────────────────────────────────────────────*
     // MARK: v.toggles
     {
       "before": ["<leader>", "t", "m"],
-      "commands": ["editor.action.toggleMinimap"]
+      "commands": ["editor.action.toggleMinimap"],
     },
     // ────────────────────────────────────────────────────────────────*
     // MARK: v.marks
     {
       "before": ["m", "a"],
-      "commands": ["bookmarks.toggle"]
+      "commands": ["bookmarks.toggle"],
     },
     {
       "before": ["m", "l"],
-      "commands": ["bookmarks.listFromAllFiles"]
-    }
+      "commands": ["bookmarks.listFromAllFiles"],
+    },
     // ────────────────────────────────────────────────────────────────*
     // MARK: v.oil
     // {
@@ -417,7 +417,7 @@
     "*": true,
     "yaml": false,
     "plaintext": false,
-    "markdown": true
+    "markdown": true,
   },
   "github.copilot.nextEditSuggestions.enabled": true,
 
@@ -442,16 +442,16 @@
     "Close Panels": {
       "sequence": [
         "workbench.action.closePanel",
-        "workbench.action.closeSidebar"
+        "workbench.action.closeSidebar",
         // TODO: figure out auxilary panel
-      ]
-    }
+      ],
+    },
   },
   "todohighlight.defaultStyle": {
     "color": "#ffab00",
     "backgroundColor": "#2a2c2d",
     "cursor": "pointer",
-    "isWholeLine": false
+    "isWholeLine": false,
   },
   "todohighlight.keywords": [
     "XXX:",
@@ -459,7 +459,7 @@
     "REVIEW:",
     "NOTE:",
     { "text": "TODO:", "color": "#ffab00", "backgroundColor": "#2a2c2d" },
-    { "text": "HACK:", "color": "#ff0000" }
+    { "text": "HACK:", "color": "#ff0000" },
   ],
 
   "yaml.customTags": ["!reference sequence"],
@@ -477,7 +477,7 @@
   "zig.path": "zig",
 
   "yaml.schemas": {
-    "file:///Users/adamhall/.cursor/extensions/atlassian.atlascode-3.8.0/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml"
+    "file:///Users/adamhall/.cursor/extensions/atlassian.atlascode-3.8.0/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml",
   },
   "atlascode.jira.enabled": true,
   "atlascode.bitbucket.enabled": false,
@@ -496,7 +496,7 @@
     "*.jsx": "${capture}.js",
     "*.tsx": "${capture}.ts",
     "tsconfig.json": "tsconfig.*.json",
-    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml, bun.lockb"
+    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml, bun.lockb",
   },
   "chat.tools.autoApprove": true,
   "json.schemaDownload.enable": true,
@@ -518,9 +518,9 @@
     "param",
     "source",
     "track",
-    "wbr"
+    "wbr",
   ],
-  "workbench.colorTheme": "Catppuccin Mocha",
+  "workbench.colorTheme": "Experimental Light",
   "colorize.languages": [
     "css",
     "sass",
@@ -532,7 +532,11 @@
     "xml",
     "svg",
     "typescript",
-    "typescriptreact"
+    "typescriptreact",
   ],
-  "claudeCode.selectedModel": "sonnet"
+  "claudeCode.selectedModel": "sonnet",
+  "biome.suggestInstallingGlobally": false,
+  "chat.tools.terminal.autoApprove": {
+    "code-review": true,
+  },
 }
