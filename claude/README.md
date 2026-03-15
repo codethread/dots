@@ -157,14 +157,14 @@ Defined in `claude/agents/`. Available in all projects.
 
 - **Model**: sonnet
 - **Tools**: playwright-cli MCP
-- **Purpose**: Browser navigation, reading page content, interacting with web apps
+- **Purpose**: General browser interaction — navigating, reading content, forms, screenshots, console output
 
 #### browser-devtools
 
 - **Model**: sonnet
 - **Tools**: chrome-devtools MCP (auto-launches headless Chrome)
 - **Cleanup**: SubagentStop hook runs cc-hook--chrome-stop
-- **Purpose**: Browser automation and UI testing via Chrome DevTools Protocol
+- **Purpose**: DevTools-level diagnostics — network errors, performance profiling, memory leaks, accessibility audits
 
 ## Custom Slash Commands
 
@@ -175,6 +175,12 @@ Defined in `claude/agents/`. Available in all projects.
 - `refine-*`: Repetitive improvement tasks (e.g., updating docs)
 
 ### Available Commands
+
+#### /github \<issue-or-pr-number-or-url\>
+
+- **Location**: `claude/commands/github.md`
+- **Auto-triggers**: When working with GitHub issues or PRs
+- **Purpose**: Ensures `gh` JSON output is used instead of plaintext view, so image URLs and embedded content aren't lost. Downloads and views referenced images for full context.
 
 #### /ct:speak [optional initial message]
 

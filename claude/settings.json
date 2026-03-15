@@ -22,6 +22,7 @@
     "deny": [
       "Bash(wget*)",
       "Bash(git push:*)",
+      "Bash(gh pr merge*)",
       "NotebookEdit",
       "Read(**/*.key)",
       "Read(~/*.key)",
@@ -53,7 +54,6 @@
       "~/workfiles"
     ]
   },
-  "model": "opusplan",
   "hooks": {
     "PostToolUse": [
       {
@@ -73,6 +73,15 @@
           {
             "type": "command",
             "command": "cc-hook--npm-redirect"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if jq -r '.tool_input.command' | grep -qi 'gh pr merge'; then echo 'Merging PRs is blocked — push branches and open PRs only'; exit 2; fi"
           }
         ]
       }
@@ -149,6 +158,7 @@
     "typescript-lsp@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true
   },
+  "effortLevel": "medium",
   "promptSuggestionEnabled": false,
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {

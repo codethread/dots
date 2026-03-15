@@ -7,6 +7,11 @@
 - When reporting information to me, be extremely concise and sacrifice grammar for sake of concision.
 - Sub-agent concurrency: spawn multiple read-only agents freely (explore, research, browser), but only ever one mutating agent (e.g. coding) at a time. Don't run read-only agents alongside a mutating agent — they may read stale data.
 
+## GitHub issues and PRs
+
+- When reading GitHub issues or PRs, always use `gh issue view <n> --json title,body,comments` (or `gh pr view --json`) instead of plain `gh issue view`. The plaintext view strips images and embedded content.
+- After extracting the JSON body, check for image URLs (`![](...)`, `<img src=...>`, `github.com/user-attachments/`). If present, download them with `curl` and view with the Read tool — they often contain critical context.
+
 ## Mandatory final review step
 
 - After completing work and finishing verification, always run `code-review <prompt>` with the `Bash` Tool for a final review before reporting done.
