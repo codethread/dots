@@ -9,7 +9,11 @@
 set -euo pipefail
 
 IMAGE_NAME="cc-sandbox"
-CLAUDE_VERSION_DEFAULT="2.1.71"
+if [[ -z "${CLAUDE_VERSION:-}" ]]; then
+    CLAUDE_VERSION_DEFAULT="$(claude --version 2>/dev/null | awk '{print $1}')"
+else
+    CLAUDE_VERSION_DEFAULT=""
+fi
 NODE_VERSION_DEFAULT="22"
 NUSHELL_VERSION_DEFAULT="0.111.0"
 PLAYWRIGHT_CLI_VERSION_DEFAULT="latest"
@@ -81,23 +85,31 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+RESOLVED_CLAUDE_VERSION="${CLAUDE_VERSION:-$CLAUDE_VERSION_DEFAULT}"
+if [[ -z "$RESOLVED_CLAUDE_VERSION" ]]; then
+    echo "Error: could not detect local claude version (is claude installed?)" >&2
+    echo "Hint: set CLAUDE_VERSION=x.y.z to override" >&2
+    exit 1
+fi
+
 CACHE_FLAG=()
 if [[ "$NO_CACHE" == true ]]; then
     CACHE_FLAG=(--no-cache)
 fi
 case "$(uname -m)" in
-    aarch64) ARCH_GNU="aarch64"; ARCH_NODE="arm64" ;;
-    x86_64)  ARCH_GNU="x86_64";  ARCH_NODE="x64"   ;;
+    aarch64) ARCH_GNU="aarch64"; ARCH_NODE="arm64"; ARCH_GO="arm64" ;;
+    x86_64)  ARCH_GNU="x86_64";  ARCH_NODE="x64";  ARCH_GO="amd64" ;;
     *) echo "Unsupported arch: $(uname -m)" >&2; exit 1 ;;
 esac
 podman build "${CACHE_FLAG[@]}" \
-    --build-arg "CLAUDE_VERSION=${CLAUDE_VERSION:-$CLAUDE_VERSION_DEFAULT}" \
+    --build-arg "CLAUDE_VERSION=$RESOLVED_CLAUDE_VERSION" \
     --build-arg "NODE_VERSION=${NODE_VERSION:-$NODE_VERSION_DEFAULT}" \
     --build-arg "NUSHELL_VERSION=${NUSHELL_VERSION:-$NUSHELL_VERSION_DEFAULT}" \
     --build-arg "PLAYWRIGHT_CLI_VERSION=${PLAYWRIGHT_CLI_VERSION:-$PLAYWRIGHT_CLI_VERSION_DEFAULT}" \
     --build-arg "CODEX_VERSION=${CODEX_VERSION:-$CODEX_VERSION_DEFAULT}" \
     --build-arg "ARCH_GNU=$ARCH_GNU" \
     --build-arg "ARCH_NODE=$ARCH_NODE" \
+    --build-arg "ARCH_GO=$ARCH_GO" \
     -t "$IMAGE_NAME" -f "$CONTAINERFILE" --ignorefile "$CONTAINERIGNORE" "$REPO_ROOT"
 
 TEMP_CLAUDE_SETTINGS="$(mktemp)"
@@ -188,6 +200,12 @@ if [[ -f "$NOTIFY_PORT_FILE" ]]; then
     )
 fi
 
+# GitHub CLI: forward read-only token if available
+GH_ARGS=()
+if [[ -n "${GH_AGENTS_RO:-}" ]]; then
+    GH_ARGS+=(-e "GITHUB_TOKEN=$GH_AGENTS_RO")
+fi
+
 CONTAINER_CMD=()
 TTY_FLAGS="-it"
 if [[ -n "$RUN_CMD" ]]; then
@@ -220,5 +238,6 @@ podman run $TTY_FLAGS --rm \
     "${TODOIST_ARGS[@]}" \
     "${PORT_ARGS[@]}" \
     "${AUTH_ARGS[@]}" \
+    "${GH_ARGS[@]}" \
     "$IMAGE_NAME" \
     "${CONTAINER_CMD[@]}"
