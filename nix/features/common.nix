@@ -174,6 +174,7 @@ in {
     tokei
     grc
     todoist-cli
+    gh
     git-lfs
     lazygit
 	lazydocker
