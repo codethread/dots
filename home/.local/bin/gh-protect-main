@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# :module: Set up branch protection on main to require PRs (no direct pushes)
+#
+# Applies to the repo in the current directory. Uses gh CLI.
+#
+# Rules enforced:
+#   - All changes to main must go through a pull request
+#   - No force pushes to main
+#   - No branch deletion of main
+#   - Enforced for admins (i.e. you) too
+#
+# Approval count is 0 — agent merging is blocked at the Claude hook/permission
+# layer, not via GitHub reviews (single-account repos can't require third-party
+# approval).
+
+set -euo pipefail
+
+usage() {
+    echo "Usage: gh-protect-main [-r owner/repo] [-h]"
+    echo ""
+    echo "Sets up branch protection on main for the current repo."
+    echo ""
+    echo "Options:"
+    echo "  -r REPO    Target a specific repo (default: current directory's repo)"
+    echo "  -h         Show this help"
+    exit 0
+}
+
+REPO=""
+while getopts "r:h" opt; do
+    case "$opt" in
+        r) REPO="$OPTARG" ;;
+        h) usage ;;
+        *) usage ;;
+    esac
+done
+
+if [[ -z "$REPO" ]]; then
+    REPO="$(gh repo view --json nameWithOwner -q '.nameWithOwner')"
+fi
+
+echo "Protecting main on $REPO..."
+
+gh api "repos/$REPO/branches/main/protection" -X PUT \
+    --input - <<'EOF'
+{
+  "required_pull_request_reviews": {
+    "required_approving_review_count": 0
+  },
+  "enforce_admins": true,
+  "required_status_checks": null,
+  "restrictions": null,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}
+EOF
+
+echo "Done. Branch protection applied to $REPO:main"
+echo ""
+echo "Rules:"
+echo "  - PRs required (no direct pushes)"
+echo "  - Force pushes blocked"
+echo "  - Branch deletion blocked"
+echo "  - Enforced for admins"
