@@ -2,7 +2,7 @@
 #
 # Provides a sandboxed environment for running Claude Code non-interactively.
 # Includes: Node.js, Bun, Chromium + playwright-cli for browser automation,
-# and codex CLI for code-review.
+# codex CLI for code-review, and yt-dlp for media downloads.
 #
 # The wrapping script (cc-sandbox) handles:
 #   - Building this image via podman
@@ -68,7 +68,7 @@ FROM docker.io/library/node:${NODE_VERSION}-slim
 # Lib list from playwright's nativeDeps.js for debian12-x64.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl git jq openssh-client gnupg unzip \
-    neovim \
+    neovim yt-dlp ffmpeg \
     chromium \
     libasound2 libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libcairo2 \
     libcups2 libdbus-1-3 libdrm2 libgbm1 libglib2.0-0 libnspr4 libnss3 \

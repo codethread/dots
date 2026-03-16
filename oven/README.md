@@ -40,6 +40,7 @@ nix develop --command bun run verify
 ## Tools Included
 
 - **bra** - Git branch switcher with fzf
+- **cc-bridge** - Unix socket bridge for executing host commands from containers
 - **cc-hook--context-injector** - Claude Code hook that provides project context at session start
 - **cc-hook--npm-redirect** - Claude Code hook that redirects npm/npx/node commands to detected package manager
 - **cc-speak** - Advanced text-to-speech tool with file and section reading support

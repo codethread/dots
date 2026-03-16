@@ -41,6 +41,7 @@ Options:
   -n, --no-cache     Rebuild container image without cache
   -i, --interactive  Start an interactive bash shell instead of claude
   -r, --run CMD      Run a specific command instead of claude
+  -b, --bridge CMD   Expose host command via cc-bridge (e.g. -b obsidian), repeatable
   -a, --auth SITE    Mount playwright auth state (e.g. -a ocado), repeatable
   -p PORT            Forward a port (e.g. -p 3000:3000), repeatable
   -h, --help         Show this help message
@@ -66,11 +67,13 @@ INTERACTIVE=false
 RUN_CMD=""
 PORT_ARGS=()
 AUTH_ARGS=()
+BRIDGE_CMDS=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -n|--no-cache) NO_CACHE=true; shift ;;
         -i|--interactive) INTERACTIVE=true; shift ;;
         -r|--run) RUN_CMD="$2"; shift 2 ;;
+        -b|--bridge) BRIDGE_CMDS+=("$2"); shift 2 ;;
         -a|--auth)
             AUTH_FILE="$HOME/.config/playwright/states/$2.json"
             if [[ ! -f "$AUTH_FILE" ]]; then
@@ -124,6 +127,8 @@ fi
 cleanup() {
     rm -f "$TEMP_CLAUDE_SETTINGS" "$TEMP_SSH_CONFIG"
     [[ -n "${SSH_TUNNEL_PID:-}" ]] && kill "$SSH_TUNNEL_PID" 2>/dev/null || true
+    [[ -n "${BRIDGE_DAEMON_PID:-}" ]] && kill "$BRIDGE_DAEMON_PID" 2>/dev/null || true
+    [[ -n "${BRIDGE_SOCK:-}" ]] && rm -f "$BRIDGE_SOCK" || true
 }
 trap cleanup EXIT
 
@@ -200,21 +205,48 @@ if [[ -f "$NOTIFY_PORT_FILE" ]]; then
     )
 fi
 
+# cc-bridge: per-session daemon exposing only the commands requested via --bridge
+BRIDGE_ARGS=()
+BRIDGE_SOCK=""
+BRIDGE_DAEMON_PID=""
+if [[ ${#BRIDGE_CMDS[@]} -gt 0 ]]; then
+    BRIDGE_ALLOW=$(IFS=,; echo "${BRIDGE_CMDS[*]}")
+    BRIDGE_SOCK="/tmp/cc-bridge-${CONTAINER_NAME}.sock"
+    cc-bridge serve --allow "$BRIDGE_ALLOW" --socket "$BRIDGE_SOCK" &
+    BRIDGE_DAEMON_PID=$!
+    sleep 0.2
+    if [[ -S "$BRIDGE_SOCK" ]]; then
+        BRIDGE_ARGS+=(-v "$BRIDGE_SOCK:/tmp/cc-bridge.sock")
+    else
+        echo "Warning: cc-bridge daemon failed to start" >&2
+    fi
+fi
+
 # GitHub CLI: forward read-only token if available
 GH_ARGS=()
 if [[ -n "${GH_AGENTS_RO:-}" ]]; then
     GH_ARGS+=(-e "GITHUB_TOKEN=$GH_AGENTS_RO")
 fi
 
+# Build bridge install prefix if commands were requested
+BRIDGE_INSTALL=""
+if [[ ${#BRIDGE_CMDS[@]} -gt 0 ]]; then
+    BRIDGE_INSTALL="cc-bridge install --commands $(IFS=,; echo "${BRIDGE_CMDS[*]}") && "
+fi
+
 CONTAINER_CMD=()
 TTY_FLAGS="-it"
 if [[ -n "$RUN_CMD" ]]; then
-    CONTAINER_CMD=(bash -c "$RUN_CMD")
+    CONTAINER_CMD=(bash -c "${BRIDGE_INSTALL}${RUN_CMD}")
     TTY_FLAGS="-i"
 elif [[ "$INTERACTIVE" == true ]]; then
-    CONTAINER_CMD=(bash)
+    if [[ -n "$BRIDGE_INSTALL" ]]; then
+        CONTAINER_CMD=(bash -c "${BRIDGE_INSTALL}exec bash")
+    else
+        CONTAINER_CMD=(bash)
+    fi
 else
-    CONTAINER_CMD=(claude --dangerously-skip-permissions "$@")
+    CONTAINER_CMD=(bash -c "${BRIDGE_INSTALL}exec claude --dangerously-skip-permissions $*")
 fi
 
 podman run $TTY_FLAGS --rm \
@@ -239,5 +271,6 @@ podman run $TTY_FLAGS --rm \
     "${PORT_ARGS[@]}" \
     "${AUTH_ARGS[@]}" \
     "${GH_ARGS[@]}" \
+    "${BRIDGE_ARGS[@]}" \
     "$IMAGE_NAME" \
     "${CONTAINER_CMD[@]}"
