@@ -38,6 +38,8 @@
   services.xserver.autoRepeatInterval = 25;
 
   # --- Shell ---
+  environment.variables.EDITOR = "nvim";
+
   # Register nushell as a valid login shell (adds it to /etc/shells)
   environment.shells = [ pkgs.nushell ];
 

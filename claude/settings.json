@@ -158,7 +158,6 @@
     "typescript-lsp@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true
   },
-  "effortLevel": "medium",
   "promptSuggestionEnabled": false,
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
