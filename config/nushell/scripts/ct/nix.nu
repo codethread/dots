@@ -89,7 +89,8 @@ def _nix_eval_check [check: string, attr: string] {
 }
 
 # Rebuild and switch system configuration (nixos-rebuild or darwin-rebuild)
-export def nrs [profile?: string] {
+export def nrs [profile?: string, --update(-u)] {
+	if $update { nfu }
 	let p = (_resolve_profile ($profile | default (_default_profile)))
 	let flake = (_flake_ref $p)
 	if (sys host).name == "Darwin" {
