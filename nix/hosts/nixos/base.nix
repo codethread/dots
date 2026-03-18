@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 # Shared NixOS system config imported by all NixOS hosts.
 # Hardware and hostname live in each host's own directory.
@@ -9,7 +9,11 @@
   boot.loader.efi.canTouchEfiVariables = true;
 
   # --- Nix ---
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings = {
+    experimental-features = [ "nix-command" "flakes" ];
+    max-substitution-jobs = lib.mkDefault 32;
+    http-connections = lib.mkDefault 50;
+  };
   nix.gc = {
     automatic = true;
     dates = "Mon *-*-* 01:00:00";

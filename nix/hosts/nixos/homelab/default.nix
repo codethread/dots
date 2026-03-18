@@ -9,6 +9,13 @@
 
   networking.hostName = "homelab";
 
+  # 8 cores / 32 GB RAM — push download parallelism hard
+  nix.settings = {
+    max-substitution-jobs = 128;
+    http-connections = 128;
+    download-buffer-size = 8388608; # 8 MiB per connection (128 × 8 MiB ≈ 1 GiB max)
+  };
+
   # Expo Go (LAN) / Metro ports + desktop WebRTC stream ports.
   networking.firewall.allowedTCPPorts = [ 3001 5555 8081 8889 19000 19001 19002 ];
   networking.firewall.allowedUDPPorts = [ 8189 19000 19001 19002 ];
