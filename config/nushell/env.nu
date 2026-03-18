@@ -55,6 +55,7 @@ if ("/etc/NIXOS" | path exists) {
 	$env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = $"($_nix_per_user)/chromium"
 } else {
 	$env.IS_NIXOS = false
+	$env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = "/Applications/Chromium.app/Contents/MacOS/Chromium"
 }
 #: }}}
 

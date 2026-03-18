@@ -141,6 +141,7 @@ in {
       "1password-cli"
       "alfred"
       "google-chrome"
+	  "ungoogled-chromium"
       "kitty"
       "visual-studio-code"
       "ghostty"
