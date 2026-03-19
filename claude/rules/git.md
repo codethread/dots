@@ -3,6 +3,7 @@
 ### Committing
 
 - Only commit when explicitly asked
+- Keep commits atomic unless directed otherwise
 - Summarize the "why" not the "what" in commit messages (1-2 sentences)
 - Always pass commit messages via HEREDOC:
   ```
