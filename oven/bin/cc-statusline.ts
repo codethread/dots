@@ -97,10 +97,9 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 		parts.push(colorize.dimMagenta(`  ${branch}`));
 	}
 
-	// Model name (if not Sonnet)
-	if (!input.model.display_name.toLowerCase().includes("sonnet")) {
-		parts.push(colorize.dimYellow(`${input.model.display_name}`));
-	}
+	// Model name
+	const modelName = getShortModelName(input.model.display_name);
+	parts.push(colorize.dimYellow(modelName));
 
 	// Cost and token count formatted as ($0.77 | 132K +5K | 22%)
 	const cost = input.cost.total_cost_usd.toFixed(2);
@@ -199,6 +198,13 @@ async function getTranscriptData(transcriptPath: string): Promise<TranscriptData
 			contextSnapshot: {currentContextSize: 0, lastPromptDelta: 0},
 		};
 	}
+}
+
+function getShortModelName(displayName: string): string {
+	const lower = displayName.toLowerCase();
+	if (lower.includes("opus")) return "opus";
+	if (lower.includes("haiku")) return "haiku";
+	return "sonnet";
 }
 
 function _truncateText(text: string, maxLength: number): string {

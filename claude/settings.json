@@ -41,12 +41,6 @@
       "Bash(git commit --amend*)",
       "Bash(git rebase -i*)"
     ],
-    "ask": [
-      "Bash(git checkout .)",
-      "Bash(git restore .)",
-      "Bash(git add -A*)",
-      "Bash(git add .)"
-    ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
       "~/PersonalConfigs",

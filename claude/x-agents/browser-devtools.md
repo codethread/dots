@@ -2,10 +2,9 @@
 name: browser-devtools
 mcpServers:
   - chrome-devtools:
+      type: stdio
       command: bunx
-      args:
-        - "chrome-devtools-mcp@latest"
-        - "--browserUrl=http://localhost:9222"
+      args: ["chrome-devtools-mcp@latest", "--browserUrl=http://localhost:9222"]
 model: sonnet
 color: yellow
 description: >

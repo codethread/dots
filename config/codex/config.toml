@@ -3,7 +3,16 @@ project_doc_fallback_filenames = ["CLAUDE.md"]
 cli_auth_credentials_store = "file"
 
 personality = "pragmatic"
+model_reasoning_effort = "high"
 model = "gpt-5.4"
+
+[profiles.fast-review]
+model = "gpt-5.3-codex-spark"
+model_reasoning_effort = "medium"
+
+[profiles.deep-review]
+model = "gpt-5.4"
+model_reasoning_effort = "high"
 
 [projects."/Users/codethread/PersonalConfigs"]
 trust_level = "trusted"
@@ -34,3 +43,6 @@ trust_level = "trusted"
 
 [tui.model_availability_nux]
 "gpt-5.3-codex-spark" = 4
+
+[notice.model_migrations]
+"gpt-5.3-codex" = "gpt-5.4"

@@ -4,13 +4,35 @@
 set -euo pipefail
 
 usage() {
-  echo 'Usage: code-review "your review prompt"' >&2
+  echo 'Usage: code-review [--deep] "your review prompt"' >&2
 }
 
-if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
-  usage
-  exit 0
-fi
+profile="fast-review"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --deep)
+      profile="deep-review"
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      echo "Unknown flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
 
 if [[ $# -lt 1 ]]; then
   usage
@@ -20,5 +42,5 @@ fi
 prompt="$*"
 
 echo "$prompt" \
-  | codex exec --json --sandbox read-only review --skip-git-repo-check - \
+  | codex exec --json --sandbox read-only --profile "$profile" review --skip-git-repo-check - \
   | jq -rs '[.[] | select(.type=="item.completed" and .item.type=="agent_message") | .item.text] | last // ""'

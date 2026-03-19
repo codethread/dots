@@ -3,6 +3,7 @@ name: browser-user
 skills:
   - playwright-cli
 model: sonnet
+color: cyan
 description: >
   Browser agent for navigating websites, reading page content, interacting with
   web apps, filling forms, taking screenshots, and reading console output. Use
