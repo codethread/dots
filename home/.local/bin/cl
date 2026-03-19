@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# :module: Claude Code wrapper with conditional system prompts
+#
+# Appends context-aware system prompts based on environment:
+#   - work repos (path contains /work/) get gitlab hint
+#   - all other repos get github hint
+#   - CC_SANDBOX env triggers container-awareness prompt
+#   - concurrency and conciseness prompts always included
+
+set -euo pipefail
+
+# --- Prompt snippets ---
+PROMPT_WORK="this repo uses gitlab (via glab). Never force push — all branches may be shared."
+PROMPT_PERSONAL="this repo uses github (via gh)"
+PROMPT_SANDBOX="You are running inside a container. If a required tool or binary is missing, stop immediately and tell the user rather than searching for alternatives."
+PROMPT_CONCURRENCY="Sub-agent concurrency: spawn multiple read-only agents freely (explore, research, browser), but only ever one mutating agent at a time. Don't run read-only agents alongside a mutating agent — they may read stale data."
+PROMPT_CONCISE="When reporting information, be extremely concise and sacrifice grammar for sake of concision."
+
+# --- Parse flags ---
+DANGEROUSLY_SKIP=false
+DRY_RUN=false
+PASSTHROUGH=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -d|--dangerously-skip-permissions) DANGEROUSLY_SKIP=true; shift ;;
+        --dry-run) DRY_RUN=true; shift ;;
+        -h|--help)
+            echo "Usage: cl [-d|--dangerously-skip-permissions] [--dry-run] [-- claude-args...]"
+            exit 0 ;;
+        *) PASSTHROUGH+=("$1"); shift ;;
+    esac
+done
+
+# --- Build args ---
+ARGS=()
+if [[ "$DANGEROUSLY_SKIP" == true ]]; then
+    ARGS+=(--dangerously-skip-permissions)
+fi
+
+# --- Build prompts ---
+CWD="${CC_HOST_PWD:-$PWD}"
+PROMPTS=()
+
+if [[ "$CWD" == */work/* ]]; then
+    PROMPTS+=("$PROMPT_WORK")
+else
+    PROMPTS+=("$PROMPT_PERSONAL")
+fi
+
+PROMPTS+=("$PROMPT_CONCURRENCY")
+PROMPTS+=("$PROMPT_CONCISE")
+
+if [[ -n "${CC_SANDBOX:-}" ]]; then
+    PROMPTS+=("$PROMPT_SANDBOX")
+fi
+
+if [[ ${#PROMPTS[@]} -gt 0 ]]; then
+    JOINED="$(printf '%s\n' "${PROMPTS[@]}")"
+    ARGS+=(--append-system-prompt "$JOINED")
+fi
+
+ARGS+=("${PASSTHROUGH[@]}")
+
+if [[ "$DRY_RUN" == true ]]; then
+    printf '%s\n' "${ARGS[@]}"
+    exit 0
+fi
+
+exec claude "${ARGS[@]}"

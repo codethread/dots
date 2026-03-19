@@ -55,8 +55,8 @@ Versions (override with env vars):
                      Playwright CLI npm package (default: ${PLAYWRIGHT_CLI_VERSION_DEFAULT})
   CODEX_VERSION      Codex CLI npm package (default: ${CODEX_VERSION_DEFAULT})
 
-Runs claude --dangerously-skip-permissions in a podman container with the
-current directory mounted as /project. Forwards SSH agent, git config,
+Runs cl -d (claude wrapper with conditional system prompts) in a
+podman container with the current directory mounted as /vm/<dirname>. Forwards SSH agent, git config,
 claude settings into the container.
 EOF
     exit 0
@@ -246,7 +246,7 @@ elif [[ "$INTERACTIVE" == true ]]; then
         CONTAINER_CMD=(bash)
     fi
 else
-    CONTAINER_CMD=(bash -c "${BRIDGE_INSTALL}exec claude --dangerously-skip-permissions $*")
+    CONTAINER_CMD=(bash -c "${BRIDGE_INSTALL}exec cl --dangerously-skip-permissions $*")
 fi
 
 podman run $TTY_FLAGS --rm \
@@ -255,6 +255,7 @@ podman run $TTY_FLAGS --rm \
     --shm-size=2g \
     --security-opt seccomp=unconfined \
     --add-host=host.containers.internal:host-gateway \
+    -e CC_HOST_PWD="$(pwd -P)" \
     -e TERM="${TERM:-xterm-256color}" \
     -e COLORTERM="${COLORTERM:-truecolor}" \
     -v "$(pwd):/vm/${PROJECT_DIR}" \

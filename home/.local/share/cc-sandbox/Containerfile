@@ -106,6 +106,7 @@ RUN npm config set prefix "$HOME/.local" \
 # Chrome/Edge and auto-generates .playwright/cli.config.json in the project dir.
 ENV PLAYWRIGHT_MCP_EXECUTABLE_PATH="/usr/bin/chromium"
 ENV EDITOR="nvim"
+ENV CC_SANDBOX="1"
 
 # GitHub CLI — for read-only access to issues, PRs, etc.
 ARG GH_VERSION=2.74.0

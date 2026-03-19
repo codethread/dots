@@ -30,7 +30,7 @@ The Containerfile COPYs the PersonalConfigs repo and runs `dotty link` + `bun ru
 ### Usage
 
 ```bash
-cc-sandbox                    # Run claude --dangerously-skip-permissions
+cc-sandbox                    # Run cl -d (wrapper with conditional system prompts)
 cc-sandbox -i                 # Interactive bash shell
 cc-sandbox -r 'claude -p "describe this project" --output-format text'
 cc-sandbox -n                 # Rebuild image without cache

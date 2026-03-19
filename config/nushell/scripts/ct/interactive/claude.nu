@@ -1,35 +1,23 @@
 # :module: claude code wrappers and helpers for tty usage
 #
-# These are written for nushell https://www.nushell.sh/ using a wrapped
-# command: https://www.nushell.sh/book/custom_commands.html#rest-parameters-with-wrapped-external-commands
-# but can likely be adapted for other shells like bash or zsh. The main
-# function of interest is `cl`
-
-# claude code wrapper with extra args to handle common mcp configs when i want
-# them as well as any default claude code args
-export def cl --wrapped [
-	--dangerously-skip-permissions(-d) # ahhhhh
-	...rest
-] {
-	let custom = if $dangerously_skip_permissions {
-		["--dangerously-skip-permissions"]
-	} else {
-		[]
-	}
-
-	let all_args: list<string> = ($custom ++ $rest)
-	print $all_args
-	claude ...$all_args
-}
+# The main `cl` wrapper is a bash script at home/.local/bin/cl which handles
+# conditional system prompt injection. These nushell wrappers provide model
+# shortcuts.
 
 # cl with opus model
-export def clo --wrapped [--dangerously-skip-permissions(-d) ...rest] { cl --dangerously-skip-permissions=$dangerously_skip_permissions --model opus ...$rest }
+export def clo --wrapped [--dangerously-skip-permissions(-d) ...rest] {
+	if $dangerously_skip_permissions { ^cl -d --model opus ...$rest } else { ^cl --model opus ...$rest }
+}
 
 # cl with sonnet model
-export def cls --wrapped [--dangerously-skip-permissions(-d) ...rest] { cl --dangerously-skip-permissions=$dangerously_skip_permissions --model sonnet ...$rest }
+export def cls --wrapped [--dangerously-skip-permissions(-d) ...rest] {
+	if $dangerously_skip_permissions { ^cl -d --model sonnet ...$rest } else { ^cl --model sonnet ...$rest }
+}
 
 # cl with haiku model
-export def clh --wrapped [--dangerously-skip-permissions(-d) ...rest] { cl --dangerously-skip-permissions=$dangerously_skip_permissions --model haiku ...$rest }
+export def clh --wrapped [--dangerously-skip-permissions(-d) ...rest] {
+	if $dangerously_skip_permissions { ^cl -d --model haiku ...$rest } else { ^cl --model haiku ...$rest }
+}
 
 export alias _claude-session = jq 'select(.event == "PreToolUse")' .logs/claude-session-*.jsonl
 export alias _claude-prompts = jq 'select(.event == "UserPromptSubmit") | {prompt: .raw_data.prompt, transcript: .raw_data.transcript_path, timestamp}' .logs/claude-session-*.jsonl
