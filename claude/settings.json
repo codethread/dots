@@ -1,29 +1,26 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "CLAUDECODE": "1",
     "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "true",
     "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "true",
-    "ENABLE_LSP_TOOL": "true",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
     "MANPAGER": "cat",
     "ZDOTDIR": "~/.config/zsh-claude",
-    "__CC_CUSTOM_ENVS_": "manpager so we can see files, CLAUDECODE tells bun.js to have less noisy cli output, ZDOTDIR avoids old shell stuff",
-    "__CC_ENVS": "title off for kitty, builtin ripgrep to ensure my stuff is found"
+    "__CC_CUSTOM_ENVS_": "manpager so we can see files, ZDOTDIR avoids old shell stuff"
   },
-  "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
       "Bash",
       "WebFetch",
-      "WebSearch",
-      "mcp__context7",
-      "mcp__plugin_playwright_playwright"
+      "WebSearch"
     ],
     "deny": [
-      "Bash(wget*)",
+      "Agent(Plan)",
+      "Agent(statusline-setup)",
+      "NotebookEdit",
       "Bash(git push:*)",
       "Bash(gh pr merge*)",
-      "NotebookEdit",
       "Read(**/*.key)",
       "Read(~/*.key)",
       "Read(**/*.pem)",
@@ -36,13 +33,19 @@
       "Read(**/id_rsa*)",
       "Read(**/secrets/**)",
       "Read(**/.netrc)",
-      "Read(~/.netrc)"
+      "Read(~/.netrc)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(git branch -D*)",
+      "Bash(git config*)",
+      "Bash(git commit --amend*)",
+      "Bash(git rebase -i*)"
     ],
     "ask": [
-      "Bash(chmod:*)",
-      "Bash(git rebase:*)",
-      "Bash(git cherry-pick:*)",
-      "Bash(curl:*)"
+      "Bash(git checkout .)",
+      "Bash(git restore .)",
+      "Bash(git add -A*)",
+      "Bash(git add .)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
@@ -73,15 +76,6 @@
           {
             "type": "command",
             "command": "cc-hook--npm-redirect"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if jq -r '.tool_input.command' | grep -qi 'gh pr merge'; then echo 'Merging PRs is blocked — push branches and open PRs only'; exit 2; fi"
           }
         ]
       }
@@ -152,12 +146,19 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "code-review@ai-tools-marketplace": true,
-    "logger@codethread-plugins": false,
     "frontend-design@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true
+    "typescript-lsp@claude-plugins-official": true
   },
+  "extraKnownMarketplaces": {
+    "claude-code-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "codethread/claude-code-plugins"
+      }
+    }
+  },
+  "includeCoAuthoredBy": false,
+  "includeGitInstructions": false,
   "promptSuggestionEnabled": false,
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
