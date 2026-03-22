@@ -57,7 +57,7 @@
     git = "${pkgs.git}/bin/git";
     backupScript = pkgs.writeShellScript "backup-notes" ''
       set -euo pipefail
-      cd $HOME/dev/projects/notes
+      cd $HOME/dev/projects/notes/vault
       ${git} add -A
       STASH_BEFORE=$(${git} rev-parse --verify refs/stash 2>/dev/null || echo "none")
       ${git} stash push -m "backup-notes-auto"
@@ -87,7 +87,7 @@
     Unit.Description = "Hourly git backup for notes vault";
     Timer = {
       OnBootSec = "5min";
-      OnUnitActiveSec = "1h";
+      OnUnitActiveSec = "15min";
       Persistent = true;
     };
     Install.WantedBy = [ "timers.target" ];
