@@ -26,14 +26,14 @@ git_tools = "~/dev/projects/git-tools"
 git_nudge = "~/dev/projects/git-nudge"
 nuphy = "~/dev/projects/nuphy_firmware/keyboards/nuphy/halo75v2/ansi"
 notes = "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Notes"
-claude-plugins = "~/dev/learn/claude-plugins"
+claude_plugins = "~/dev/learn/claude-plugins"
 vault = "~/dev/Vault"
 ziggles = "~/dev/learn/ziggles/simple"
 
 [keys]
 P0 = "qmk"
 P1 = "dots"
-P2 = "claude-plugins"
+P2 = "claude_plugins"
 P3 = "ziggles"
 P8 = "nuphy"
 P9 = "vault"
@@ -74,16 +74,19 @@ vsc = ["~/dev"]
 
 [profiles.homelab.projects]
 notes = "~/dev/projects/notes"
+claude_code_plugins = "~/dev/projects/claude-code-plugins"
 cc_inspect = "~/dev/projects/cc-inspect"
 cc_notify = "~/dev/projects/cc-notify"
 claudet = "~/dev/projects/claudet"
 
 [profiles.homelab.keys]
-P0 = "notes"
 P1 = "dots"
-P2 = "cc_inspect"
-P3 = "cc_notify"
-P4 = "claudet"
+P2 = "claudet"
+P3 = "claude_code_plugins"
+P4 = "cc_notify"
+
+P9 = "cc_inspect"
+P0 = "notes"
 
 # ============================================================================
 # PROFILE SELECTION RULES

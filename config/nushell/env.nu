@@ -11,7 +11,7 @@ def home [p: string] {
 #: envs {{{
 
 $env.DOTFILES = ($env.DOTFILES? | default (home PersonalConfigs))
-$env.EDITOR = ($env.EDITOR? | default "nvim")
+$env.EDITOR = "nvim"
 # $env.VISUAL = "zed --wait"
 $env.SHELL = ($env.SHELL? | default (which nu | get 0.path))
 $env.MANPAGER = ($env.MANPAGER? | default "nvim +Man! -c 'lua require(\"codethread.manpager\")'")

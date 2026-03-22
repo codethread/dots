@@ -81,7 +81,8 @@ function M.store_to_clipboard(str)
 		vim.notify 'should be string!'
 		return
 	end
-	vim.cmd([[let @*="]] .. str .. '"')
+	local register = vim.fn.has 'mac' == 1 and '*' or '+'
+	vim.cmd([[let @]] .. register .. '="' .. str .. '"')
 	vim.notify 'saved to clipboard'
 end
 

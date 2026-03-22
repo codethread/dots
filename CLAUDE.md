@@ -76,7 +76,7 @@ This repo defines Claude Code configurations such as commands and agents at `cla
 For larger cross-cutting changes, especially ones touching `cc-sandbox`, container build inputs, Claude/Codex wiring, or major rebases, consider running:
 
 ```bash
-cc-sandbox-smoke --stream --no-cache --with-models
+nu -I ~/PersonalConfigs/config/nushell/scripts -c 'use ct/interactive/claude.nu *; cc-sandbox-smoke --stream --no-cache --with-models'
 ```
 
 This is intentionally not a default check for every change. It is expensive, but it verifies the no-cache container rebuild, linked configs, binaries on `PATH`, and headless `claude`/`codex` execution end-to-end without requiring interactive TUI steps.
