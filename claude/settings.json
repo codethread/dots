@@ -122,6 +122,8 @@
   "includeCoAuthoredBy": false,
   "includeGitInstructions": false,
   "promptSuggestionEnabled": false,
+  "fastMode": false,
+  "cleanupPeriodDays": 0,
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754027278114

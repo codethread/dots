@@ -44,6 +44,30 @@ export interface StatuslineInput extends BaseHookInput {
 			cache_read_input_tokens: number;
 		} | null;
 	};
+	exceeds_200k_tokens?: boolean;
+	rate_limits?: {
+		five_hour?: {
+			used_percentage: number;
+			resets_at: number;
+		};
+		seven_day?: {
+			used_percentage: number;
+			resets_at: number;
+		};
+	};
+	vim?: {
+		mode: string;
+	};
+	agent?: {
+		name: string;
+	};
+	worktree?: {
+		name: string;
+		path: string;
+		branch: string;
+		original_cwd: string;
+		original_branch: string;
+	};
 }
 
 /**

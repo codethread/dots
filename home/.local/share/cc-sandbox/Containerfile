@@ -118,7 +118,7 @@ COPY --from=todoist-build /todoist /home/user/.local/bin/todoist
 # Playwright CLI + Codex CLI — browser automation and code-review support.
 # Installed to ~/.local/bin via npm prefix (user can't write /usr/lib).
 ARG PLAYWRIGHT_CLI_VERSION=latest
-ARG CODEX_VERSION=0.111.0
+ARG CODEX_VERSION=0.116.0
 RUN npm config set prefix "$HOME/.local" \
     && npm install -g "@playwright/cli@${PLAYWRIGHT_CLI_VERSION}" "@openai/codex@${CODEX_VERSION}"
 # Point playwright-cli at the Debian chromium; without this it tries to find

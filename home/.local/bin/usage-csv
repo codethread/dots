@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# :module: Export AI usage data from ccusage and codex as CSV
+
+set -euo pipefail
+
+usage() {
+    echo "Usage: usage-csv"
+    echo ""
+    echo "Fetches daily model usage from ccusage (Claude) and codex,"
+    echo "outputs CSV to stdout: date,model,tokens,cost"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help    Show this help"
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    usage
+    exit 0
+fi
+
+claude_json=$(bunx ccusage@latest daily -b -j 2>/dev/null)
+codex_json=$(bunx @ccusage/codex@latest daily -j 2>/dev/null)
+
+echo "date,model,tokens,cost"
+
+# ccusage (Claude) - has per-model cost and token breakdowns
+echo "$claude_json" | jq -r '
+  .daily[] | .date as $date |
+  .modelBreakdowns[] |
+  # sum all token types for total
+  (.inputTokens + .outputTokens + .cacheCreationTokens + .cacheReadTokens) as $tokens |
+  # strip trailing date stamps like -20251001
+  (.modelName | gsub("-(?<d>[0-9]{8})$"; "")) as $model |
+  [$date, $model, ($tokens | tostring), (.cost * 100 | round / 100 | tostring)]
+  | @csv
+'
+
+# codex - cost only at day level, distribute proportionally by tokens
+echo "$codex_json" | jq -r '
+  .daily[] |
+  # normalize "Mar 08, 2026" to "2026-03-08"
+  (.date | strptime("%b %d, %Y") | strftime("%Y-%m-%d")) as $date |
+  .costUSD as $dayCost | .totalTokens as $dayTokens |
+  .models | to_entries[] |
+  (.key | gsub("-(?<d>[0-9]{8})$"; "")) as $model |
+  .value.totalTokens as $tokens |
+  (if $dayTokens > 0 then ($dayCost * $tokens / $dayTokens) else 0 end) as $cost |
+  [$date, $model, ($tokens | tostring), ($cost * 100 | round / 100 | tostring)]
+  | @csv
+'

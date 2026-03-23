@@ -7,7 +7,7 @@ model_reasoning_effort = "high"
 model = "gpt-5.4"
 
 [profiles.fast-review]
-model = "gpt-5.3-codex-spark"
+model = "gpt-5.3-codex"
 model_reasoning_effort = "medium"
 
 [profiles.deep-review]
