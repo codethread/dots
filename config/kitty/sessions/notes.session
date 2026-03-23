@@ -1,1 +1,1 @@
-launch --title notes --cwd ~/Library/Mobile\ Documents/com~apple~CloudDocs/Documents/Notes
+launch --title notes --cwd /Users/codethread/dev/projects/notes

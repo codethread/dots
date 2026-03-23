@@ -10,7 +10,6 @@ dirs = [
   "~/workfiles",
   "~/.local/share/nvim/lazy/*",
   "~/.local/share/nvim/mason/packages/*",
-  "~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Notes"
 ]
 vsc = ["~/dev", "~/work"]
 cmd = []
@@ -25,18 +24,18 @@ qmk_nvim = "~/dev/projects/qmk.nvim"
 git_tools = "~/dev/projects/git-tools"
 git_nudge = "~/dev/projects/git-nudge"
 nuphy = "~/dev/projects/nuphy_firmware/keyboards/nuphy/halo75v2/ansi"
-notes = "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Notes"
+old_notes = "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Notes"
 claude_plugins = "~/dev/learn/claude-plugins"
-vault = "~/dev/projects/notes"
+notes = "~/dev/projects/notes"
 ziggles = "~/dev/learn/ziggles/simple"
 
 [keys]
-P0 = "qmk"
 P1 = "dots"
 P2 = "claude_plugins"
 P3 = "ziggles"
 P8 = "nuphy"
-P9 = "vault"
+P9 = "qmk"
+P0 = "notes"
 
 [profiles.work.projects]
 deals_ui = "~/work/app/deals-light-ui"
