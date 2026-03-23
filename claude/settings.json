@@ -103,7 +103,8 @@
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
-    "cc-notify@cc-notify-marketplace": true
+    "cc-notify@cc-notify-marketplace": true,
+    "karen@codethread-plugins": true
   },
   "extraKnownMarketplaces": {
     "claude-code-plugins": {
@@ -119,11 +120,11 @@
       }
     }
   },
-  "includeCoAuthoredBy": false,
-  "includeGitInstructions": false,
   "promptSuggestionEnabled": false,
   "fastMode": false,
   "cleanupPeriodDays": 0,
+  "includeCoAuthoredBy": false,
+  "includeGitInstructions": false,
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754027278114

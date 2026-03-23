@@ -27,7 +27,7 @@ git_nudge = "~/dev/projects/git-nudge"
 nuphy = "~/dev/projects/nuphy_firmware/keyboards/nuphy/halo75v2/ansi"
 notes = "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Notes"
 claude_plugins = "~/dev/learn/claude-plugins"
-vault = "~/dev/Vault"
+vault = "~/dev/projects/notes"
 ziggles = "~/dev/learn/ziggles/simple"
 
 [keys]
