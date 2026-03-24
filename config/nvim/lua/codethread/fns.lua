@@ -77,12 +77,12 @@ function M.test_current_file()
 end
 
 function M.store_to_clipboard(str)
-	if not type(str) == 'string' then
+	if type(str) ~= 'string' then
 		vim.notify 'should be string!'
 		return
 	end
 	local register = vim.fn.has 'mac' == 1 and '*' or '+'
-	vim.cmd([[let @]] .. register .. '="' .. str .. '"')
+	vim.fn.setreg(register, str)
 	vim.notify 'saved to clipboard'
 end
 

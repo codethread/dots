@@ -50,6 +50,7 @@ vim.opt.updatetime = 300 -- Faster completion
 vim.opt.timeoutlen = 500 -- By default timeoutlen is 1000 ms
 -- vim.opt.formatoptions-=cro                  -- Stop newline continution of comments
 -- vim.opt.clipboard:append("unnamed") -- Copy paste between vim and everything else
+if vim.env.SSH_TTY then vim.g.clipboard = 'osc52' end
 vim.opt.signcolumn = 'yes'
 -- always keep some space around the window
 vim.opt.scrolloff = 4
