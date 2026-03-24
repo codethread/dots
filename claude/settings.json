@@ -4,7 +4,6 @@
     "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "true",
     "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "true",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
     "MANPAGER": "cat",
     "ZDOTDIR": "~/.config/zsh-claude",
     "__CC_CUSTOM_ENVS_": "manpager so we can see files, ZDOTDIR avoids old shell stuff"
@@ -13,7 +12,8 @@
     "allow": [
       "Bash",
       "WebFetch",
-      "WebSearch"
+      "WebSearch",
+      "Skill"
     ],
     "deny": [
       "Agent(Plan)",
@@ -120,11 +120,12 @@
       }
     }
   },
-  "promptSuggestionEnabled": false,
+  "autoMemoryEnabled": false,
   "fastMode": false,
-  "cleanupPeriodDays": 0,
   "includeCoAuthoredBy": false,
   "includeGitInstructions": false,
+  "promptSuggestionEnabled": false,
+  "cleanupPeriodDays": 999,
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754027278114
