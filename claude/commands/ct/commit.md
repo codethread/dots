@@ -22,7 +22,9 @@ $ARGUMENTS
 
 ## Your Task
 
-Based on the above changes and user context, create a single git commit following these guidelines:
+Based on the above changes and user context, create atomic commits following these guidelines:
+
+- **IMPORTANT**: Any repo specific instructions around git commits supersede these instructions
 
 ### Commit Message Guidelines
 
@@ -31,9 +33,13 @@ Based on the above changes and user context, create a single git commit followin
 3. **Focus**: Explain "why" rather than "what" (code shows the what)
 4. **Style**: Match the style of recent commits in this repository
 
+### Atomic level
+
+- Favour one commit, but multiple is applicable if recent commits show a clear separation of concerns
+
 ### Quality Checks
 
-- Exclude temporary files (.env, *.log, .DS_Store, build artifacts, etc.)
+- Exclude temporary files (.env, \*.log, .DS_Store, build artifacts, etc.)
 - Ensure message accurately reflects the changes
 - Verify all relevant changes are included
 
@@ -53,5 +59,3 @@ Based on the above changes and user context, create a single git commit followin
 
 - If hooks modify files and it's safe to amend (check authorship with `git log -1 --format='%an %ae'` and verify not pushed), amend the commit
 - Otherwise create a new commit
-
-**IMPORTANT**: Do not push to remote unless explicitly requested.
