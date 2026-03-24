@@ -1,9 +1,18 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "autoMemoryEnabled": false,
+  "cleanupPeriodDays": 999,
+  "fastMode": false,
+  "includeCoAuthoredBy": false,
+  "includeGitInstructions": false,
+  "promptSuggestionEnabled": false,
+  "skipDangerousModePermissionPrompt": true,
   "env": {
     "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "true",
     "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "true",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "0",
     "MANPAGER": "cat",
     "ZDOTDIR": "~/.config/zsh-claude",
     "__CC_CUSTOM_ENVS_": "manpager so we can see files, ZDOTDIR avoids old shell stuff"
@@ -100,12 +109,6 @@
     "command": "cc-statusline",
     "padding": 0
   },
-  "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "cc-notify@cc-notify-marketplace": true,
-    "karen@codethread-plugins": true
-  },
   "extraKnownMarketplaces": {
     "claude-code-plugins": {
       "source": {
@@ -120,14 +123,10 @@
       }
     }
   },
-  "autoMemoryEnabled": false,
-  "fastMode": false,
-  "includeCoAuthoredBy": false,
-  "includeGitInstructions": false,
-  "promptSuggestionEnabled": false,
-  "cleanupPeriodDays": 999,
-  "skipDangerousModePermissionPrompt": true,
-  "feedbackSurveyState": {
-    "lastShownTime": 1754027278114
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "cc-notify@cc-notify-marketplace": true,
+    "karen@codethread-plugins": true
   }
 }

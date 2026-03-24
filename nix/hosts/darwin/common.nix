@@ -69,7 +69,8 @@ in {
       location = "${homeDir}/Pictures";
     };
     "com.apple.spaces" = {
-      "spans-displays" = true;
+      # false = each display has its own spaces (required for AeroSpace)
+      "spans-displays" = false;
     };
   };
 
