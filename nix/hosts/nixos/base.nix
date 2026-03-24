@@ -29,6 +29,7 @@
   services.openssh = {
     enable = true;
     settings.PasswordAuthentication = false; # key-based only
+    settings.UseDns = false; # skip reverse DNS lookup on connecting clients
   };
 
   programs.ssh.startAgent = true;

@@ -13,7 +13,7 @@
   nix.settings = {
     max-substitution-jobs = 128;
     http-connections = 128;
-    download-buffer-size = 8388608; # 8 MiB per connection (128 × 8 MiB ≈ 1 GiB max)
+    download-buffer-size = 134217728; # 128 MiB per connection
   };
 
   # Expo Go (LAN) / Metro ports + desktop WebRTC stream ports.
