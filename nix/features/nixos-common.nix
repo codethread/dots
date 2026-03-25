@@ -40,15 +40,88 @@
     color-scheme = "prefer-dark";
   };
 
-  systemd.user.services.tmux-main = {
+  systemd.user.services.tmux-main = let
+    script = pkgs.writeShellScript "tmux-ensure-main" ''
+      if ! ${pkgs.tmux}/bin/tmux has-session -t main 2>/dev/null; then
+        ${pkgs.tmux}/bin/tmux new-session -d -s main
+      fi
+    '';
+  in {
     Unit = {
       Description = "Ensure tmux session main exists";
       After = [ "graphical-session.target" ];
     };
     Service = {
       Type = "oneshot";
-      ExecStart = "${pkgs.bash}/bin/bash -lc 'if ! ${pkgs.tmux}/bin/tmux has-session -t main 2>/dev/null; then ${pkgs.tmux}/bin/tmux new-session -d -s main; fi'";
+      ExecStart = "${script}";
       RemainAfterExit = true;
+      KillMode = "none";
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
+
+  systemd.user.services.tmux-ai-notes-cron = let
+    script = pkgs.writeShellScript "tmux-ensure-ai-notes-cron" ''
+      if ! ${pkgs.tmux}/bin/tmux has-session -t ai-notes-cron 2>/dev/null; then
+        ${pkgs.tmux}/bin/tmux new-session -d -s ai-notes-cron \
+          -c "$HOME/dev/projects/notes" \
+          "${pkgs.bun}/bin/bun scripts/automation/src/ai-task-cron.ts"
+      fi
+    '';
+  in {
+    Unit = {
+      Description = "Ensure tmux session ai-notes-cron exists running ai task cron";
+      After = [ "graphical-session.target" ];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${script}";
+      RemainAfterExit = true;
+      KillMode = "none";
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
+
+  systemd.user.services.tmux-cc-inspect = let
+    script = pkgs.writeShellScript "tmux-ensure-cc-inspect" ''
+      if ! ${pkgs.tmux}/bin/tmux has-session -t cc-inspect 2>/dev/null; then
+        ${pkgs.tmux}/bin/tmux new-session -d -s cc-inspect \
+          -c "$HOME/dev/projects/cc-inspect" \
+          "${pkgs.bun}/bin/bun start"
+      fi
+    '';
+  in {
+    Unit = {
+      Description = "Ensure tmux session cc-inspect exists";
+      After = [ "graphical-session.target" ];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${script}";
+      RemainAfterExit = true;
+      KillMode = "none";
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
+
+  systemd.user.services.tmux-cc-notify = let
+    script = pkgs.writeShellScript "tmux-ensure-cc-notify" ''
+      if ! ${pkgs.tmux}/bin/tmux has-session -t cc-notify 2>/dev/null; then
+        ${pkgs.tmux}/bin/tmux new-session -d -s cc-notify \
+          -c "$HOME/dev/projects/cc-notify" \
+          "${pkgs.bun}/bin/bun start"
+      fi
+    '';
+  in {
+    Unit = {
+      Description = "Ensure tmux session cc-notify exists";
+      After = [ "graphical-session.target" ];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${script}";
+      RemainAfterExit = true;
+      KillMode = "none";
     };
     Install.WantedBy = [ "graphical-session.target" ];
   };
