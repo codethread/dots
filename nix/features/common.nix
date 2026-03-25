@@ -31,6 +31,10 @@ in {
   };
   home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
+  home.file.".npmrc".text = ''
+    prefix=${config.home.homeDirectory}/.local
+  '';
+
   home.file.".local/share/nvim/nix-treesitter-parsers".source = treesitter-parsers;
   home.file.".local/share/atuin/init.nu" = {
     source = atuinNushellInit;
