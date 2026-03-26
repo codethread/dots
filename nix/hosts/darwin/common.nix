@@ -134,6 +134,7 @@ in {
       "morantron/tmux-fingers/tmux-fingers"
       "ical-buddy"
       "volta"
+	  "yazi"
     ];
     casks = [
       "aerospace"

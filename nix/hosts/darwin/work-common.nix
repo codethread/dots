@@ -10,6 +10,7 @@
 
   homebrew.brews = [
     "cocoapods"
+	"jira-cli"
   ];
 
   homebrew.casks = [
