@@ -7,8 +7,8 @@ export alias l = ls -a
 export alias finder = ^open -a 'Finder' .
 export alias ports = lsof -i tcp:3000
 
-export def port-kill [port: int] {
-	lsof -ti $"tcp:($port)" | lines | each {|pid| kill ($pid | into int) }
+export def port-kill [...ports: int] {
+	$ports | each {|port| lsof -ti $"tcp:($port)" | lines | each {|pid| kill ($pid | into int) } }
 }
 export alias loggy = cd `~/Library/Mobile Documents/iCloud~com~logseq~logseq/`
 

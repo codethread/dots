@@ -1,5 +1,5 @@
 ---
-name: api-research
+name: api-researcher
 tools: Glob, Grep, Read, Skill, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__query-docs
 mcpServers:
   - context7:

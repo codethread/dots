@@ -7,6 +7,7 @@ use ct/dotty
 use ct/cursor.nu *
 use ct/macos.nu *
 use ct/git *
+use ct/git/worktree *
 use ct/homebrew.nu *
 use ct/editor.nu *
 use ct/terminal.nu *

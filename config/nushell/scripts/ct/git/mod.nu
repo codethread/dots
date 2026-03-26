@@ -154,6 +154,10 @@ export def git_squash [
 	git commit -C $msg
 }
 
+export def cdd --env [] {
+	cd (git rev-parse --show-toplevel)
+}
+
 # check for unstaged or uncommitted changes
 export def git_is_dirty [] {
 	git status --short | is-not-empty
