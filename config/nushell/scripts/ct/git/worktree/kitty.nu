@@ -6,3 +6,22 @@ export def --env wk-open-dir [path: string, title: string] {
 		cd $path
 	}
 }
+
+# close any kitty tabs that have windows rooted inside path
+export def wk-close-dir [path: string] {
+	if "KITTY_WINDOW_ID" not-in $env { return }
+	let listing = (kitten @ ls | complete)
+	if $listing.exit_code != 0 { return }
+	let tab_ids = ($listing.stdout
+		| from json
+		| each {|os_win|
+			$os_win.tabs | where {|tab|
+				$tab.windows | any {|win| $win.cwd == $path or ($win.cwd | str starts-with $"($path)/") }
+			} | get id
+		}
+		| flatten
+	)
+	for id in $tab_ids {
+		kitten @ close-tab --match $"id:($id)"
+	}
+}

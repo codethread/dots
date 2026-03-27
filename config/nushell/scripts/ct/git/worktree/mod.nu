@@ -35,10 +35,10 @@ export def --env "wk add" [
 		git worktree add $tree_dir $branch
 	} else if $"origin/($branch)" in $remote_branches {
 		print $"(ansi green)checking out existing remote branch ($branch)(ansi reset)"
-		git worktree add -b $branch $tree_dir $"origin/($branch)"
+		git worktree add --no-track -b $branch $tree_dir $"origin/($branch)"
 	} else {
 		print $"(ansi green)creating ($branch) from origin/($base_branch)(ansi reset)"
-		git worktree add -b $branch $tree_dir $"origin/($base_branch)"
+		git worktree add --no-track -b $branch $tree_dir $"origin/($base_branch)"
 	}
 
 	if $"origin/($branch)" in $remote_branches {
@@ -58,11 +58,33 @@ export def --env "wk add" [
 }
 
 # remove a worktree by branch name (does not delete the branch)
-export def "wk remove" [
-	branch: string   # branch name used when the worktree was added
+export def --env "wk remove" [
+	branch?: string  # branch name used when the worktree was added
+	--self           # use the current branch
 ] {
-	let tree_dir = wk-worktree-path $branch
-	git worktree remove $tree_dir
+	let tree_dir = if $self {
+		# resolve to worktree root so removal works from any subdirectory
+		let rev = (git rev-parse --show-toplevel | complete)
+		if $rev.exit_code != 0 {
+			error make { msg: "couldn't resolve current worktree root" }
+		}
+		$rev.stdout | str trim
+	} else if $branch != null {
+		wk-worktree-path $branch
+	} else {
+		error make { msg: "provide a branch name or pass --self" }
+	}
+	let repo_root = wk-canonical-root
+	if $tree_dir == $repo_root {
+		error make { msg: "cannot remove the canonical worktree" }
+	}
+	# cd home only when currently inside the target worktree, so the shell
+	# isn't stranded in a deleted directory after removal
+	if ($env.PWD == $tree_dir or ($env.PWD | str starts-with $"($tree_dir)/")) {
+		cd ~
+	}
+	git -C $repo_root worktree remove $tree_dir
+	wk-close-dir $tree_dir
 }
 
 export def "wk list" [

@@ -133,7 +133,7 @@
   },
   "fastMode": false,
   "promptSuggestionEnabled": false,
-  "autoUpdatesChannel": "stable",
+  "autoUpdatesChannel": "latest",
   "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true
 }

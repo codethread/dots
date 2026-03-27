@@ -1,0 +1,9 @@
+
+[paths]
+deals_ui  = "~/work/app/deals-light-ui*"
+
+[projects]
+deals_ui = """
+yarn install
+notif worktree wk %%dir%% ready
+"""
