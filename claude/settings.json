@@ -135,6 +135,5 @@
   "promptSuggestionEnabled": false,
   "autoUpdatesChannel": "stable",
   "autoMemoryEnabled": false,
-  "skipDangerousModePermissionPrompt": true,
-  "model": "opus"
+  "skipDangerousModePermissionPrompt": true
 }
