@@ -27,7 +27,7 @@
 
   xdg.desktopEntries.obsidian = {
     name = "Obsidian";
-    exec = "${pkgs.obsidian}/bin/obsidian %u";
+    exec = "${pkgs.obsidian}/bin/obsidian \"obsidian://open?path=/home/codethread/dev/projects/notes/vault\" %u";
     icon = "obsidian";
     categories = [ "Office" ];
     mimeType = [ "x-scheme-handler/obsidian" ];
