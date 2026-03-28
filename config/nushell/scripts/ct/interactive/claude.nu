@@ -94,6 +94,7 @@ export def cc-sandbox-smoke [
 		"check_shell 'claude settings mounted' '[ -f /home/user/.claude/settings.json ] && printf \"%s\" /home/user/.claude/settings.json'"
 		"check_shell 'codex config linked' '[ -f /home/user/.config/codex/config.toml ] && printf \"%s\" /home/user/.config/codex/config.toml'"
 		"check_shell 'project mounted under /vm' 'pwd | grep \"^/vm/\"'"
+		"check_shell 'nvim config' 'nvim --headless -c \"lua print((vim.g.colors_name or \\\"none\\\") .. \\\",oil:\\\" .. tostring(require(\\\"oil\\\") ~= nil) .. \\\",ts:\\\" .. tostring(require(\\\"nvim-treesitter\\\") ~= nil))\" +qa 2>&1'"
 	]
 
 	let run_model_checks = ($with_models and (not $skip_models))

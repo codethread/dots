@@ -125,6 +125,7 @@ RUN npm config set prefix "$HOME/.local" \
 # Chrome/Edge and auto-generates .playwright/cli.config.json in the project dir.
 ENV PLAYWRIGHT_MCP_EXECUTABLE_PATH="/usr/bin/chromium"
 ENV EDITOR="nvim"
+ENV NVIM_APPNAME="minimal-nvim"
 ENV CC_SANDBOX="1"
 
 # GitHub CLI — for read-only access to issues, PRs, etc.
@@ -162,6 +163,9 @@ RUN mkdir -p ~/.local/data \
 # Generate oven wrapper scripts (thin bash shims that exec bun run <source>).
 # Runs after dotty link which creates the ~/.local/bin/ directory structure.
 RUN cd $DOTFILES/oven && bun run build --verbose
+
+# Pre-install neovim plugins for the lightweight minimal-nvim config.
+RUN nvim --headless "+Lazy! install" +qa
 
 WORKDIR /project
 
