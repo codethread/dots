@@ -26,6 +26,7 @@ target = "~/.config"
 name = "claude"
 origin = "~/PersonalConfigs/claude"
 target = "~/.claude"
+excludes = ["**/settings.json", "**/settings.local.json"]
 # excludes = ["**/agents/**"]
 #
 # [[project]]

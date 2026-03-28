@@ -24,6 +24,8 @@ let
       | ${pkgs.gnused}/bin/sed 's|"/homeless-shelter|$"($env.HOME)|g' > "$out"
   '';
 in {
+  imports = [ ./claude-code.nix ];
+
   home.stateVersion = "24.11";
 
   home.sessionVariables = {

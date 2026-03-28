@@ -33,6 +33,8 @@
     mimeType = [ "x-scheme-handler/obsidian" ];
   };
 
+  ct.claude-code.enableNotify = true;
+
   home.packages = with pkgs; [
     chromium
     ffmpeg
