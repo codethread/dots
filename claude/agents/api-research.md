@@ -10,7 +10,7 @@ mcpServers:
 memory: user
 model: haiku
 color: green
-description: >
+description: |
   Use this agent when you need to investigate API documentation for project dependencies
   or explore new technologies. This agent excels in two primary scenarios:
 

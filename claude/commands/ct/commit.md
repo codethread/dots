@@ -1,8 +1,7 @@
 ---
-description: Create a git commit with a well-crafted conventional commit message
+description: Create git commit(s) with a well-crafted conventional commit message
 argument-hint: [optional context about changes]
 allowed-tools: Bash(git:*)
-disable-model-invocation: true
 ---
 
 # Create Git Commit
