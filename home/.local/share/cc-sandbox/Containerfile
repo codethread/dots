@@ -69,7 +69,7 @@ FROM docker.io/library/node:${NODE_VERSION}-slim
 # System deps + Chromium for headless browser automation via playwright-cli.
 # Lib list from playwright's nativeDeps.js for debian12-x64.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl git jq openssh-client gnupg unzip \
+    ca-certificates curl git jq openssh-client gnupg unzip poppler-utils \
     ffmpeg \
     python3 \
     chromium \

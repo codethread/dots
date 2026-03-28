@@ -164,6 +164,7 @@ in {
     fzf
 
     # --- Utils ---
+    poppler_utils
     bat
     fd
     ripgrep
