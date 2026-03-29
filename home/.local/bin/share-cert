@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# :module: Serve Caddy root CA cert over HTTP for iOS trust install
+# :module: Upload Caddy root CA cert to a private GitHub gist for device trust install
 
 set -euo pipefail
 
 CERT="/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt"
-PORT=8888
 
 if ! sudo test -f "$CERT"; then
   echo "Caddy root cert not found at $CERT" >&2
@@ -12,22 +11,14 @@ if ! sudo test -f "$CERT"; then
   exit 1
 fi
 
-LAN_IP=$(ip -4 route get 1.1.1.1 | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}')
-if [[ -z "$LAN_IP" ]]; then
-  echo "Could not determine LAN IP" >&2
-  exit 1
-fi
+OUTFILE="/tmp/caddy-root.crt"
+sudo install -m 644 -o "$(id -u)" -g "$(id -g)" "$CERT" "$OUTFILE"
 
-TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR"' EXIT
-
-sudo install -m 644 -o "$(id -u)" -g "$(id -g)" "$CERT" "$TMPDIR/root.crt"
+URL=$(gh gist create --public=false --desc "Caddy local CA root cert" "$OUTFILE" 2>&1)
 
 echo ""
-echo "Cert available at: http://${LAN_IP}:${PORT}/root.crt"
+echo "Gist created: $URL"
 echo ""
-echo "iOS: open URL in Safari → Install Profile → Settings → General → About → Certificate Trust Settings → enable"
-echo "Press Ctrl+C to stop"
-echo ""
-
-bun -e "Bun.serve({port:${PORT},fetch(req){const f=Bun.file('${TMPDIR}/root.crt');return f.exists().then(ok=>ok?new Response(f,{headers:{'content-type':'application/x-x509-ca-cert'}}):new Response('Not found',{status:404}))}})"
+echo "Open the raw file URL on your device, then:"
+echo "  macOS: open .crt → Keychain Access → Trust → Always Trust"
+echo "  iOS:   open in Safari → Install Profile → Settings → General → About → Certificate Trust Settings → enable"

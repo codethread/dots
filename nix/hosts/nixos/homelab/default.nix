@@ -17,7 +17,7 @@
   };
 
   # Expo Go (LAN) / Metro ports + desktop WebRTC stream ports.
-  networking.firewall.allowedTCPPorts = [ 443 3001 5555 8081 8888 8889 19000 19001 19002 ];
+  networking.firewall.allowedTCPPorts = [ 443 3001 5555 8081 8889 19000 19001 19002 ];
   networking.firewall.allowedUDPPorts = [ 8189 19000 19001 19002 ];
 
   # Keep user systemd services running after logout so tmux sessions persist.
