@@ -58,6 +58,14 @@ Use an empty string `""` for the initial hash (`vendorHash`, `npmDepsHash`, etc.
 
 ## Validation
 
+After modifying any file under `nix/`, always verify the flake builds before committing:
+
+```bash
+nixos-rebuild build --flake 'path:./nix#<host>'
+```
+
+where `<host>` matches the current machine (e.g. `homelab`). A pre-commit hook in `.githooks/` enforces this automatically.
+
 After modifying `homebrew.taps`, `homebrew.brews`, or `homebrew.casks` in darwin hosts, run `nrs-check` (no sudo) to validate all packages resolve before rebuilding. This taps missing repos and checks every formula/cask exists in brew.
 
 - Always run `nix-smoke` after making Nix changes in this subtree. It is the default health check here and verifies the local Nix-managed environment, key binaries on `PATH`, expected linked config locations, and optional flake evaluation.

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# :module: verify nix flake builds when nix/ files are staged
+
+if ! git diff --cached --name-only | grep -q '^nix/'; then
+	exit 0
+fi
+
+echo "nix/ files changed — checking flake build..."
+
+FLAKE="path:$(git rev-parse --show-toplevel)/nix"
+
+case "$(uname -s)" in
+	Darwin)
+		host="$(scutil --get LocalHostName 2>/dev/null || echo home)"
+		rebuild_cmd="darwin-rebuild"
+		;;
+	Linux)
+		host="$(hostname)"
+		rebuild_cmd="nixos-rebuild"
+		;;
+	*)
+		echo "pre-commit: unknown OS, skipping nix check"
+		exit 0
+		;;
+esac
+
+if ! "$rebuild_cmd" build --flake "${FLAKE}#${host}" 2>&1; then
+	echo ""
+	echo "ERROR: nix build failed. Fix before committing."
+	exit 1
+fi

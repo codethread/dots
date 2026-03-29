@@ -23,6 +23,17 @@ let
     ${pkgs.carapace}/bin/carapace _carapace nushell \
       | ${pkgs.gnused}/bin/sed 's|"/homeless-shelter|$"($env.HOME)|g' > "$out"
   '';
+
+  direnvNushellInit = pkgs.writeText "direnv-init.nu" ''
+    $env.config.hooks.env_change.PWD = $env.config.hooks.env_change.PWD? | default []
+    $env.config.hooks.env_change.PWD ++= [{||
+      if (which direnv | is-empty) { return }
+      direnv export json | from json | default {} | load-env
+      if ($env.PATH | describe) == 'string' {
+        $env.PATH = $env.PATH | split row (char esep)
+      }
+    }]
+  '';
 in {
   imports = [ ./claude-code.nix ];
 
@@ -44,6 +55,10 @@ in {
   };
   home.file.".local/cache/carapace/init.nu" = {
     source = carapaceNushellInit;
+    force = true;
+  };
+  home.file.".local/cache/direnv/init.nu" = {
+    source = direnvNushellInit;
     force = true;
   };
 
@@ -110,6 +125,10 @@ in {
     ${lib.optionalString pkgs.stdenv.isDarwin ''
       clone_if_missing_ssh "git@github.com:codethread/alfred.git" "$HOME/sync/Alfred" "Alfred"
     ''}
+
+    if [ -d "$HOME/PersonalConfigs/.git" ]; then
+      ${pkgs.git}/bin/git -C "$HOME/PersonalConfigs" config core.hooksPath .githooks
+    fi
   '';
 
   home.activation.dottyLink = lib.hm.dag.entryAfter [ "userBootstrap" ] ''
@@ -188,4 +207,11 @@ in {
     difftastic
     yt-dlp
   ];
+
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+    enableBashIntegration = true;
+    enableNushellIntegration = false;
+  };
 }

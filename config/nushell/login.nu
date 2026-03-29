@@ -17,6 +17,9 @@ source (if ($atuin | path exists) { $atuin } else { null })
 const carapace = ("~/.local/cache/carapace/init.nu" | path expand)
 source (if ($carapace | path exists) { $carapace } else { null })
 
+const direnv = ("~/.local/cache/direnv/init.nu" | path expand)
+source (if ($direnv | path exists) { $direnv } else { null })
+
 def get-package-scripts [] {
 	open package.json | get scripts | items { |key,_| $key }
 }
