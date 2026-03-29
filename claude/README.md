@@ -78,6 +78,7 @@ SessionStart ──► cc-hook--context-injector session-start (list README.md f
 UserPromptSubmit ──► cc-hook--activity (cancel pending notification)
 PreToolUse[Bash] ──► cc-hook--npm-redirect (redirect npm/npx/node)
 PostToolUse[Write] ──► git add -N (intent-to-add for new files)
+Stop ──► make link build (rebuild dotfiles & oven binaries, project-local)
 Stop ──► cc-hook--notify (schedule delayed notification)
 PermissionRequest ──► cc-hook--notify (schedule delayed notification)
 SessionEnd ──► cc-hook--context-injector session-end (cleanup)
@@ -105,6 +106,12 @@ SessionEnd ──► cc-hook--activity (cancel pending notification)
 
 - **Events**: UserPromptSubmit, SessionEnd
 - **Purpose**: Cancels pending cc-notify notifications (user is active, no alert needed)
+
+#### make link build (inline, project-local)
+
+- **Events**: Stop
+- **Config**: `.claude/settings.local.json` (this repo only)
+- **Purpose**: Keeps dotfile symlinks and oven binaries in sync after Claude finishes
 
 #### git add -N (inline)
 

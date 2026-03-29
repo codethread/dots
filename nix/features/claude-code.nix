@@ -14,24 +14,6 @@ in {
   config = {
     home.file.".claude/settings.json".text = builtins.toJSON {
       "$schema" = "https://json.schemastore.org/claude-code-settings.json";
-      cleanupPeriodDays = 999;
-      env = {
-        CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "true";
-        CLAUDE_CODE_DISABLE_TERMINAL_TITLE = "1";
-        CLAUDE_CODE_DISABLE_AUTO_MEMORY = "1";
-        CLAUDE_CODE_DISABLE_CRON = "1";
-        DISABLE_FEEDBACK_COMMAND = "1";
-        DISABLE_ERROR_REPORTING = "1";
-        ENABLE_TOOL_SEARCH = "0";
-        DISABLE_TELEMETRY = "1";
-        DISABLE_AUTOUPDATER = "0";
-        ENABLE_CLAUDEAI_MCP_SERVERS = "0";
-        MANPAGER = "cat";
-        ZDOTDIR = "~/.config/zsh-claude";
-        "__CC_CUSTOM_ENVS_" = "manpager so we can see files, ZDOTDIR avoids old shell stuff";
-      };
-      includeCoAuthoredBy = false;
-      includeGitInstructions = false;
       permissions = {
         allow = [
           "Bash"
@@ -155,10 +137,31 @@ in {
           };
         };
       };
-      fastMode = false;
-      promptSuggestionEnabled = false;
-      autoUpdatesChannel = "latest";
+
+      env = {
+        CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "true";
+        CLAUDE_CODE_DISABLE_TERMINAL_TITLE = "1";
+        CLAUDE_CODE_DISABLE_AUTO_MEMORY = "1";
+        CLAUDE_CODE_DISABLE_CRON = "1";
+        DISABLE_FEEDBACK_COMMAND = "1";
+        DISABLE_ERROR_REPORTING = "1";
+        ENABLE_TOOL_SEARCH = "0";
+        DISABLE_TELEMETRY = "1";
+        DISABLE_AUTOUPDATER = "0";
+        ENABLE_CLAUDEAI_MCP_SERVERS = "0";
+        MANPAGER = "cat";
+        ZDOTDIR = "~/.config/zsh-claude";
+        "__CC_CUSTOM_ENVS_" = "manpager so we can see files, ZDOTDIR avoids old shell stuff";
+      };
+
+	  spinnerTipsEnabled = false;
       autoMemoryEnabled = false;
+      autoUpdatesChannel = "latest";
+      cleanupPeriodDays = 999;
+      fastMode = false;
+      includeCoAuthoredBy = false;
+      includeGitInstructions = false;
+      promptSuggestionEnabled = false;
       skipDangerousModePermissionPrompt = true;
     };
   };
