@@ -43,9 +43,14 @@ in {
           "mcp__context7__query-docs"
         ];
         deny = [
-          "Agent(Plan)"
-          "Agent(statusline-setup)"
-          "NotebookEdit"
+          "Agent(Plan)" # garbage
+          "Agent(statusline-setup)" # not needed
+          "NotebookEdit" # not needed
+		  "AskUserQuestion" # cheaper to just chat
+		  "EnterPlanMode" # moving away from plan
+		  "ExitPlanMode" # moving away from plan
+
+		  # TODO: block at hook level
           "Read(**/*.key)"
           "Read(~/*.key)"
           "Read(**/*.pem)"
@@ -59,6 +64,8 @@ in {
           "Read(**/secrets/**)"
           "Read(**/.netrc)"
           "Read(~/.netrc)"
+
+		  # TODO: can probably be brave here
           "Bash(git reset --hard*)"
           "Bash(git clean -f*)"
           "Bash(git branch -D*)"
