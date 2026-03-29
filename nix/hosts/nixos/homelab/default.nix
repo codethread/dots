@@ -17,7 +17,7 @@
   };
 
   # Expo Go (LAN) / Metro ports + desktop WebRTC stream ports.
-  networking.firewall.allowedTCPPorts = [ 3001 5555 8081 8889 19000 19001 19002 ];
+  networking.firewall.allowedTCPPorts = [ 443 3001 5555 8081 8888 8889 19000 19001 19002 ];
   networking.firewall.allowedUDPPorts = [ 8189 19000 19001 19002 ];
 
   # Keep user systemd services running after logout so tmux sessions persist.
@@ -94,6 +94,19 @@
     environmentFiles = [
       "/etc/codethread/nm.env"
     ];
+  };
+
+  # TLS reverse proxy for cc-inspect so LAN clients get a secure context
+  # (clipboard API, etc.). Caddy uses its own internal CA — install its root
+  # cert on each client device once: trust /var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt
+  services.caddy = {
+    enable = true;
+    virtualHosts."homelab.local" = {
+      extraConfig = ''
+        reverse_proxy localhost:5555
+        tls internal
+      '';
+    };
   };
 
   # Low-latency desktop streaming via OBS -> mediamtx -> WebRTC.
