@@ -21,9 +21,11 @@ case "$(uname -s)" in
 		;;
 esac
 
-output=$("$rebuild_cmd" build --no-out-link --flake "${FLAKE}#${host}" 2>&1)
+output=$("$rebuild_cmd" build --flake "${FLAKE}#${host}" 2>&1)
+rc=$?
+rm -f "$(git rev-parse --show-toplevel)/result"
 
-if [ $? -ne 0 ]; then
+if [ $rc -ne 0 ]; then
 	echo "nix build failed:"
 	echo "$output"
 	exit 1
