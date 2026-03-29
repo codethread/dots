@@ -39,6 +39,7 @@
     chromium
     ffmpeg
     google-chrome
+    python3
     spotify
     obsidian
     todoist-electron

@@ -5,6 +5,16 @@ if ! git diff --cached --name-only | grep -q '^nix/'; then
 	exit 0
 fi
 
+GIT_DIR="$(git rev-parse --git-dir)"
+# skip during rebase — intermediate commits may be intentionally broken
+if [ -d "${GIT_DIR}/rebase-merge" ] || [ -d "${GIT_DIR}/rebase-apply" ]; then
+	exit 0
+fi
+# skip during cherry-pick sequences
+if [ -f "${GIT_DIR}/CHERRY_PICK_HEAD" ]; then
+	exit 0
+fi
+
 FLAKE="path:$(git rev-parse --show-toplevel)/nix"
 
 case "$(uname -s)" in

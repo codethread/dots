@@ -31,6 +31,7 @@
   environment.systemPackages = with pkgs; [
     brightnessctl
     obs-studio
+    resvg
   ];
   users.users.codethread.extraGroups = [ "video" ];
 
