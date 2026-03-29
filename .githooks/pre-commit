@@ -5,8 +5,6 @@ if ! git diff --cached --name-only | grep -q '^nix/'; then
 	exit 0
 fi
 
-echo "nix/ files changed — checking flake build..."
-
 FLAKE="path:$(git rev-parse --show-toplevel)/nix"
 
 case "$(uname -s)" in
@@ -19,13 +17,14 @@ case "$(uname -s)" in
 		rebuild_cmd="nixos-rebuild"
 		;;
 	*)
-		echo "pre-commit: unknown OS, skipping nix check"
 		exit 0
 		;;
 esac
 
-if ! "$rebuild_cmd" build --flake "${FLAKE}#${host}" 2>&1; then
-	echo ""
-	echo "ERROR: nix build failed. Fix before committing."
+output=$("$rebuild_cmd" build --no-out-link --flake "${FLAKE}#${host}" 2>&1)
+
+if [ $? -ne 0 ]; then
+	echo "nix build failed:"
+	echo "$output"
 	exit 1
 fi
