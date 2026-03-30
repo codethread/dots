@@ -23,7 +23,7 @@
           packages = with pkgs; [
             bun
             biome
-            nodePackages.typescript
+            typescript
           ];
 
           BIOME_BINARY = "${pkgs.biome}/bin/biome";

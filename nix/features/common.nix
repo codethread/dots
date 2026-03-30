@@ -161,8 +161,8 @@ in {
     # --- Agent tools ---
     agentPkgSet.nodejs_24
     playwright-cli
-    agentPkgSet.nodePackages.typescript
-    agentPkgSet.nodePackages.typescript-language-server
+    agentPkgSet.typescript
+    agentPkgSet.typescript-language-server
     codexPackage
     agentPkgSet.opencode
     agentPkgSet.claude-code
