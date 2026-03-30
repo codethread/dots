@@ -30,9 +30,9 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             echo "Usage: cl [-d|--dangerously-skip-permissions] [--dry-run] [-- claude-args...]"
             exit 0 ;;
-        --model|-m) MODEL="$2"; PASSTHROUGH+=("$1" "$2"); shift 2 ;;
+        --model|-m) [[ $# -lt 2 ]] && { echo "cl: $1 requires an argument" >&2; exit 1; }; MODEL="$2"; PASSTHROUGH+=("$1" "$2"); shift 2 ;;
         --model=*) MODEL="${1#*=}"; PASSTHROUGH+=("$1"); shift ;;
-        --effort) HAS_EFFORT=true; PASSTHROUGH+=("$1" "$2"); shift 2 ;;
+        --effort) [[ $# -lt 2 ]] && { echo "cl: $1 requires an argument" >&2; exit 1; }; HAS_EFFORT=true; PASSTHROUGH+=("$1" "$2"); shift 2 ;;
         --effort=*) HAS_EFFORT=true; PASSTHROUGH+=("$1"); shift ;;
         *) PASSTHROUGH+=("$1"); shift ;;
     esac
