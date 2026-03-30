@@ -21,6 +21,8 @@ PROMPT_TOOLS="You only have access to the tools explicitly defined in your tool 
 DANGEROUSLY_SKIP=false
 DRY_RUN=false
 PASSTHROUGH=()
+MODEL=""
+HAS_EFFORT=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -d|--dangerously-skip-permissions) DANGEROUSLY_SKIP=true; shift ;;
@@ -28,6 +30,10 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             echo "Usage: cl [-d|--dangerously-skip-permissions] [--dry-run] [-- claude-args...]"
             exit 0 ;;
+        --model|-m) MODEL="$2"; PASSTHROUGH+=("$1" "$2"); shift 2 ;;
+        --model=*) MODEL="${1#*=}"; PASSTHROUGH+=("$1"); shift ;;
+        --effort) HAS_EFFORT=true; PASSTHROUGH+=("$1" "$2"); shift 2 ;;
+        --effort=*) HAS_EFFORT=true; PASSTHROUGH+=("$1"); shift ;;
         *) PASSTHROUGH+=("$1"); shift ;;
     esac
 done
@@ -36,6 +42,14 @@ done
 ARGS=()
 if [[ "$DANGEROUSLY_SKIP" == true ]]; then
     ARGS+=(--dangerously-skip-permissions)
+fi
+
+# --- Default effort per model ---
+if [[ "$HAS_EFFORT" == false ]]; then
+    case "$MODEL" in
+        opus*|claude-opus*) ARGS+=(--effort high) ;;
+        *)                  ARGS+=(--effort medium) ;;
+    esac
 fi
 
 # --- Build prompts ---

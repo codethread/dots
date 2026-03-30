@@ -119,6 +119,8 @@ in {
         "typescript-lsp@claude-plugins-official" = true;
         "claude-md-management@claude-plugins-official" = true;
         "claude-code-knowledge@codethread-plugins" = true;
+        "bdfl@codethread-plugins" = true;
+        "dev@codethread-plugins" = true;
       } // lib.optionalAttrs cfg.enableNotify {
         "cc-notify@cc-notify-marketplace" = true;
       };
@@ -149,6 +151,7 @@ in {
         DISABLE_TELEMETRY = "1";
         DISABLE_AUTOUPDATER = "0";
         ENABLE_CLAUDEAI_MCP_SERVERS = "0";
+        CLAUDE_CODE_DISABLE_1M_CONTEXT = "1";
         MANPAGER = "cat";
         ZDOTDIR = "~/.config/zsh-claude";
         "__CC_CUSTOM_ENVS_" = "manpager so we can see files, ZDOTDIR avoids old shell stuff";
