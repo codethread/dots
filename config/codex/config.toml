@@ -50,6 +50,12 @@ trust_level = "trusted"
 [projects."/home/codethread/dev/projects/claude-code-plugins"]
 trust_level = "trusted"
 
+[projects."/home/codethread/dev/vendor"]
+trust_level = "trusted"
+
+[projects."/home/codethread/dev/vendor/claude-code"]
+trust_level = "trusted"
+
 [tui.model_availability_nux]
 "gpt-5.3-codex-spark" = 4
 
