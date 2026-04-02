@@ -15,7 +15,7 @@
     (import ../services/tmux-service.nix {
       name = "cc-inspect";
       gitUrl = "git@github.com:codethread/cc-inspect.git";
-      command = "{bun} start";
+      command = "{bun} --cwd packages/cc-inspect start";
     })
     (import ../services/tmux-service.nix {
       name = "cc-notify";

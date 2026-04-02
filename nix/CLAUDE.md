@@ -66,6 +66,8 @@ Long-running project services (cron jobs, watchers, servers) use the generic `se
 - **No flake inputs for private repos**: using `github:` or `path:` inputs for private repos creates auth/existence problems at build time. Instead, the service module is a local `.nix` file in `services/`.
 - **Auto-clone with graceful fallback**: each service includes a `home.activation` hook that clones the repo via SSH if the directory is missing. If SSH auth isn't set up yet (fresh machine), the clone is skipped with a warning — the service simply won't start until the repo is cloned.
 - **Host owns the "where" and "whether"**: the profile sets `enable = true` and `workingDirectory`. The git URL and command are defined in the `import` call.
+- **`KillMode = "none"` is required**: the service is a fire-and-forget launcher — it creates a tmux session and exits. Without `KillMode = "none"`, systemd's default `control-group` mode kills the tmux session (and its server) when the service restarts during rebuilds. Do not remove this or add `ExecStop`.
+- **Commands must start directly, not build**: the command runs in a systemd oneshot with no interactive environment. `{bun} start` works; `make` / `bun install` / build pipelines do not — they fail silently and the tmux session dies immediately. Assume deps are pre-installed from development.
 
 ### Adding a new tmux service
 

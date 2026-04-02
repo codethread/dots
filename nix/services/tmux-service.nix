@@ -37,10 +37,12 @@ in {
         "${pkgs.bun}/bin/bun"
         cfg.workingDirectory
       ] command;
+      path = lib.makeBinPath [ pkgs.bun pkgs.gnumake pkgs.coreutils ];
       script = pkgs.writeShellScript "tmux-ensure-${name}" ''
         if ! ${pkgs.tmux}/bin/tmux has-session -t ${name} 2>/dev/null; then
           ${pkgs.tmux}/bin/tmux new-session -d -s ${name} \
             -c "${cfg.workingDirectory}" \
+            -e PATH="${path}:$PATH" \
             "${cmd}"
         fi
       '';
