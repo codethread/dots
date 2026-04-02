@@ -158,6 +158,11 @@ export def cdd --env [] {
 	cd (git rev-parse --show-toplevel)
 }
 
+export def cdm --env [] {
+	let root = (git worktree list --porcelain | lines | where {|l| $l | str starts-with "worktree "} | first | str replace "worktree " "")
+	cd $root
+}
+
 # check for unstaged or uncommitted changes
 export def git_is_dirty [] {
 	git status --short | is-not-empty

@@ -99,6 +99,16 @@ export def nrs [profile?: string, --update(-u)] {
 	} else {
 		print $"sudo nixos-rebuild switch --flake '($flake)'"
 		sudo nixos-rebuild switch --flake $flake
+		_kernel_reboot_check
+	}
+}
+
+# Warn if the running kernel differs from the one NixOS will boot into
+def _kernel_reboot_check [] {
+	let running = (^uname -r)
+	let booted = (ls /run/current-system/kernel-modules/lib/modules | get name | path basename | first)
+	if $running != $booted {
+		print $"\n(ansi yellow_bold)⚠ Reboot advised(ansi reset): running kernel (ansi dim)($running)(ansi reset) differs from new kernel (ansi dim)($booted)(ansi reset)"
 	}
 }
 
