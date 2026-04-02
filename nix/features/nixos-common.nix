@@ -23,6 +23,7 @@
       name = "rose-pine-moon";
       package = pkgs.rose-pine-gtk-theme;
     };
+    gtk4.theme = null;
     iconTheme = {
       name = "rose-pine-moon";
       package = pkgs.rose-pine-icon-theme;
