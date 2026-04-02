@@ -3,15 +3,13 @@
 set -euo pipefail
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
-  echo "Usage: pbimg [host]"
+  echo "Usage: pbimg"
   echo ""
-  echo "Extract image from macOS clipboard, scp to remote host, copy path to clipboard."
-  echo ""
-  echo "  host    SSH host (default: \$PBIMG_HOST or 'nixos')"
+  echo "Extract image from macOS clipboard, scp to homelab, copy path to clipboard."
   exit 0
 fi
 
-REMOTE="${1:-${PBIMG_HOST:-nixos}}"
+REMOTE="homelab"
 DIR="/tmp/pbimg"
 NAME="$(date +%Y%m%d-%H%M%S).png"
 REMOTE_PATH="$DIR/$NAME"
