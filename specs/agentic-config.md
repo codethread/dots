@@ -62,7 +62,7 @@ make link    →  dotty link   →  claude/ assets symlinked to ~/.claude/
 make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
 ```
 
-`make` (default) runs `link` then `build`. The project-local Stop hook (`make -C $HOME/PersonalConfigs link build`) re-runs link+build automatically after each Claude session.
+`make` (default target `all`) runs `link`, `build`, then `system` (nix rebuild). The project-local Stop hook (`make -C $HOME/PersonalConfigs link build`) re-runs link+build (without system) automatically after each Claude session.
 
 ## 3. Data Model
 
