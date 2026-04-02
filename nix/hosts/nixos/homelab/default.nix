@@ -16,9 +16,9 @@
     download-buffer-size = 134217728; # 128 MiB per connection
   };
 
-  # Expo Go (LAN) / Metro ports + desktop WebRTC stream ports.
-  networking.firewall.allowedTCPPorts = [ 443 3001 5555 8081 8889 19000 19001 19002 ];
-  networking.firewall.allowedUDPPorts = [ 8189 19000 19001 19002 ];
+  # Expo Go (LAN) / Metro ports.
+  networking.firewall.allowedTCPPorts = [ 443 3001 5555 8081 19000 19001 19002 ];
+  networking.firewall.allowedUDPPorts = [ 19000 19001 19002 ];
 
   # Keep user systemd services running after logout so tmux sessions persist.
   users.users.codethread.linger = true;
@@ -30,6 +30,7 @@
   # Terminal brightness control (e.g. `brightnessctl set 5%-`).
   environment.systemPackages = with pkgs; [
     brightnessctl
+    nssTools # certutil — needed by Caddy to install its root CA into the system trust store
     obs-studio
     resvg
   ];
@@ -110,16 +111,4 @@
     };
   };
 
-  # Low-latency desktop streaming via OBS -> mediamtx -> WebRTC.
-  # View on iOS Safari: http://<host-ip>:8889/live/desktop
-  services.mediamtx = {
-    enable = true;
-    settings = {
-      # Loopback-only: OBS connects locally, no reason to expose RTMP on the network
-      rtmpAddress = "127.0.0.1:1935";
-      webrtcAddress = ":8889";
-      # Accept any published stream without pre-registration
-      paths.all_others = {};
-    };
-  };
 }
