@@ -24,6 +24,7 @@ Declarative configuration system for Claude Code and OpenAI Codex agent platform
 - Plugin implementation details — plugins live in `~/dev/projects/claude-code-plugins` (separate repo)
 - cc-notify daemon internals — external project at `~/dev/projects/cc-notify`
 - Dotty implementation — dotty is a general-purpose symlink manager, not agentic-specific
+- Project-local `.claude/` config — each repo's agents, skills, and settings overrides are that repo's concern
 
 ## 2. Architecture
 
@@ -44,15 +45,15 @@ Three configuration layers compose at runtime:
 │   config/codex/ → ~/.config/codex/                  │
 │     config.toml, AGENTS.md                          │
 ├─────────────────────────────────────────────────────┤
-│ Layer 3: Project-local overrides                    │
+│ Layer 3: Project-local overrides (per-repo)         │
 │   .claude/settings.json    (repo-specific hooks)    │
 │   .claude/settings.local.json (machine-local)       │
-│   .claude/agents/          (repo-specific agents)   │
-│   .claude/skills/          (repo-specific skills)   │
+│   .claude/agents/, .claude/skills/                  │
+│   (not covered by this spec — each repo's own)      │
 └─────────────────────────────────────────────────────┘
 ```
 
-Settings merge order: Nix globals → project settings → local overrides.
+Settings merge order: Nix globals → project settings → local overrides. This spec covers layers 1 and 2 only.
 
 ### Build Pipeline
 
@@ -62,7 +63,7 @@ make link    →  dotty link   →  claude/ assets symlinked to ~/.claude/
 make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
 ```
 
-`make` (default target `all`) runs `link`, `build`, then `system` (nix rebuild). The project-local Stop hook (`make -C $HOME/PersonalConfigs link build`) re-runs link+build (without system) automatically after each Claude session.
+`make` (default target `all`) runs `link`, `build`, then `system` (nix rebuild).
 
 ## 3. Data Model
 
@@ -161,8 +162,6 @@ Note: `PermissionRequest` is a Claude Code hook event not represented in the Typ
 
 **Disabled (`claude/x-agents/`):** `browser-devtools` (sonnet, chrome-devtools MCP) — DevTools diagnostics. Prefix convention keeps files out of Claude's agent discovery.
 
-**Project-local (`PersonalConfigs/.claude/agents/`):** `nix-packager` (sonnet) — Nix packaging workflow.
-
 ### Skills
 
 **Global (`claude/skills/` → `~/.claude/skills/`):**
@@ -171,8 +170,6 @@ Note: `PermissionRequest` is a Claude Code hook event not represented in the Typ
 |-------|-------|---------|
 | commit | Bash(git:*) | Conventional commits with auto status/diff injection |
 | playwright-cli | Bash(playwright-cli:*) | Full browser automation (279 lines + 7 reference docs) |
-
-**Project-local (`PersonalConfigs/.claude/skills/`):** `kitty-terminal` — kitty control via kitten @ commands.
 
 ### Commands (`claude/commands/` → `~/.claude/commands/`)
 
@@ -250,8 +247,6 @@ Disables Ctrl+A in Global context.
 - **x-agents/ prefix convention.** Disabled agents live in `claude/x-agents/` — the prefix keeps them out of Claude's discovery path while keeping them version-controlled for re-enablement.
 
 - **Hook I/O via stdin/stdout JSON.** Hooks receive structured input on stdin and return structured output on stdout. Exit code 2 blocks the operation. This matches Claude Code's hook protocol and allows both TypeScript and Bash implementations.
-
-- **Project-local Stop hook for self-rebuild.** The PersonalConfigs repo's `.claude/settings.json` runs `make link build` on Stop, ensuring any changes Claude made to oven/ or home/ are compiled and linked immediately.
 
 - **Wrapper-injected system prompts.** The `cl` wrapper adds repo-type-specific, concurrency, and sandbox-awareness prompts at launch rather than embedding them in settings.json. This keeps prompts context-dependent without polluting global config.
 
