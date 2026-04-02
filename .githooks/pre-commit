@@ -16,19 +16,14 @@ if [ -f "${GIT_DIR}/CHERRY_PICK_HEAD" ]; then
 fi
 
 FLAKE="path:$(git rev-parse --show-toplevel)/nix"
+SCRIPTS="$(git rev-parse --show-toplevel)/config/nushell/scripts"
+
+host=$(nu -I "$SCRIPTS" -c 'use ct/nix.nu [nrs-flake-host]; nrs-flake-host')
 
 case "$(uname -s)" in
-	Darwin)
-		host="$(scutil --get LocalHostName 2>/dev/null || echo home)"
-		rebuild_cmd="darwin-rebuild"
-		;;
-	Linux)
-		host="$(hostname)"
-		rebuild_cmd="nixos-rebuild"
-		;;
-	*)
-		exit 0
-		;;
+	Darwin)  rebuild_cmd="darwin-rebuild" ;;
+	Linux)   rebuild_cmd="nixos-rebuild" ;;
+	*)       exit 0 ;;
 esac
 
 output=$("$rebuild_cmd" build --flake "${FLAKE}#${host}" 2>&1)

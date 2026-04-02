@@ -88,6 +88,11 @@ def _nix_eval_check [check: string, attr: string] {
 	}
 }
 
+# Resolved flake host/profile name for the current machine
+export def nrs-flake-host [profile?: string] {
+	_resolve_profile ($profile | default (_default_profile))
+}
+
 # Rebuild and switch system configuration (nixos-rebuild or darwin-rebuild)
 export def nrs [profile?: string, --update(-u)] {
 	if $update { nfu }

@@ -133,6 +133,7 @@ in {
       "pam-reattach"  # PAM module so Touch ID works inside tmux sudo prompts
       "morantron/tmux-fingers/tmux-fingers"
       "ical-buddy"
+      "pngpaste"
       "volta"
 	  "yazi"
     ];
