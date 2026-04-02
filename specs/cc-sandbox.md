@@ -54,7 +54,8 @@ cc-sandbox (launcher)
   │     │   ├── CODEX_HOME, GITHUB_TOKEN
   │     │   └── TERM, COLORTERM, SSH_AUTH_SOCK
   │     │
-  │     └── Default command: cl --dangerously-skip-permissions
+  │     └── Launcher passes: cl --dangerously-skip-permissions
+  │         (Containerfile CMD is bash; launcher always overrides)
   │
   ├── cc-bridge daemon (optional, --bridge flag)
   │     └── Unix socket → container shims for host commands
@@ -124,7 +125,7 @@ Stateless, fire-and-forget — no stdin forwarding, no interactive commands.
 
 ## 4. Interfaces
 
-### cc-sandbox CLI (`home/.local/bin/cc-sandbox`, 280 lines)
+### cc-sandbox CLI (`home/.local/bin/cc-sandbox`)
 
 ```
 cc-sandbox [OPTIONS] [-- CLAUDE_ARGS...]
@@ -139,7 +140,7 @@ Options:
   -h, --help         Show usage
 ```
 
-Default command: `cl --dangerously-skip-permissions [CLAUDE_ARGS...]`
+Default command (assembled by launcher, overriding Containerfile's `CMD ["bash"]`): `cl --dangerously-skip-permissions [CLAUDE_ARGS...]`
 
 ### Mounts
 
@@ -154,15 +155,15 @@ Default command: `cl --dangerously-skip-permissions [CLAUDE_ARGS...]`
 | SSH agent socket | `/tmp/ssh-agent.sock` | — | Linux: bind; macOS: reverse tunnel |
 | `~/.ssh/config` | `/home/user/.ssh/config` | ro | filtered for Linux compat |
 | `~/.config/playwright/states/<site>.json` | same path | ro | per `--auth` flag |
-| todoist config | `/home/user/.config/todoist/config.json` | ro | if exists |
-| cc-bridge socket | `/tmp/cc-bridge.sock` | ro | if `--bridge` |
+| todoist config | `/home/user/.config/todoist/config.json` | ro | if exists AND cwd is `~/dev/projects/notes` or subdirectory |
+| cc-bridge socket | `/tmp/cc-bridge.sock` | rw | if `--bridge` |
 | session dir | `~/.claude/projects/$CONTAINER_KEY/` | rw | always |
 
 ### Environment Variables Forwarded
 
 | Variable | Value/Source | Purpose |
 |----------|-------------|---------|
-| CC_SANDBOX | `1` | Triggers container-aware prompts in cl wrapper |
+| CC_SANDBOX | `1` (baked in image via `ENV`, not forwarded by launcher) | Triggers container-aware prompts in cl wrapper |
 | CC_HOST_PWD | `$PWD` (host) | Original path for cl wrapper |
 | CC_NOTIFY_HOST | `host.containers.internal` | cc-notify daemon reachable via host gateway |
 | CC_NOTIFY_PORT | from port file | cc-notify daemon port |
@@ -171,7 +172,7 @@ Default command: `cl --dangerously-skip-permissions [CLAUDE_ARGS...]`
 | SSH_AUTH_SOCK | `/tmp/ssh-agent.sock` | Forwarded agent |
 | TERM, COLORTERM | from host | Terminal config |
 
-### cc-bridge CLI (`oven/bin/cc-bridge.ts`, 293 lines)
+### cc-bridge CLI (`oven/bin/cc-bridge.ts`)
 
 Three subcommands:
 
@@ -192,7 +193,7 @@ cc-bridge install --commands cmd1,cmd2 [--bin-dir PATH]
 
 Each shim: `#!/usr/bin/env bash\nexec cc-bridge exec CMD "$@"`
 
-### Containerfile (`home/.local/share/cc-sandbox/Containerfile`, 172 lines)
+### Containerfile (`home/.local/share/cc-sandbox/Containerfile`)
 
 Multi-stage build:
 1. **todoist-build** — Go build of custom todoist fork (`codethread/todoist`, branch `codethread`)

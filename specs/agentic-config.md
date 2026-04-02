@@ -92,9 +92,14 @@ interface BaseHookOutput {
 }
 ```
 
-Specialized outputs: `PreToolUseOutput` adds `permissionDecision` (allow|deny|ask), `PostToolUseOutput` and `UserPromptSubmitOutput` add `additionalContext`, `StopOutput` adds `decision: "block"`, `SessionStartOutput` adds `additionalContext` (context injection).
+Specialized outputs nest event-specific fields inside `hookSpecificOutput`:
+- `PreToolUseOutput`: `hookSpecificOutput.permissionDecision` (allow|deny|ask)
+- `PostToolUseOutput`, `UserPromptSubmitOutput`, `SessionStartOutput`: `hookSpecificOutput.additionalContext`
+- `StopOutput`: `decision: "block"` (top-level)
 
-I/O protocol: JSON on stdin (HookInput), JSON on stdout (HookOutput), exit code 2 to block.
+Legacy compat fields (`decision`, `reason`) also exist at the top level for older hook implementations.
+
+I/O protocol: JSON on stdin (HookInput), JSON on stdout (HookOutput), exit code 2 to block. Some hooks (e.g., `cc-hook--context-injector`) output plain text to stdout instead of JSON — Claude Code accepts both.
 
 ### Dotty Config (`config/dotty/dotty.toml`)
 
@@ -120,12 +125,14 @@ The `config` project covers `config/codex/` → `~/.config/codex/` as part of th
 
 | Event | Handler | Type | Behavior |
 |-------|---------|------|----------|
-| SessionStart | `cc-hook--context-injector session-start` | TS | Scans README.md files, injects listing as contextOutput |
+| SessionStart | `cc-hook--context-injector session-start` | TS | Scans README.md files, outputs listing as plain text to stdout |
 | PreToolUse[Bash] | `cc-hook--npm-redirect` | TS | Redirects npm/npx/node to detected package manager |
 | PostToolUse[Write] | `git add -N` | inline | Intent-to-add for new files |
 | SessionEnd | `cc-hook--context-injector session-end` | TS | Removes session state file |
 
-**Plugin hooks (conditional, via cc-notify plugin when `enableNotify=true`):**
+**Plugin hooks (wired by the cc-notify plugin itself, not the Nix module; available when `enableNotify=true`):**
+
+Note: `PermissionRequest` is a Claude Code hook event not represented in the TypeScript type system (`oven/shared/claude-hooks.ts`). It is handled only by the bash hook `cc-hook--notify`.
 
 | Event | Handler | Type | Behavior |
 |-------|---------|------|----------|
@@ -134,7 +141,7 @@ The `config` project covers `config/codex/` → `~/.config/codex/` as part of th
 | UserPromptSubmit | `cc-hook--activity` | bash | Cancel pending notification |
 | SessionEnd | `cc-hook--activity` | bash | Cancel pending notification |
 
-**Environment variables (14):** Disables telemetry, error reporting, feedback, auto-memory, cron, MCP servers, terminal title, 1M context, tool search. Enables PWD maintenance. Sets MANPAGER=cat, ZDOTDIR=~/.config/zsh-claude.
+**Environment variables (13):** Disables telemetry, error reporting, feedback, auto-memory, cron, MCP servers, terminal title, 1M context, tool search. Keeps auto-updater enabled (`DISABLE_AUTOUPDATER=0`). Enables PWD maintenance. Sets MANPAGER=cat, ZDOTDIR=~/.config/zsh-claude.
 
 **Nix option:** `ct.claude-code.enableNotify` (boolean) gates cc-notify plugin and its hooks.
 
@@ -196,7 +203,7 @@ Bash wrapper prepending context-aware system prompts to `claude` CLI:
 
 ### Codex Configuration (`config/codex/`)
 
-- `config.toml`: model gpt-5.4, personality pragmatic, effort high. Profiles: fast-review (gpt-5.3-codex, medium), deep-review (gpt-5.4, high). 15+ trusted project paths. Falls back to CLAUDE.md for project docs.
+- `config.toml`: model gpt-5.4, personality pragmatic, effort high. Profiles: fast-review (gpt-5.3-codex, medium), deep-review (gpt-5.4, high). 15 trusted project paths. Falls back to CLAUDE.md for project docs.
 - `AGENTS.md`: global instruction for conciseness
 
 ### Nushell Wrappers (`config/nushell/scripts/ct/interactive/claude.nu`)
@@ -209,17 +216,17 @@ Bash wrapper prepending context-aware system prompts to `claude` CLI:
 
 **TypeScript (oven/bin/, compiled to ~/.local/bin/):**
 
-| Hook | Lines | Key Behavior |
-|------|-------|-------------|
-| cc-hook--context-injector | 212 | Session start: glob README.md files, output contextOutput. Session end: rm /tmp state file. |
-| cc-hook--npm-redirect | 320 | Walk dir tree for lock files (bun > pnpm > yarn > npm). Quote-aware. Skill/plugin context bypass. Exit 2 + suggestion on mismatch. |
+| Hook | Key Behavior |
+|------|-------------|
+| cc-hook--context-injector | Session start: glob README.md files, output listing as plain text to stdout. Session end: rm /tmp state file. |
+| cc-hook--npm-redirect | Walk dir tree for lock files (bun > pnpm > yarn > npm). Quote-aware. Skill/plugin context bypass. Exit 2 + suggestion on mismatch. |
 
 **Bash (home/.local/bin/):**
 
-| Hook | Lines | Key Behavior |
-|------|-------|-------------|
-| cc-hook--notify | 71 | POST to cc-notify daemon. Stop: "Done · $PROJECT" + 120-char snippet. PermissionRequest: tool-specific detail. |
-| cc-hook--activity | 10 | POST session_id to /activity to cancel pending notification. Fail silent. |
+| Hook | Key Behavior |
+|------|-------------|
+| cc-hook--notify | POST to cc-notify daemon. Stop: "Done · $PROJECT" + 120-char snippet. PermissionRequest: tool-specific detail. |
+| cc-hook--activity | POST session_id to /activity to cancel pending notification. Fail silent. |
 
 ### Supporting Tools
 
