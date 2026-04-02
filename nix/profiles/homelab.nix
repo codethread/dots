@@ -7,6 +7,21 @@
   imports = [
     ../features/common.nix
     ../features/nixos-common.nix
+    (import ../services/tmux-service.nix {
+      name = "ai-notes-cron";
+      gitUrl = "git@github.com:codethread/notes.git";
+      command = "{bun} scripts/automation/src/ai-task-cron.ts";
+    })
+    (import ../services/tmux-service.nix {
+      name = "cc-inspect";
+      gitUrl = "git@github.com:codethread/cc-inspect.git";
+      command = "{bun} start";
+    })
+    (import ../services/tmux-service.nix {
+      name = "cc-notify";
+      gitUrl = "git@github.com:codethread/cc-notify.git";
+      command = "{bun} start";
+    })
   ];
 
   # Chrome ships two .desktop files; both need --disable-gpu to prevent VM GPU crashes.
@@ -34,6 +49,16 @@
   };
 
   ct.claude-code.enableNotify = true;
+
+  # Repo-local tmux services (see nix/CLAUDE.md "Repo-Local Service Modules")
+  services.ai-notes-cron.enable = true;
+  services.ai-notes-cron.workingDirectory = "/home/codethread/dev/projects/notes";
+
+  services.cc-inspect.enable = true;
+  services.cc-inspect.workingDirectory = "/home/codethread/dev/projects/cc-inspect";
+
+  services.cc-notify.enable = true;
+  services.cc-notify.workingDirectory = "/home/codethread/dev/projects/cc-notify";
 
   home.packages = with pkgs; [
     chromium

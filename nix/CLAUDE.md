@@ -8,10 +8,11 @@ flake.nix          # Inputs, overlays, system configurations
 │   ├── darwin/    # macOS common + home/work host variants
 │   └── nixos/     # NixOS hosts (homelab, vm-aarch, desktop)
 ├── profiles/      # User-level home-manager profiles (personal, work, homelab, vm)
-└── features/      # Shared modules imported by profiles
-    ├── common.nix       # Packages + settings for ALL systems
-    ├── darwin-common.nix
-    └── nixos-common.nix
+├── features/      # Shared modules imported by profiles
+│   ├── common.nix       # Packages + settings for ALL systems
+│   ├── darwin-common.nix
+│   └── nixos-common.nix
+└── services/      # Reusable service builders (e.g. tmux-service.nix)
 ```
 
 ## Dual Channel Pattern
@@ -55,6 +56,44 @@ Use an empty string `""` for the initial hash (`vendorHash`, `npmDepsHash`, etc.
 
 - `dontNpmBuild = true` — package has no build script
 - `env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"` — skip postinstall browser downloads
+
+## Repo-Local Service Modules
+
+Long-running project services (cron jobs, watchers, servers) use the generic `services/tmux-service.nix` builder. Service definitions live in this repo (no flake inputs needed), with auto-clone on first rebuild.
+
+### Design principles
+
+- **No flake inputs for private repos**: using `github:` or `path:` inputs for private repos creates auth/existence problems at build time. Instead, the service module is a local `.nix` file in `services/`.
+- **Auto-clone with graceful fallback**: each service includes a `home.activation` hook that clones the repo via SSH if the directory is missing. If SSH auth isn't set up yet (fresh machine), the clone is skipped with a warning — the service simply won't start until the repo is cloned.
+- **Host owns the "where" and "whether"**: the profile sets `enable = true` and `workingDirectory`. The git URL and command are defined in the `import` call.
+
+### Adding a new tmux service
+
+1. **In the host profile** (e.g. `profiles/homelab.nix`) — add an import and enable it:
+   ```nix
+   imports = [
+     (import ../services/tmux-service.nix {
+       name = "my-service";
+       gitUrl = "git@github.com:codethread/my-repo.git";
+       command = "{bun} start";  # {bun} and {dir} are substituted automatically
+     })
+   ];
+
+   services.my-service.enable = true;
+   services.my-service.workingDirectory = "/home/codethread/dev/projects/my-repo";
+   ```
+
+2. That's it. No flake input changes needed. The builder handles the systemd unit, tmux session, and clone activation.
+
+### Existing tmux services
+
+| Service | Repo | Profile |
+|---------|------|---------|
+| `ai-notes-cron` | `codethread/notes` | homelab |
+| `cc-inspect` | `codethread/cc-inspect` | homelab |
+| `cc-notify` | `codethread/cc-notify` | homelab |
+
+Other services in `features/nixos-common.nix` (`tmux-main`, `backup-notes`) are not repo-local and remain there.
 
 ## Validation
 
