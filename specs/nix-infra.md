@@ -66,7 +66,7 @@ Two nixpkgs inputs provide version flexibility:
 - `pkgs` ← `nixpkgs` (unstable) — default for most packages
 - `pkgsMaster` ← `nixpkgs-master` (bleeding edge) — for packages needing latest versions
 
-In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available, falling back to `pkgs`. Packages like `claude-code`, `nodejs_24`, and `typescript` use `agentPkgSet.*` to track master.
+In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available, falling back to `pkgs`. Packages like `claude-code`, `nodejs_24`, `typescript`, `typescript-language-server`, and `opencode` use `agentPkgSet.*` to track master. `codexCliPackage` is a special case — injected via `specialArgs` from the flake, falling back to `agentPkgSet.codex` if null.
 
 ### Custom Overlays
 
@@ -90,7 +90,7 @@ boot/boot.sh
 ├─ Post-rebuild: nu "boot machine"
 │   ├─ [macOS] Check Full Disk Access
 │   ├─ Build bun binaries (oven/)
-│   └─ Sync nvim treesitter parsers
+│   └─ Sync nvim plugins (nvim-sync)
 └─ [NixOS] Commit hardware-configuration.nix if git identity set
 ```
 
@@ -110,8 +110,9 @@ make system [PROFILE=<name>]
 Three ordered activation scripts run during every rebuild:
 
 1. **bootDotfiles** (NixOS only, after `installPackages`) — clones PersonalConfigs if missing
-2. **userBootstrap** (after `writeBoundary`) — creates directory structure, clones vendor repos (nu_scripts, gitwatch), clones service repos (SSH-gated), sets git hooks
-3. **dottyLink** (after `userBootstrap`) — symlinks `config/` to `$XDG_CONFIG_HOME` via dotty
+2. **userBootstrap** (after `writeBoundary`) — creates directory structure, clones vendor repos (nu_scripts, gitwatch, Alfred on macOS), sets git hooks path
+3. **clone-\<name\>** (per tmux service, after `installPackages`) — each `tmux-service.nix` instance generates its own activation hook that clones its repo via SSH with a 5s BatchMode auth test; skips gracefully if SSH auth unavailable
+4. **dottyLink** (after `userBootstrap`) — symlinks `config/` to `$XDG_CONFIG_HOME` via dotty
 
 ### Tmux Service Module
 
@@ -123,6 +124,13 @@ Three ordered activation scripts run during every rebuild:
 - Command template supports `{bun}` and `{dir}` substitutions
 
 Active services (homelab only): `ai-notes-cron`, `cc-inspect`, `cc-notify`
+
+### NixOS Built-In Services
+
+Defined directly in `features/nixos-common.nix` (not via `tmux-service.nix`):
+
+- **tmux-main** — systemd oneshot that creates the main tmux session on graphical login
+- **backup-notes** — systemd oneshot + timer that auto-commits and pushes the notes vault (`~/dev/projects/notes/vault`) every 15 minutes via git (add → stash → pull --rebase → stash pop → commit → push). Sends `notify-send` on failure when Wayland display is available.
 
 ## 3. Data Model
 
