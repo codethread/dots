@@ -59,3 +59,9 @@ Based on the above changes and user context, create atomic commits following the
 
 - If hooks modify files and it's safe to amend (check authorship with `git log -1 --format='%an %ae'` and verify not pushed), amend the commit
 - Otherwise create a new commit
+
+## Current context
+
+- If this is running within an existing session, focus on the work we have done only.
+- If running in a new session, commit everything to get a clean worktree
+- If in doubt, just ask
