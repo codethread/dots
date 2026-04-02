@@ -1,0 +1,31 @@
+#!/bin/bash
+# :module: paste clipboard image to remote NixOS and copy path
+set -euo pipefail
+
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  echo "Usage: pbimg [host]"
+  echo ""
+  echo "Extract image from macOS clipboard, scp to remote host, copy path to clipboard."
+  echo ""
+  echo "  host    SSH host (default: \$PBIMG_HOST or 'nixos')"
+  exit 0
+fi
+
+REMOTE="${1:-${PBIMG_HOST:-nixos}}"
+DIR="/tmp/pbimg"
+NAME="$(date +%Y%m%d-%H%M%S).png"
+REMOTE_PATH="$DIR/$NAME"
+
+LOCAL_TMP=$(mktemp /tmp/pbimg.XXXXXX.png)
+trap 'rm -f "$LOCAL_TMP"' EXIT
+
+if ! pngpaste "$LOCAL_TMP" 2>/dev/null; then
+  echo "No image in clipboard" >&2
+  exit 1
+fi
+
+ssh "$REMOTE" "mkdir -p $DIR"
+scp -q "$LOCAL_TMP" "$REMOTE:$REMOTE_PATH"
+
+echo -n "$REMOTE_PATH" | pbcopy
+echo "Saved to $REMOTE_PATH (path copied to clipboard)"
