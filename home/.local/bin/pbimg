@@ -1,29 +1,58 @@
 #!/bin/bash
-# :module: paste clipboard image to remote NixOS and copy path
+# :module: paste clipboard image to remote NixOS with compressed variants
 set -euo pipefail
 
+LOCAL_MODE=false
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
-  echo "Usage: pbimg"
+  echo "Usage: pbimg [--local]"
   echo ""
-  echo "Extract image from macOS clipboard, scp to homelab, copy path to clipboard."
+  echo "Extract image from macOS clipboard, create original + compressed"
+  echo "variants via ffmpeg, scp all to homelab, copy README path to clipboard."
+  echo ""
+  echo "  --local  Keep files locally in /tmp instead of uploading to homelab"
   exit 0
+elif [ "${1:-}" = "--local" ]; then
+  LOCAL_MODE=true
 fi
 
+# --- Tweak these to taste ---
+COMPRESS_SCALE=50        # percentage scale for compressed variant
+COMPRESS_QUALITY=85      # JPEG quality (1-100) for compressed variant
+# ----------------------------
+
 REMOTE="homelab"
-DIR="/tmp/pbimg"
-NAME="$(date +%Y%m%d-%H%M%S).png"
-REMOTE_PATH="$DIR/$NAME"
+BASE_DIR="/tmp/pbimg"
+STAMP="$(date +%Y%m%d-%H%M%S)"
+OUT_DIR="$BASE_DIR/$STAMP"
 
-LOCAL_TMP=$(mktemp /tmp/pbimg.XXXXXX.png)
-trap 'rm -f "$LOCAL_TMP"' EXIT
+LOCAL_DIR=$(mktemp -d /tmp/pbimg.XXXXXX)
+trap 'rm -rf "$LOCAL_DIR"' EXIT
 
-if ! pngpaste "$LOCAL_TMP" 2>/dev/null; then
+if ! pngpaste "$LOCAL_DIR/original.png" 2>/dev/null; then
   echo "No image in clipboard" >&2
   exit 1
 fi
 
-ssh "$REMOTE" "bash -c 'mkdir -p $DIR'"
-scp -q "$LOCAL_TMP" "$REMOTE:$REMOTE_PATH"
+ffmpeg -loglevel error -i "$LOCAL_DIR/original.png" \
+  -vf "scale=iw*${COMPRESS_SCALE}/100:-2" \
+  -q:v "$(( (100 - COMPRESS_QUALITY) * 31 / 100 + 1 ))" \
+  "$LOCAL_DIR/compressed.jpg"
 
-echo -n "$REMOTE_PATH" | pbcopy
-echo "Saved to $REMOTE_PATH (path copied to clipboard)"
+cat > "$LOCAL_DIR/README.md" <<EOF
+- [Original (full res)](${OUT_DIR}/original.png)
+- [Compressed (${COMPRESS_SCALE}%, q${COMPRESS_QUALITY})](${OUT_DIR}/compressed.jpg)
+
+Compressed is good enough unless you need pixel-perfect, color-accurate details.
+EOF
+
+if [ "$LOCAL_MODE" = true ]; then
+  mkdir -p "$OUT_DIR"
+  cp "$LOCAL_DIR/original.png" "$LOCAL_DIR/compressed.jpg" "$LOCAL_DIR/README.md" "$OUT_DIR/"
+else
+  ssh "$REMOTE" "bash -c 'mkdir -p $OUT_DIR'"
+  scp -q "$LOCAL_DIR/original.png" "$LOCAL_DIR/compressed.jpg" "$LOCAL_DIR/README.md" "$REMOTE:$OUT_DIR/"
+fi
+
+README_PATH="$OUT_DIR/README.md"
+echo -n "$README_PATH" | pbcopy
+echo "Saved to $OUT_DIR/ (README path copied to clipboard)"
