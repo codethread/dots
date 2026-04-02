@@ -22,7 +22,7 @@ if ! pngpaste "$LOCAL_TMP" 2>/dev/null; then
   exit 1
 fi
 
-ssh "$REMOTE" "mkdir -p $DIR"
+ssh "$REMOTE" "bash -c 'mkdir -p $DIR'"
 scp -q "$LOCAL_TMP" "$REMOTE:$REMOTE_PATH"
 
 echo -n "$REMOTE_PATH" | pbcopy
