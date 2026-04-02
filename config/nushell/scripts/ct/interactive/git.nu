@@ -160,7 +160,11 @@ export alias lg = lazygit
 
 # use kitty as pager
 export def "git diff" [...args] {
-	^git -c pager.difftool=true difftool -t kitty --no-symlinks --dir-diff ...$args
+	if ("KITTY_WINDOW_ID" in $env) {
+		^git -c pager.difftool=true difftool -t kitty --no-symlinks --dir-diff ...$args
+	} else {
+		^git diff ...$args
+	}
 }
 
 export def "git lg" [] {
