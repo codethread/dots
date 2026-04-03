@@ -105,8 +105,8 @@ Keys.list({}, {
 
 --Fold related
 if vim.g.vscode then
-	vim.api.nvim_set_keymap('n', 'j', 'gj', { noremap = false, silent = true })
-	vim.api.nvim_set_keymap('n', 'k', 'gk', { noremap = false, silent = true })
+	vim.keymap.set('n', 'j', 'gj', { remap = true, silent = true })
+	vim.keymap.set('n', 'k', 'gk', { remap = true, silent = true })
 
 	local vscode = require 'vscode'
 

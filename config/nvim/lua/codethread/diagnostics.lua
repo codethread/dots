@@ -1,18 +1,3 @@
-local function set_signs()
-	local signs = {
-		{ name = 'DiagnosticSignError', text = '' },
-		{ name = 'DiagnosticSignWarn', text = '' },
-		{ name = 'DiagnosticSignHint', text = '' },
-		{ name = 'DiagnosticSignInfo', text = '' },
-	}
-
-	for _, sign in ipairs(signs) do
-		vim.fn.sign_define(sign.name, { texthl = sign.name, text = sign.text, numhl = '' })
-	end
-
-	return signs
-end
-
 local function format(diagnostic)
 	if diagnostic.source == 'eslint_d' then
 		return string.format(
@@ -27,7 +12,14 @@ end
 
 vim.diagnostic.config {
 	severity_sort = true,
-	signs = { active = set_signs() },
+	signs = {
+		text = {
+			[vim.diagnostic.severity.ERROR] = '',
+			[vim.diagnostic.severity.WARN] = '',
+			[vim.diagnostic.severity.HINT] = '',
+			[vim.diagnostic.severity.INFO] = '',
+		},
+	},
 	underline = true,
 	update_in_insert = false,
 	virtual_text = { spacing = 4, source = 'if_many', prefix = '●' },

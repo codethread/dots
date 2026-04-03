@@ -8,8 +8,7 @@ vim.opt.termguicolors = true -- adds more colors
 vim.opt.hidden = true -- Required to keep multiple buffers open multiple buffers
 vim.opt.encoding = 'utf-8' -- The encoding displayed
 vim.opt.pumheight = 10 -- Makes popup menu smaller
--- vim.opt.pumborder = 'rounded'
--- vim.opt.winborder = 'double'
+vim.opt.winborder = 'rounded'
 vim.opt.fileencoding = 'utf-8' -- The encoding written to file
 vim.opt.spellfile = vim.fn.expand '~' .. '/.config/.en.utf-8.add'
 vim.opt.ruler = true -- Show the cursor position all the time
@@ -65,7 +64,7 @@ if vim.version().minor < 12 then
 	-- vim.opt.diffopt = 'internal,filler,closeoff,indent-heuristic,linematch:60,algorithm:histogram'
 	vim.opt.diffopt = 'internal,algorithm:histogram,indent-heuristic,linematch:32,filler,context:3'
 else
-	vim.op.diffopt:append 'inline:word'
+	vim.opt.diffopt:append 'inline:word'
 end
 
 -- can use abolish-grep with this
