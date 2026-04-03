@@ -65,7 +65,8 @@ def _expected-config-check [check: string, actual: string, expected: string] {
 	} else {
 		let resolved = ($actual | path expand)
 		let want = ($expected | path expand)
-		(_smoke-check $check ($resolved == $want) $resolved)
+		let detail = if $resolved == $want { $resolved } else { $"($resolved)\n    expected: ($want)" }
+		(_smoke-check $check ($resolved == $want) $detail)
 	}
 }
 
@@ -265,14 +266,13 @@ export def nix-smoke [
 			actual: ($xdg_config | path join "ghostty/startup.sh")
 			expected: ($dotfiles | path join "config/ghostty/startup.sh")
 		}
-		{
-			check: "config: claude settings"
-			actual: ($env.HOME | path join ".claude/settings.json")
-			expected: ($dotfiles | path join "claude/settings.json")
-		}
 	] {
 		$checks = ($checks | append (_expected-config-check $file_check.check $file_check.actual $file_check.expected))
 	}
+
+	# settings.json is Nix-store-managed (read-only), not dotty-symlinked — just check it exists
+	let claude_settings = ($env.HOME | path join ".claude/settings.json")
+	$checks = ($checks | append (_smoke-check "config: claude settings (nix)" ($claude_settings | path exists) $claude_settings))
 
 	if not $skip_flake {
 		let home_attr = $"($flake)#($config_type).($p).config.home-manager.users.($hm_user).home.packages"
@@ -291,7 +291,12 @@ export def nix-smoke [
 
 	$report | table -e
 
-	if ($checks | where ok == false | is-not-empty) {
+	let failures = ($checks | where ok == false)
+	if ($failures | is-not-empty) {
+		print $"\n(ansi red_bold)Failed checks:(ansi reset)"
+		for f in $failures {
+			print $"  (ansi red)✗(ansi reset) ($f.check): ($f.detail)"
+		}
 		error make { msg: "nix smoke failed" }
 	}
 
