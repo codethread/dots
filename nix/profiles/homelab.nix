@@ -13,6 +13,11 @@
       command = "{bun} scripts/automation/src/ai-task-cron.ts";
     })
     (import ../services/tmux-service.nix {
+      name = "ai-notes-youtube";
+      gitUrl = "git@github.com:codethread/notes.git";
+      command = "{bun} scripts/automation/src/yt-playlist-watcher.ts";
+    })
+    (import ../services/tmux-service.nix {
       name = "cc-inspect";
       gitUrl = "git@github.com:codethread/cc-inspect.git";
       command = "{bun} --cwd packages/cc-inspect start";
