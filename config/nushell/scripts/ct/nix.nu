@@ -113,7 +113,7 @@ def _kernel_reboot_check [] {
 	let running = (^uname -r)
 	let booted = (ls /run/current-system/kernel-modules/lib/modules | get name | path basename | first)
 	if $running != $booted {
-		print $"\n(ansi yellow_bold)⚠ Reboot advised(ansi reset): running kernel (ansi dim)($running)(ansi reset) differs from new kernel (ansi dim)($booted)(ansi reset)"
+		print $"\n(ansi yellow_bold)⚠ Reboot advised(ansi reset): running kernel (ansi d)($running)(ansi reset) differs from new kernel (ansi d)($booted)(ansi reset)"
 	}
 }
 
