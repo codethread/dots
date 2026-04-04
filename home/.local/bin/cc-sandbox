@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# :module: Run Claude Code in a sandboxed Podman container for the current project
+# :module: Run agent CLIs in a sandboxed Podman container for the current project
 #
 # Mounts cwd as /project, forwards SSH agent + git config + ~/.claude into the
 # container. Runs as non-root user with UID remapping (--userns=keep-id).
@@ -18,6 +18,9 @@ NODE_VERSION_DEFAULT="22"
 NUSHELL_VERSION_DEFAULT="0.111.0"
 PLAYWRIGHT_CLI_VERSION_DEFAULT="latest"
 CODEX_VERSION_DEFAULT="$(codex --version 2>/dev/null | awk '{print $2}')"
+PI_VERSION_FALLBACK="0.64.0"
+PI_VERSION_DEFAULT="$(pi --version 2>&1 | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?' | head -n1 || true)"
+PI_VERSION_DEFAULT="${PI_VERSION_DEFAULT:-$PI_VERSION_FALLBACK}"
 YT_DLP_VERSION_DEFAULT="$(yt-dlp --version 2>/dev/null || true)"
 CONTAINER_NAME="cc-sandbox-$(head -c4 /dev/urandom | od -An -tx1 | tr -d ' \n')"
 # Resolve symlinks portably (readlink -f is GNU-only, unavailable on macOS)
@@ -34,19 +37,19 @@ CONTAINERIGNORE="$(dirname "$CONTAINERFILE")/.containerignore"
 
 show_help() {
     cat <<EOF
-cc-sandbox - Run Claude Code in a sandboxed Podman container
+cc-sandbox - Run agent CLIs in a sandboxed Podman container
 
 Usage: cc-sandbox [options] [-- claude-args...]
 
 Options:
   -n, --no-cache     Rebuild container image without cache
-  -i, --interactive  Start an interactive bash shell instead of claude
-  -r, --run CMD      Run a specific command instead of claude
+  -i, --interactive  Start an interactive bash shell instead of the default cl wrapper
+  -r, --run CMD      Run a specific command instead of the default cl wrapper
   -b, --bridge CMD   Expose host command via cc-bridge (e.g. -b obsidian), repeatable
   -a, --auth SITE    Mount playwright auth state (e.g. -a ocado), repeatable
   -p PORT            Forward a port (e.g. -p 3000:3000), repeatable
   -h, --help         Show this help message
-  --                 Pass remaining args to claude (e.g. -- --model=haiku)
+  --                 Pass remaining args to cl (e.g. -- --model=haiku)
 
 Versions (override with env vars):
   CLAUDE_VERSION     Claude Code binary (default: ${CLAUDE_VERSION_DEFAULT})
@@ -55,11 +58,14 @@ Versions (override with env vars):
   PLAYWRIGHT_CLI_VERSION
                      Playwright CLI npm package (default: ${PLAYWRIGHT_CLI_VERSION_DEFAULT})
   CODEX_VERSION      Codex CLI npm package (default: ${CODEX_VERSION_DEFAULT})
+  PI_VERSION         Pi coding agent npm package (default: ${PI_VERSION_DEFAULT})
   YT_DLP_VERSION     yt-dlp binary (default: auto-detected, empty to skip)
 
-Runs cl -d (claude wrapper with conditional system prompts) in a
-podman container with the current directory mounted as /vm/<dirname>. Forwards SSH agent, git config,
-claude settings into the container.
+Runs cl --dangerously-skip-permissions (Claude wrapper with conditional system prompts)
+in a podman container with the current directory mounted as /vm/<dirname>.
+Forwards SSH agent, git config, claude settings, codex auth, and pi auth/models into the container.
+Persists Claude and Pi sessions with host↔container project-key mapping.
+Pi is also available explicitly via: cc-sandbox -r 'pim ...'
 EOF
     exit 0
 }
@@ -112,6 +118,7 @@ podman build "${CACHE_FLAG[@]}" \
     --build-arg "NUSHELL_VERSION=${NUSHELL_VERSION:-$NUSHELL_VERSION_DEFAULT}" \
     --build-arg "PLAYWRIGHT_CLI_VERSION=${PLAYWRIGHT_CLI_VERSION:-$PLAYWRIGHT_CLI_VERSION_DEFAULT}" \
     --build-arg "CODEX_VERSION=${CODEX_VERSION:-$CODEX_VERSION_DEFAULT}" \
+    --build-arg "PI_VERSION=${PI_VERSION:-$PI_VERSION_DEFAULT}" \
     --build-arg "YT_DLP_VERSION=${YT_DLP_VERSION:-$YT_DLP_VERSION_DEFAULT}" \
     --build-arg "ARCH_GNU=$ARCH_GNU" \
     --build-arg "ARCH_NODE=$ARCH_NODE" \
@@ -149,6 +156,19 @@ if [[ -f "$HOME/.codex/auth.json" ]]; then
     )
 fi
 
+PI_HOME_CONTAINER="/home/user/.pi/agent"
+PI_ARGS=(-e "PI_CODING_AGENT_DIR=$PI_HOME_CONTAINER")
+if [[ -f "$HOME/.pi/agent/auth.json" ]]; then
+    PI_ARGS+=(
+        -v "$HOME/.pi/agent/auth.json:$PI_HOME_CONTAINER/auth.json"
+    )
+fi
+if [[ -f "$HOME/.pi/agent/models.json" ]]; then
+    PI_ARGS+=(
+        -v "$HOME/.pi/agent/models.json:$PI_HOME_CONTAINER/models.json:ro"
+    )
+fi
+
 VM_SSH_SOCK="/tmp/host-ssh-agent.sock"
 SSH_TUNNEL_PID=""
 SSH_ARGS=()
@@ -179,15 +199,24 @@ fi
 
 PROJECT_DIR="$(basename "$(pwd)")"
 
-# Session persistence: map host project sessions into container's expected path
-# Claude derives project key from cwd; container sees /vm/$PROJECT_DIR so uses
-# key "-vm-$PROJECT_DIR", but host stores sessions under the real path key.
+# Session persistence: map host project sessions into container's expected path.
+# Both Claude and Pi derive project keys from cwd, but container cwd is /vm/$PROJECT_DIR
+# while host cwd is the real path. Mount host keys -> container keys for both tools.
 HOST_PROJECT_KEY="$(pwd -P | tr '/' '-')"
 CONTAINER_PROJECT_KEY="-vm-${PROJECT_DIR}"
-HOST_SESSIONS_DIR="$HOME/.claude/projects/${HOST_PROJECT_KEY}"
-mkdir -p "$HOST_SESSIONS_DIR"
-SESSION_ARGS=(
-    -v "$HOST_SESSIONS_DIR:/home/user/.claude/projects/${CONTAINER_PROJECT_KEY}"
+HOST_CLAUDE_SESSIONS_DIR="$HOME/.claude/projects/${HOST_PROJECT_KEY}"
+mkdir -p "$HOST_CLAUDE_SESSIONS_DIR"
+CLAUDE_SESSION_ARGS=(
+    -v "$HOST_CLAUDE_SESSIONS_DIR:/home/user/.claude/projects/${CONTAINER_PROJECT_KEY}"
+)
+
+# Pi stores sessions in ~/.pi/agent/sessions/--<path>--/
+HOST_PI_PROJECT_KEY="--${HOST_PROJECT_KEY}--"
+CONTAINER_PI_PROJECT_KEY="--vm-${PROJECT_DIR}--"
+HOST_PI_SESSIONS_DIR="$HOME/.pi/agent/sessions/${HOST_PI_PROJECT_KEY}"
+mkdir -p "$HOST_PI_SESSIONS_DIR"
+PI_SESSION_ARGS=(
+    -v "$HOST_PI_SESSIONS_DIR:$PI_HOME_CONTAINER/sessions/${CONTAINER_PI_PROJECT_KEY}"
 )
 
 # Todoist CLI auth: only needed for the notes project
@@ -266,9 +295,11 @@ podman run $TTY_FLAGS --rm \
     -v "$HOME/.claude/.credentials.json:/home/user/.claude/.credentials.json" \
     -v "$TEMP_CLAUDE_SETTINGS:/home/user/.claude/settings.json" \
     -v "$HOME/.claude.json:/home/user/.claude.json" \
-    "${SESSION_ARGS[@]}" \
+    "${CLAUDE_SESSION_ARGS[@]}" \
+    "${PI_SESSION_ARGS[@]}" \
     ${GIT_CONFIG_DIR:+-v "$GIT_CONFIG_DIR:/home/user/.config/git:ro"} \
     "${CODEX_ARGS[@]}" \
+    "${PI_ARGS[@]}" \
     "${SSH_ARGS[@]}" \
     "${NOTIFY_ARGS[@]}" \
     "${TODOIST_ARGS[@]}" \

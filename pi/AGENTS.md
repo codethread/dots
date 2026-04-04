@@ -1,0 +1,1 @@
+- read relavent README.md files when working in nested directories

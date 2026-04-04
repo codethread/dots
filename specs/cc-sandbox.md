@@ -1,20 +1,20 @@
 # cc-sandbox Specification
 
 **Status:** Implemented
-**Last Updated:** 2026-04-02
+**Last Updated:** 2026-04-04
 
 ## 1. Overview
 
 ### Purpose
 
-Podman-based container isolation for running Claude Code (and Codex) headless sessions. Provides a reproducible, auditable environment with full config forwarding (SSH, git, credentials, dotfiles) while preventing uncontrolled host access.
+Podman-based container isolation for running Claude Code, Codex, and Pi headless sessions. Provides a reproducible, auditable environment with full config forwarding (SSH, git, credentials, dotfiles) while preventing uncontrolled host access.
 
 ### Goals
 
-- Deterministic container image with pinned tool versions (Claude, Codex, Bun, Nushell, Playwright, Chromium, GitHub CLI, Neovim)
+- Deterministic container image with pinned tool versions (Claude, Codex, Pi, Bun, Nushell, Playwright, Chromium, GitHub CLI, Neovim)
 - Mount current project + credentials without leaking host filesystem
 - SSH agent forwarding across Linux and macOS (Podman VM tunnel on macOS)
-- Session persistence via host→container project key mapping
+- Session persistence via host→container project key mapping (Claude + Pi)
 - Selective host command execution via cc-bridge Unix socket
 - Push notification integration via cc-notify port forwarding
 - Smoke-testable: `cc-sandbox-smoke` validates binary presence, PATH, mounts, and optional API pings
@@ -35,27 +35,28 @@ cc-sandbox (launcher)
   ├── podman build (Containerfile)
   │     └── node:22-slim base
   │         + system deps (chromium, ffmpeg, git, jq, ...)
-  │         + tools (claude, codex, bun, nu, gh, neovim, playwright-cli)
+  │         + tools (claude, codex, pi, bun, nu, gh, neovim, playwright-cli)
   │         + PersonalConfigs copied + dotty link + bun run build
   │
   ├── podman run
   │     ├── Mounts:
   │     │   ├── $PWD → /vm/$PROJECT_DIR
-  │     │   ├── credentials (settings.json, .credentials.json, .claude.json)
+  │     │   ├── credentials (settings.json, .credentials.json, .claude.json, pi auth/models)
   │     │   ├── git config (ro)
   │     │   ├── SSH agent socket
   │     │   ├── playwright auth states (ro, per --auth flag)
   │     │   ├── todoist config (ro)
-  │     │   └── session dir (~/.claude/projects/$KEY)
+  │     │   └── session dirs (~/.claude/projects/$KEY, ~/.pi/agent/sessions/$KEY)
   │     │
   │     ├── Environment:
   │     │   ├── CC_SANDBOX=1, CC_HOST_PWD
   │     │   ├── CC_NOTIFY_HOST, CC_NOTIFY_PORT
-  │     │   ├── CODEX_HOME, GITHUB_TOKEN
+  │     │   ├── CODEX_HOME, PI_CODING_AGENT_DIR, GITHUB_TOKEN
   │     │   └── TERM, COLORTERM, SSH_AUTH_SOCK
   │     │
-  │     └── Launcher passes: cl --dangerously-skip-permissions
+  │     └── Launcher passes: cl --dangerously-skip-permissions [CLAUDE_ARGS...]
   │         (Containerfile CMD is bash; launcher always overrides)
+  │         Pi remains available explicitly via --run (e.g. `cc-sandbox -r 'pim ...'`)
   │
   ├── cc-bridge daemon (optional, --bridge flag)
   │     └── Unix socket → container shims for host commands
@@ -81,14 +82,29 @@ cc-notify daemon (:$PORT)  ◄── POST /notify, /activity
 
 ### Session Key Mapping
 
-Host and container use different project keys for the same session directory:
+Host and container use different project keys for the same session directory because the container cwd is `/vm/$PROJECT_DIR`.
+
+#### Claude keys
 
 | Side | Key Format | Example |
 |------|-----------|---------|
 | Host | `$PWD` with `/` → `-` | `-home-codethread-dev-myproject` |
 | Container | `-vm-$PROJECT_DIR` | `-vm-myproject` |
 
-Host mounts `~/.claude/projects/${HOST_KEY}/` into container at `~/.claude/projects/${CONTAINER_KEY}/`. This enables session persistence across container restarts while translating paths.
+Mount: `~/.claude/projects/${HOST_KEY}/` → `~/.claude/projects/${CONTAINER_KEY}/`
+
+#### Pi keys
+
+Pi session dirs are wrapped in `--...--`:
+
+| Side | Key Format | Example |
+|------|-----------|---------|
+| Host | `--${HOST_KEY}--` | `--home-codethread-dev-myproject--` |
+| Container | `--vm-${PROJECT_DIR}--` | `--vm-myproject--` |
+
+Mount: `~/.pi/agent/sessions/${HOST_PI_KEY}/` → `~/.pi/agent/sessions/${CONTAINER_PI_KEY}/`
+
+This enables both Claude and Pi session persistence across container restarts while translating host/container paths.
 
 ### cc-bridge Protocol
 
@@ -120,6 +136,7 @@ Stateless, fire-and-forget — no stdin forwarding, no interactive commands.
 | NUSHELL_VERSION | 0.111.0 | hardcoded |
 | PLAYWRIGHT_CLI_VERSION | latest | `playwright-cli --version` on host |
 | CODEX_VERSION | 0.116.0 | `codex --version` on host |
+| PI_VERSION | 0.64.0 | `pi --version` on host |
 | YT_DLP_VERSION | (empty) | `yt-dlp --version` on host, skipped if absent |
 | ARCH_GNU/ARCH_NODE/ARCH_GO | — | detected from `uname -m` |
 
@@ -132,8 +149,8 @@ cc-sandbox [OPTIONS] [-- CLAUDE_ARGS...]
 
 Options:
   -n, --no-cache     Rebuild image without cache
-  -i, --interactive  Start bash shell instead of claude
-  -r, --run CMD      Execute specific command in container
+  -i, --interactive  Start bash shell instead of default `cl` wrapper
+  -r, --run CMD      Execute specific command in container (e.g. `pim --help`)
   -b, --bridge CMD   Expose host command via cc-bridge (repeatable)
   -a, --auth SITE    Mount playwright auth state (repeatable)
   -p PORT            Forward port (repeatable)
@@ -141,6 +158,8 @@ Options:
 ```
 
 Default command (assembled by launcher, overriding Containerfile's `CMD ["bash"]`): `cl --dangerously-skip-permissions [CLAUDE_ARGS...]`
+
+Pi is still available in the same sandbox image via explicit run commands, e.g. `cc-sandbox -r 'pim --help'`.
 
 ### Mounts
 
@@ -152,22 +171,25 @@ Default command (assembled by launcher, overriding Containerfile's `CMD ["bash"]
 | `~/.claude.json` | `/home/user/.claude.json` | rw | always |
 | `~/.config/git/` | `/home/user/.config/git/` | ro | if exists |
 | `~/.codex/auth.json` | `/home/user/.config/codex/auth.json` | rw | if exists |
+| `~/.pi/agent/auth.json` | `/home/user/.pi/agent/auth.json` | rw | if exists |
+| `~/.pi/agent/models.json` | `/home/user/.pi/agent/models.json` | ro | if exists |
 | SSH agent socket | `/tmp/ssh-agent.sock` | — | Linux: bind; macOS: reverse tunnel |
 | `~/.ssh/config` | `/home/user/.ssh/config` | ro | filtered for Linux compat |
 | `~/.config/playwright/states/<site>.json` | same path | ro | per `--auth` flag |
 | todoist config | `/home/user/.config/todoist/config.json` | ro | if exists AND cwd is `~/dev/projects/notes` or subdirectory |
 | cc-bridge socket | `/tmp/cc-bridge.sock` | rw | if `--bridge` |
-| session dir | `~/.claude/projects/$CONTAINER_KEY/` | rw | always |
-
+| Claude session dir | `~/.claude/projects/$CONTAINER_KEY/` | rw | always |
+| Pi session dir | `~/.pi/agent/sessions/$CONTAINER_PI_KEY/` | rw | always |
 ### Environment Variables Forwarded
 
 | Variable | Value/Source | Purpose |
 |----------|-------------|---------|
-| CC_SANDBOX | `1` (baked in image via `ENV`, not forwarded by launcher) | Triggers container-aware prompts in cl wrapper |
-| CC_HOST_PWD | `$PWD` (host) | Original path for cl wrapper |
+| CC_SANDBOX | `1` (baked in image via `ENV`, not forwarded by launcher) | Triggers container-aware prompts in wrappers |
+| CC_HOST_PWD | `$PWD` (host) | Original host path for wrapper repo classification |
 | CC_NOTIFY_HOST | `host.containers.internal` | cc-notify daemon reachable via host gateway |
 | CC_NOTIFY_PORT | from port file | cc-notify daemon port |
 | CODEX_HOME | `/home/user/.config/codex` | Codex config location |
+| PI_CODING_AGENT_DIR | `/home/user/.pi/agent` | Pi config location |
 | GITHUB_TOKEN | from `$GH_AGENTS_RO` | Read-only GitHub token |
 | SSH_AUTH_SOCK | `/tmp/ssh-agent.sock` | Forwarded agent |
 | TERM, COLORTERM | from host | Terminal config |
@@ -199,7 +221,7 @@ Multi-stage build:
 1. **todoist-build** — Go build of custom todoist fork (`codethread/todoist`, branch `codethread`)
 2. **Final stage** — node:22-slim + system deps + tool installation + PersonalConfigs integration
 
-Tool installation order: system packages → neovim → bun → claude binary → yt-dlp → todoist → playwright-cli → codex → gh → nushell.
+Tool installation order: system packages → neovim → bun → claude binary → yt-dlp → todoist → playwright-cli → codex → pi → gh → nushell.
 
 PersonalConfigs integration:
 1. Copy `oven/`, run `bun install` (dependency layer cache)
@@ -234,7 +256,7 @@ Filtered SSH config: macOS-only directives (`usekeychain`) stripped before mount
 
 - **Podman over Docker.** Rootless by default, UID remapping via `--userns=keep-id`, no daemon required. Aligns with NixOS packaging.
 
-- **Whitelist-based .containerignore.** Starts with `**` (ignore all), then whitelists `claude/`, `config/`, `home/`, `oven/`. Prevents accidental inclusion of large/sensitive directories (nix/, .git/, node_modules/).
+- **Whitelist-based .containerignore.** Starts with `**` (ignore all), then whitelists `claude/`, `pi/`, `config/`, `home/`, `oven/`, `specs/`, and `nix/` (plus root metadata files like `README.md`, `CLAUDE.md`, `Makefile`, `.gitignore`). This keeps the build context explicit while ensuring in-container access to Pi workflow/spec docs (`specs/README.md`) and Nix configuration files.
 
 - **Fresh git init in container.** `git init && git add .` instead of mounting the real `.git/`. Dotty requires a git repo (for .gitignore awareness), but full history is unnecessary and adds image size.
 
@@ -244,13 +266,13 @@ Filtered SSH config: macOS-only directives (`usekeychain`) stripped before mount
 
 - **cc-bridge allowlist model.** The bridge daemon only executes commands explicitly listed via `--allow`. This prevents arbitrary host command execution from within the container. Commands are typically things like `obsidian` (open files) — not interactive tools.
 
-- **Session key translation.** Host paths contain absolute paths (e.g., `/home/codethread/dev/myproject`), but the container sees `/vm/myproject`. Mapping between keys lets session history persist across container restarts while paths remain valid in each context.
+- **Session key translation (Claude + Pi).** Host paths contain absolute paths (e.g., `/home/codethread/dev/myproject`), but the container sees `/vm/myproject`. Mapping between keys lets session history persist across container restarts while paths remain valid in each context for both CLIs.
 
 ## 6. Testing
 
 **Smoke test (`cc-sandbox-smoke`):**
 - Runs inside container via `cc-sandbox -r "nu -c 'cc-sandbox-smoke [flags]'"`
-- Local checks: binary existence (claude, codex, playwright-cli, bun, nu), versions, PATH (includes ~/.local/bin, ~/.bun/bin), CODEX_HOME set, settings.json mounted, codex config linked, project under /vm/, neovim plugins loaded
+- Local checks: binary existence (claude, codex, pi, playwright-cli, bun, nu), versions, PATH (includes ~/.local/bin, ~/.bun/bin), CODEX_HOME and PI_CODING_AGENT_DIR set, settings.json mounted, codex config linked, pi config linked, project under /vm/, neovim plugins loaded
 - Model checks (`--with-models`): headless Claude ping (haiku, 30s timeout), headless Codex exec (read-only sandbox, 30s timeout)
 - Output: formatted table with check/ok/detail columns
 - Full invocation from host: `nu -I ~/PersonalConfigs/config/nushell/scripts -c 'use ct/interactive/claude.nu *; cc-sandbox-smoke --stream --no-cache --with-models'`

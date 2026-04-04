@@ -1,8 +1,26 @@
 # NixOS-only utilities — boot target, store info, Wi-Fi helpers
 
+def _dotfiles_root [] {
+	let fallback = ($env.DOTFILES? | default ($env.HOME | path join "PersonalConfigs"))
+	let git_root = (do { ^git rev-parse --show-toplevel } | complete)
+
+	if $git_root.exit_code == 0 {
+		let root = ($git_root.stdout | str trim)
+		if (($root | path join "nix") | path exists) and (($root | path join "config/nushell/env.nu") | path exists) {
+			return $root
+		}
+	}
+
+	$fallback
+}
+
+def _flake_ref [profile: string] {
+	$"path:((_dotfiles_root | path join 'nix'))#($profile)"
+}
+
 # Rebuild and set boot target (use when switching would change critical components e.g. dbus)
 export def nrb [profile: string = "homelab"] {
-	sudo nixos-rebuild boot --flake $"path:($env.HOME)/PersonalConfigs/nix#($profile)"
+	sudo nixos-rebuild boot --flake (_flake_ref $profile)
 }
 
 # Show current store size and generation count

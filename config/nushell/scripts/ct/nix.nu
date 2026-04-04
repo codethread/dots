@@ -26,8 +26,26 @@ def _resolve_profile [profile: string] {
 	}
 }
 
+def _dotfiles_root [] {
+	let fallback = ($env.DOTFILES? | default ($env.HOME | path join "PersonalConfigs"))
+	let git_root = (do { ^git rev-parse --show-toplevel } | complete)
+
+	if $git_root.exit_code == 0 {
+		let root = ($git_root.stdout | str trim)
+		if (($root | path join "nix") | path exists) and (($root | path join "config/nushell/env.nu") | path exists) {
+			return $root
+		}
+	}
+
+	$fallback
+}
+
+def _flake_path [] {
+	(_dotfiles_root | path join "nix")
+}
+
 def _flake_ref [profile: string] {
-	$"path:($env.HOME)/PersonalConfigs/nix#($profile)"
+	$"path:((_flake_path))#($profile)"
 }
 
 def _hm_user_for_profile [profile: string] {
@@ -120,7 +138,7 @@ def _kernel_reboot_check [] {
 
 # Update flake inputs
 export def nfu [] {
-	nix flake update --flake $"path:($env.HOME)/PersonalConfigs/nix"
+	nix flake update --flake $"path:((_flake_path))"
 }
 
 # Delete all old generations and run garbage collection
@@ -136,7 +154,7 @@ export def nix-clean-older [days: int = 14] {
 # List home-manager packages for a profile
 export def nix-packages [profile?: string] {
 	let p = (_resolve_profile ($profile | default (_default_profile)))
-	let flake = $"path:($env.HOME)/PersonalConfigs/nix"
+	let flake = $"path:((_flake_path))"
 	let config_type = if ($p in ["home" "work" "work-adamhall"]) { "darwinConfigurations" } else { "nixosConfigurations" }
 	let attr = $"($flake)#($config_type).($p).config.home-manager.users.($env.USER).home.packages"
 	^nix eval $attr --apply "map (p: p.name)" --json | from json | sort | uniq
@@ -145,14 +163,14 @@ export def nix-packages [profile?: string] {
 # List system-level packages for a profile
 export def nix-sys-packages [profile?: string] {
 	let p = (_resolve_profile ($profile | default (_default_profile)))
-	let flake = $"path:($env.HOME)/PersonalConfigs/nix"
+	let flake = $"path:((_flake_path))"
 	let config_type = if ($p in ["home" "work" "work-adamhall"]) { "darwinConfigurations" } else { "nixosConfigurations" }
 	let attr = $"($flake)#($config_type).($p).config.environment.systemPackages"
 	^nix eval $attr --apply "map (p: p.name)" --json | from json | sort | uniq
 }
 
 def _brew_config_attr [profile: string, attr: string] {
-	let flake = $"path:($env.HOME)/PersonalConfigs/nix"
+	let flake = $"path:((_flake_path))"
 	^nix eval $"($flake)#darwinConfigurations.($profile).config.homebrew.($attr)" --json
 		| from json
 		| get name
@@ -202,7 +220,7 @@ export def nrs-check [profile?: string] {
 
 # Show all flake outputs
 export def nix-outputs [] {
-	^nix flake show $"path:($env.HOME)/PersonalConfigs/nix"
+	^nix flake show $"path:((_flake_path))"
 }
 
 # Smoke-test that the local Nix-managed environment and linked configs are present.
@@ -211,7 +229,7 @@ export def nix-smoke [
 	--skip-flake # skip nix eval checks against the flake
 ] {
 	let p = (_resolve_profile ($profile | default (_default_profile)))
-	let flake = $"path:($env.HOME)/PersonalConfigs/nix"
+	let flake = $"path:((_flake_path))"
 	let config_type = if ($p in ["home" "work" "work-adamhall"]) { "darwinConfigurations" } else { "nixosConfigurations" }
 	let hm_user = (_hm_user_for_profile $p)
 	let dotfiles = ($env.DOTFILES? | default ($env.HOME | path join "PersonalConfigs"))
@@ -231,7 +249,7 @@ export def nix-smoke [
 		])
 	}
 
-	for cmd in [nix nu nvim tmux git rg fd jq bun claude codex playwright-cli cc-sandbox] {
+	for cmd in [nix nu nvim tmux git rg fd jq bun claude codex pi playwright-cli cc-sandbox] {
 		let resolved = (_which-path $cmd)
 		$checks = ($checks | append (_smoke-check $"binary: ($cmd)" ($resolved != null) ($resolved | default "missing")))
 	}
@@ -241,6 +259,11 @@ export def nix-smoke [
 	$checks = ($checks | append (_smoke-check $"binary: ($platform_cmd)" ($platform_path != null) ($platform_path | default "missing")))
 
 	for file_check in [
+		{
+			check: "config: pi settings"
+			actual: ($env.HOME | path join ".pi/agent/settings.json")
+			expected: ($dotfiles | path join "pi/settings.json")
+		}
 		{
 			check: "config: nushell env"
 			actual: ($xdg_config | path join "nushell/env.nu")

@@ -1,8 +1,8 @@
-{ pkgs, pkgsMaster ? null, codexCliPackage ? null, config, lib, ... }:
+{ pkgs, pkgsMaster ? null, config, lib, ... }:
 
 let
   agentPkgSet = if pkgsMaster == null then pkgs else pkgsMaster;
-  codexPackage = if codexCliPackage == null then agentPkgSet.codex else codexCliPackage;
+  llmAgents = agentPkgSet."llm-agents";
 
   # Pre-compiled treesitter parsers — avoids recompilation on every nvim
   # launch (nix store GC invalidates dynamically-compiled .so paths)
@@ -163,9 +163,10 @@ in {
     playwright-cli
     agentPkgSet.typescript
     agentPkgSet.typescript-language-server
-    codexPackage
-    agentPkgSet.opencode
-    agentPkgSet.claude-code
+    llmAgents.codex
+    llmAgents.opencode
+    llmAgents.claude-code
+    llmAgents.pi
 
     # --- Languages ---
     go

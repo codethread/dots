@@ -4,13 +4,14 @@ Architecture and design rationale are in `specs/nix-infra.md`. This file covers 
 
 ## Dual Channel Pattern
 
-Two nixpkgs channels: `pkgs` (unstable) and `pkgsMaster` (bleeding edge). In `common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available. Use `agentPkgSet.*` for packages needing latest nixpkgs-master. Use bare names for overlay or stable packages.
+Two nixpkgs channels: `pkgs` (unstable) and `pkgsMaster` (bleeding edge). In `common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available. Use `agentPkgSet.*` for fast-moving supporting packages from nixpkgs-master. Agent CLIs (`claude-code`, `codex`, `opencode`, `pi`) come from the `llm-agents.nix` overlay via `agentPkgSet."llm-agents".*`.
 
 ## Adding a New Package
 
 1. **Check nixpkgs first**: `nix search nixpkgs <name>` or `nix eval 'nixpkgs#<attr>'`
-2. If it exists — add to `features/common.nix` directly
-3. If not — create an overlay (see below)
+2. If it is an agent CLI already provided by `llm-agents.nix` — add `agentPkgSet."llm-agents".<name>` in `features/common.nix`
+3. If it exists in nixpkgs — add to `features/common.nix` directly
+4. If not — create an overlay (see below)
 
 ## Adding an Overlay
 

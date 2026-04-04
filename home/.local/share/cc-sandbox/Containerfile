@@ -4,7 +4,7 @@
 # Includes: Node.js and Bun for web dev projects,
 # Python3 for Claude Code inline scripting,
 # Chromium + playwright-cli for browser automation, codex CLI for code-review,
-# and yt-dlp for media downloads.
+# pi for minimal terminal agent workflows, and yt-dlp for media downloads.
 #
 # The wrapping script (cc-sandbox) handles:
 #   - Building this image via podman
@@ -115,12 +115,13 @@ RUN if [ -n "$YT_DLP_VERSION" ]; then \
 # Todoist CLI — built from Go source in earlier stage
 COPY --from=todoist-build /todoist /home/user/.local/bin/todoist
 
-# Playwright CLI + Codex CLI — browser automation and code-review support.
+# Playwright CLI + Codex CLI + Pi — browser automation and agent CLIs.
 # Installed to ~/.local/bin via npm prefix (user can't write /usr/lib).
 ARG PLAYWRIGHT_CLI_VERSION=latest
 ARG CODEX_VERSION=0.116.0
+ARG PI_VERSION=0.64.0
 RUN npm config set prefix "$HOME/.local" \
-    && npm install -g "@playwright/cli@${PLAYWRIGHT_CLI_VERSION}" "@openai/codex@${CODEX_VERSION}"
+    && npm install -g "@playwright/cli@${PLAYWRIGHT_CLI_VERSION}" "@openai/codex@${CODEX_VERSION}" "@mariozechner/pi-coding-agent@${PI_VERSION}"
 # Point playwright-cli at the Debian chromium; without this it tries to find
 # Chrome/Edge and auto-generates .playwright/cli.config.json in the project dir.
 ENV PLAYWRIGHT_MCP_EXECUTABLE_PATH="/usr/bin/chromium"

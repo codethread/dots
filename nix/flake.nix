@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-master.url = "github:nixos/nixpkgs";
-    codex-cli-nix.url = "github:sadjow/codex-cli-nix";
+    llm-agents.url = "github:numtide/llm-agents.nix";
 
     todoist-src = {
       url = "github:codethread/todoist/codethread";
@@ -27,8 +27,10 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-master, codex-cli-nix, todoist-src, playwright-cli-src, nix-darwin, home-manager, ... }:
+  outputs = { self, nixpkgs, nixpkgs-master, llm-agents, todoist-src, playwright-cli-src, nix-darwin, home-manager, ... }:
   let
+    llmAgentsOverlay = llm-agents.overlays.default;
+
     todoistOverlay = final: prev: {
       todoist-cli = final.buildGoModule {
         pname = "todoist";
@@ -54,10 +56,10 @@
     };
 
     # Each host picks a profile from nix/profiles/ and binds it to one user.
-    hmFor = username: profile: pkgsMaster: codexCliPackage: {
+    hmFor = username: profile: pkgsMaster: {
       home-manager.useGlobalPkgs = true;
       home-manager.useUserPackages = true;
-      home-manager.extraSpecialArgs = { inherit pkgsMaster codexCliPackage; };
+      home-manager.extraSpecialArgs = { inherit pkgsMaster; };
       home-manager.users = {
         "${username}" = import profile;
       };
@@ -67,19 +69,19 @@
       system = "aarch64-darwin"; # Intel Mac: x86_64-darwin
       specialArgs = { pkgsMaster = pkgsMasterFor "aarch64-darwin"; };
       modules = [
-        { nixpkgs.overlays = [ todoistOverlay playwrightCliOverlay ]; }
+        { nixpkgs.overlays = [ llmAgentsOverlay todoistOverlay playwrightCliOverlay ]; }
         hostModule
         home-manager.darwinModules.home-manager
         (hmFor
           username
           profile
-          (pkgsMasterFor "aarch64-darwin")
-          codex-cli-nix.packages.aarch64-darwin.default)
+          (pkgsMasterFor "aarch64-darwin"))
       ];
     };
 
     pkgsMasterFor = system: import nixpkgs-master {
       inherit system;
+      overlays = [ llmAgentsOverlay ];
       config.allowUnfree = true;
       config.allowUnsupportedSystem = true;
     };
@@ -108,14 +110,13 @@
       system = "x86_64-linux";
       specialArgs = { pkgsMaster = pkgsMasterFor "x86_64-linux"; };
       modules = [
-        { nixpkgs.overlays = [ todoistOverlay playwrightCliOverlay ]; }
+        { nixpkgs.overlays = [ llmAgentsOverlay todoistOverlay playwrightCliOverlay ]; }
         ./hosts/nixos/homelab
         home-manager.nixosModules.home-manager
         (hmFor
           "codethread"
           ./profiles/homelab.nix
-          (pkgsMasterFor "x86_64-linux")
-          codex-cli-nix.packages.x86_64-linux.default)
+          (pkgsMasterFor "x86_64-linux"))
       ];
     };
 
@@ -124,14 +125,13 @@
       system = "aarch64-linux";
       specialArgs = { pkgsMaster = pkgsMasterFor "aarch64-linux"; };
       modules = [
-        { nixpkgs.overlays = [ todoistOverlay playwrightCliOverlay ]; }
+        { nixpkgs.overlays = [ llmAgentsOverlay todoistOverlay playwrightCliOverlay ]; }
         ./hosts/nixos/vm-aarch
         home-manager.nixosModules.home-manager
         (hmFor
           "codethread"
           ./profiles/vm.nix
-          (pkgsMasterFor "aarch64-linux")
-          codex-cli-nix.packages.aarch64-linux.default)
+          (pkgsMasterFor "aarch64-linux"))
       ];
     };
   };

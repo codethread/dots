@@ -35,6 +35,12 @@ excludes = ["**/settings.json", "**/settings.local.json"]
 # target = "~/.claude/agents"
 # link_directory = true
 
+# Pi user config
+[[project]]
+name = "pi"
+origin = "~/PersonalConfigs/pi"
+target = "~/.pi/agent"
+
 [[project]]
 name = "work"
 origin = "~/workfiles/home"

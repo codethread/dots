@@ -7,6 +7,12 @@
 !home/**
 !oven/
 !oven/**
+!pi/
+!pi/**
+!specs/
+!specs/**
+!nix/
+!nix/**
 !.gitignore
 !CLAUDE.md
 !Makefile

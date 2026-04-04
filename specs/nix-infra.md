@@ -1,7 +1,7 @@
 # Nix Infrastructure Specification
 
 **Status:** Implemented
-**Last Updated:** 2026-04-02
+**Last Updated:** 2026-04-04
 
 ## 1. Overview
 
@@ -101,6 +101,8 @@ make system [PROFILE=<name>]
 └─ nrs [profile] [--update]
    ├─ [--update] nfu → nix flake update
    ├─ Resolve profile → flake reference
+   ├─ Prefer current git worktree root when it looks like the dotfiles repo
+   ├─ Else fall back to `$DOTFILES` / `~/PersonalConfigs`
    ├─ darwin-rebuild switch / nixos-rebuild switch
    └─ [NixOS] Kernel reboot check
 ```
@@ -112,7 +114,7 @@ Three ordered activation scripts run during every rebuild:
 1. **bootDotfiles** (NixOS only, after `installPackages`) — clones PersonalConfigs if missing
 2. **userBootstrap** (after `writeBoundary`) — creates directory structure, clones vendor repos (nu_scripts, gitwatch, Alfred on macOS), sets git hooks path
 3. **clone-\<name\>** (per tmux service, after `installPackages`) — each `tmux-service.nix` instance generates its own activation hook that clones its repo via SSH with a 5s BatchMode auth test; skips gracefully if SSH auth unavailable
-4. **dottyLink** (after `userBootstrap`) — symlinks `config/` to `$XDG_CONFIG_HOME` via dotty
+4. **dottyLink** (after `userBootstrap`) — symlinks dotfiles into place via dotty (see [dotty spec](./dotty.md))
 
 ### Tmux Service Module
 
@@ -150,13 +152,15 @@ NixOS defaults to `homelab`. The `_resolve_profile` function handles the special
 
 | Variable | Value |
 |---|---|
-| `DOTFILES` | `~/PersonalConfigs` |
+| `DOTFILES` | `~/PersonalConfigs` by default |
 | `EDITOR` | `nvim` |
 | `SHELL` | `<pkgs.nushell>/bin/nu` |
 | `XDG_CONFIG_HOME` | `~/.config` (macOS: `~/PersonalConfigs/config` during bootstrap) |
 | `XDG_DATA_HOME` | `~/.local/share` |
 | `XDG_STATE_HOME` | `~/.local/state` |
 | `XDG_CACHE_HOME` | `~/.local/cache` |
+
+For interactive shells and Nix-managed environments, `DOTFILES` remains the canonical clone path. Rebuild helpers (`nrs`, `nfu`, `nrb`, related flake queries) additionally detect the current git worktree root and use it when invoked from a valid dotfiles checkout. The root `Makefile` also overrides `DOTFILES` to the current checkout so `make link` / `make system` operate on the active worktree.
 
 ### Network Secrets
 
@@ -168,22 +172,22 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 | Command | Purpose |
 |---|---|
-| `nrs [profile] [--update]` | Rebuild and switch system configuration |
-| `nfu` | Update flake inputs |
+| `nrs [profile] [--update]` | Rebuild and switch system configuration, preferring the current dotfiles worktree when valid |
+| `nfu` | Update flake inputs for the current dotfiles worktree when valid |
 | `nrs-flake-host [profile]` | Resolve current machine's flake host name |
 | `nrs-check [profile]` | Validate homebrew taps/brews/casks (Darwin only) |
 | `nix-clean` | Delete all old generations + GC |
 | `nix-clean-older [days=14]` | Delete generations older than N days + GC |
-| `nix-packages [profile]` | List home-manager packages for a profile |
-| `nix-sys-packages [profile]` | List system-level packages for a profile |
-| `nix-smoke [profile] [--skip-flake]` | Health check: PATH, binaries, config symlinks, flake eval |
-| `nix-outputs` | Show all flake outputs |
+| `nix-packages [profile]` | List home-manager packages for a profile from the current flake path |
+| `nix-sys-packages [profile]` | List system-level packages for a profile from the current flake path |
+| `nix-smoke [profile] [--skip-flake]` | Health check: PATH, binaries (including `pi`), config symlinks (including `~/.pi/agent/settings.json`), flake eval against the current flake path |
+| `nix-outputs` | Show all flake outputs from the current flake path |
 
 ### CLI Commands (Nushell — `ct/nixos.nu`, NixOS only)
 
 | Command | Purpose |
 |---|---|
-| `nrb [profile=homelab]` | Set boot target without switching |
+| `nrb [profile=homelab]` | Set boot target without switching, preferring the current dotfiles worktree when valid |
 | `nix-store-info` | Show store size and generation count |
 | `nix-wifi-setup [--ssid --env-file --var]` | Interactive WiFi password configuration |
 | `nix-wifi-restart` | Restart NetworkManager profiles service |
@@ -193,9 +197,9 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 | Target | Action |
 |---|---|
-| `make system` | Rebuild nix system via `nrs` |
-| `make link` | Symlink dotfiles via `dotty link --no-cache` |
-| `make build` | Build oven/ tools via `nix develop` + `bun run verify` |
+| `make system` | Rebuild nix system via local `ct/nix.nu` from the current checkout |
+| `make link` | Symlink dotfiles from the current checkout via `dotty link --no-cache` |
+| `make build` | Build `oven/` tools from the current checkout via `nix develop` + `bun run verify` |
 | `make all` | `link` → `build` → `system` |
 
 ### Git Pre-Commit Hook
@@ -228,6 +232,8 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 - **XDG_CONFIG_HOME points to repo during bootstrap** — `boot.sh` sets `XDG_CONFIG_HOME="${DOTFILES}/config"` so tools find configs before dotty has run. After `dottyLink` activation, configs are symlinked to `~/.config/`.
 
+- **Current worktree preferred for rebuild commands** — The canonical clone path remains `~/PersonalConfigs`, but flake-backed Nushell commands and the root `Makefile` prefer the current git worktree when it contains the expected repo structure. This allows testing changes from feature branches and linked worktrees without rewriting the base shell environment.
+
 ## 6. Testing
 
 ### Automated
@@ -236,7 +242,7 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 ### Manual
 
-- **`nix-smoke [profile]`** — Comprehensive health check verifying: PATH entries present, required binaries on PATH, config symlinks valid, flake evaluates without error. Returns structured table of pass/fail results.
+- **`nix-smoke [profile]`** — Comprehensive health check verifying: PATH entries present, required binaries on PATH (including `pi`), config symlinks valid (including `~/.pi/agent/settings.json`), flake evaluates without error. Returns structured table of pass/fail results.
 - **`nrs-check [profile]`** — Darwin-only. Validates all homebrew taps, brews, and casks resolve without error before running a rebuild.
 - **`cc-sandbox-smoke`** — End-to-end container rebuild and headless Claude/Codex execution test (expensive, not routine).
 

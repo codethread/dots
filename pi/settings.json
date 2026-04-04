@@ -1,0 +1,13 @@
+{
+  "lastChangelogVersion": "0.64.0",
+  "quietStartup": true,
+  "editorPaddingX": 1,
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.4",
+  "defaultThinkingLevel": "medium",
+  "enabledModels": [
+    "openai-codex/gpt-5.3-codex",
+    "openai-codex/gpt-5.4",
+    "openai-codex/gpt-5.4-mini"
+  ]
+}

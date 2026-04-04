@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# :module: Pi wrapper with minimal context-aware system prompts
+#
+# Adds only:
+#   - work vs personal git hosting hint
+#   - sandbox/container hint when relevant
+
+set -euo pipefail
+
+PROMPT_WORK="this repo uses gitlab (via glab). Never force push — all branches may be shared."
+PROMPT_PERSONAL="this repo uses github (via gh)"
+PROMPT_SANDBOX="You are running inside a container. If a required tool or binary is missing, stop immediately and tell the user rather than searching for alternatives."
+
+show_help() {
+    cat <<'EOF'
+pim - Pi wrapper with minimal context-aware prompts
+
+Usage:
+  pim [--dry-run] [-- pi-args...]
+
+Adds only:
+  - work vs personal git hosting hint
+  - sandbox/container hint when relevant
+
+Examples:
+  pim
+  pim -p "review this repo"
+  pim -- --model sonnet:high
+EOF
+}
+
+DRY_RUN=false
+PASSTHROUGH=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry-run) DRY_RUN=true; shift ;;
+        -h|--help)
+            show_help
+            exit 0 ;;
+        --) shift; PASSTHROUGH+=("$@"); break ;;
+        *) PASSTHROUGH+=("$1"); shift ;;
+    esac
+done
+
+CWD="${CC_HOST_PWD:-$PWD}"
+PROMPTS=()
+
+if [[ "$CWD" == */work/* ]]; then
+    PROMPTS+=("$PROMPT_WORK")
+else
+    PROMPTS+=("$PROMPT_PERSONAL")
+fi
+
+if [[ -n "${CC_HOST_PWD:-}" || -n "${CC_SANDBOX:-}" ]]; then
+    PROMPTS+=("$PROMPT_SANDBOX")
+fi
+
+ARGS=()
+if [[ ${#PROMPTS[@]} -gt 0 ]]; then
+    JOINED="$(printf '%s\n' "${PROMPTS[@]}")"
+    ARGS+=(--append-system-prompt "$JOINED")
+fi
+ARGS+=("${PASSTHROUGH[@]}")
+
+if [[ "$DRY_RUN" == true ]]; then
+    printf '%s\n' pi "${ARGS[@]}"
+    exit 0
+fi
+
+exec pi "${ARGS[@]}"
