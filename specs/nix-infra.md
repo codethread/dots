@@ -94,6 +94,8 @@ boot/boot.sh
 └─ [NixOS] Commit hardware-configuration.nix if git identity set
 ```
 
+`boot/boot.sh` is also responsible for the NixOS hardware file handoff. Keep its path logic in sync with the real host layout under `nix/hosts/nixos/`.
+
 ### Rebuild Flow (Existing Machine)
 
 ```
@@ -147,6 +149,15 @@ macOS profiles are resolved from username:
 | (other) | `home` |
 
 NixOS defaults to `homelab`. The `_resolve_profile` function handles the special case where profile `work` + username `adamhall` maps to `work-adamhall`.
+
+For bootstrap-only hardware file management, `boot/boot.sh` may need an additional profile → host-directory mapping when the flake output name differs from the on-disk host directory. Current example:
+
+| NixOS profile | Host directory |
+|---|---|
+| `homelab` | `nix/hosts/nixos/homelab` |
+| `vm` | `nix/hosts/nixos/vm-aarch` |
+
+When adding or renaming NixOS hosts, update both `nix/flake.nix` and `boot/boot.sh` together.
 
 ### Environment Variables (Set by All Configs)
 

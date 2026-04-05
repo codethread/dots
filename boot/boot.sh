@@ -49,6 +49,17 @@ resolve_profile() {
   esac
 }
 
+resolve_nixos_host_dir() {
+  case "$1" in
+    vm)
+      echo "vm-aarch"
+      ;;
+    *)
+      echo "$1"
+      ;;
+  esac
+}
+
 while [ $# -gt 0 ]; do
   case "$1" in
     -p|--profile)
@@ -140,7 +151,8 @@ fi
 
 if [ "$IS_NIXOS" -eq 1 ]; then
   _hw_src="/etc/nixos/hardware-configuration.nix"
-  _hw_dest="${DOTFILES}/nix/hosts/${NIX_PROFILE}/hardware-configuration.nix"
+  _nixos_host_dir="$(resolve_nixos_host_dir "$NIX_PROFILE")"
+  _hw_dest="${DOTFILES}/nix/hosts/nixos/${_nixos_host_dir}/hardware-configuration.nix"
   if [ -f "${_hw_src}" ] && grep -q '{ \.\.\. }: { }' "${_hw_dest}" 2>/dev/null; then
     printf "${_cyan}( ◕ ◡ ◕ )${_reset} Copying hardware configuration from installer\n"
     cp "${_hw_src}" "${_hw_dest}"
@@ -229,7 +241,8 @@ nu \
 #: commit {{{
 
 if [ "$IS_NIXOS" -eq 1 ]; then
-  _hw_file="nix/hosts/${NIX_PROFILE}/hardware-configuration.nix"
+  _nixos_host_dir="$(resolve_nixos_host_dir "$NIX_PROFILE")"
+  _hw_file="nix/hosts/nixos/${_nixos_host_dir}/hardware-configuration.nix"
   if git -C "${DOTFILES}" status --porcelain -- "${_hw_file}" | grep -q .; then
     if git -C "${DOTFILES}" config user.name >/dev/null 2>&1 \
       && git -C "${DOTFILES}" config user.email >/dev/null 2>&1; then
