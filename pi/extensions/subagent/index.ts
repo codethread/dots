@@ -428,6 +428,44 @@ const SubagentParams = Type.Object({
 });
 
 export default function (pi: ExtensionAPI) {
+	pi.registerCommand("debug-agents", {
+		description: "Send discovered subagent information into the conversation",
+		handler: async (_args, ctx) => {
+			const scopes: AgentScope[] = ["user", "project", "both"];
+			const sections: string[] = [];
+
+			for (const scope of scopes) {
+				const discovery = discoverAgents(ctx.cwd, scope);
+				const lines: string[] = [];
+				lines.push(`Scope: ${scope}`);
+				lines.push(`Project agents dir: ${discovery.projectAgentsDir ?? "(none)"}`);
+				if (discovery.agents.length === 0) {
+					lines.push("Agents: (none)");
+				} else {
+					lines.push("Agents:");
+					for (const agent of discovery.agents) {
+						lines.push(`- ${agent.name} [${agent.source}]`);
+						lines.push(`  file: ${agent.filePath}`);
+						if (agent.model) lines.push(`  resolved model: ${agent.model}`);
+						if (agent.tools?.length) lines.push(`  normalized tools: ${agent.tools.join(", ")}`);
+						else lines.push("  normalized tools: (default toolset)");
+					}
+				}
+				sections.push(lines.join("\n"));
+			}
+
+			const content = `Here are the currently discovered subagents:\n\n${sections.join("\n\n")}`;
+
+			if (!ctx.isIdle()) {
+				pi.sendUserMessage(content, { deliverAs: "followUp" });
+				if (ctx.hasUI) ctx.ui.notify("Queued agent debug info as follow-up", "info");
+				return;
+			}
+
+			pi.sendUserMessage(content);
+		},
+	});
+
 	pi.registerTool({
 		name: "subagent",
 		label: "Subagent",

@@ -1,7 +1,7 @@
 # Agentic Configuration Specification
 
 **Status:** Implemented
-**Last Updated:** 2026-04-04
+**Last Updated:** 2026-04-05
 
 ## 1. Overview
 
@@ -25,7 +25,7 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 - Plugin implementation details — plugins live in `~/dev/projects/claude-code-plugins` (separate repo)
 - cc-notify daemon internals — external project at `~/dev/projects/cc-notify`
 - Dotty implementation — dotty is a general-purpose symlink manager, not agentic-specific
-- Project-local `.claude/` config — each repo's agents, skills, and settings overrides are that repo's concern
+- Project-local `.claude/` config authoring beyond the shared Pi compatibility shim
 
 ## 2. Architecture
 
@@ -56,8 +56,9 @@ Four configuration layers compose at runtime:
 │ Layer 3: Project-local overrides (per-repo)         │
 │   .claude/settings.json    (repo-specific hooks)    │
 │   .claude/settings.local.json (machine-local)       │
-│   .claude/agents/, .claude/skills/                  │
-│   (not covered by this spec — each repo's own)      │
+│   .claude/agents/, .claude/skills/, .claude/commands/ │
+│   .pi/{agents,skills,prompts} may be generated as   │
+│   symlinks back to .claude for Pi compatibility     │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -238,7 +239,10 @@ Bash wrapper prepending minimal context-aware system prompts to `pi` CLI:
 
 - `AGENTS.md`: global working-style instructions loaded by Pi
 - `APPEND_SYSTEM.md`: appended system prompt for tool/capability realism and concise output
-- `settings.json`: global Pi defaults (`anthropic` provider, `medium` thinking)
+- `settings.json`: global Pi defaults and enabled model list used by the subagent compatibility shim
+- `extensions/claude-sync.ts`: project-local Pi extension that treats `.claude/` as source-of-truth and creates `.pi/skills -> .claude/skills`, `.pi/agents -> .claude/agents`, and flattened `.pi/prompts/*.md -> .claude/commands/**/*.md` symlinks on startup
+- `extensions/subagent/agents.ts`: project-local agent loader for the `subagent` extension; follows symlinked `.pi/agents`, normalizes Claude tool names to Pi tools, strips unsupported tools, and resolves Claude model aliases like `sonnet`/`haiku` to concrete enabled OpenAI models from `pi/settings.json`
+- `extensions/subagent/index.ts`: adds `/debug-agents` to show discovered agents with resolved model and normalized tools
 - `pim` adds runtime context-specific prompt fragments for work/personal Git hosting and sandbox awareness
 - Machine-local state stays outside the repo: `auth.json`, `models.json`, `sessions/`
 
@@ -294,6 +298,8 @@ Disables Ctrl+A in Global context.
 - **x-agents/ prefix convention.** Disabled agents live in `claude/x-agents/` — the prefix keeps them out of Claude's discovery path while keeping them version-controlled for re-enablement.
 
 - **Hook I/O via stdin/stdout JSON.** Hooks receive structured input on stdin and return structured output on stdout. Exit code 2 blocks the operation. This matches Claude Code's hook protocol and allows both TypeScript and Bash implementations.
+
+- **`.claude` as project source of truth for reusable agent assets.** A project-local Pi extension creates `.pi` symlinks back to `.claude` so Pi can reuse Claude-authored skills, agents, and nested commands with minimal duplication.
 
 - **Wrapper-injected system prompts.** Shell wrappers add context-dependent prompts at launch rather than embedding them in settings.json. `cl` injects richer Claude-specific guidance (repo type, concurrency, concision, tool realism, sandbox awareness), while `pim` intentionally stays minimal and injects only repo type and sandbox awareness. This keeps prompts context-dependent without polluting global config.
 
