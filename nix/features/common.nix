@@ -189,6 +189,8 @@ in {
     fd
     ripgrep
     jq
+    yq
+    dasel
     sd
     tree
     dust

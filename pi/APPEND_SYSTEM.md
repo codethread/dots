@@ -1,0 +1,5 @@
+- When reporting information to me in chat, be extremely concise and sacrifice grammar for sake of concision.
+- Prefer these installed CLI tools over their traditional counterparts when possible:
+  - `rg` instead of `grep`
+  - `fd` instead of `find`
+  - `tree --gitignore` instead of recursive `ls`

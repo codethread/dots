@@ -22,18 +22,12 @@ import { StringEnum } from "@mariozechner/pi-ai";
 import { type ExtensionAPI, getMarkdownTheme, withFileMutationQueue } from "@mariozechner/pi-coding-agent";
 import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
+import { formatContextDisplay, formatCost, formatModelDisplay } from "../usage-format.js";
 import { type AgentConfig, type AgentScope, discoverAgents } from "./agents.js";
 
 const MAX_PARALLEL_TASKS = 8;
 const MAX_CONCURRENCY = 4;
 const COLLAPSED_ITEM_COUNT = 10;
-
-function formatTokens(count: number): string {
-	if (count < 1000) return count.toString();
-	if (count < 10000) return `${(count / 1000).toFixed(1)}k`;
-	if (count < 1000000) return `${Math.round(count / 1000)}k`;
-	return `${(count / 1000000).toFixed(1)}M`;
-}
 
 function formatUsageStats(
 	usage: {
@@ -43,21 +37,41 @@ function formatUsageStats(
 		cacheWrite: number;
 		cost: number;
 		contextTokens?: number;
+		contextWindow?: number;
+		contextPercent?: number | null;
 		turns?: number;
 	},
-	model?: string,
+	options?: {
+		provider?: string;
+		model?: string;
+		thinkingLevel?: string;
+		reasoning?: boolean;
+		usingSubscription?: boolean;
+	},
 ): string {
 	const parts: string[] = [];
 	if (usage.turns) parts.push(`${usage.turns} turn${usage.turns > 1 ? "s" : ""}`);
-	if (usage.input) parts.push(`↑${formatTokens(usage.input)}`);
-	if (usage.output) parts.push(`↓${formatTokens(usage.output)}`);
-	if (usage.cacheRead) parts.push(`R${formatTokens(usage.cacheRead)}`);
-	if (usage.cacheWrite) parts.push(`W${formatTokens(usage.cacheWrite)}`);
-	if (usage.cost) parts.push(`$${usage.cost.toFixed(4)}`);
-	if (usage.contextTokens && usage.contextTokens > 0) {
-		parts.push(`ctx:${formatTokens(usage.contextTokens)}`);
+	if (usage.contextTokens || usage.contextWindow) {
+		parts.push(
+			formatContextDisplay({
+				contextTokens: usage.contextTokens,
+				contextWindow: usage.contextWindow,
+				contextPercent: usage.contextPercent,
+			}),
+		);
 	}
-	if (model) parts.push(model);
+	if (usage.cost || options?.usingSubscription) parts.push(formatCost(usage.cost, options?.usingSubscription, 4));
+	if (options?.model) {
+		parts.push(
+			formatModelDisplay({
+				provider: options.provider,
+				model: options.model,
+				thinkingLevel: options.thinkingLevel,
+				reasoning: options.reasoning,
+				includeProvider: Boolean(options.provider),
+			}),
+		);
+	}
 	return parts.join(" ");
 }
 
@@ -136,6 +150,8 @@ interface UsageStats {
 	cacheWrite: number;
 	cost: number;
 	contextTokens: number;
+	contextWindow?: number;
+	contextPercent?: number | null;
 	turns: number;
 }
 
@@ -147,7 +163,11 @@ interface SingleResult {
 	messages: Message[];
 	stderr: string;
 	usage: UsageStats;
+	provider?: string;
 	model?: string;
+	reasoning?: boolean;
+	usingSubscription?: boolean;
+	thinkingLevel?: string;
 	stopReason?: string;
 	errorMessage?: string;
 	step?: number;
@@ -233,6 +253,10 @@ function getPiInvocation(args: string[]): { command: string; args: string[] } {
 }
 
 type OnUpdateCallback = (partial: AgentToolResult<SubagentDetails>) => void;
+type ResolveModelInfo = (
+	provider: string | undefined,
+	model: string | undefined,
+) => { contextWindow?: number; reasoning?: boolean; usingSubscription?: boolean } | undefined;
 
 async function runSingleAgent(
 	defaultCwd: string,
@@ -244,6 +268,7 @@ async function runSingleAgent(
 	signal: AbortSignal | undefined,
 	onUpdate: OnUpdateCallback | undefined,
 	makeDetails: (results: SingleResult[]) => SubagentDetails,
+	resolveModelInfo?: ResolveModelInfo,
 ): Promise<SingleResult> {
 	const agent = agents.find((a) => a.name === agentName);
 
@@ -276,7 +301,7 @@ async function runSingleAgent(
 		messages: [],
 		stderr: "",
 		usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, contextTokens: 0, turns: 0 },
-		model: agent.model,
+		thinkingLevel: agent.model?.split(":").at(1),
 		step,
 	};
 
@@ -333,7 +358,18 @@ async function runSingleAgent(
 							currentResult.usage.cost += usage.cost?.total || 0;
 							currentResult.usage.contextTokens = usage.totalTokens || 0;
 						}
-						if (!currentResult.model && msg.model) currentResult.model = msg.model;
+						if (msg.provider) currentResult.provider = msg.provider;
+						if (msg.model) currentResult.model = msg.model;
+						const modelInfo = resolveModelInfo?.(currentResult.provider, currentResult.model);
+						if (modelInfo) {
+							currentResult.usage.contextWindow = modelInfo.contextWindow;
+							currentResult.reasoning = modelInfo.reasoning;
+							currentResult.usingSubscription = modelInfo.usingSubscription;
+						}
+						if (currentResult.usage.contextWindow && currentResult.usage.contextTokens > 0) {
+							currentResult.usage.contextPercent =
+								(currentResult.usage.contextTokens / currentResult.usage.contextWindow) * 100;
+						}
 						if (msg.stopReason) currentResult.stopReason = msg.stopReason;
 						if (msg.errorMessage) currentResult.errorMessage = msg.errorMessage;
 					}
@@ -496,6 +532,16 @@ export default function (pi: ExtensionAPI) {
 					projectAgentsDir: discovery.projectAgentsDir,
 					results,
 				});
+			const resolveModelInfo: ResolveModelInfo = (provider, model) => {
+				if (!provider || !model) return undefined;
+				const resolved = ctx.modelRegistry.find(provider, model);
+				if (!resolved) return undefined;
+				return {
+					contextWindow: resolved.contextWindow,
+					reasoning: resolved.reasoning,
+					usingSubscription: ctx.modelRegistry.isUsingOAuth(resolved),
+				};
+			};
 
 			if (modeCount !== 1) {
 				const available = agents.map((a) => `${a.name} (${a.source})`).join(", ") || "none";
@@ -568,6 +614,7 @@ export default function (pi: ExtensionAPI) {
 						signal,
 						chainUpdate,
 						makeDetails("chain"),
+						resolveModelInfo,
 					);
 					results.push(result);
 
@@ -648,6 +695,7 @@ export default function (pi: ExtensionAPI) {
 							}
 						},
 						makeDetails("parallel"),
+						resolveModelInfo,
 					);
 					allResults[index] = result;
 					emitParallelUpdate();
@@ -682,6 +730,7 @@ export default function (pi: ExtensionAPI) {
 					signal,
 					onUpdate,
 					makeDetails("single"),
+					resolveModelInfo,
 				);
 				const isError = result.exitCode !== 0 || result.stopReason === "error" || result.stopReason === "aborted";
 				if (isError) {
@@ -775,6 +824,14 @@ export default function (pi: ExtensionAPI) {
 				return text.trimEnd();
 			};
 
+			const getUsageOptions = (r: SingleResult) => ({
+				provider: r.provider,
+				model: r.model,
+				thinkingLevel: r.thinkingLevel,
+				reasoning: r.reasoning,
+				usingSubscription: r.usingSubscription,
+			});
+
 			if (details.mode === "single" && details.results.length === 1) {
 				const r = details.results[0];
 				const isError = r.exitCode !== 0 || r.stopReason === "error" || r.stopReason === "aborted";
@@ -812,7 +869,7 @@ export default function (pi: ExtensionAPI) {
 							container.addChild(new Markdown(finalOutput.trim(), 0, 0, mdTheme));
 						}
 					}
-					const usageStr = formatUsageStats(r.usage, r.model);
+					const usageStr = formatUsageStats(r.usage, getUsageOptions(r));
 					if (usageStr) {
 						container.addChild(new Spacer(1));
 						container.addChild(new Text(theme.fg("dim", usageStr), 0, 0));
@@ -828,7 +885,7 @@ export default function (pi: ExtensionAPI) {
 					text += `\n${renderDisplayItems(displayItems, COLLAPSED_ITEM_COUNT)}`;
 					if (displayItems.length > COLLAPSED_ITEM_COUNT) text += `\n${theme.fg("muted", "(Ctrl+O to expand)")}`;
 				}
-				const usageStr = formatUsageStats(r.usage, r.model);
+				const usageStr = formatUsageStats(r.usage, getUsageOptions(r));
 				if (usageStr) text += `\n${theme.fg("dim", usageStr)}`;
 				return new Text(text, 0, 0);
 			}
@@ -897,7 +954,7 @@ export default function (pi: ExtensionAPI) {
 							container.addChild(new Markdown(finalOutput.trim(), 0, 0, mdTheme));
 						}
 
-						const stepUsage = formatUsageStats(r.usage, r.model);
+						const stepUsage = formatUsageStats(r.usage, getUsageOptions(r));
 						if (stepUsage) container.addChild(new Text(theme.fg("dim", stepUsage), 0, 0));
 					}
 
@@ -982,7 +1039,7 @@ export default function (pi: ExtensionAPI) {
 							container.addChild(new Markdown(finalOutput.trim(), 0, 0, mdTheme));
 						}
 
-						const taskUsage = formatUsageStats(r.usage, r.model);
+						const taskUsage = formatUsageStats(r.usage, getUsageOptions(r));
 						if (taskUsage) container.addChild(new Text(theme.fg("dim", taskUsage), 0, 0));
 					}
 
