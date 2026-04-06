@@ -299,7 +299,7 @@ Disables Ctrl+A in Global context.
 
 - **Hook I/O via stdin/stdout JSON.** Hooks receive structured input on stdin and return structured output on stdout. Exit code 2 blocks the operation. This matches Claude Code's hook protocol and allows both TypeScript and Bash implementations.
 
-- **`.claude` as project source of truth for reusable agent assets.** A project-local Pi extension creates `.pi` symlinks back to `.claude` so Pi can reuse Claude-authored skills, agents, and nested commands with minimal duplication.
+- **`.claude` as project source of truth for reusable agent assets.** (Note: much of this configuration has moved to the `https://github.com/codethread/agents` repository) A project-local Pi extension creates `.pi` symlinks back to `.claude` so Pi can reuse Claude-authored skills, agents, and nested commands with minimal duplication.
 
 - **Wrapper-injected system prompts.** Shell wrappers add context-dependent prompts at launch rather than embedding them in settings.json. `cl` injects richer Claude-specific guidance (repo type, concurrency, concision, tool realism, sandbox awareness), while `pim` intentionally stays minimal and injects only repo type and sandbox awareness. This keeps prompts context-dependent without polluting global config.
 

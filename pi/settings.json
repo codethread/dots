@@ -1,11 +1,11 @@
 {
   "lastChangelogVersion": "0.64.0",
-  "theme": "rose-pine",
+  "theme": "rose-pine-moon",
   "quietStartup": true,
   "editorPaddingX": 1,
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.4",
-  "defaultThinkingLevel": "off",
+  "defaultThinkingLevel": "high",
   "enabledModels": [
     "openai-codex/gpt-5.4",
     "openai-codex/gpt-5.4-mini",
@@ -15,6 +15,7 @@
     "github-copilot/claude-opus-4.6"
   ],
   "packages": [
-    "../../dev/projects/claude-code-plugins"
+    "../../dev/projects/claude-code-plugins",
+    "../../dev/projects/agents"
   ]
 }
