@@ -17,10 +17,10 @@
   };
 
   # Expo Go (LAN) / Metro ports.
-  networking.firewall.allowedTCPPorts = [ 443 3001 5555 8081 19000 19001 19002 ];
+  networking.firewall.allowedTCPPorts = [ 443 3001 3888 5555 8081 19000 19001 19002 ];
   networking.firewall.allowedUDPPorts = [ 19000 19001 19002 ];
 
-  # Keep user systemd services running after logout so tmux sessions persist.
+  # Keep user systemd services running after logout (linger = true).
   users.users.codethread.linger = true;
 
   # Keyboard: remap Caps Lock to an additional Control key.

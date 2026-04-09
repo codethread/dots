@@ -30,16 +30,17 @@ Use an empty string `""` for the initial hash (`vendorHash`, `npmDepsHash`, etc.
 - `dontNpmBuild = true` — package has no build script
 - `env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"` — skip postinstall browser downloads
 
-## Adding a Tmux Service
+## Adding a Service
 
 In the host profile (e.g. `profiles/homelab.nix`):
 
 ```nix
 imports = [
-  (import ../services/tmux-service.nix {
+  (import ../services/repo-service.nix {
     name = "my-service";
     gitUrl = "git@github.com:codethread/my-repo.git";
     command = "{bun} start";  # {bun} and {dir} are substituted automatically
+    extraPackages = pkgs: [ pkgs.some-tool ];  # optional: extra binaries needed at runtime
   })
 ];
 
@@ -47,6 +48,8 @@ services.my-service.enable = true;
 services.my-service.workingDirectory = "/home/codethread/dev/projects/my-repo";
 ```
 
+Logs: `journalctl --user -u my-service -f`  
+Control: `systemctl --user restart my-service`  
 No flake input changes needed. Commands must start directly (no `make` / `bun install` / build pipelines).
 
 ## Validation

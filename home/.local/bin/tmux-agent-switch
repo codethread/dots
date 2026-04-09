@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+#:module: Tmux agentic-pane switcher
+#:
+#: Usage: tmux-agent-switch [--debug]
+#:
+#: Finds tmux panes running agentic CLIs (Claude, Codex, Pi, etc.), shows them
+#: in an fzf-tmux popup with a live pane preview, and jumps to the selection.
+#:
+#: Options:
+#:   --debug   Print pane list and their captured content to stdout (no fzf)
+#:   -h|--help Show this help
+
+set -u
+
+AGENT_REGEX='(claude([-/ ]code)?|@anthropic-ai/claude-code|\bcl\b|codex([-/ ]raw)?|\bpi\b|\bpim\b|opencode)'
+
+DEBUG_MODE=0
+
+usage() {
+	grep '^#:' "$0" | sed 's/^#: \{0,1\}//'
+	exit 0
+}
+
+for arg in "$@"; do
+	case "$arg" in
+		--debug) DEBUG_MODE=1 ;;
+		-h|--help) usage ;;
+	esac
+done
+
+if ! command -v tmux >/dev/null 2>&1; then
+	echo 'tmux-agent-switch: tmux is required' >&2
+	exit 1
+fi
+
+if [[ $DEBUG_MODE -eq 0 ]] && ! command -v fzf-tmux >/dev/null 2>&1; then
+	echo 'tmux-agent-switch: fzf-tmux is required' >&2
+	exit 1
+fi
+
+if [[ -z "${TMUX:-}" ]] && ! tmux list-clients >/dev/null 2>&1; then
+	echo 'tmux-agent-switch: no running tmux client found' >&2
+	exit 1
+fi
+
+pane_process() {
+	local pane_pid=$1
+	local child_line pid args exec self_line
+
+	child_line=$(pgrep -a -P "$pane_pid" 2>/dev/null | tail -n 1 || true)
+	if [[ -n "$child_line" ]]; then
+		pid=${child_line%% *}
+		args=${child_line#* }
+	else
+		self_line=$(ps -o pid=,args= -p "$pane_pid" 2>/dev/null | awk 'NF {print; exit}' || true)
+		[[ -z "$self_line" ]] && return 1
+		pid=$(awk '{print $1}' <<< "$self_line")
+		args=${self_line#* }
+	fi
+
+	exec=${args%% *}
+	exec=${exec##*/}
+	printf '%s\t%s\t%s\n' "$pid" "$exec" "$args"
+}
+
+agent_label() {
+	local exec=$1
+	local args=$2
+
+	if [[ "$exec" == "pi" || "$exec" == "pim" ]] || [[ "$args" =~ (^|[[:space:]])(pi|pim)([[:space:]]|$) ]]; then
+		echo 'pi'
+	elif [[ "$exec" == "codex" || "$exec" == "codex-raw" ]] || [[ "$args" =~ codex ]]; then
+		echo 'codex'
+	elif [[ "$exec" == "opencode" ]] || [[ "$args" =~ opencode ]]; then
+		echo 'opencode'
+	elif [[ "$exec" == "claude" || "$exec" == "cl" ]] || [[ "$args" =~ claude([-/ ]code)? ]] || [[ "$args" =~ @anthropic-ai/claude-code ]]; then
+		echo 'claude'
+	else
+		echo "$exec"
+	fi
+}
+
+# Outputs one line per matching pane:
+#   <active>|<session>|<window_name>|<tool>|<path>\t<pane_id>\t<window_target>
+#
+# Fields are pipe-delimited so align_candidates can parse them without
+# ambiguity before assembling the final space-padded display label.
+list_agent_panes() {
+	local pane_format
+	pane_format=$'#{session_name}\t#{window_index}\t#{window_name}\t#{pane_index}\t#{pane_id}\t#{pane_pid}\t#{pane_current_command}\t#{pane_current_path}\t#{pane_active}\t#{pane_tty}\t#{pane_title}'
+	while IFS=$'\t' read -r session_name window_index window_name pane_index pane_id pane_pid pane_current_command pane_current_path pane_active pane_tty pane_title; do
+		local fg pid exec args tool active_mark short_path
+		fg=$(pane_process "$pane_pid") || continue
+		[[ -z "$fg" ]] && continue
+		IFS=$'\t' read -r pid exec args <<< "$fg"
+
+		if [[ ! "$args" =~ $AGENT_REGEX ]] && [[ ! "$exec" =~ ^(claude|cl|codex|codex-raw|pi|pim|opencode|node)$ ]]; then
+			continue
+		fi
+
+		tool=$(agent_label "$exec" "$args")
+		if [[ "$tool" == "node" && ! "$args" =~ $AGENT_REGEX ]]; then
+			continue
+		fi
+
+		active_mark=' '
+		[[ "$pane_active" == '1' ]] && active_mark='*'
+
+		short_path="${pane_current_path/#$HOME/\~}"
+
+		printf '%s|%s|%s|%s|%s\t%s\t%s\n' \
+			"$active_mark" \
+			"$session_name" \
+			"$window_name" \
+			"$tool" \
+			"$short_path" \
+			"$pane_id" \
+			"$session_name:$window_index"
+	done < <(tmux list-panes -a -F "$pane_format")
+}
+
+# Reads pipe-delimited structured lines from list_agent_panes and re-emits
+# them with columns padded to the same width across all rows.
+align_candidates() {
+	local lines=()
+	while IFS= read -r line; do
+		lines+=("$line")
+	done
+
+	[[ ${#lines[@]} -eq 0 ]] && return
+
+	local max_session=0 max_window=0 max_tool=0
+	local display_part active session window tool path
+	for line in "${lines[@]}"; do
+		display_part="${line%%$'\t'*}"
+		IFS='|' read -r active session window tool path <<< "$display_part"
+		[[ ${#session} -gt $max_session ]] && max_session=${#session}
+		[[ ${#window}  -gt $max_window  ]] && max_window=${#window}
+		[[ ${#tool}    -gt $max_tool    ]] && max_tool=${#tool}
+	done
+
+	local label rest
+	for line in "${lines[@]}"; do
+		rest="${line#*$'\t'}"
+		display_part="${line%%$'\t'*}"
+		IFS='|' read -r active session window tool path <<< "$display_part"
+		label=$(printf '%s  %-*s  %-*s  %-*s  %s' \
+			"$active" \
+			"$max_session" "$session" \
+			"$max_window"  "$window" \
+			"$max_tool"    "$tool" \
+			"$path")
+		printf '%s\t%s\n' "$label" "$rest"
+	done
+}
+
+debug_panes() {
+	local candidates="$1"
+	if [[ -z "$candidates" ]]; then
+		echo "No agent panes found."
+		return
+	fi
+
+	echo "=== Agent panes found ==="
+	echo ""
+	while IFS=$'\t' read -r label pane_id window_target; do
+		echo "──────────────────────────────────────────"
+		echo "LABEL:   $label"
+		echo "PANE_ID: $pane_id"
+		echo "TARGET:  $window_target"
+		echo "PREVIEW (tmux capture-pane -ep -t $pane_id) — last 20 lines:"
+		echo "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄"
+		tmux capture-pane -ep -t "$pane_id" 2>/dev/null | tail -20
+		echo ""
+	done <<< "$candidates"
+}
+
+main() {
+	local candidates selected pane_id window_target
+	candidates=$(list_agent_panes | align_candidates)
+
+	if [[ $DEBUG_MODE -eq 1 ]]; then
+		debug_panes "$candidates"
+		exit 0
+	fi
+
+	if [[ -z "$candidates" ]]; then
+		tmux display-message "No running agentic tools found"
+		exit 0
+	fi
+
+	selected=$(printf '%s\n' "$candidates" \
+		| fzf-tmux -p -w 90% -h 80% \
+			--prompt='Agents > ' \
+			--layout=reverse-list \
+			--delimiter=$'\t' \
+			--with-nth=1 \
+			--preview='tmux capture-pane -ep -t {2}' \
+			--preview-window='down,70%,wrap' \
+			--bind 'enter:accept') || exit 0
+
+	pane_id=$(printf '%s' "$selected" | cut -f2)
+	window_target=$(printf '%s' "$selected" | cut -f3)
+
+	tmux switch-client -t "$window_target"
+	tmux select-pane -t "$pane_id"
+}
+
+main "$@"

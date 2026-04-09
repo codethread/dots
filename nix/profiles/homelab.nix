@@ -7,22 +7,18 @@
   imports = [
     ../features/common.nix
     ../features/nixos-common.nix
-    (import ../services/tmux-service.nix {
-      name = "ai-notes-cron";
+    (import ../services/repo-service.nix {
+      name = "ai-notes";
       gitUrl = "git@github.com:codethread/notes.git";
-      command = "{bun} scripts/automation/src/ai-task-cron.ts";
+      command = "{bun} scripts/automation/src/start.ts";
+      extraPackages = pkgs: [ pkgs.yt-dlp pkgs.todoist-cli ];
     })
-    (import ../services/tmux-service.nix {
-      name = "ai-notes-youtube";
-      gitUrl = "git@github.com:codethread/notes.git";
-      command = "{bun} scripts/automation/src/yt-playlist-watcher.ts";
-    })
-    (import ../services/tmux-service.nix {
+    (import ../services/repo-service.nix {
       name = "cc-inspect";
       gitUrl = "git@github.com:codethread/cc-inspect.git";
       command = "{bun} --cwd packages/cc-inspect start";
     })
-    (import ../services/tmux-service.nix {
+    (import ../services/repo-service.nix {
       name = "cc-notify";
       gitUrl = "git@github.com:codethread/cc-notify.git";
       command = "{bun} start";
@@ -55,9 +51,9 @@
 
   ct.claude-code.enableNotify = true;
 
-  # Repo-local tmux services (see nix/CLAUDE.md "Repo-Local Service Modules")
-  services.ai-notes-cron.enable = true;
-  services.ai-notes-cron.workingDirectory = "/home/codethread/dev/projects/notes";
+  # Repo-local managed services (see nix/CLAUDE.md "Adding a Service")
+  services.ai-notes.enable = true;
+  services.ai-notes.workingDirectory = "/home/codethread/dev/projects/notes";
 
   services.cc-inspect.enable = true;
   services.cc-inspect.workingDirectory = "/home/codethread/dev/projects/cc-inspect";
