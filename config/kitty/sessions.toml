@@ -77,10 +77,11 @@ claude_code_plugins = "~/dev/projects/claude-code-plugins"
 cc_inspect = "~/dev/projects/cc-inspect"
 cc_notify = "~/dev/projects/cc-notify"
 claudet = "~/dev/projects/claudet"
+agents = "~/dev/projects/agents"
 
 [profiles.homelab.keys]
 P1 = "dots"
-P2 = "claudet"
+P2 = "agents"
 P3 = "claude_code_plugins"
 P4 = "cc_notify"
 

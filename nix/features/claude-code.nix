@@ -145,6 +145,7 @@ in {
         CLAUDE_CODE_DISABLE_TERMINAL_TITLE = "1";
         CLAUDE_CODE_DISABLE_AUTO_MEMORY = "1";
         CLAUDE_CODE_DISABLE_CRON = "1";
+        CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING = "1";
         DISABLE_FEEDBACK_COMMAND = "1";
         DISABLE_ERROR_REPORTING = "1";
         ENABLE_TOOL_SEARCH = "0";
@@ -152,12 +153,13 @@ in {
         DISABLE_AUTOUPDATER = "0";
         ENABLE_CLAUDEAI_MCP_SERVERS = "0";
         CLAUDE_CODE_DISABLE_1M_CONTEXT = "1";
+        # so we can see files
         MANPAGER = "cat";
+        # avoids old shell stuff
         ZDOTDIR = "~/.config/zsh-claude";
-        "__CC_CUSTOM_ENVS_" = "manpager so we can see files, ZDOTDIR avoids old shell stuff";
       };
 
-	  spinnerTipsEnabled = false;
+      spinnerTipsEnabled = false;
       autoMemoryEnabled = false;
       autoUpdatesChannel = "latest";
       cleanupPeriodDays = 999;

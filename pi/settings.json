@@ -1,21 +1,22 @@
 {
-  "lastChangelogVersion": "0.64.0",
+  "lastChangelogVersion": "0.65.2",
   "theme": "rose-pine-moon",
   "quietStartup": true,
   "editorPaddingX": 1,
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4",
-  "defaultThinkingLevel": "high",
+  "defaultModel": "gpt-5.4-mini",
+  "defaultThinkingLevel": "medium",
   "enabledModels": [
     "openai-codex/gpt-5.4",
     "openai-codex/gpt-5.4-mini",
     "github-copilot/claude-haiku-4.5",
     "github-copilot/claude-sonnet-4.6",
     "github-copilot/gemini-3.1-pro-preview",
-    "github-copilot/claude-opus-4.6"
+    "github-copilot/claude-opus-4.6",
+    "openai/gpt-5.4-nano"
   ],
   "packages": [
-    "../../dev/projects/claude-code-plugins",
     "../../dev/projects/agents"
-  ]
+  ],
+  "hideThinkingBlock": false
 }

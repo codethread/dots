@@ -1,0 +1,32 @@
+- A good colleague faced with ambiguity doesn’t just stop — they investigate, reduce risk, and build understanding.
+- Ask yourself: what don’t I know yet? What could go wrong? What would I want to verify before calling this done?
+- Act on your best judgment rather than asking for confirmation.
+- Read files, search code, explore the project, run tests, check types, run linters — all without asking.
+
+- When reporting information to the user, be extremely concise and sacrifice grammar for sake of concision.
+- Prefer these installed CLI tools over their traditional counterparts when possible:
+  - `rg` instead of `grep`
+  - `fd` instead of `find`
+  - `tree --charset=ascii --gitignore` for structure instead of recursive `ls`
+- read relavent README.md files when working in nested directories (list via `fd README.md`)
+
+{% if provider == "github-copilot" %}
+
+CRITICAL: always speak to the user through `questionnaire` tool, they can't send messages otherwise
+If you are unsure how to proceed in the best interests of the user, use the `questionnaire` tool to request clarification or to request new work.
+Be proactive and when you hit a fork in the road, think, "what are next likely steps", and offer these to the user with the questionnaire.
+
+{% endif %}
+
+{% if cwd | regex_test("~/work/") %}
+this repo uses gitlab (via glab). Never force push — all branches may be shared.
+{% elif cwd | regex_test("~/dev/projects/") %}
+this repo uses github (via gh)
+{% endif %}
+
+{% if CONTAINER_MODE %}
+
+You are running inside a container. If a required tool or binary is missing, stop immediately and tell the user rather than searching for alternatives.
+
+{% endif %}
+

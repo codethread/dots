@@ -54,10 +54,6 @@
     };
   };
 
-  # Bootstrap mode: allow password SSH login from trusted LAN clients.
-  # Remove this once key-based auth is in place.
-  services.openssh.settings.PasswordAuthentication = lib.mkForce true;
-
   # Prefer wired if available; fall back to Pi-Fi.
   networking.networkmanager.ensureProfiles = {
     profiles = {

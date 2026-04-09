@@ -1,1 +1,0 @@
-- read relavent README.md files when working in nested directories (list via `fd README.md`)

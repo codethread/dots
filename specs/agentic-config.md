@@ -1,7 +1,7 @@
 # Agentic Configuration Specification
 
 **Status:** Implemented
-**Last Updated:** 2026-04-05
+**Last Updated:** 2026-04-09
 
 ## 1. Overview
 
@@ -49,7 +49,8 @@ Four configuration layers compose at runtime:
 │     agents/, commands/, skills/, rules/,            │
 │     CLAUDE.md, keybindings.json                     │
 │   pi/ → ~/.pi/agent/                                │
-│     AGENTS.md, APPEND_SYSTEM.md, settings.json      │
+│     agent.njk, README.md, settings.json             │
+│     (appended system prompt + shared defaults)       │
 │   config/codex/ → ~/.config/codex/                  │
 │     config.toml, AGENTS.md                          │
 ├─────────────────────────────────────────────────────┤
@@ -80,6 +81,7 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 - Its overlay is applied to both the system package set and `pkgsMaster`
 - `nix/features/common.nix` installs `llm-agents` packages for `claude-code`, `codex`, `opencode`, and `pi`
 - `config/dotty/dotty.toml` links the tracked `pi/` directory into `~/.pi/agent`
+- Most mutable Pi config now lives in `https://github.com/codethread/agents`; this repo keeps the `pi/agent.njk` template plus minimal bootstrap files and symlinks that make Pi consume the shared prompt/config layout
 
 ## 3. Data Model
 
@@ -219,32 +221,23 @@ Bash wrapper prepending context-aware system prompts to `claude` CLI:
 - Flags: `-d` (skip permissions), `--dry-run`, `-m/--model`, `--effort`
 - Respects `CC_HOST_PWD` for container path translation
 
-### Pi Wrapper (`home/.local/bin/pim`)
+### Pi Configuration (`pi/`)
 
-Bash wrapper prepending minimal context-aware system prompts to `pi` CLI:
+Direct `pi` invocation with shared repo-aware configuration:
 
-- Repository type detection: `/work/*` → GitLab hints; else → GitHub hints
-- Container awareness: `CC_HOST_PWD` or `CC_SANDBOX` → "stop immediately if tool missing"
-- Intentionally does **not** inject Claude-specific prompts for concurrency, concision, tool-schema warnings, or effort defaults
-- Flags: `--dry-run`
-- All other arguments pass through directly to `pi`
-- Respects `CC_HOST_PWD` for container path translation
+- `agent.njk`: template used to inject the appended system prompt and repo-specific runtime instructions into Pi sessions
+- `README.md`: local docs for the repo-owned Pi bootstrap layout
+- `settings.json`: minimal global Pi defaults and enabled model list used by the subagent compatibility shim
+- Most reusable Pi agents/skills now live in `https://github.com/codethread/agents`; this repo keeps the template and any local compatibility glue needed to consume that shared source
+- `extensions/claude-sync.ts`: project-local Pi extension that treats `.claude/` as source-of-truth and creates `.pi/skills -> .claude/skills`, `.pi/agents -> .claude/agents`, and flattened `.pi/prompts/*.md -> .claude/commands/**/*.md` symlinks on startup
+- `extensions/subagent/agents.ts`: project-local agent loader for the `subagent` extension; follows symlinked `.pi/agents`, normalizes Claude tool names to Pi tools, strips unsupported tools, and resolves Claude model aliases like `sonnet`/`haiku` to concrete enabled OpenAI models from `pi/settings.json`
+- `extensions/subagent/index.ts`: adds `/debug-agents` to show discovered agents with resolved model and normalized tools
+- Machine-local state stays outside the repo: `auth.json`, `models.json`, `sessions/`
 
 ### Codex Configuration (`config/codex/`)
 
 - `config.toml`: model gpt-5.4, personality pragmatic, effort high. Profiles: fast-review (gpt-5.3-codex, medium), deep-review (gpt-5.4, high). 15 trusted project paths. Falls back to CLAUDE.md for project docs.
 - `AGENTS.md`: global instruction for conciseness
-
-### Pi Configuration (`pi/`)
-
-- `AGENTS.md`: global working-style instructions loaded by Pi
-- `APPEND_SYSTEM.md`: appended system prompt for tool/capability realism and concise output
-- `settings.json`: global Pi defaults and enabled model list used by the subagent compatibility shim
-- `extensions/claude-sync.ts`: project-local Pi extension that treats `.claude/` as source-of-truth and creates `.pi/skills -> .claude/skills`, `.pi/agents -> .claude/agents`, and flattened `.pi/prompts/*.md -> .claude/commands/**/*.md` symlinks on startup
-- `extensions/subagent/agents.ts`: project-local agent loader for the `subagent` extension; follows symlinked `.pi/agents`, normalizes Claude tool names to Pi tools, strips unsupported tools, and resolves Claude model aliases like `sonnet`/`haiku` to concrete enabled OpenAI models from `pi/settings.json`
-- `extensions/subagent/index.ts`: adds `/debug-agents` to show discovered agents with resolved model and normalized tools
-- `pim` adds runtime context-specific prompt fragments for work/personal Git hosting and sandbox awareness
-- Machine-local state stays outside the repo: `auth.json`, `models.json`, `sessions/`
 
 ### Agent CLI Packages (`nix/flake.nix`, `nix/features/common.nix`)
 
@@ -299,9 +292,9 @@ Disables Ctrl+A in Global context.
 
 - **Hook I/O via stdin/stdout JSON.** Hooks receive structured input on stdin and return structured output on stdout. Exit code 2 blocks the operation. This matches Claude Code's hook protocol and allows both TypeScript and Bash implementations.
 
-- **`.claude` as project source of truth for reusable agent assets.** (Note: much of this configuration has moved to the `https://github.com/codethread/agents` repository) A project-local Pi extension creates `.pi` symlinks back to `.claude` so Pi can reuse Claude-authored skills, agents, and nested commands with minimal duplication.
+- **Shared agent assets live in `codethread/agents`.** Pi-related reusable agents/skills are primarily authored and maintained there now; this repo keeps only the `pi/agent.njk` template and compatibility shims needed to append the right system prompt and consume the shared assets.
 
-- **Wrapper-injected system prompts.** Shell wrappers add context-dependent prompts at launch rather than embedding them in settings.json. `cl` injects richer Claude-specific guidance (repo type, concurrency, concision, tool realism, sandbox awareness), while `pim` intentionally stays minimal and injects only repo type and sandbox awareness. This keeps prompts context-dependent without polluting global config.
+- **Wrapper-injected system prompts.** Shell wrappers add context-dependent prompts at launch rather than embedding them in settings.json. `cl` injects richer Claude-specific guidance (repo type, concurrency, concision, tool realism, sandbox awareness). `pi` now uses `pi/agent.njk` as the template for appended system prompt management, while the heavier reusable config lives in `codethread/agents`. This keeps prompts context-dependent without polluting global config.
 
 - **Package manager detection by lock file.** `cc-hook--npm-redirect` walks the directory tree looking for lock files in priority order (bun > pnpm > yarn > npm). This is more reliable than checking tool presence and handles monorepos.
 
@@ -312,9 +305,9 @@ Disables Ctrl+A in Global context.
 - `cc-hook--context-injector.test.ts` — session start/end lifecycle
 - `cc-hook--npm-redirect.test.ts` — PM detection, redirection, quote awareness, skill bypass
 
-**End-to-end smoke test:** `cc-sandbox-smoke` (nushell function in `config/nushell/scripts/ct/interactive/claude.nu`) verifies inside a container: binary presence (claude, codex, pi, playwright-cli, bun, nu), versions, PATH setup, settings mounted, codex config linked, pi config linked, project mount under /vm/. Optional `--with-models` flag pings Claude and Codex APIs headlessly.
+**End-to-end smoke test:** `cc-sandbox-smoke` (nushell function in `config/nushell/scripts/ct/interactive/claude.nu`) verifies inside a container: binary presence (claude, codex, pi, playwright-cli, bun, nu), versions, PATH setup, settings mounted, codex config linked, pi template/config wired, project mount under /vm/. Optional `--with-models` flag pings Claude and Codex APIs headlessly.
 
-**No direct tests for:** bash hooks (cc-hook--notify, cc-hook--activity), `cl` and `pim` wrappers, nushell wrappers. These are verified indirectly through the smoke test and manual usage.
+**No direct tests for:** bash hooks (cc-hook--notify, cc-hook--activity), `cl` wrapper, direct `pi` usage, nushell wrappers. These are verified indirectly through the smoke test and manual usage.
 
 ## 7. Open Questions
 

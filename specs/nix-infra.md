@@ -16,14 +16,14 @@ Declarative system configuration and bootstrap infrastructure for all personal m
 - Shared configuration across platforms with platform-specific extensions
 - Dual nixpkgs channel support (unstable + master) for package freshness
 - Automated validation via pre-commit hooks and smoke tests
-- Long-running services on NixOS via tmux-based systemd units
+- Long-running services on NixOS via systemd user units
 
 ### Non-Goals
 
 - CI/CD pipeline — validation is local (pre-commit hooks, manual smoke tests)
 - Multi-user support — all configs target a single user per machine
 - NixOS on desktop as daily driver — homelab and VM only; macOS is the primary workstation
-- Containerised services — services run directly via tmux, not Docker/Podman
+- Containerised services — services run directly as systemd user units, not Docker/Podman
 - Secrets management beyond WiFi PSK — no vault, no sops, no agenix
 
 ## 2. Architecture
@@ -46,7 +46,7 @@ flake.nix (inputs, overlays, system configurations)
     │   └─ claude-code.nix           Claude Code settings.json generation
     │
     └─ services/
-        └─ tmux-service.nix          Generic builder for repo-local tmux services
+        └─ repo-service.nix           Generic builder for repo-local systemd services
 ```
 
 ### System Configurations
@@ -115,23 +115,27 @@ Three ordered activation scripts run during every rebuild:
 
 1. **bootDotfiles** (NixOS only, after `installPackages`) — clones PersonalConfigs if missing
 2. **userBootstrap** (after `writeBoundary`) — creates directory structure, clones vendor repos (nu_scripts, gitwatch, Alfred on macOS), sets git hooks path
-3. **clone-\<name\>** (per tmux service, after `installPackages`) — each `tmux-service.nix` instance generates its own activation hook that clones its repo via SSH with a 5s BatchMode auth test; skips gracefully if SSH auth unavailable
+3. **clone-\<name\>** (per service, after `installPackages`) — each `repo-service.nix` instance generates its own activation hook that clones its repo via SSH with a 5s BatchMode auth test; skips gracefully if SSH auth unavailable
 4. **dottyLink** (after `userBootstrap`) — symlinks dotfiles into place via dotty (see [dotty spec](./dotty.md))
 
-### Tmux Service Module
+### Service Module
 
-`services/tmux-service.nix` is a parametrised NixOS module for long-running processes:
+`services/repo-service.nix` is a parametrised home-manager module for long-running processes:
 
 - **Activation hook** clones the repo (SSH-gated, graceful fallback)
-- **Systemd oneshot** creates a detached tmux session running the command
-- **`KillMode = "none"`** prevents systemd from killing tmux on service restart
+- **Systemd user service** (`Type = simple`) runs the process directly — no tmux wrapper
+- **`Restart = on-failure`** with 5s backoff for automatic crash recovery
+- Logs to journald: `journalctl --user -u <name>`
+- Control via `systemctl --user status/start/stop/restart <name>`
 - Command template supports `{bun}` and `{dir}` substitutions
 
-Active services (homelab only): `ai-notes-cron`, `cc-inspect`, `cc-notify`
+- **`extraPackages`** — optional `pkgs: [...]` argument for runtime tools needed in PATH beyond the defaults (`bun`, `gnumake`, `coreutils`). Used by `ai-notes` to expose `yt-dlp` and `todoist-cli`.
+
+Active services (homelab only): `ai-notes` (with `yt-dlp`, `todoist-cli`), `cc-inspect`, `cc-notify`
 
 ### NixOS Built-In Services
 
-Defined directly in `features/nixos-common.nix` (not via `tmux-service.nix`):
+Defined directly in `features/nixos-common.nix` (not via `repo-service.nix`):
 
 - **tmux-main** — systemd oneshot that creates the main tmux session on graphical login
 - **backup-notes** — systemd oneshot + timer that auto-commits and pushes the notes vault (`~/dev/projects/notes/vault`) every 15 minutes via git (add → stash → pull --rebase → stash pop → commit → push). Sends `notify-send` on failure when Wayland display is available.
@@ -231,7 +235,7 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 - **Two work profiles for username variants** — Some macOS machines use `adam.hall` (dotted), others use `adamhall`. Both share `work-common.nix` and `profiles/work.nix`; only the host module and `primaryUser` differ.
 
-- **`KillMode = "none"` for tmux services** — Systemd oneshot launches tmux and exits. Without `KillMode = "none"`, systemd would kill the tmux session when the launcher process exits.
+- **Direct process execution for managed services** — `services/repo-service.nix` runs processes with `Type = simple` directly under systemd. This gives proper PID tracking, `journalctl` log access, and working restart semantics (`Restart = on-failure`). `tmux-main` (the interactive session) remains tmux-backed since it exists for human interaction, not daemon management.
 
 - **SSH-gated service cloning** — Service repos are cloned only if SSH auth to github.com succeeds (5s timeout, BatchMode). This prevents blocking the rebuild on machines without SSH keys or on first bootstrap before keys are deployed.
 

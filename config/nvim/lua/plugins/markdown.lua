@@ -13,7 +13,7 @@ return U.F {
 		branch = 'mermaids',
 		build = 'deno task --quiet build:fast',
 		opts = {
-			app = 'browser',
+			app = os.getenv 'IS_NIXOS' == nil and 'browser' or 'true',
 		},
 		init = function()
 			vim.api.nvim_create_user_command('PeekOpen', function() require('peek').open() end, {})
