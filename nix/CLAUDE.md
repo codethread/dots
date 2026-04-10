@@ -40,7 +40,8 @@ imports = [
     name = "my-service";
     gitUrl = "git@github.com:codethread/my-repo.git";
     command = "{bun} start";  # {bun} and {dir} are substituted automatically
-    extraPackages = pkgs: [ pkgs.some-tool ];  # optional: extra binaries needed at runtime
+    devShell = "automation";  # optional: run under {dir}#automation via `nix develop`
+    extraPackages = pkgs: [ pkgs.some-tool ];  # optional: extra binaries needed before/alongside the dev shell
   })
 ];
 
@@ -50,7 +51,7 @@ services.my-service.workingDirectory = "/home/codethread/dev/projects/my-repo";
 
 Logs: `journalctl --user -u my-service -f`  
 Control: `systemctl --user restart my-service`  
-No flake input changes needed. Commands must start directly (no `make` / `bun install` / build pipelines).
+No flake input changes needed on the dotfiles side. If `devShell` is set, the target repo must expose that shell in its own `flake.nix` (ideally with a committed `flake.lock`). Commands must start directly (no `make` / `bun install` / build pipelines).
 
 ## Validation
 

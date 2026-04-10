@@ -11,6 +11,7 @@
       name = "ai-notes";
       gitUrl = "git@github.com:codethread/notes.git";
       command = "{bun} scripts/automation/src/start.ts";
+      devShell = "automation";
       extraPackages = pkgs: [ pkgs.yt-dlp pkgs.todoist-cli ];
     })
     (import ../services/repo-service.nix {

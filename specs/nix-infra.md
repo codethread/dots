@@ -128,8 +128,10 @@ Three ordered activation scripts run during every rebuild:
 - Logs to journald: `journalctl --user -u <name>`
 - Control via `systemctl --user status/start/stop/restart <name>`
 - Command template supports `{bun}` and `{dir}` substitutions
+- Service runner exports an explicit PATH including Nix profile bins and `~/.local/bin` (no shell-dependent `$PATH` inheritance)
+- Optional **`devShell`** argument runs the command via `nix develop {dir}#<shell>` so repo-local flakes can pin runtime tooling
 
-- **`extraPackages`** — optional `pkgs: [...]` argument for runtime tools needed in PATH beyond the defaults (`bun`, `gnumake`, `coreutils`). Used by `ai-notes` to expose `yt-dlp` and `todoist-cli`.
+- **`extraPackages`** — optional `pkgs: [...]` argument for runtime tools needed in PATH before/alongside the repo dev shell. Used by `ai-notes` to expose `yt-dlp` and `todoist-cli`.
 
 Active services (homelab only): `ai-notes` (with `yt-dlp`, `todoist-cli`), `cc-inspect`, `cc-notify`
 

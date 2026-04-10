@@ -5,7 +5,7 @@
 #
 # Logs: journalctl --user -u <name>
 # Control: systemctl --user status/start/stop/restart <name>
-{ name, gitUrl, command, extraPackages ? (_pkgs: []) }:
+{ name, gitUrl, command, extraPackages ? (_pkgs: []), devShell ? null }:
 
 { config, lib, pkgs, ... }:
 let
@@ -14,7 +14,47 @@ let
     "${pkgs.bun}/bin/bun"
     cfg.workingDirectory
   ] command;
-  path = lib.makeBinPath ([ pkgs.bun pkgs.gnumake pkgs.coreutils ] ++ (extraPackages pkgs));
+  runtimePath = lib.concatStringsSep ":" ([
+    (lib.makeBinPath ([
+      pkgs.bash
+      pkgs.bun
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.git
+      pkgs.gnumake
+      pkgs.gnugrep
+      pkgs.gnused
+      pkgs.nix
+    ] ++ (extraPackages pkgs)))
+    "${config.home.homeDirectory}/.local/bin"
+    "${config.home.homeDirectory}/.bun/bin"
+    "${config.home.homeDirectory}/.local/state/nix/profile/bin"
+    "/etc/profiles/per-user/${config.home.username}/bin"
+    "/run/current-system/sw/bin"
+    "/run/wrappers/bin"
+    "/nix/var/nix/profiles/default/bin"
+    "${config.home.homeDirectory}/.nix-profile/bin"
+    "/nix/profile/bin"
+  ]);
+  commandRunner = pkgs.writeShellScript "${name}-command" ''
+    set -euo pipefail
+    ${if devShell == null
+      then "export PATH='${runtimePath}':\"$PATH\""
+      else "export PATH=\"$PATH:${runtimePath}\""}
+    cd '${cfg.workingDirectory}'
+    exec ${cmd}
+  '';
+  serviceRunner =
+    if devShell == null
+    then commandRunner
+    else pkgs.writeShellScript "${name}-run" ''
+      set -euo pipefail
+      export PATH='${runtimePath}':"$PATH"
+      cd '${cfg.workingDirectory}'
+      exec ${pkgs.nix}/bin/nix --extra-experimental-features 'nix-command flakes' \
+        develop '${cfg.workingDirectory}#${devShell}' \
+        --command '${commandRunner}'
+    '';
 in {
   options.services.${name} = {
     enable = lib.mkEnableOption "managed service: ${name}";
@@ -58,11 +98,10 @@ in {
       };
       Service = {
         Type = "simple";
-        ExecStart = cmd;
+        ExecStart = serviceRunner;
         WorkingDirectory = cfg.workingDirectory;
         Restart = "on-failure";
         RestartSec = "5s";
-        Environment = "PATH=${path}:$PATH";
         StandardOutput = "journal";
         StandardError = "journal";
       };
