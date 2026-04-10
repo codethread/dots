@@ -4,8 +4,8 @@
   "quietStartup": true,
   "editorPaddingX": 1,
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4-mini",
-  "defaultThinkingLevel": "medium",
+  "defaultModel": "gpt-5.4",
+  "defaultThinkingLevel": "high",
   "enabledModels": [
     "openai-codex/gpt-5.4",
     "openai-codex/gpt-5.4-mini",

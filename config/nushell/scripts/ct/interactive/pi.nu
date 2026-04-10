@@ -1,12 +1,12 @@
 # :module: pi wrappers and helpers for tty usage
-#
-# The main `pim` wrapper is a bash script at home/.local/bin/pim which handles
-# minimal context-aware system prompt injection. These nushell wrappers provide
-# model shortcuts.
 
 # pim with a fast mini model and thinking disabled
 export def pii --wrapped [...rest] {
-	^pim --provider openai-codex --model gpt-5.4-mini:off ...$rest
+	pi --provider openai-codex --model gpt-5.4-mini:off ...$rest
+}
+
+export def pih --wrapped [...rest] {
+	pi --provider openai-codex --model gpt-5.4:high ...$rest
 }
 
 # Hardcoded model matrix for `pi-par`. Tweak this list to compare different
@@ -70,7 +70,7 @@ export def pi-par [
 		let parts = ($spec | split row "/")
 		let provider = ($parts | get 0)
 		let model = ($parts | get 1)
-		let command = $"clear; pim --provider ($provider) --model ($model) ($quoted_prompt)"
+		let command = $"clear; pi --provider ($provider) --model ($model) ($quoted_prompt)"
 
 		^tmux send-keys -t $pane C-c
 		^tmux send-keys -t $pane -l $command
