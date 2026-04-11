@@ -40,8 +40,8 @@ imports = [
     name = "my-service";
     gitUrl = "git@github.com:codethread/my-repo.git";
     command = "{bun} start";  # {bun} and {dir} are substituted automatically
-    devShell = "automation";  # optional: run under {dir}#automation via `nix develop`
-    extraPackages = pkgs: [ pkgs.some-tool ];  # optional: extra binaries needed before/alongside the dev shell
+    devShell = "default";     # standard: run under {dir}#default via `nix develop`
+    # extraPackages = pkgs: [ pkgs.some-tool ];  # last resort only — prefer target repo's flake.nix
   })
 ];
 
@@ -51,7 +51,11 @@ services.my-service.workingDirectory = "/home/codethread/dev/projects/my-repo";
 
 Logs: `journalctl --user -u my-service -f`  
 Control: `systemctl --user restart my-service`  
-No flake input changes needed on the dotfiles side. If `devShell` is set, the target repo must expose that shell in its own `flake.nix` (ideally with a committed `flake.lock`). Commands must start directly (no `make` / `bun install` / build pipelines).
+No flake input changes needed on the dotfiles side.
+
+**Standard pattern**: every service should use `devShell` pointing to a shell in the target repo's own `flake.nix`. This keeps runtime deps pinned alongside the code. The target repo must expose that shell (ideally with a committed `flake.lock`). Commands must start directly (no `make` / `bun install` / build pipelines).
+
+**`extraPackages`** is a last-resort escape hatch for tools that cannot be added to the target repo's flake (e.g. the repo is not yours). Prefer putting deps in the target flake's devShell instead.
 
 ## Validation
 

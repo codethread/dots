@@ -131,9 +131,9 @@ Three ordered activation scripts run during every rebuild:
 - Service runner exports an explicit PATH including Nix profile bins and `~/.local/bin` (no shell-dependent `$PATH` inheritance)
 - Optional **`devShell`** argument runs the command via `nix develop {dir}#<shell>` so repo-local flakes can pin runtime tooling
 
-- **`extraPackages`** — optional `pkgs: [...]` argument for runtime tools needed in PATH before/alongside the repo dev shell. Used by `ai-notes` to expose `yt-dlp` and `todoist-cli`.
+- **`extraPackages`** — optional `pkgs: [...]` last-resort escape hatch for tools that cannot be added to the target repo's flake. The standard pattern is to put all runtime deps in the target repo's `flake.nix` devShell instead.
 
-Active services (homelab only): `ai-notes` (with `yt-dlp`, `todoist-cli`), `cc-inspect`, `cc-notify`
+Active services (homelab only): `ai-notes` (`devShell = "automation"`), `cc-inspect` (`devShell = "default"`), `cc-notify` (`devShell = "default"`)
 
 ### NixOS Built-In Services
 

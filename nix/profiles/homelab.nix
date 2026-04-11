@@ -12,17 +12,18 @@
       gitUrl = "git@github.com:codethread/notes.git";
       command = "{bun} scripts/automation/src/start.ts";
       devShell = "automation";
-      extraPackages = pkgs: [ pkgs.yt-dlp pkgs.todoist-cli ];
     })
     (import ../services/repo-service.nix {
       name = "cc-inspect";
       gitUrl = "git@github.com:codethread/cc-inspect.git";
       command = "{bun} --cwd packages/cc-inspect start";
+      devShell = "default";
     })
     (import ../services/repo-service.nix {
       name = "cc-notify";
       gitUrl = "git@github.com:codethread/cc-notify.git";
       command = "{bun} start";
+      devShell = "default";
     })
   ];
 
