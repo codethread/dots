@@ -8,9 +8,21 @@
     ../features/common.nix
     ../features/nixos-common.nix
     (import ../services/repo-service.nix {
-      name = "ai-notes";
+      name = "ai-task-cron";
       gitUrl = "git@github.com:codethread/notes.git";
-      command = "{bun} scripts/automation/src/start.ts";
+      command = "{bun} scripts/automation/src/ai-task-cron.ts";
+      devShell = "automation";
+    })
+    (import ../services/repo-service.nix {
+      name = "ai-note-watcher";
+      gitUrl = "git@github.com:codethread/notes.git";
+      command = "{bun} scripts/automation/src/ai-note-watcher.ts";
+      devShell = "automation";
+    })
+    (import ../services/repo-service.nix {
+      name = "yt-playlist-watcher";
+      gitUrl = "git@github.com:codethread/notes.git";
+      command = "{bun} scripts/automation/src/yt-playlist-watcher.ts";
       devShell = "automation";
     })
     (import ../services/repo-service.nix {
@@ -54,8 +66,14 @@
   ct.claude-code.enableNotify = true;
 
   # Repo-local managed services (see nix/CLAUDE.md "Adding a Service")
-  services.ai-notes.enable = true;
-  services.ai-notes.workingDirectory = "/home/codethread/dev/projects/notes";
+  services.ai-task-cron.enable = true;
+  services.ai-task-cron.workingDirectory = "/home/codethread/dev/projects/notes";
+
+  services.ai-note-watcher.enable = true;
+  services.ai-note-watcher.workingDirectory = "/home/codethread/dev/projects/notes";
+
+  services.yt-playlist-watcher.enable = true;
+  services.yt-playlist-watcher.workingDirectory = "/home/codethread/dev/projects/notes";
 
   services.cc-inspect.enable = true;
   services.cc-inspect.workingDirectory = "/home/codethread/dev/projects/cc-inspect";

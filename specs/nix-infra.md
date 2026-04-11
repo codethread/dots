@@ -133,7 +133,7 @@ Three ordered activation scripts run during every rebuild:
 
 - **`extraPackages`** — optional `pkgs: [...]` last-resort escape hatch for tools that cannot be added to the target repo's flake. The standard pattern is to put all runtime deps in the target repo's `flake.nix` devShell instead.
 
-Active services (homelab only): `ai-notes` (`devShell = "automation"`), `cc-inspect` (`devShell = "default"`), `cc-notify` (`devShell = "default"`)
+Active services (homelab only): `ai-task-cron`, `ai-note-watcher`, `yt-playlist-watcher` (all from `codethread/notes`, `devShell = "automation"`), `cc-inspect`, `cc-notify` (`devShell = "default"`)
 
 ### NixOS Built-In Services
 
