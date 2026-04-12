@@ -169,6 +169,11 @@ export def nix-sys-packages [profile?: string] {
 	^nix eval $attr --apply "map (p: p.name)" --json | from json | sort | uniq
 }
 
+export def nix-update-llm [] {
+	let flake = $"path:((_flake_path))"
+	nix flake update llm-agents --flake $flake
+}
+
 def _brew_config_attr [profile: string, attr: string] {
 	let flake = $"path:((_flake_path))"
 	^nix eval $"($flake)#darwinConfigurations.($profile).config.homebrew.($attr)" --json

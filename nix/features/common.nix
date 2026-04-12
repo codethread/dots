@@ -175,6 +175,7 @@ in {
     zig
     bun
     deno
+    pnpm
 
     # --- Shell ---
     neovim

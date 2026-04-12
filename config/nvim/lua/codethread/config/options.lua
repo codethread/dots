@@ -97,6 +97,7 @@ vim.filetype.add {
 			{ priority = -math.huge },
 		},
 		['.*/pi/agent%.njk'] = 'jinja',
+		['.*/.pi/agent%.njk'] = 'jinja',
 	},
 	extension = {
 		nuon = 'nu',
