@@ -53,9 +53,12 @@ if ("/etc/NIXOS" | path exists) {
 	path add ($env.XDG_STATE_HOME | path join "nix/profile/bin")
 	$env.DOCKER_HOST = $"unix:///run/user/(id -u)/podman/podman.sock"
 	$env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = $"($_nix_per_user)/chromium"
+	# stable symlink to nix store path; avoids hash-heavy store path in pi system prompts (~130 tokens/session)
+	$env.PI_PACKAGE_DIR = ("~/.pi/pi-source")
 } else {
 	$env.IS_NIXOS = false
 	$env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = "/Applications/Chromium.app/Contents/MacOS/Chromium"
+
 }
 #: }}}
 
