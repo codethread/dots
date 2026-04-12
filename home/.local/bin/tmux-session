@@ -170,9 +170,9 @@ interactive_select() {
 	local selected
 	selected=$({
 		if [[ ${#dirs[@]} -gt 0 ]]; then
-			fd -H --no-ignore -t d '^\.git$' "${dirs[@]}" --max-depth 5 \
+			fd -H --no-ignore '^\.git$' "${dirs[@]}" --max-depth 5 \
 				-E node_modules -E target -E .cargo -E .next -E dist -E build -E coverage \
-				| sed 's|/\.git/\?$||'
+				| sed 's|/\.git$||' | sed 's|/\.git/$||'
 		fi
 		printf '%s\n' "${static_dirs[@]}"
 	} | sort -u \
