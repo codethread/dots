@@ -9,6 +9,10 @@ export def pih --wrapped [...rest] {
 	pi --provider openai-codex --model gpt-5.4:high ...$rest
 }
 
+export def pio --wrapped [...rest] {
+	pi --provider github-copilot --model claude-opus-4.6:high ...$rest
+}
+
 # Hardcoded model matrix for `pi-par`. Tweak this list to compare different
 # providers/models side-by-side.
 const pi_par_models = [
