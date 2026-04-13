@@ -1,1 +1,1 @@
-launch --title workfiles --cwd ~/workfiles
+launch --title workfiles --cwd /Users/adamhall/workfiles

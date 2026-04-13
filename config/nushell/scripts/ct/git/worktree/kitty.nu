@@ -1,7 +1,12 @@
-# open a directory in a new kitty tab, or cd into it if not running inside kitty
+# open a directory as a kitty session (matching git-session naming), or cd if not in kitty
 export def --env wk-open-dir [path: string, title: string] {
 	if "KITTY_WINDOW_ID" in $env {
-		kitten @ launch --type=tab --cwd $path --tab-title $title
+		let session_name = ($path | path basename | str downcase | str replace --all --regex '[^a-z0-9]' '-' | str replace --all --regex '-+' '-' | str replace --all --regex '^-|-$' '')
+		let sessions_dir = ($env.HOME | path join ".config" "kitty" "sessions")
+		mkdir $sessions_dir
+		let session_file = ($sessions_dir | path join $"($session_name).session")
+		$"launch --title ($session_name) --cwd \"($path)\"\n" | save -f $session_file
+		kitten @ action goto_session $session_file
 	} else {
 		cd $path
 	}

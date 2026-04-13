@@ -520,7 +520,7 @@
     "track",
     "wbr",
   ],
-  "workbench.colorTheme": "Experimental Light",
+  "workbench.colorTheme": "VS Code Light",
   "colorize.languages": [
     "css",
     "sass",
