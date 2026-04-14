@@ -44,10 +44,6 @@ in {
   };
   home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
-  home.file.".npmrc".text = ''
-    prefix=${config.home.homeDirectory}/.local
-  '';
-
   home.file.".local/share/nvim/nix-treesitter-parsers".source = treesitter-parsers;
   # Stable short path so PI_PACKAGE_DIR avoids the hash-heavy nix store path in system prompts
   home.file.".pi/pi-source".source = "${llmAgents.pi}/lib/node_modules/@mariozechner/pi-coding-agent";
@@ -198,6 +194,7 @@ in {
     tree
     dust
     stylua
+    tree-sitter
     wakatime-cli
     prettierd
     just

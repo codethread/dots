@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, config, ... }:
 
 {
   home.activation.bootDotfiles = lib.hm.dag.entryAfter [ "installPackages" ] ''
@@ -8,6 +8,10 @@
       ${pkgs.git}/bin/git clone --branch main \
         https://github.com/codethread/PersonalConfigs.git "$DOTFILES"
     fi
+  '';
+
+  home.file.".npmrc".text = ''
+    prefix=${config.home.homeDirectory}/.local
   '';
 
   home.packages = with pkgs; [
