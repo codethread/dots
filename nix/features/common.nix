@@ -206,10 +206,11 @@ in {
     gh
     git-lfs
     lazygit
-	lazydocker
+    lazydocker
     difftastic
     yt-dlp
-	vivid
+    ast-grep
+    vivid
   ];
 
   programs.direnv = {
