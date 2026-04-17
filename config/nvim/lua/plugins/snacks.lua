@@ -2,14 +2,6 @@
 
 return {
 	'folke/snacks.nvim',
-	dependencies = {
-		U.highlights {
-			SnacksDebugPrint = { bg = 'surface', fg = 'white' },
-			SnacksIndent = { fg = 'overlay' },
-			SnacksIndentChunk = { fg = 'iris' },
-			SnacksIndentScope = { fg = 'iris' },
-		},
-	},
 	priority = 1000,
 	lazy = false,
 	init = function() vim.g.snacks_animate = false end,

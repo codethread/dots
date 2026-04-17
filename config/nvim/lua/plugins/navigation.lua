@@ -129,11 +129,6 @@ return {
 	{
 		'folke/flash.nvim',
 		event = U.LazyFile,
-		dependencies = {
-			U.highlights {
-				FlashLabel = { bg = 'surface', fg = 'white' },
-			},
-		},
 		---@type Flash.Config
 		opts = {
 			label = {

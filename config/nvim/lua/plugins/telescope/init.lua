@@ -20,28 +20,6 @@ return {
 			{ 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
 			{ 'nvim-telescope/telescope-live-grep-args.nvim' },
 			{ 'catgoose/telescope-helpgrep.nvim' },
-			U.highlights {
-				TelescopeBorder = { fg = 'highlight_low', bg = 'highlight_low' },
-				TelescopeNormal = { fg = 'text', bg = 'highlight_low' },
-				TelescopeSelection = { fg = 'text', bg = 'highlight_med' },
-				TelescopeSelectionCaret = { fg = 'love', bg = 'highlight_med' },
-				TelescopeMultiSelection = { fg = 'text', bg = 'highlight_high' },
-
-				TelescopeTitle = { fg = 'love' },
-				TelescopePromptTitle = { fg = 'rose' },
-				TelescopePreviewTitle = { fg = 'iris' },
-
-				TelescopePromptNormal = { fg = 'text', bg = 'surface' },
-				TelescopePromptBorder = { fg = 'surface', bg = 'surface' },
-				TelescopePromptCounter = { fg = 'subtle' },
-
-				-- alt
-				-- TelescopeBorder = { fg = 'muted', bg = 'base' },
-				-- TelescopeNormal = { fg = 'subtle', bg = 'base' },
-				-- TelescopePromptCounter = { fg = 'subtle', bg = 'base' },
-				-- TelescopePromptNormal = { fg = 'text', bg = 'base' },
-				-- TelescopePromptBorder = { fg = 'rose', bg = 'base' },
-			},
 		},
 		config = function(_, opts)
 			opts = opts or {}

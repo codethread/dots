@@ -12,60 +12,12 @@ return {
 	-- { 'nvim-mini/mini.icons', opts = {} },
 
 	{
-		'rose-pine/neovim',
-		name = 'rose-pine',
+		'folke/tokyonight.nvim',
 		priority = 1000,
 		lazy = false,
-		config = function(_, opts)
-			require('rose-pine').setup(vim.tbl_deep_extend('force', opts, {
-				variant = 'moon',
-				styles = { italic = true, transparency = true },
-				enable = {
-					terminal = true,
-					-- Improve compatibility for previous versions of Neovim
-					legacy_highlights = false,
-					-- Handle deprecated options automatically
-					migrations = false,
-				},
-				-- calls to nvim_set_hl()
-				dim_inactive_windows = false,
-				extend_background_behind_borders = true,
-				---@type table<string, ct.RoseColor>
-				highlight_groups = {
-					NonText = { fg = 'base' }, -- end ~
-					ColorColumn = { bg = 'rose' },
-					-- Blend colours against the "base" background
-					CursorLine = { bg = 'foam', blend = 10 },
-					StatusLine = { fg = 'foam', bg = 'foam', blend = 10 },
-
-					['@variable'] = { italic = false },
-					['@variable.builtin'] = { fg = 'text', bold = true },
-
-					['@keyword.bang'] = { fg = 'love', underline = true },
-					['@keyword.return'] = { fg = 'iris' },
-
-					-- js stuff
-					-- ['@arrow_function.const'] = { undercurl = true },
-					['@keyword.export'] = { fg = 'love' },
-					['@keyword.default'] = { fg = 'love', bold = true },
-
-					['@lsp.mod.async.typescript'] = { bold = true, undercurl = true },
-
-					-- markdown
-					-- @markup.italic.markdown_inline
-					['@markup'] = { fg = 'rose' },
-					['@markup.italic'] = { italic = true },
-					['@markup.heading.1'] = { fg = 'gold', underline = true },
-					['@markup.heading.2'] = { fg = 'rose', bold = true },
-
-					-- italic, I prefer to do these myself and disable it globally
-					['@text.emphasis'] = { italic = true },
-					Comment = { italic = true },
-					htmlItalic = { italic = true },
-					mkdCode = { italic = true },
-				},
-			}))
-			vim.cmd [[colorscheme rose-pine]]
+		config = function()
+			require('tokyonight').setup(require('codethread.theme').tokyonight_opts())
+			vim.cmd 'colorscheme tokyonight'
 		end,
 	},
 

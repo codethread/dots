@@ -103,11 +103,11 @@ function M.toggle_listchars()
 	if state then
 		vim.b.ct_debug_spacing = false
 		vim.cmd 'set nolist'
-		vim.api.nvim_set_hl(0, 'Whitespace', { fg = U.hl 'base' })
+		vim.api.nvim_set_hl(0, 'Whitespace', { fg = require('codethread.theme').whitespace.hidden })
 	else
 		vim.b.ct_debug_spacing = true
 		vim.cmd 'set list'
-		vim.api.nvim_set_hl(0, 'Whitespace', { fg = U.hl 'leaf' })
+		vim.api.nvim_set_hl(0, 'Whitespace', { fg = require('codethread.theme').whitespace.visible })
 	end
 end
 

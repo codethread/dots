@@ -10,12 +10,16 @@ vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
 local function load_plugins()
 	local lazypath = vim.fn.stdpath 'data' .. '/lazy'
 
-	vim.iter({ 'flash.nvim' }):each(function(mod)
+	vim.iter({ 'tokyonight.nvim', 'flash.nvim' }):each(function(mod)
 		local plug = lazypath .. '/' .. mod
 		vim.opt.rtp:prepend(plug)
 	end)
 
-	vim.api.nvim_set_hl(0, 'FlashLabel', { bg = '#2a273f', fg = 'white' })
+	local theme = require 'codethread.theme'
+	vim.api.nvim_set_hl(0, 'FlashLabel', {
+		bg = theme.flash.label_bg,
+		fg = theme.flash.label_fg,
+	})
 	local flash = require 'flash'
 	flash.setup {
 		label = {
