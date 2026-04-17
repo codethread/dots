@@ -4,28 +4,32 @@ return {
 		'akinsho/toggleterm.nvim',
 		version = 'v2.*',
 		cmd = 'ToggleTerm',
-		opts = {
-			size = function(term)
-				if term.direction == 'horizontal' then
-					return 15
-				elseif term.direction == 'vertical' then
-					return vim.o.columns * 0.4
-				end
-			end,
-			shell = 'nu',
-			open_mapping = [[<M-t>]],
-			hide_numbers = true,
-			start_in_insert = true,
-			insert_mappings = true,
-			terminal_mappings = true,
-			persist_size = true,
-			direction = 'horizontal',
-			close_on_exit = false,
-			float_opts = {
-				border = 'single',
-				winblend = 3,
-			},
-		},
+		opts = function()
+			local opts = {
+				size = function(term)
+					if term.direction == 'horizontal' then
+						return 15
+					elseif term.direction == 'vertical' then
+						return vim.o.columns * 0.4
+					end
+				end,
+				shell = 'nu',
+				open_mapping = [[<M-t>]],
+				hide_numbers = true,
+				start_in_insert = true,
+				insert_mappings = true,
+				terminal_mappings = true,
+				persist_size = true,
+				direction = 'horizontal',
+				close_on_exit = false,
+				float_opts = {
+					border = 'single',
+					winblend = 3,
+				},
+			}
+			opts.highlights = require('codethread.theme').toggleterm_highlights()
+			return opts
+		end,
 		init = function()
 			function _G.set_terminal_keymaps()
 				local opts = { buffer = 0, noremap = true }

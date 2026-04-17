@@ -1,26 +1,108 @@
 -- Single source of truth for theme colors across the nvim config.
--- Colors are sourced from the active tokyonight variant via its plugin API.
 --
--- NOTE: tokyonight must be on runtimepath before this module is required.
--- It loads with priority=1000/lazy=false in normal nvim startup, so calling
--- this from plugin config functions is safe. Do not require at module top-level.
+-- Tokyo Night stays the default, but keep the Rose Pine setup here too so the
+-- active family can be switched without recovering per-plugin config.
 
 local M = {}
 
-local function read_style()
+local DEFAULT_FAMILY = 'tokyonight'
+local families = {
+	['rose-pine'] = true,
+	tokyonight = true,
+}
+
+local rose_pine_colors = {
+	moon = {
+		base = '#232136',
+		surface = '#2a273f',
+		overlay = '#393552',
+		muted = '#6e6a86',
+		subtle = '#908caa',
+		text = '#e0def4',
+		love = '#eb6f92',
+		gold = '#f6c177',
+		rose = '#ea9a97',
+		pine = '#3e8fb0',
+		foam = '#9ccfd8',
+		iris = '#c4a7e7',
+		highlight_low = '#2a283e',
+		highlight_med = '#44415a',
+		highlight_high = '#56526e',
+	},
+	dawn = {
+		base = '#faf4ed',
+		surface = '#fffaf3',
+		overlay = '#f2e9e1',
+		muted = '#9893a5',
+		subtle = '#797593',
+		text = '#575279',
+		love = '#b4637a',
+		gold = '#ea9d34',
+		rose = '#d7827e',
+		pine = '#286983',
+		foam = '#56949f',
+		iris = '#907aa9',
+		highlight_low = '#f4ede8',
+		highlight_med = '#dfdad9',
+		highlight_high = '#cecacd',
+	},
+}
+
+local rose_pine_highlight_groups = {
+	NonText = { fg = 'base' },
+	ColorColumn = { bg = 'rose' },
+	CursorLine = { bg = 'foam', blend = 10 },
+	StatusLine = { fg = 'foam', bg = 'foam', blend = 10 },
+
+	['@variable'] = { italic = false },
+	['@variable.builtin'] = { fg = 'text', bold = true },
+	['@keyword.bang'] = { fg = 'love', underline = true },
+	['@keyword.return'] = { fg = 'iris' },
+	['@keyword.export'] = { fg = 'love' },
+	['@keyword.default'] = { fg = 'love', bold = true },
+	['@lsp.mod.async.typescript'] = { bold = true, undercurl = true },
+	['@markup'] = { fg = 'rose' },
+	['@markup.italic'] = { italic = true },
+	['@markup.heading.1'] = { fg = 'gold', underline = true },
+	['@markup.heading.2'] = { fg = 'rose', bold = true },
+	['@text.emphasis'] = { italic = true },
+	Comment = { italic = true },
+	htmlItalic = { italic = true },
+	mkdCode = { italic = true },
+}
+
+local function read_state(name)
 	local state_home = vim.env.XDG_STATE_HOME or (vim.fn.expand '~' .. '/.local/state')
-	local theme_file = state_home .. '/color-theme'
-	if vim.fn.filereadable(theme_file) == 1 then
-		local lines = vim.fn.readfile(theme_file)
-		if lines[1] == 'light' then return 'day' end
+	local path = state_home .. '/' .. name
+	if vim.fn.filereadable(path) == 1 then
+		local lines = vim.fn.readfile(path)
+		return vim.trim(lines[1] or '')
 	end
-	return 'moon'
 end
 
-local style = read_style()
-local colors = require('tokyonight.colors').setup { style = style }
+function M.mode() return read_state 'color-theme' == 'light' and 'light' or 'dark' end
 
-local function palette(c)
+function M.family()
+	local family = vim.env.CT_THEME_FAMILY or read_state 'color-theme-family'
+	return families[family] and family or DEFAULT_FAMILY
+end
+
+function M.colorscheme() return M.family() == 'rose-pine' and 'rose-pine' or 'tokyonight' end
+
+function M.lazy_plugin_dir() return M.family() == 'rose-pine' and 'rose-pine' or 'tokyonight.nvim' end
+
+local function tokyonight_style() return M.mode() == 'light' and 'day' or 'moon' end
+
+local function rose_pine_variant() return M.mode() == 'light' and 'dawn' or 'moon' end
+
+function M.style() return M.family() == 'rose-pine' and rose_pine_variant() or tokyonight_style() end
+
+function M.colors()
+	if M.family() == 'rose-pine' then return rose_pine_colors[rose_pine_variant()] end
+	return require('tokyonight.colors').setup { style = tokyonight_style() }
+end
+
+local function tokyonight_palette(c)
 	return {
 		statusline = {
 			normal_fg = c.blue,
@@ -92,14 +174,85 @@ local function palette(c)
 	}
 end
 
-M = vim.tbl_extend('force', M, palette(colors))
+local function rose_pine_palette(c)
+	return {
+		statusline = {
+			normal_fg = c.rose,
+			normal_b = c.text,
+			normal_c = c.subtle,
+			insert_fg = c.foam,
+			visual_fg = c.iris,
+			replace_fg = c.pine,
+			command_fg = c.love,
+			inactive_fg = c.subtle,
+			winbar_fg = c.pine,
+		},
+		flash = {
+			label_bg = c.surface,
+			label_fg = c.text,
+		},
+		notes = {
+			todo_fg = c.love,
+			done_fg = c.foam,
+			right_arrow_fg = c.gold,
+			tilde_fg = c.love,
+			bullet_fg = c.foam,
+			ref_text_fg = c.iris,
+			ext_link_icon_fg = c.iris,
+			tag_fg = c.foam,
+			block_id_fg = c.foam,
+			highlight_bg = c.rose,
+			highlight_fg = c.base,
+		},
+		whitespace = {
+			hidden = c.surface,
+			visible = c.pine,
+		},
+		telescope = {
+			border = c.surface,
+			normal_bg = c.surface,
+			normal_fg = c.text,
+			selection_bg = c.overlay,
+			selection_fg = c.text,
+			selection_caret = c.love,
+			multi_selection_bg = c.highlight_med,
+			title = c.love,
+			prompt_title = c.rose,
+			preview_title = c.iris,
+			prompt_bg = c.base,
+			prompt_fg = c.text,
+			prompt_counter = c.subtle,
+		},
+		snacks = {
+			debug_bg = c.base,
+			debug_fg = c.text,
+			indent = c.overlay,
+			indent_chunk = c.iris,
+			indent_scope = c.iris,
+		},
+		syntax = {
+			nontext = c.base,
+			colorcolumn = c.rose,
+			cursorline = c.foam,
+			variable_builtin = c.text,
+			keyword_bang = c.love,
+			keyword_return = c.iris,
+			keyword_export = c.love,
+			keyword_default = c.love,
+			markup = c.rose,
+			markup_heading_1 = c.gold,
+			markup_heading_2 = c.rose,
+		},
+	}
+end
 
-function M.style() return style end
-
-function M.colors() return colors end
+local function active_palette()
+	if M.family() == 'rose-pine' then return rose_pine_palette(M.colors()) end
+	return tokyonight_palette(M.colors())
+end
 
 function M.on_highlights(hl, c)
-	local t = palette(c)
+	local t = tokyonight_palette(c)
 
 	hl.NonText = { fg = t.syntax.nontext }
 	hl.ColorColumn = { bg = t.syntax.colorcolumn }
@@ -150,7 +303,7 @@ end
 
 function M.tokyonight_opts()
 	return {
-		style = style,
+		style = tokyonight_style(),
 		transparent = true,
 		terminal_colors = true,
 		styles = {
@@ -160,5 +313,30 @@ function M.tokyonight_opts()
 		on_highlights = M.on_highlights,
 	}
 end
+
+function M.rose_pine_highlights() return vim.deepcopy(rose_pine_highlight_groups) end
+
+function M.rose_pine_opts()
+	return {
+		variant = rose_pine_variant(),
+		styles = { italic = true, transparency = true },
+		enable = {
+			terminal = true,
+			legacy_highlights = false,
+			migrations = false,
+		},
+		dim_inactive_windows = false,
+		extend_background_behind_borders = true,
+		highlight_groups = M.rose_pine_highlights(),
+	}
+end
+
+function M.toggleterm_highlights()
+	if M.family() == 'rose-pine' then return require 'rose-pine.plugins.toggleterm' end
+end
+
+setmetatable(M, {
+	__index = function(_, key) return active_palette()[key] end,
+})
 
 return M

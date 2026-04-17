@@ -61,7 +61,7 @@ local opts = {
 		fallback = true,
 	},
 	install = {
-		colorscheme = { 'tokyonight' },
+		colorscheme = { 'tokyonight', 'rose-pine' },
 	},
 	performance = {
 		rtp = {

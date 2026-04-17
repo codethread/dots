@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
-# :module: Switch macOS and terminal color theme (light/dark)
-# Usage: theme [light|dark|toggle]
+# :module: Switch macOS and terminal color theme
+# Usage: theme [--family tokyonight|rose-pine] [light|dark|toggle]
 
 set -euo pipefail
 
-STATE_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/color-theme"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}"
+MODE_FILE="$STATE_DIR/color-theme"
+FAMILY_FILE="$STATE_DIR/color-theme-family"
+DEFAULT_FAMILY="tokyonight"
 KITTY_THEMES="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/themes"
 KITTY_SOCKET="unix:/tmp/mykitty"
 BG_DIR="$HOME/Library/CloudStorage/OneDrive-Vivup/_img/bgs"
 
 usage() {
-  echo "Usage: theme [light|dark|toggle]"
-  echo "       theme          # show current theme"
+  echo "Usage: theme [--family tokyonight|rose-pine] [light|dark|toggle]"
+  echo "       theme                         # show current theme"
+  echo "       theme --family rose-pine      # switch family, keep current mode"
 }
 
 is_macos() {
@@ -21,8 +25,8 @@ is_macos() {
 state_mode() {
   local mode
 
-  if [[ -r "$STATE_FILE" ]]; then
-    mode="$(tr -d '[:space:]' < "$STATE_FILE")"
+  if [[ -r "$MODE_FILE" ]]; then
+    mode="$(tr -d '[:space:]' < "$MODE_FILE")"
     case "$mode" in
       light | dark)
         echo "$mode"
@@ -57,6 +61,71 @@ system_mode() {
 
 current_mode() {
   system_mode || state_mode || echo "dark"
+}
+
+state_family() {
+  local family
+
+  if [[ -r "$FAMILY_FILE" ]]; then
+    family="$(tr -d '[:space:]' < "$FAMILY_FILE")"
+    case "$family" in
+      tokyonight | rose-pine)
+        echo "$family"
+        return 0
+        ;;
+    esac
+  fi
+
+  return 1
+}
+
+current_family() {
+  state_family || echo "$DEFAULT_FAMILY"
+}
+
+theme_name() {
+  local family="$1"
+  local mode="$2"
+
+  case "$family:$mode" in
+    tokyonight:light)
+      echo "tokyonight-day"
+      ;;
+    tokyonight:dark)
+      echo "tokyonight-moon"
+      ;;
+    rose-pine:light)
+      echo "rose-pine-dawn"
+      ;;
+    rose-pine:dark)
+      echo "rose-pine"
+      ;;
+    *)
+      echo "Unsupported theme: $family $mode" >&2
+      return 1
+      ;;
+  esac
+}
+
+wallpaper_name() {
+  local family="$1"
+  local mode="$2"
+  local name
+
+  name="$(theme_name "$family" "$mode")"
+  if [[ -f "$BG_DIR/$name.jpg" ]]; then
+    echo "$name"
+    return 0
+  fi
+
+  case "$family:$mode" in
+    *:light)
+      echo "tokyonight-day"
+      ;;
+    *)
+      echo "tokyonight-moon"
+      ;;
+  esac
 }
 
 set_system_mode() {
@@ -95,14 +164,59 @@ end run
 APPLESCRIPT
 }
 
-case "${1:-}" in
+MODE_ARG=""
+FAMILY=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    --family)
+      shift
+      if [[ $# -eq 0 ]]; then
+        echo "Missing family after --family" >&2
+        exit 1
+      fi
+      FAMILY="$1"
+      ;;
+    light | dark | toggle)
+      if [[ -n "$MODE_ARG" ]]; then
+        echo "Only one mode may be provided" >&2
+        exit 1
+      fi
+      MODE_ARG="$1"
+      ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+if [[ -z "$MODE_ARG" && -z "$FAMILY" ]]; then
+  echo "Current: $(current_family) $(current_mode)"
+  usage
+  exit 0
+fi
+
+FAMILY="${FAMILY:-$(current_family)}"
+case "$FAMILY" in
+  tokyonight | rose-pine) ;;
+  *)
+    echo "Unsupported theme family: $FAMILY" >&2
+    exit 1
+    ;;
+esac
+
+case "$MODE_ARG" in
   "")
-    echo "Current: $(current_mode)"
-    usage
-    exit 0
+    MODE="$(current_mode)"
     ;;
   light | dark)
-    MODE="$1"
+    MODE="$MODE_ARG"
     ;;
   toggle)
     if [[ "$(current_mode)" == "dark" ]]; then
@@ -111,19 +225,12 @@ case "${1:-}" in
       MODE="dark"
     fi
     ;;
-  *)
-    usage >&2
-    exit 1
-    ;;
 esac
 
-if [[ "$MODE" == "light" ]]; then
-  THEME_NAME="tokyonight-day"
-else
-  THEME_NAME="tokyonight-moon"
-fi
+THEME_NAME="$(theme_name "$FAMILY" "$MODE")"
+WALLPAPER_NAME="$(wallpaper_name "$FAMILY" "$MODE")"
 THEME_CONF="$KITTY_THEMES/$THEME_NAME.conf"
-WALLPAPER="$BG_DIR/$THEME_NAME.jpg"
+WALLPAPER="$BG_DIR/$WALLPAPER_NAME.jpg"
 
 if [[ ! -f "$THEME_CONF" ]]; then
   echo "Missing kitty theme: $THEME_CONF" >&2
@@ -135,10 +242,11 @@ if is_macos && [[ ! -f "$WALLPAPER" ]]; then
   exit 1
 fi
 
-mkdir -p "$(dirname "$STATE_FILE")"
+mkdir -p "$STATE_DIR"
 set_system_mode "$MODE"
 set_wallpaper "$WALLPAPER"
-echo "$MODE" > "$STATE_FILE"
+echo "$MODE" > "$MODE_FILE"
+echo "$FAMILY" > "$FAMILY_FILE"
 cp "$THEME_CONF" "$KITTY_THEMES/active-theme.conf"
 
 # reload live kitty sessions; silence errors if no instance is running
@@ -148,4 +256,4 @@ if command -v kitty >/dev/null 2>&1; then
     || true
 fi
 
-echo "Theme: $MODE"
+echo "Theme: $FAMILY $MODE"

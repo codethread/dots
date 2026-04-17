@@ -1,5 +1,7 @@
 if vim.g.vscode then return {} end
 
+local theme = require 'codethread.theme'
+
 return {
 	-- Keeping these around if moving to a termainl without builtin smear
 	-- { 'DanilaMihailov/beacon.nvim' },
@@ -13,11 +15,26 @@ return {
 
 	{
 		'folke/tokyonight.nvim',
+		enabled = theme.family() == 'tokyonight',
 		priority = 1000,
 		lazy = false,
 		config = function()
 			require('tokyonight').setup(require('codethread.theme').tokyonight_opts())
 			vim.cmd 'colorscheme tokyonight'
+		end,
+	},
+
+	{
+		'rose-pine/neovim',
+		name = 'rose-pine',
+		enabled = theme.family() == 'rose-pine',
+		priority = 1000,
+		lazy = false,
+		config = function(_, opts)
+			require('rose-pine').setup(
+				vim.tbl_deep_extend('force', opts or {}, require('codethread.theme').rose_pine_opts())
+			)
+			vim.cmd 'colorscheme rose-pine'
 		end,
 	},
 
