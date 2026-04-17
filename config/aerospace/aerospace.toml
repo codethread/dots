@@ -136,6 +136,10 @@ run = 'move-node-to-workspace alt'
 #####################################
 # Special
 [[on-window-detected]]
+if.app-id = 'com.obsproject.obs-studio'
+run = 'move-node-to-monitor next'
+
+[[on-window-detected]]
 if.app-id = 'com.figma.Desktop'
 run = 'move-node-to-workspace figma'
 
