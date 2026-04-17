@@ -209,6 +209,7 @@ in {
 	lazydocker
     difftastic
     yt-dlp
+	vivid
   ];
 
   programs.direnv = {

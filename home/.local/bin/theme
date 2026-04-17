@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# :module: Switch macOS and terminal color theme (light/dark)
+# Usage: theme [light|dark|toggle]
+
+set -euo pipefail
+
+STATE_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/color-theme"
+KITTY_THEMES="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/themes"
+KITTY_SOCKET="unix:/tmp/mykitty"
+BG_DIR="$HOME/Library/CloudStorage/OneDrive-Vivup/_img/bgs"
+
+usage() {
+  echo "Usage: theme [light|dark|toggle]"
+  echo "       theme          # show current theme"
+}
+
+is_macos() {
+  [[ "$(uname -s)" == "Darwin" ]]
+}
+
+state_mode() {
+  local mode
+
+  if [[ -r "$STATE_FILE" ]]; then
+    mode="$(tr -d '[:space:]' < "$STATE_FILE")"
+    case "$mode" in
+      light | dark)
+        echo "$mode"
+        return 0
+        ;;
+    esac
+  fi
+
+  return 1
+}
+
+system_mode() {
+  local dark_mode
+
+  if ! is_macos || ! command -v osascript >/dev/null 2>&1; then
+    return 1
+  fi
+
+  dark_mode="$(osascript -e 'tell app "System Events" to tell appearance preferences to get dark mode' 2>/dev/null)"
+  case "$dark_mode" in
+    true)
+      echo "dark"
+      ;;
+    false)
+      echo "light"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+current_mode() {
+  system_mode || state_mode || echo "dark"
+}
+
+set_system_mode() {
+  local mode="$1"
+  local dark_mode
+
+  if ! is_macos; then
+    return 0
+  fi
+
+  if [[ "$mode" == "dark" ]]; then
+    dark_mode="true"
+  else
+    dark_mode="false"
+  fi
+
+  osascript -e "tell app \"System Events\" to tell appearance preferences to set dark mode to $dark_mode" >/dev/null
+}
+
+set_wallpaper() {
+  local wallpaper="$1"
+
+  if ! is_macos; then
+    return 0
+  fi
+
+  osascript - "$wallpaper" <<'APPLESCRIPT' >/dev/null
+on run argv
+  set wallpaperPath to item 1 of argv
+  tell application "System Events"
+    repeat with currentDesktop in desktops
+      set picture of currentDesktop to wallpaperPath
+    end repeat
+  end tell
+end run
+APPLESCRIPT
+}
+
+case "${1:-}" in
+  "")
+    echo "Current: $(current_mode)"
+    usage
+    exit 0
+    ;;
+  light | dark)
+    MODE="$1"
+    ;;
+  toggle)
+    if [[ "$(current_mode)" == "dark" ]]; then
+      MODE="light"
+    else
+      MODE="dark"
+    fi
+    ;;
+  *)
+    usage >&2
+    exit 1
+    ;;
+esac
+
+if [[ "$MODE" == "light" ]]; then
+  THEME_NAME="tokyonight-day"
+else
+  THEME_NAME="tokyonight-moon"
+fi
+THEME_CONF="$KITTY_THEMES/$THEME_NAME.conf"
+WALLPAPER="$BG_DIR/$THEME_NAME.jpg"
+
+if [[ ! -f "$THEME_CONF" ]]; then
+  echo "Missing kitty theme: $THEME_CONF" >&2
+  exit 1
+fi
+
+if is_macos && [[ ! -f "$WALLPAPER" ]]; then
+  echo "Missing wallpaper: $WALLPAPER" >&2
+  exit 1
+fi
+
+mkdir -p "$(dirname "$STATE_FILE")"
+set_system_mode "$MODE"
+set_wallpaper "$WALLPAPER"
+echo "$MODE" > "$STATE_FILE"
+cp "$THEME_CONF" "$KITTY_THEMES/active-theme.conf"
+
+# reload live kitty sessions; silence errors if no instance is running
+if command -v kitty >/dev/null 2>&1; then
+  kitty @ --to "$KITTY_SOCKET" set-colors --all --configured "$THEME_CONF" 2>/dev/null \
+    || kitty @ set-colors --all --configured "$THEME_CONF" 2>/dev/null \
+    || true
+fi
+
+echo "Theme: $MODE"

@@ -1,8 +1,8 @@
 # macOS system utilities and general OS functions
-# Note: mac-dark-toggle, finder, loggy, alert are macOS-only (osascript, open -a, afplay)
+# Note: mac-dark-toggle, finder, loggy, alert are macOS-only (theme, open -a, osascript, afplay)
 # They are safe to import on Linux but will error if invoked
 
-export alias mac-dark-toggle = osascript -e 'tell app "System Events" to tell appearance preferences to set dark mode to not dark mode'
+export alias mac-dark-toggle = theme toggle
 export alias l = ls -a
 export alias finder = ^open -a 'Finder' .
 export alias ports = lsof -i tcp:3000

@@ -1,5 +1,6 @@
 use ct/boot
 use ct/themes.nu themes
+use ct/ls-colors.nu
 use ct/config [keybindings menus hooks]
 use ct/core *
 use ct/tmux
@@ -45,7 +46,12 @@ $env.config.shell_integration = $env.config.shell_integration | merge {
 }
 $env.config.completions.algorithm = "fuzzy"
 $env.config.show_banner = false
-$env.config.color_config = $themes.dark
+let _theme_file = ($env.XDG_STATE_HOME | path join "color-theme")
+$env.config.color_config = if (($_theme_file | path exists) and ((open $_theme_file | str trim) == "light")) {
+	$themes.light
+} else {
+	$themes.dark
+}
 $env.config.edit_mode = 'emacs' # emacs, vi
 $env.config.render_right_prompt_on_last_line = false # true or false to enable or disable right prompt to be rendered on last line of the prompt.
 $env.config.highlight_resolved_externals = true
