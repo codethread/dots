@@ -79,6 +79,10 @@ $env.STARSHIP_CACHE = ($env.STARSHIP_CACHE? | default ($env.XDG_CACHE_HOME | pat
 if (sys host).name == "Darwin" {
 	path add -a "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
 	path add -a "/Applications/Cursor.app/Contents/Resources/app/bin"
+	$env.CT_BACKGROUNDS_DIR = ($env.CT_BACKGROUNDS_DIR? | default (match $env.CT_USER {
+		"work" => (home "Library/CloudStorage/OneDrive-Vivup/_img/bgs"),
+		_ => (home "Library/Mobile Documents/com~apple~CloudDocs/Images/backgrounds"),
+	}))
 }
 
 path add "/opt/podman/bin"

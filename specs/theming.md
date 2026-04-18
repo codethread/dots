@@ -1,7 +1,7 @@
 # Theming Specification
 
 **Status:** Partially Implemented
-**Last Updated:** 2026-04-17
+**Last Updated:** 2026-04-18
 
 ## 1. Overview
 
@@ -140,8 +140,8 @@ Implemented in `home/.local/bin/theme`.
 
 - Reads current system appearance through `osascript`.
 - Sets system dark mode through `System Events`.
-- Sets every desktop wallpaper to an image under `~/Library/CloudStorage/OneDrive-Vivup/_img/bgs`.
-- Wallpaper lookup first tries the exact theme name, then falls back to `tokyonight-day` or `tokyonight-moon`.
+- Sets every desktop wallpaper to an image under `$CT_BACKGROUNDS_DIR` (defaults to iCloud `Images/backgrounds` on home machines, OneDrive `_img/bgs` on work machines).
+- Wallpaper lookup first tries the exact theme name, then falls back to `default` image in the backgrounds directory.
 
 On non-macOS systems these steps are no-ops.
 

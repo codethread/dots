@@ -10,7 +10,18 @@ FAMILY_FILE="$STATE_DIR/color-theme-family"
 DEFAULT_FAMILY="tokyonight"
 KITTY_THEMES="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/themes"
 KITTY_SOCKET="unix:/tmp/mykitty"
-BG_DIR="$HOME/Library/CloudStorage/OneDrive-Vivup/_img/bgs"
+_ct_user="${CT_USER:-}"
+if [[ -z "$_ct_user" ]]; then
+  case "${USER:-}" in
+    adam.hall | adamhall) _ct_user="work" ;;
+    *) _ct_user="home" ;;
+  esac
+fi
+if [[ "$_ct_user" == "work" ]]; then
+  BG_DIR="${CT_BACKGROUNDS_DIR:-$HOME/Library/CloudStorage/OneDrive-Vivup/_img/bgs}"
+else
+  BG_DIR="${CT_BACKGROUNDS_DIR:-$HOME/Library/Mobile Documents/com~apple~CloudDocs/Images/backgrounds}"
+fi
 
 usage() {
   echo "Usage: theme [--family tokyonight|rose-pine] [light|dark|toggle]"
@@ -107,25 +118,27 @@ theme_name() {
   esac
 }
 
-wallpaper_name() {
+find_wallpaper() {
+  local name="$1"
+  local ext
+  for ext in jpg png; do
+    if [[ -f "$BG_DIR/$name.$ext" ]]; then
+      echo "$BG_DIR/$name.$ext"
+      return 0
+    fi
+  done
+  return 1
+}
+
+wallpaper_path() {
   local family="$1"
   local mode="$2"
   local name
 
   name="$(theme_name "$family" "$mode")"
-  if [[ -f "$BG_DIR/$name.jpg" ]]; then
-    echo "$name"
-    return 0
-  fi
+  find_wallpaper "$name" && return 0
 
-  case "$family:$mode" in
-    *:light)
-      echo "tokyonight-day"
-      ;;
-    *)
-      echo "tokyonight-moon"
-      ;;
-  esac
+  find_wallpaper "default"
 }
 
 set_system_mode() {
@@ -228,17 +241,16 @@ case "$MODE_ARG" in
 esac
 
 THEME_NAME="$(theme_name "$FAMILY" "$MODE")"
-WALLPAPER_NAME="$(wallpaper_name "$FAMILY" "$MODE")"
 THEME_CONF="$KITTY_THEMES/$THEME_NAME.conf"
-WALLPAPER="$BG_DIR/$WALLPAPER_NAME.jpg"
+WALLPAPER="$(wallpaper_path "$FAMILY" "$MODE" || true)"
 
 if [[ ! -f "$THEME_CONF" ]]; then
   echo "Missing kitty theme: $THEME_CONF" >&2
   exit 1
 fi
 
-if is_macos && [[ ! -f "$WALLPAPER" ]]; then
-  echo "Missing wallpaper: $WALLPAPER" >&2
+if is_macos && [[ -z "$WALLPAPER" ]]; then
+  echo "Missing wallpaper for: $FAMILY $MODE in $BG_DIR" >&2
   exit 1
 fi
 
