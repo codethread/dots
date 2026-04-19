@@ -30,6 +30,7 @@
     enable = true;
     settings.PasswordAuthentication = false; # key-based only
     settings.UseDns = false; # skip reverse DNS lookup on connecting clients
+    settings.GSSAPIAuthentication = false; # iPhone/Termius had ~1 min initial SSH delay without this; avoid GSSAPI/Kerberos negotiation
   };
 
   programs.ssh.startAgent = true;
