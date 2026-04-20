@@ -2,15 +2,15 @@
 
 # pim with a fast mini model and thinking disabled
 export def pii --wrapped [...rest] {
-	pi --provider openai-codex --model gpt-5.4-mini:off ...$rest
+	pi --agent main --provider openai-codex --model gpt-5.4-mini:low ...$rest
 }
 
 export def pih --wrapped [...rest] {
-	pi --provider openai-codex --model gpt-5.4:high ...$rest
+	pi --agent main --provider openai-codex --model gpt-5.4:high ...$rest
 }
 
 export def pio --wrapped [...rest] {
-	pi --provider github-copilot --model claude-opus-4.6:high ...$rest
+	pi --agent main --provider github-copilot --model claude-opus-4.6:high ...$rest
 }
 
 # Hardcoded model matrix for `pi-par`. Tweak this list to compare different

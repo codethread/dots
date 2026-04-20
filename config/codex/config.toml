@@ -62,6 +62,9 @@ trust_level = "trusted"
 [projects."/home/codethread/dev/vendor/pi-mono"]
 trust_level = "trusted"
 
+[projects."/home/codethread/dev/projects/agents"]
+trust_level = "trusted"
+
 [tui.model_availability_nux]
 "gpt-5.3-codex-spark" = 4
 

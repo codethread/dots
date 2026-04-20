@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.66.1",
+  "lastChangelogVersion": "0.67.6",
   "theme": "rose-pine-moon",
   "quietStartup": true,
   "editorPaddingX": 1,
@@ -7,13 +7,26 @@
   "defaultModel": "gpt-5.4-mini",
   "defaultThinkingLevel": "low",
   "enabledModels": [
-    "openai-codex/gpt-5.4:low",
-    "openai-codex/gpt-5.4-mini:low",
-    "github-copilot/claude-sonnet-4.6:medium",
-    "github-copilot/gemini-3.1-pro-preview:high"
+    "openai-codex/gpt-5.4",
+    "openai-codex/gpt-5.4-mini",
+    "github-copilot/claude-sonnet-4.6",
+    "anthropic/claude-haiku-4-5"
   ],
   "packages": [
-    "../../dev/projects/agents"
+    {
+      "source": "../../dev/projects/agents",
+      "extensions": [
+        "-pi-extensions/extensions/claude-sync/index.ts"
+      ]
+    },
+    "npm:pi-mermaid",
+    {
+      "source": "npm:pi-web-access",
+      "skills": [
+        "-skills/librarian/SKILL.md"
+      ]
+    }
   ],
-  "hideThinkingBlock": false
+  "hideThinkingBlock": false,
+  "treeFilterMode": "default"
 }
