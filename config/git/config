@@ -44,6 +44,12 @@
     # (what the target branch introduced)
     rc-theirs = "!git -c diff.external=difft diff REBASE_HEAD^..HEAD"
 
+    # Difftastic aliases, so `git dlog -p` is `git log -p`
+    # with difftastic and likewise for the other subcommands.
+    dlog = -c diff.external=difft log --ext-diff
+    dshow = -c diff.external=difft show --ext-diff
+    ddiff = -c diff.external=difft diff
+
 [merge]
 	# The diff3 conflict style adds a third section to your conflict markers showing the common ancestor's version of the conflicting lines. This can be incredibly helpful for understanding the context of the conflict and resolving it accurately.
 	conflictstyle = zdiff3
