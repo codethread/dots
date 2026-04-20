@@ -60,4 +60,5 @@ export const colorize = {
 	dimMagenta: (text: string | number) => `${ANSI.dim}${ANSI.magenta}${text}${ANSI.reset}`,
 	dimCyan: (text: string | number) => `${ANSI.dim}${ANSI.cyan}${text}${ANSI.reset}`,
 	dimItalic: (text: string | number) => `${ANSI.dim}${ANSI.italic}${text}${ANSI.reset}`,
+	brightBlack: (text: string | number) => `${ANSI.brightBlack}${text}${ANSI.reset}`,
 } as const;

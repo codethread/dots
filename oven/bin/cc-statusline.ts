@@ -75,7 +75,7 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 		: isGitRoot
 			? colorize.cyan(dirDisplay)
 			: colorize.red(dirDisplay);
-	const branchPart = branch ? colorize.dimMagenta(`  ${branch}`) : "";
+	const branchPart = branch ? colorize.magenta(`  ${branch}`) : "";
 	const dirBranch = `${dirPart}${branchPart}`;
 
 	if (inContainer) {
@@ -85,12 +85,12 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 	}
 
 	// Model name
-	parts.push(colorize.dimYellow(getShortModelName(input.model.display_name)));
+	parts.push(colorize.yellow(getShortModelName(input.model.display_name)));
 
 	// Token usage and remaining percentage
 	const cw = input.context_window;
 	const totalTokens = (cw?.total_input_tokens ?? 0) + (cw?.total_output_tokens ?? 0);
-	parts.push(colorize.dim(formatTokenCount(totalTokens)));
+	parts.push(colorize.brightBlack(formatTokenCount(totalTokens)));
 
 	const remainingPercent = cw?.remaining_percentage ?? 100;
 	const remainingDisplay = `${remainingPercent.toFixed(0)}%`;
@@ -99,7 +99,7 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 			? colorize.red(remainingDisplay)
 			: remainingPercent < 50
 				? colorize.yellow(remainingDisplay)
-				: colorize.dim(remainingDisplay);
+				: colorize.brightBlack(remainingDisplay);
 	parts.push(coloredRemaining);
 
 	return parts.join(" ");
