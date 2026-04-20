@@ -9,6 +9,7 @@ return {
 
 	{
 		'mrjones2014/smart-splits.nvim',
+		lazy = false,
 		build = './kitty/install-kittens.bash',
 		init = function()
 			do -- handle kitty keybinding passthrough
@@ -37,6 +38,7 @@ return {
 		},
 		opts = {
 			log_level = 'warn',
+			multiplexer_integration = 'kitty',
 			-- Ignored buffer types (only while resizing)
 			ignored_buftypes = {
 				'nofile',
