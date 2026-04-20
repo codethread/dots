@@ -43,6 +43,7 @@ fe_native = "~/work/app/fe-native"
 fe_feat = "~/work/app/deals-light-ui__ct--vite"
 fe_feat2 = "~/work/app/fe-review"
 
+notes = "~/Library/CloudStorage/OneDrive-Vivup/_docs/notes"
 advanced_budgets = "~/dev/projects/advanced-budgets"
 flexi_points = "~/work/perkbox-services/flexi-points/flexi-points-app"
 inspect_package = "~/work/libraries/inspect-my-package"
@@ -58,9 +59,10 @@ P3 = "fe_feat"
 P4 = "fe_feat2"
 P5 = "fe_native"
 
+P7 = "ai_files"
 P8 = "workfiles"
 P9 = "protobuf"
-P0 = "ai_files"
+P0 = "notes"
 
 [profiles.homelab.search]
 dirs = [
