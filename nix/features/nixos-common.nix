@@ -20,6 +20,11 @@
     libnotify
   ];
 
+  programs.rofi = {
+    enable = true;
+    theme = "purple";
+  };
+
   # Dark mode: GTK
   gtk = {
     enable = true;
