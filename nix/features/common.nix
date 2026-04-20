@@ -161,8 +161,7 @@ in {
     playwright-cli
     agentPkgSet.typescript
     agentPkgSet.typescript-language-server
-    llmAgents.codex
-    llmAgents.opencode
+    codex
     llmAgents.claude-code
     llmAgents.pi
 
