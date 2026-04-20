@@ -12,5 +12,6 @@
 
   homebrew.casks = [
     "whatsapp"
+    "discord"
   ];
 }
