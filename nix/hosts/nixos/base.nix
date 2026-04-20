@@ -11,6 +11,7 @@
   # --- Nix ---
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
+    accept-flake-config = true;
     max-substitution-jobs = lib.mkDefault 32;
     http-connections = lib.mkDefault 50;
   };

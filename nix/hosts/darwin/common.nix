@@ -23,7 +23,10 @@ let
     "/sbin"
   ];
 in {
-  nix.settings.experimental-features = "nix-command flakes";
+  nix.settings = {
+    experimental-features = "nix-command flakes";
+    accept-flake-config = true;
+  };
   nixpkgs.config.allowUnfree = true;
 
   # Keyboard repeat: lower values are faster on macOS.
