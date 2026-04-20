@@ -9,6 +9,7 @@ MODE_FILE="$STATE_DIR/color-theme"
 FAMILY_FILE="$STATE_DIR/color-theme-family"
 DEFAULT_FAMILY="tokyonight"
 KITTY_THEMES="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/themes"
+ACTIVE_THEME_CONF="${XDG_STATE_HOME:-$HOME/.local/state}/kitty/active-theme.conf"
 KITTY_SOCKET="unix:/tmp/mykitty"
 _ct_user="${CT_USER:-}"
 if [[ -z "$_ct_user" ]]; then
@@ -254,12 +255,12 @@ if is_macos && [[ -z "$WALLPAPER" ]]; then
   exit 1
 fi
 
-mkdir -p "$STATE_DIR"
+mkdir -p "$STATE_DIR" "$(dirname "$ACTIVE_THEME_CONF")"
 set_system_mode "$MODE"
 set_wallpaper "$WALLPAPER"
 echo "$MODE" > "$MODE_FILE"
 echo "$FAMILY" > "$FAMILY_FILE"
-cp "$THEME_CONF" "$KITTY_THEMES/active-theme.conf"
+cp "$THEME_CONF" "$ACTIVE_THEME_CONF"
 
 # reload live kitty sessions; silence errors if no instance is running
 if command -v kitty >/dev/null 2>&1; then

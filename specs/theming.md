@@ -56,7 +56,7 @@ theme light|dark|toggle [--family tokyonight|rose-pine]
     |  +- color-theme-family
     |
     +- Kitty
-       +- copy selected theme to active-theme.conf
+       +- copy selected theme to $XDG_STATE_HOME/kitty/active-theme.conf
        +- reload live windows through kitty remote control
 ```
 
@@ -67,14 +67,16 @@ home/.local/bin/theme
     Main theme switcher. Writes shared state, controls macOS, updates Kitty.
 
 config/kitty/kitty.conf
-    Includes themes/active-theme.conf and enables remote control.
+    Includes $XDG_STATE_HOME/kitty/active-theme.conf and enables remote control.
 
 config/kitty/themes/
-    active-theme.conf
     rose-pine.conf
     rose-pine-dawn.conf
     tokyonight-day.conf
     tokyonight-moon.conf
+
+$XDG_STATE_HOME/kitty/active-theme.conf
+    Written by theme switcher; not tracked in git to avoid noisy history.
 
 config/nushell/config.nu
     Reads color-theme and selects the light/dark Nushell color config.
@@ -100,6 +102,7 @@ config/nvim/lua/plugins/ui.lua
 |---|---|---|---|
 | `$XDG_STATE_HOME/color-theme` | `light`, `dark` | `theme` | `theme`, Nushell, Neovim |
 | `$XDG_STATE_HOME/color-theme-family` | `tokyonight`, `rose-pine` | `theme` | `theme`, Nushell `LS_COLORS`, Neovim |
+| `$XDG_STATE_HOME/kitty/active-theme.conf` | Kitty color config | `theme` | Kitty |
 
 `$XDG_STATE_HOME` defaults to `~/.local/state` when unset.
 
@@ -149,8 +152,8 @@ On non-macOS systems these steps are no-ops.
 
 Implemented by `home/.local/bin/theme` and `config/kitty/kitty.conf`.
 
-- `kitty.conf` includes `themes/active-theme.conf`.
-- The switcher copies the selected theme file over `active-theme.conf`.
+- `kitty.conf` includes `$XDG_STATE_HOME/kitty/active-theme.conf`.
+- The switcher copies the selected theme file to `$XDG_STATE_HOME/kitty/active-theme.conf`; this file is not tracked in git.
 - Live reload uses `kitty @ set-colors --all --configured`.
 - Primary remote socket is `unix:/tmp/mykitty`; fallback is Kitty's default remote target.
 - `allow_remote_control yes` and `listen_on unix:/tmp/mykitty` must remain enabled.
@@ -227,7 +230,7 @@ Known areas outside the current shared flow:
 
 - **Tiny state contract** - plain files under `$XDG_STATE_HOME` are easy for Bash, Nushell, Lua, and future Nix activation scripts to share.
 - **Imperative runtime switcher** - day/night switching should not require a Nix rebuild.
-- **Kitty theme file copy** - `active-theme.conf` keeps normal Kitty startup simple while still allowing live reload.
+- **Kitty theme file copy** - `$XDG_STATE_HOME/kitty/active-theme.conf` keeps normal Kitty startup simple while still allowing live reload. Stored outside the repo to avoid git churn on every theme switch.
 - **Family and mode are separate** - toggling light/dark preserves the user's preferred family.
 - **Neovim owns plugin-specific details** - external state picks family/mode; `codethread.theme` translates that into plugin options and custom highlight palettes.
 - **Terminal apps inherit first** - the default approach is terminal palette plus shell color config plus `LS_COLORS`; add app-specific theme config only when inheritance fails.
