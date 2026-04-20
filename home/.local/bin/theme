@@ -9,7 +9,7 @@ MODE_FILE="$STATE_DIR/color-theme"
 FAMILY_FILE="$STATE_DIR/color-theme-family"
 DEFAULT_FAMILY="tokyonight"
 KITTY_THEMES="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/themes"
-ACTIVE_THEME_CONF="${XDG_STATE_HOME:-$HOME/.local/state}/kitty/active-theme.conf"
+ACTIVE_THEME_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/themes/active.conf"
 KITTY_SOCKET="unix:/tmp/mykitty"
 _ct_user="${CT_USER:-}"
 if [[ -z "$_ct_user" ]]; then
