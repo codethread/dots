@@ -16,7 +16,8 @@
     {
       "source": "../../dev/projects/agents",
       "extensions": [
-        "-pi-extensions/extensions/claude-sync/index.ts"
+        "-pi-extensions/extensions/claude-sync/index.ts",
+        "-pi-extensions/claude-sync/index.ts"
       ]
     },
     "npm:pi-mermaid",

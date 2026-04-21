@@ -10,7 +10,7 @@ export def pih --wrapped [...rest] {
 }
 
 export def pio --wrapped [...rest] {
-	pi --agent main --provider github-copilot --model claude-opus-4.6:high ...$rest
+	pi --agent main --provider github-copilot --model claude-opus-4.7:high ...$rest
 }
 
 # Hardcoded model matrix for `pi-par`. Tweak this list to compare different

@@ -1,5 +1,6 @@
 # Don't let ripgrep vomit really long lines to my terminal, and show a preview.
---max-columns=150
+# need to make this 300 for ai and 150 for human
+--max-columns=300
 --max-columns-preview
 
 --hidden
