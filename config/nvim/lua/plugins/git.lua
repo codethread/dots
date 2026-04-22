@@ -4,7 +4,7 @@ return {
 	{
 		'NeogitOrg/neogit',
 		lazy = true,
-		dependencies = { 'sindrets/diffview.nvim' },
+		dependencies = { 'dlyongemallo/diffview.nvim' },
 		init = function()
 			vim.api.nvim_create_autocmd('User', {
 				pattern = 'NeogitPushComplete',
@@ -27,7 +27,7 @@ return {
 		},
 	},
 	{
-		'sindrets/diffview.nvim',
+		'dlyongemallo/diffview.nvim',
 		lazy = false,
 		cmd = {
 			'DiffviewFileHistory',
