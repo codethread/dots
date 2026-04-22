@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+#:module: Kitty agentic-window switcher
+#:
+#: Usage: kitty-agent-switch [--debug]
+#:
+#: Finds kitty windows running agentic CLIs (Claude, Codex, Pi, etc.), shows
+#: them in fzf with a live window preview, and jumps to the selection.
+#:
+#: Intended use: bind in kitty.conf with --type=overlay so kitty handles the popup:
+#:   map --mode tmux t launch --type=overlay kitty-agent-switch
+#:
+#: Options:
+#:   --debug   Print window list and their captured content to stdout (no fzf)
+#:   -h|--help Show this help
+#:
+#: Note: kitty cannot programmatically switch focus between OS windows on macOS.
+#:       Only windows within the current OS window are reachable.
+
+set -u
+
+AGENT_REGEX='(claude([-/ ]code)?|@anthropic-ai/claude-code|\bcl\b|codex([-/ ]raw)?|\bpi\b|\bpim\b|opencode)'
+
+DEBUG_MODE=0
+
+usage() {
+	grep '^#:' "$0" | sed 's/^#: \{0,1\}//'
+	exit 0
+}
+
+for arg in "$@"; do
+	case "$arg" in
+		--debug) DEBUG_MODE=1 ;;
+		-h|--help) usage ;;
+	esac
+done
+
+if ! command -v kitten >/dev/null 2>&1; then
+	echo 'kitty-agent-switch: kitten is required' >&2
+	exit 1
+fi
+
+if [[ $DEBUG_MODE -eq 0 ]] && ! command -v fzf >/dev/null 2>&1; then
+	echo 'kitty-agent-switch: fzf is required' >&2
+	exit 1
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+	echo 'kitty-agent-switch: jq is required' >&2
+	exit 1
+fi
+
+if ! kitten @ ls >/dev/null 2>&1; then
+	echo 'kitty-agent-switch: no running kitty instance found (is allow_remote_control enabled?)' >&2
+	exit 1
+fi
+
+agent_label() {
+	local exec=$1
+	local args=$2
+
+	if [[ "$exec" == "pi" || "$exec" == "pim" ]] || [[ "$args" =~ (^|[[:space:]])(pi|pim)([[:space:]]|$) ]]; then
+		echo 'pi'
+	elif [[ "$exec" == "codex" || "$exec" == "codex-raw" ]] || [[ "$args" =~ codex ]]; then
+		echo 'codex'
+	elif [[ "$exec" == "opencode" ]] || [[ "$args" =~ opencode ]]; then
+		echo 'opencode'
+	elif [[ "$exec" == "claude" || "$exec" == "cl" ]] || [[ "$args" =~ claude([-/ ]code)? ]] || [[ "$args" =~ @anthropic-ai/claude-code ]]; then
+		echo 'claude'
+	else
+		echo "$exec"
+	fi
+}
+
+# Outputs one line per matching window:
+#   <active>|<tab_title>|<tool>|<path>\t<window_id>\t<tab_id>
+list_agent_windows() {
+	local kitty_data
+	kitty_data=$(kitten @ ls 2>/dev/null) || return 1
+
+	# Emit TSV: window_id, tab_id, tab_title, cwd, is_focused, fg_cmdlines (unit-sep delimited)
+	while IFS=$'\t' read -r window_id tab_id tab_title cwd is_focused fg_cmds; do
+		# Skip the window running this script
+		[[ "$window_id" == "${KITTY_WINDOW_ID:-}" ]] && continue
+		local tool=''
+		local exec args cmd
+
+		# Check each foreground process against the agent regex
+		while IFS= read -r cmd; do
+			[[ -z "$cmd" ]] && continue
+			exec="${cmd%% *}"
+			exec="${exec##*/}"
+			args="$cmd"
+
+			if [[ "$args" =~ $AGENT_REGEX ]] || [[ "$exec" =~ ^(claude|cl|codex|codex-raw|pi|pim|opencode)$ ]]; then
+				if [[ "$exec" == "node" && ! "$args" =~ $AGENT_REGEX ]]; then
+					continue
+				fi
+				tool=$(agent_label "$exec" "$args")
+				break
+			fi
+		done < <(printf '%s\n' "$fg_cmds" | tr '\x1f' '\n')
+
+		[[ -z "$tool" ]] && continue
+
+		local active_mark=' '
+		[[ "$is_focused" == "true" ]] && active_mark='*'
+
+		local short_path="${cwd/#$HOME/\~}"
+
+		printf '%s|%s|%s|%s\t%s\t%s\n' \
+			"$active_mark" \
+			"$tab_title" \
+			"$tool" \
+			"$short_path" \
+			"$window_id" \
+			"$tab_id"
+	done < <(echo "$kitty_data" | jq -r '
+		.[] | .tabs[] as $tab | $tab.windows[] |
+		[
+			(.id | tostring),
+			($tab.id | tostring),
+			$tab.title,
+			.cwd,
+			(.is_focused | tostring),
+			(.foreground_processes | map(.cmdline | join(" ")) | join("\u001f"))
+		] | @tsv
+	')
+}
+
+# Reads pipe-delimited structured lines from list_agent_windows and re-emits
+# them with columns padded to the same width across all rows.
+align_candidates() {
+	local lines=()
+	while IFS= read -r line; do
+		lines+=("$line")
+	done
+
+	[[ ${#lines[@]} -eq 0 ]] && return
+
+	local max_tab=0 max_tool=0
+	local display_part active tab tool path
+	for line in "${lines[@]}"; do
+		display_part="${line%%$'\t'*}"
+		IFS='|' read -r active tab tool path <<< "$display_part"
+		[[ ${#tab}  -gt $max_tab  ]] && max_tab=${#tab}
+		[[ ${#tool} -gt $max_tool ]] && max_tool=${#tool}
+	done
+
+	local label rest
+	for line in "${lines[@]}"; do
+		rest="${line#*$'\t'}"
+		display_part="${line%%$'\t'*}"
+		IFS='|' read -r active tab tool path <<< "$display_part"
+		label=$(printf '%s  %-*s  %-*s  %s' \
+			"$active" \
+			"$max_tab"  "$tab" \
+			"$max_tool" "$tool" \
+			"$path")
+		printf '%s\t%s\n' "$label" "$rest"
+	done
+}
+
+debug_windows() {
+	local candidates="$1"
+	if [[ -z "$candidates" ]]; then
+		echo "No agent windows found."
+		return
+	fi
+
+	echo "=== Agent windows found ==="
+	echo ""
+	while IFS=$'\t' read -r label window_id tab_id; do
+		echo "──────────────────────────────────────────"
+		echo "LABEL:     $label"
+		echo "WINDOW_ID: $window_id"
+		echo "TAB_ID:    $tab_id"
+		echo "PREVIEW (kitten @ get-text --match id:$window_id) — last 20 lines:"
+		echo "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄"
+		kitten @ get-text --match "id:$window_id" 2>/dev/null | tail -20
+		echo ""
+	done <<< "$candidates"
+}
+
+main() {
+	local candidates selected window_id tab_id
+	candidates=$(list_agent_windows | align_candidates)
+
+	if [[ $DEBUG_MODE -eq 1 ]]; then
+		debug_windows "$candidates"
+		exit 0
+	fi
+
+	if [[ -z "$candidates" ]]; then
+		echo "No running agentic tools found"
+		exit 0
+	fi
+
+	selected=$(printf '%s\n' "$candidates" \
+		| fzf \
+			--prompt='Agents > ' \
+			--layout=reverse \
+			--border=rounded \
+			--delimiter=$'\t' \
+			--with-nth=1 \
+			--preview='kitten @ get-text --match id:{2}' \
+			--preview-window='down,70%,nowrap' \
+			--bind 'enter:accept') || exit 0
+
+	window_id=$(printf '%s' "$selected" | cut -f2)
+	tab_id=$(printf '%s' "$selected"    | cut -f3)
+
+	kitten @ focus-tab    --match "id:$tab_id"
+	kitten @ focus-window --match "id:$window_id"
+}
+
+main "$@"
