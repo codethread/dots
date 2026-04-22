@@ -1,11 +1,16 @@
 {
   "lastChangelogVersion": "0.70.2",
-  "theme": "rose-pine-moon",
+  "theme": "rose-pine-dawn",
   "quietStartup": true,
+  "npmCommand": [
+    "npm",
+    "--prefix",
+    "~/.pi/npm-global"
+  ],
   "editorPaddingX": 1,
-  "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4-mini",
-  "defaultThinkingLevel": "low",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-haiku-4-5",
+  "defaultThinkingLevel": "xhigh",
   "enabledModels": [
     "openai-codex/gpt-5.4",
     "openai-codex/gpt-5.4-mini",
@@ -26,9 +31,10 @@
       "skills": [
         "-skills/librarian/SKILL.md"
       ]
-    }
+    },
+    "npm:pi-nvim"
   ],
-  "hideThinkingBlock": false,
+  "hideThinkingBlock": true,
   "treeFilterMode": "default",
   "terminal": {
     "showTerminalProgress": false

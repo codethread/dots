@@ -139,6 +139,7 @@ in {
       "pngpaste"
       "volta"
 	  "yazi"
+	  "rsync"
     ];
     casks = [
       "aerospace"
