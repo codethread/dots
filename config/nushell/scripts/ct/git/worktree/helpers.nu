@@ -56,6 +56,47 @@ export def wk-worktree-path [branch: string] {
 	$"($canonical_root)__($encoded_branch)"
 }
 
+export def wk-config-path [] {
+	let config_home = if "XDG_CONFIG_HOME" in $env {
+		$env.XDG_CONFIG_HOME
+	} else {
+		$env.HOME | path join ".config"
+	}
+
+	$config_home | path join "ct-worktrees" "trees.toml"
+}
+
+export def wk-post-create-hooks [] {
+	let config_path = wk-config-path
+
+	if not ($config_path | path exists) {
+		return []
+	}
+
+	let config = (open $config_path)
+
+	($config | get -o post_create | default [])
+	| where {|hook| (($hook | get -o root | default null) != null) and (($hook | get -o command | default null) != null) }
+	| each {|hook|
+		let shell = (($hook | get -o shell | default "bash") | str downcase)
+		if ($shell in ["bash" "nu"]) {
+			{
+				name: ($hook | get -o name | default $hook.root)
+				root: ($hook.root | path expand)
+				shell: $shell
+				command: $hook.command
+			}
+		} else {
+			error make { msg: $"invalid worktree post-create shell: ($shell)" }
+		}
+	}
+}
+
+export def wk-matching-post-create-hooks [root_dir: string] {
+	let root_path = ($root_dir | path expand)
+	wk-post-create-hooks | where {|hook| $hook.root == $root_path }
+}
+
 export def wk-list-data [] {
 	let listing = (git worktree list --porcelain | complete)
 

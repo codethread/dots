@@ -19,6 +19,7 @@ export def --env "wk add" [
 	branch: string   # branch to create or checkout
 	base?: string    # base branch to create from (default: repo default branch)
 ] {
+	let repo_root = wk-canonical-root
 	let tree_dir = wk-worktree-path $branch
 
 	# fetch all remote refs so branch existence checks are current
@@ -54,13 +55,15 @@ export def --env "wk add" [
 		}
 	}
 
-	wk-open-dir $tree_dir $branch
+	let post_create_hooks = (wk-matching-post-create-hooks $repo_root)
+	wk-open-dir $tree_dir $branch $repo_root $post_create_hooks
 }
 
-# remove a worktree by branch name (does not delete the branch)
+# remove a worktree by branch name and delete its branch
 export def --env "wk remove" [
 	branch?: string  # branch name used when the worktree was added
 	--self           # use the current branch
+	--force          # pass force through to worktree + branch removal
 ] {
 	let tree_dir = if $self {
 		# resolve to worktree root so removal works from any subdirectory
@@ -78,12 +81,33 @@ export def --env "wk remove" [
 	if $tree_dir == $repo_root {
 		error make { msg: "cannot remove the canonical worktree" }
 	}
+
+	let worktree = (wk-list-data | where path == $tree_dir)
+	if ($worktree | is-empty) {
+		error make { msg: $"couldn't find worktree at ($tree_dir)" }
+	}
+	let target_branch = ($worktree | first | get branch)
+
 	# cd home only when currently inside the target worktree, so the shell
 	# isn't stranded in a deleted directory after removal
 	if ($env.PWD == $tree_dir or ($env.PWD | str starts-with $"($tree_dir)/")) {
 		cd ~
 	}
-	git -C $repo_root worktree remove $tree_dir
+
+	if $force {
+		git -C $repo_root worktree remove --force $tree_dir
+	} else {
+		git -C $repo_root worktree remove $tree_dir
+	}
+
+	if $target_branch != null {
+		if $force {
+			git -C $repo_root branch -D $target_branch
+		} else {
+			git -C $repo_root branch -d $target_branch
+		}
+	}
+
 	wk-close-dir $tree_dir
 }
 
