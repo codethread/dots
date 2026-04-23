@@ -68,6 +68,9 @@ trust_level = "trusted"
 [projects."/Users/adamhall/work/app/web-server"]
 trust_level = "trusted"
 
+[projects."/Users/adamhall/work/k8s/helm-charts"]
+trust_level = "trusted"
+
 [tui.model_availability_nux]
 "gpt-5.3-codex-spark" = 4
 
