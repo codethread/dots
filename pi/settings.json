@@ -8,9 +8,9 @@
     "~/.pi/npm-global"
   ],
   "editorPaddingX": 1,
-  "defaultProvider": "anthropic",
-  "defaultModel": "claude-haiku-4-5",
-  "defaultThinkingLevel": "xhigh",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.4-mini",
+  "defaultThinkingLevel": "low",
   "enabledModels": [
     "openai-codex/gpt-5.4",
     "openai-codex/gpt-5.4-mini",

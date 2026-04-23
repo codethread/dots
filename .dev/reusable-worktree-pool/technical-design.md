@@ -32,11 +32,14 @@ Add to `oven/package.json`:
 
 ```json
 "dependencies": {
-  "effect": "^3"
+  "effect": "^3",
+  "@effect/platform-bun": "<version>"
 }
 ```
 
-`@effect/platform` is NOT added — Bun-native IO (Bun.spawn, Bun.file, Bun.write) is wrapped in `Effect.tryPromise` directly. The `effect` package is sufficient for services, layers, errors, and control flow.
+Clarification: we are **not** adopting the generic `@effect/platform` service layer for file system / command / terminal abstractions. Bun-native IO (`Bun.spawn`, `Bun.file`, `Bun.write`) is still wrapped directly in `Effect.tryPromise`.
+
+We **do** add `@effect/platform-bun` for `BunRuntime.runMain`, so the CLI gets Bun-native Effect runtime wiring for process lifecycle, exit handling, and signal teardown without introducing the broader `@effect/platform` abstraction surface.
 
 ## Type surface
 
@@ -52,8 +55,6 @@ interface ProjectConfig {
 }
 
 type TreesConfig = { projects: ProjectConfig[] };
-
-const isPooled = (p: ProjectConfig): boolean => p.poolSize !== null;
 
 // ── Worktree / slot types ─────────────────────────────────────────────────────
 interface Worktree {
@@ -150,38 +151,6 @@ export class Git extends Context.Tag("Git")<Git, {
   // Always succeeds. Use when exit code itself is the signal (e.g. merge-base --is-ancestor).
   runRaw(args: string[], opts?: { cwd?: string }): Effect.Effect<GitResult, GitError>;
 }>() {}
-
-async function spawnGit(args: string[], cwd?: string): Promise<GitResult> {
-  const proc = Bun.spawn(["git", ...args], {
-    cwd,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-  ]);
-  return { stdout, stderr, exitCode: await proc.exited };
-}
-
-export const GitLive = Layer.succeed(Git, {
-  run: (args, opts) =>
-    Effect.tryPromise({
-      try: () => spawnGit(args, opts?.cwd),
-      catch: (e) => new GitError({ args, stderr: String(e), exitCode: -1 }),
-    }).pipe(
-      Effect.flatMap((result) =>
-        result.exitCode === 0
-          ? Effect.succeed(result)
-          : Effect.fail(new GitError({ args, stderr: result.stderr, exitCode: result.exitCode }))
-      )
-    ),
-  runRaw: (args, opts) =>
-    Effect.tryPromise({
-      try: () => spawnGit(args, opts?.cwd),
-      catch: (e) => new GitError({ args, stderr: String(e), exitCode: -1 }),
-    }),
-});
 ```
 
 ### Services defined in `wktree.ts`
@@ -200,14 +169,6 @@ interface HookExecutor {
 }
 class Hook extends Context.Tag("Hook")<Hook, HookExecutor>() {}
 
-const HookLive = Layer.succeed(Hook, {
-  runInline: (scriptPath, cwd, env, onLine) =>
-    Effect.tryPromise({
-      try: async () => { /* Bun.spawn bash scriptPath, stream lines via onLine */ },
-      catch: (e) => new HookError({ exitCode: -1, slotPath: cwd }),
-    }),
-});
-
 // ── Picker service ─────────────────────────────────────────────────────────────
 interface PickerItem { key: string; display: string; preview: string }
 interface PickerService {
@@ -217,11 +178,6 @@ interface PickerService {
 }
 class Picker extends Context.Tag("Picker")<Picker, PickerService>() {}
 
-const PickerLive = Layer.succeed(Picker, {
-  pick: (items, header) => /* invoke shared/fzf.ts with header+preview on /dev/tty */,
-  confirm: (prompt) => /* write prompt to /dev/tty, read y/N */,
-});
-
 // ── Progress service ──────────────────────────────────────────────────────────
 interface ProgressService {
   banner(line: string): Effect.Effect<void>;
@@ -229,12 +185,6 @@ interface ProgressService {
   error(msg: string): Effect.Effect<void>;
 }
 class Progress extends Context.Tag("Progress")<Progress, ProgressService>() {}
-
-const ProgressLive = Layer.succeed(Progress, {
-  banner: (line) => Effect.sync(() => process.stderr.write(`${line}\n`)),
-  stream: (_, line) => Effect.sync(() => process.stderr.write(`  ${line}\n`)),
-  error: (msg) => Effect.sync(() => process.stderr.write(`error: ${msg}\n`)),
-});
 ```
 
 ## `shared/git/worktrees.ts` — pure parsers
@@ -256,26 +206,9 @@ export function branchExistsInList(listOutput: string, branch: string): boolean
 
 ## CLI entry point
 
-`main()` parses the subcommand, builds a single `program` Effect with all services provided, then hands off to `NodeRuntime.runMain` — which handles exit codes, uncaught errors, and signal teardown.
+`main()` parses the subcommand, builds a single `program` Effect with all services provided, then hands off to `BunRuntime.runMain` — which handles exit codes, uncaught errors, and signal teardown.
 
-```ts
-import { Effect, Layer } from "effect";
-import { BunRuntime } from "@effect/platform-bun";
-
-async function main() {
-  const [, , subcommand, ...rest] = process.argv;
-  const program = dispatch(subcommand, rest).pipe(
-    Effect.provide(Layer.mergeAll(GitLive, HookLive, PickerLive, ProgressLive))
-  );
-  BunRuntime.runMain(program);
-}
-
-if (import.meta.main) {
-  main();
-}
-```
-
-> **Note:** `@effect/platform-bun` is added to dependencies for `BunRuntime.runMain`. This is the only `@effect/platform-*` package needed.
+> **Note:** `@effect/platform-bun` is added to dependencies for `BunRuntime.runMain`. This does **not** mean the design uses `@effect/platform` abstractions for IO services — `@effect/platform-bun` is only the runtime bridge.
 
 Exit code mapping via `Effect.mapError` at the dispatch boundary:
 
@@ -288,35 +221,6 @@ Exit code mapping via `Effect.mapError` at the dispatch boundary:
 ## Subcommand implementations (inside `wktree.ts`)
 
 Each subcommand is an `Effect.Effect<..., ..., Git | Hook | Picker | Progress>`. Dependencies flow in via `yield* ServiceName` inside `Effect.gen`. There are no explicit parameter bags — Effect's context carries them.
-
-Example shape for `ensure`:
-
-```ts
-const ensurePool = (root: string, config: ProjectConfig) =>
-  Effect.gen(function* () {
-    const git = yield* Git;
-    const hook = yield* Hook;
-    const progress = yield* Progress;
-
-    const state = yield* buildPoolState(git, root, config);
-    let didFetch = false;
-
-    for (const slot of state.slots.filter(s => !s.initialized)) {
-      yield* progress.banner(`[wk-pool] initializing feat${slot.index}…`);
-
-      if (!didFetch) {
-        yield* git.run(["-C", root, "fetch", "origin"]);
-        didFetch = true;
-      }
-
-      // create placeholder branch if missing
-      // git worktree add
-      // generate runner script
-      // hook.runInline — on failure: git worktree remove --force, re-throw HookError
-      // write init marker
-    }
-  });
-```
 
 ## Git commands
 
@@ -623,59 +527,13 @@ For pure functions (`parseWorktreeList`, `parseTrunkFromSymbolicRef`, `generateR
 
 ### Layer substitution
 
-```ts
-// Scripted hook — writes a sentinel file instead of running yarn
-const TestHook = (sentinel: string) =>
-  Layer.succeed(Hook, {
-    runInline: (_, cwd) =>
-      Effect.tryPromise({
-        try: () => Bun.write(`${cwd}/${sentinel}`, ""),
-        catch: (e) => new HookError({ exitCode: 1, slotPath: cwd }),
-      }),
-  });
+Three test layer factories are defined:
 
-// Scripted picker — returns pre-determined item or null
-const TestPicker = (choice: PickerItem | null) =>
-  Layer.succeed(Picker, {
-    pick: () =>
-      choice === null ? Effect.fail(new PickerCancelled()) : Effect.succeed(choice),
-    confirm: () => Effect.succeed(true),
-  });
+- `TestHook(sentinel: string)` — writes a sentinel file to the slot cwd instead of running the hook script
+- `TestPicker(choice: PickerItem | null)` — returns a pre-determined item, or fails with `PickerCancelled` when `null`
+- `StrictGit(responses: Map<string, GitResult>)` — rejects any git call not in the response map; for unit-style assertions
 
-// Strict git layer for unit-style assertions (rejects unexpected calls)
-const StrictGit = (responses: Map<string, GitResult>) =>
-  Layer.succeed(Git, {
-    run: (args) => {
-      const key = args.join(" ");
-      const result = responses.get(key);
-      if (!result)
-        return Effect.fail(new GitError({ args, stderr: `unexpected git call: ${key}`, exitCode: 1 }));
-      return Effect.succeed(result);
-    },
-  });
-```
-
-### Helper
-
-```ts
-function runWith<A, E>(
-  effect: Effect.Effect<A, E, Git | Hook | Picker | Progress>,
-  overrides: { git?: Layer.Layer<Git>; hook?: Layer.Layer<Hook>; picker?: Layer.Layer<Picker> }
-): Promise<A> {
-  return Effect.runPromise(
-    effect.pipe(
-      Effect.provide(
-        Layer.mergeAll(
-          overrides.git    ?? GitLive,
-          overrides.hook   ?? HookLive,
-          overrides.picker ?? PickerLive,
-          ProgressLive,       // always live — stdout is fine in tests
-        )
-      )
-    )
-  );
-}
-```
+A `runWith` helper composes these overrides over the live layers and returns a `Promise<A>` for use with `expect`.
 
 ### Coverage
 
@@ -738,4 +596,4 @@ The picker's `/dev/tty` discipline is handled at the `fzf` call site by passing 
 - In `mod.nu`: remove `use helpers.nu *`; rewrite `wk add` / `wk remove` / `wk list` / `wk path` / `wk root` to the shapes above.
 - Grep for `wk-canonical-root`, `wk-worktree-path`, `wk-encode-branch`, `wk-default-branch`, `wk-list-data`, `wk-post-create-hooks`, `wk-matching-post-create-hooks`, `wk-post-create-runner` before deletion; migrate any external caller to `wktree` subcommand invocations.
 - Update `specs/git-worktrees.md` to reflect the layer split.
-- Add `effect` and `@effect/platform-bun` to `oven/package.json`.
+- Add `effect` and `@effect/platform-bun` to `oven/package.json` (`effect` for services/layers/control flow; `@effect/platform-bun` only for `BunRuntime.runMain`).
