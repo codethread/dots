@@ -138,6 +138,11 @@ tasks:
           state — not yet implemented" (task 010 wires the real lookup).
       Add ring-1 integration tests using a real tmp git repo with `parseConfig` + a test
       `trees.toml` fixture. Assert output shape for each subcommand.
+      Also add the ring-2 integration-test skip switch now (earliest integration coverage
+      lives here): wrap git-in-tmp tests in a guard that skips when `WKTREE_SKIP_INTEGRATION=1`.
+      Provide a small `integrationDescribe` helper in the test file so later tasks reuse it.
+      Pool-ensure trigger from `wk list` is NOT wired here — task 009 updates this call site
+      once ensure exists. Leave a TODO comment referencing task 009.
     status: "pending"
     files:
       modify:
@@ -148,6 +153,7 @@ tasks:
       - "`wktree list --cwd <path>` human output mirrors today's nushell `wk list` columns"
       - "`wktree list --cwd <path> --json` emits valid JSON with `pool` field"
       - "`wktree path` non-pool derivation matches nushell encoding"
+      - "`WKTREE_SKIP_INTEGRATION=1 bun run test` skips ring-2 tests cleanly"
       - "`bun run test` passes"
       - "Typecheck passes"
     notes: ""
@@ -290,9 +296,16 @@ tasks:
             * On hook failure: `git worktree remove --force <slot_path>` (rollback); exit non-zero
               immediately. Already-initialized slots untouched.
         - Marker file creation is already in the pooled runner (task 005) — verify it lands.
+      Wire ensure into the other pooled dispatch paths per PRD Story 2 (any `wk` command
+      against a pooled repo on first run triggers materialisation):
+        - `wktree list` (task 004): call `ensurePool` before reading worktree list when the
+          project is pooled.
+        - `wktree remove` (task 007): call `ensurePool` before resolving target for pooled
+          projects. (Pool add is wired later in task 010.)
       Ring-2 tests: empty repo → N slots materialised; hook fails on slot 3 → slots 1-2 intact,
       slot 3 rolled back, slots 4-5 untouched; re-run recovers; half-init (worktree present,
-      marker absent) → hook re-runs.
+      marker absent) → hook re-runs; first-run `wktree list` on a pooled repo materialises
+      slots; first-run `wktree remove` on a pooled repo materialises slots before dispatch.
     status: "pending"
     files:
       modify:
@@ -303,6 +316,8 @@ tasks:
       - "Hook failure rolls back only the in-flight slot"
       - "Half-init state re-runs the hook on next ensure"
       - "Banner and hook output stream live (not buffered) — verified via onLine callback timing"
+      - "First-run `wktree list` on pooled repo triggers ensure (test asserts slot sentinels appear)"
+      - "First-run `wktree remove` on pooled repo triggers ensure before target resolution"
       - "`bun run test` passes"
       - "Typecheck passes"
     notes: ""
@@ -323,13 +338,19 @@ tasks:
         6. Checkout target branch into that slot via the correct variant (new / existing-local
            / existing-remote-only / existing-local+remote → merge --ff-only). Warn on
            diverged; preserve user work.
-        7. Generate runner script (pooled shape, with marker line appended).
-        8. Write AddPlan (worktree_path = slot_path, runner_script_path set).
+        7. `--base` handling per Story 3: for NEW branches, create from `origin/<base>` (if
+           supplied) or `origin/<trunk>` (default). For EXISTING branches (local or remote),
+           ignore `--base` and emit a stderr warning ("--base ignored: branch already exists").
+           Use same handling as the non-pool path (task 006) — factor into shared helper if
+           natural.
+        8. Generate runner script (pooled shape, with marker line appended).
+        9. Write AddPlan (worktree_path = slot_path, runner_script_path set).
       Also wire pooled branch of `wktree path` — look up branch in slot state (error if not
       found).
       Ring-2 tests: allocate new branch, allocate existing remote-only, allocate existing local,
       allocate diverged (warning), duplicate-in-canonical errors, duplicate-in-slot errors,
-      reserved prefix errors, `wktree path` lookup for pooled branch.
+      reserved prefix errors, `wktree path` lookup for pooled branch, `--base <b>` creates new
+      branch from `origin/<b>`, `--base` with existing branch emits warning and is ignored.
     status: "pending"
     files:
       modify:
@@ -341,6 +362,7 @@ tasks:
       - "Reserved `wk-pool/` prefix rejected with targeted message"
       - "Pooled runner script contains the marker-writing tail"
       - "`wktree path` pooled-branch lookup works; absent branch errors cleanly"
+      - "`--base <b>` on new branch creates from `origin/<b>`; on existing branch warns and is ignored"
       - "`bun run test` passes"
       - "Typecheck passes"
     notes: ""
