@@ -1,12 +1,15 @@
 # :module: pi wrappers and helpers for tty usage
 
-# pim with a fast mini model and thinking disabled
 export def pii --wrapped [...rest] {
 	pi --agent main --provider openai-codex --model gpt-5.4-mini:low ...$rest
 }
 
+export def pim --wrapped [...rest] {
+	pi --agent main --provider openai-codex --model gpt-5.5:low ...$rest
+}
+
 export def pih --wrapped [...rest] {
-	pi --agent main --provider openai-codex --model gpt-5.4:high ...$rest
+	pi --agent main --provider openai-codex --model gpt-5.5:high ...$rest
 }
 
 export def pio --wrapped [...rest] {

@@ -29,5 +29,8 @@
     }
   ],
   "hideThinkingBlock": false,
-  "treeFilterMode": "default"
+  "treeFilterMode": "default",
+  "terminal": {
+    "showTerminalProgress": false
+  }
 }
