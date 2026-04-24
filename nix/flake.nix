@@ -30,6 +30,7 @@
   outputs = { self, nixpkgs, nixpkgs-master, llm-agents, todoist-src, playwright-cli-src, nix-darwin, home-manager, ... }:
   let
     llmAgentsOverlay = llm-agents.overlays.default;
+    nativeAgentOverlay = import ./overlays/native-agent-installers.nix;
 
     todoistOverlay = final: prev: {
       todoist-cli = final.buildGoModule {
@@ -69,7 +70,7 @@
       system = "aarch64-darwin"; # Intel Mac: x86_64-darwin
       specialArgs = { pkgsMaster = pkgsMasterFor "aarch64-darwin"; };
       modules = [
-        { nixpkgs.overlays = [ llmAgentsOverlay todoistOverlay playwrightCliOverlay ]; }
+        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay todoistOverlay playwrightCliOverlay ]; }
         hostModule
         home-manager.darwinModules.home-manager
         (hmFor
@@ -81,7 +82,7 @@
 
     pkgsMasterFor = system: import nixpkgs-master {
       inherit system;
-      overlays = [ llmAgentsOverlay ];
+      overlays = [ llmAgentsOverlay nativeAgentOverlay ];
       config.allowUnfree = true;
       config.allowUnsupportedSystem = true;
     };
@@ -110,7 +111,7 @@
       system = "x86_64-linux";
       specialArgs = { pkgsMaster = pkgsMasterFor "x86_64-linux"; };
       modules = [
-        { nixpkgs.overlays = [ llmAgentsOverlay todoistOverlay playwrightCliOverlay ]; }
+        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay todoistOverlay playwrightCliOverlay ]; }
         ./hosts/nixos/homelab
         home-manager.nixosModules.home-manager
         (hmFor
@@ -125,7 +126,7 @@
       system = "aarch64-linux";
       specialArgs = { pkgsMaster = pkgsMasterFor "aarch64-linux"; };
       modules = [
-        { nixpkgs.overlays = [ llmAgentsOverlay todoistOverlay playwrightCliOverlay ]; }
+        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay todoistOverlay playwrightCliOverlay ]; }
         ./hosts/nixos/vm-aarch
         home-manager.nixosModules.home-manager
         (hmFor

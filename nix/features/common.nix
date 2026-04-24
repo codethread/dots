@@ -40,24 +40,28 @@ in {
   home.stateVersion = "24.11";
 
   home.sessionVariables = {
+    # Keep npm globals user-writable for native Darwin installs and ad-hoc npm tools.
     NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.local";
   };
   home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
-  home.file.".local/share/nvim/nix-treesitter-parsers".source = treesitter-parsers;
-  # Stable short path so PI_PACKAGE_DIR avoids the hash-heavy nix store path in system prompts
-  home.file.".pi/pi-source".source = "${llmAgents.pi}/lib/node_modules/@mariozechner/pi-coding-agent";
-  home.file.".local/share/atuin/init.nu" = {
-    source = atuinNushellInit;
-    force = true;
-  };
-  home.file.".local/cache/carapace/init.nu" = {
-    source = carapaceNushellInit;
-    force = true;
-  };
-  home.file.".local/cache/direnv/init.nu" = {
-    source = direnvNushellInit;
-    force = true;
+  home.file = {
+    ".local/share/nvim/nix-treesitter-parsers".source = treesitter-parsers;
+    ".local/share/atuin/init.nu" = {
+      source = atuinNushellInit;
+      force = true;
+    };
+    ".local/cache/carapace/init.nu" = {
+      source = carapaceNushellInit;
+      force = true;
+    };
+    ".local/cache/direnv/init.nu" = {
+      source = direnvNushellInit;
+      force = true;
+    };
+  } // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+    # Stable short path so PI_PACKAGE_DIR avoids the hash-heavy nix store path in system prompts.
+    ".pi/pi-source".source = "${llmAgents.pi}/lib/node_modules/@mariozechner/pi-coding-agent";
   };
 
   home.activation.userBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -129,7 +133,25 @@ in {
     fi
   '';
 
-  home.activation.dottyLink = lib.hm.dag.entryAfter [ "userBootstrap" ] ''
+  home.activation.nativeAgentBootstrap = lib.hm.dag.entryAfter [ "userBootstrap" ] ''
+    ${lib.optionalString pkgs.stdenv.isDarwin ''
+      sync_native_agent() {
+        local label="$1"
+        shift
+
+        echo ">>> Syncing $label"
+        if ! "$@"; then
+          echo ">>> WARN: failed to sync $label; continuing"
+        fi
+      }
+
+      sync_native_agent "Claude Code" ${pkgs.nativeAgentInstallClaude}/bin/native-agent-install-claude
+      sync_native_agent "Codex" ${pkgs.nativeAgentInstallCodex}/bin/native-agent-install-codex
+      sync_native_agent "Pi" ${pkgs.nativeAgentInstallPi}/bin/native-agent-install-pi
+    ''}
+  '';
+
+  home.activation.dottyLink = lib.hm.dag.entryAfter [ "nativeAgentBootstrap" ] ''
     DOTFILES="$HOME/PersonalConfigs"
     if [ ! -d "$DOTFILES" ]; then
       echo ">>> WARN: skipping dotty link; $DOTFILES missing"
@@ -161,10 +183,11 @@ in {
     playwright-cli
     agentPkgSet.typescript
     agentPkgSet.typescript-language-server
+  ] ++ lib.optionals (!pkgs.stdenv.isDarwin) [
     codex
     llmAgents.claude-code
     llmAgents.pi
-
+  ] ++ [
     # --- Languages ---
     go
     zig
