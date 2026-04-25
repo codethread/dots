@@ -1,36 +1,37 @@
--- local is_nixos = vim.env.IS_NIXOS == 'true'
--- NixOS: re-enable is_nixos checks and nix-specific blocks below when testing on NixOS
+local uv = vim.uv or vim.loop
+local nix_parsers_dir = vim.fn.stdpath 'data' .. '/nix-treesitter-parsers'
+local use_nix_parsers = uv.fs_stat(nix_parsers_dir) ~= nil
 
 ---@diagnostic disable: missing-fields
 return {
 	{
 		'nvim-treesitter/nvim-treesitter',
 		branch = 'main',
-		build = ':TSUpdate',
+		build = use_nix_parsers and nil or ':TSUpdate',
 		dependencies = { 'andymass/vim-matchup' },
 		config = function()
-			-- Enable treesitter highlighting and indentation for all filetypes
+			-- Prefer the Home Manager linked runtime when present. Neovim discovers both
+			-- parser/*.so and queries/**/*.scm from runtimepath, so if this directory
+			-- exists we let Nix own parser management entirely.
+			if use_nix_parsers and not vim.tbl_contains(vim.opt.rtp:get(), nix_parsers_dir) then
+				vim.opt.rtp:prepend(nix_parsers_dir)
+			end
+
+			-- Enable treesitter highlighting and indentation for all filetypes with a parser.
 			vim.api.nvim_create_autocmd('FileType', {
+				group = vim.api.nvim_create_augroup('CodeThreadTreesitter', { clear = true }),
 				callback = function()
-					pcall(vim.treesitter.start)
-					vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+					local ok = pcall(vim.treesitter.start)
+					if ok then vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()" end
 				end,
 			})
 
-			-- NixOS: prepend nix-provided parsers to rtp before installing
-			-- local nix_parsers = vim.fn.stdpath('data') .. '/nix-treesitter-parsers'
-			-- if is_nixos and vim.uv.fs_stat(nix_parsers) then
-			-- 	vim.opt.runtimepath:prepend(nix_parsers)
-			-- end
-
-			-- NixOS: parsers come from nix (see nix/features/common.nix), skip installation
-			-- if not is_nixos then
 			-- stylua: ignore
 			local parsers = vim.iter({
 				-- scripting
 				{ 'awk', 'bash', 'jq', 'nu' },
 				-- langs
-				{ 'c', 'rust', 'gleam', 'zig', 'disassembly' },
+				{ 'c', 'rust', 'gleam', 'zig', 'disassembly', 'devicetree' },
 				{ 'go', 'gosum', 'gomod', 'gowork' },
 				-- DB
 				{ 'sql' },
@@ -48,11 +49,15 @@ return {
 				{ 'comment','todotxt','markdown','markdown_inline','regex' },
 			}):flatten():totable()
 
-			require('nvim-treesitter').install(parsers)
-			-- end
+			if not use_nix_parsers then
+				require('nvim-treesitter.configs').setup {
+					parser_install_dir = vim.fn.stdpath 'data' .. '/site',
+					ensure_installed = parsers,
+					auto_install = false,
+				}
+			end
 
-			vim.treesitter.language.register('jsonc', 'json')
-			vim.treesitter.language.register('dts', 'keymap')
+			vim.treesitter.language.register('devicetree', 'keymap')
 		end,
 	},
 

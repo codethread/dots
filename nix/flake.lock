@@ -46,16 +46,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1776182890,
-        "narHash": "sha256-+/VOe8XGq5klpU+I19D+3TcaR7o+Cwbq67KNF7mcFak=",
-        "owner": "Mic92",
+        "lastModified": 1776192490,
+        "narHash": "sha256-5gYQNEs0/vDkHhg63aHS5g0IwG/8HNvU1Vr00cElofk=",
+        "owner": "nix-community",
         "repo": "bun2nix",
-        "rev": "648d293c51e981aec9cb07ba4268bc19e7a8c575",
+        "rev": "6ef9f144616eedea90b364bb408ef2e1de7b310a",
         "type": "github"
       },
       "original": {
-        "owner": "Mic92",
-        "ref": "catalog-support",
+        "owner": "nix-community",
+        "ref": "staging-2.1.0",
         "repo": "bun2nix",
         "type": "github"
       }
@@ -88,11 +88,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1775457580,
-        "narHash": "sha256-ikws/ssAmG20AGrEwBuwspwPlkubJu34mB+Uz2fJBJs=",
+        "lastModified": 1777054018,
+        "narHash": "sha256-tTNS7V6xN/LX1KZ0TrdOnj375ZrsUlLoce4qxZwDN9U=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "5de7dbd151b0bd65d45785553d4a22d832733ffc",
+        "rev": "ffbd94a1c9d7d3e1258e51c084ab2109da04f2b1",
         "type": "github"
       },
       "original": {
@@ -126,11 +126,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1776696859,
-        "narHash": "sha256-4uNSs7ZABo7vcda2hEnvRhaBnfN59J1yIumPnxSO90w=",
+        "lastModified": 1777060931,
+        "narHash": "sha256-V+R+93G4ENClhsfZHUYTcYBkZ8TZeU6X93/IEbOG3Eo=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "97a297df87c428863a9e985fefc908613410ae73",
+        "rev": "59ad447c4551c3b948508bfff472cf20c64ecab0",
         "type": "github"
       },
       "original": {
@@ -177,11 +177,11 @@
     },
     "nixpkgs-master": {
       "locked": {
-        "lastModified": 1775538173,
-        "narHash": "sha256-QpDRMYXT+eB9qkt2iDFGUUZXq26eHlS+gSaw/8oN4VI=",
+        "lastModified": 1777060610,
+        "narHash": "sha256-wb7Yznz7pIfOD99Od/q5ey0/5Lnw6FFApmCPdHeVfAo=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "e5b9fe3d8fd3d0dcf705e4c6ef3cda74996b03b4",
+        "rev": "1d97387f37ab08e94773704727fdef4ec679f6cf",
         "type": "github"
       },
       "original": {
@@ -192,11 +192,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1775423009,
-        "narHash": "sha256-vPKLpjhIVWdDrfiUM8atW6YkIggCEKdSAlJPzzhkQlw=",
+        "lastModified": 1776548001,
+        "narHash": "sha256-ZSK0NL4a1BwVbbTBoSnWgbJy9HeZFXLYQizjb2DPF24=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "68d8aa3d661f0e6bd5862291b5bb263b2a6595c9",
+        "rev": "b12141ef619e0a9c1c84dc8c684040326f27cdcc",
         "type": "github"
       },
       "original": {
@@ -209,11 +209,11 @@
     "playwright-cli-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1775239956,
-        "narHash": "sha256-NtYGVWOiqYNoyRQ/Rt4kSBcuGJn6Yb8yxa0X41sDyYU=",
+        "lastModified": 1776192087,
+        "narHash": "sha256-8f/wFO4hSytpy3kEPyScoMWXWyeTl/SKoc3vD7xYaKo=",
         "owner": "microsoft",
         "repo": "playwright-cli",
-        "rev": "a0d5bfd4d9658073029d33f979ac5a027568caec",
+        "rev": "0406adaed4c6ba95bbfa6952229e76188bc59993",
         "type": "github"
       },
       "original": {
@@ -230,7 +230,8 @@
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-master": "nixpkgs-master",
         "playwright-cli-src": "playwright-cli-src",
-        "todoist-src": "todoist-src"
+        "todoist-src": "todoist-src",
+        "tree-sitter-jsonc-src": "tree-sitter-jsonc-src"
       }
     },
     "systems": {
@@ -262,6 +263,22 @@
         "owner": "codethread",
         "ref": "codethread",
         "repo": "todoist",
+        "type": "github"
+      }
+    },
+    "tree-sitter-jsonc-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1760758290,
+        "narHash": "sha256-SazxjhbqJ9dstCDV12qjCMIKTRQ9QKJGjxvBprDReJo=",
+        "owner": "lymansix",
+        "repo": "tree-sitter-jsonc",
+        "rev": "e56e61c2d2f980a28787c1dad5d015387b0f252f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lymansix",
+        "repo": "tree-sitter-jsonc",
         "type": "github"
       }
     },

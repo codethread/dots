@@ -2,7 +2,15 @@ return {
 	{
 		'andymass/vim-matchup',
 		keys = { { '%' }, { 'g%' }, { '[%' }, { ']%' }, { 'z%' } },
-		init = function() vim.g.matchup_matchparen_offscreen = { method = 'popup' } end,
+		init = function()
+			vim.g.matchup_treesitter_stopline = 500
+			vim.g.matchup_matchparen_offscreen = { method = 'popup' }
+			require('match-up').setup {
+				treesitter = {
+					stopline = 500,
+				},
+			}
+		end,
 	},
 
 	{

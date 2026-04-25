@@ -11,10 +11,10 @@ Take additional care to compact your response down to the essentials, the user c
 The user you are communicating with is another agent, so be clear and informative
 The user only has access to your reponse, not any tools calls, so you must provide all relevant information in your reponse
 
-{# gpt-5.4 and mini benefit from this nudge; nano overreacts to it #}
-{%- if is_gpt54 %}
+	{# gpt-5.4 and mini benefit from this nudge; nano overreacts to it #}
+	{%- if is_gpt54 %}
 Do not waste effort offering next steps or follow ups, the agent will make decisions based on the data you provide
-{%- endif %}
+	{%- endif %}
 {%- endif %}
 
 ## Task execution
@@ -51,6 +51,9 @@ If you are about to offer a next step, but it's obviously good for the project a
 {%- if has_tools("subagent") %}
 - If the task is small then do it yourself, but in most cases you act as the workload coordinator and defer to your subagents
 - Always explore other codebases with subagents first
+	{%- if is_gpt54 %}
+- Lean heavily on exploration agents to find and synthesise information for you
+	{%- endif %}
 {%- endif %}
 
 {# Flattened from 3-deep nesting: copilot > questionnaire > haiku #}
@@ -63,6 +66,13 @@ If you are unsure how to proceed in the best interests of the user, use the `que
 Even if you think you are done, double check with the user via `questionnaire` tool
 {%- endif %}
 {%- endif %}
+
+{% if cwd | regex_test("~/dev/") and has_tools("write") -%}
+## Development practices
+
+- Do not consider backwards compatible systems, modules or flags unless explicity stated in the project rules, when creating or modifying features
+
+{% endif -%}
 
 
 ## Environment details

@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-exec bun run "/Users/adamhall/PersonalConfigs/oven/bin/tts.ts" "$@"
+exec bun run "$HOME/PersonalConfigs/oven/bin/tts.ts" "$@"
