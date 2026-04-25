@@ -1,4 +1,5 @@
 {#-- Profiles: name conditions that are complex or reused, keep simple ones inline --#}
+{% set is_gpt55 = model | regex_test("gpt-5.5") -%}
 {% set is_gpt54 = model | regex_test("(?:^|/)gpt-5\\.4(?:-mini)?$") -%}
 {% set is_copilot_with_questionnaire = provider == "github-copilot" and has_tools(["questionnaire"]) -%}
 
@@ -67,11 +68,17 @@ Even if you think you are done, double check with the user via `questionnaire` t
 {%- endif %}
 {%- endif %}
 
-{% if cwd | regex_test("~/dev/") and has_tools("write") -%}
 ## Development practices
 
+{% if cwd | regex_test("~/dev/") and has_tools("write") -%}
+## Development practices
 - Do not consider backwards compatible systems, modules or flags unless explicity stated in the project rules, when creating or modifying features
-
+{% elseif cwd | regex_test("~/PersonalConfigs/") and has_tools("write") -%}
+- Do not consider backwards compatible systems, modules or flags unless explicity stated in the project rules, when creating or modifying features
+{% endif -%}
+{%- if is_gpt55 %}
+- Code should be built for correctness or fail loudly, it should not quietly fallback to default values; this will lead to confusing and hard to trace bugs
+- Code should be built for to work as intended, it should not have guards in the code to protect against dead code or deprectaed approaches being used; this is noise in the codebase
 {% endif -%}
 
 
