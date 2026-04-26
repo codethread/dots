@@ -153,7 +153,6 @@ in {
       "visual-studio-code"
       "ghostty"
       "spotify"
-      "zed"
       "todoist-app"
       "font-fira-code"
       "font-victor-mono"

@@ -148,7 +148,6 @@ Keys.tbl('<leader>', {
 		-- if you can't beat 'em
 		-- c = { 'Gui', Cmd 'silent !code %' },
 		-- c = { 'Gui', Cmd 'silent !cursor %' },
-		c = { 'Gui', Cmd 'silent !zed %' },
 		d = { 'Dir', Cmd 'Oil' },
 		f = { 'Open finder', function() vim.ui.open(vim.fn.expand '%:p:h') end },
 		g = { 'git remote', function() Snacks.gitbrowse.open() end },
