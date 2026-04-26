@@ -206,7 +206,6 @@ in {
 
     # --- Utils ---
     poppler-utils
-    bat
     fd
     ripgrep
     jq

@@ -125,7 +125,6 @@ alias gnuke="git clean -dfX"
 alias gr='git rebase -i HEAD~$1'
 alias gundo="git reset --soft HEAD~1 && git restore --staged ."
 alias gwip="git add . && git commit -nm 'wip'"
-alias bdiff="git diff --name-only --relative --diff-filter=d | xargs bat --diff"
 alias gpopular="git log --format=format: --name-only --since=12.month | egrep -v '^$' | sort | uniq -c | sort -nr | head -50"
 alias gbranch-mine="git for-each-ref --format=' %(authorname) %09 %(refname)' --sort=authorname | grep 'adam.hall'"
 alias gconflict="git diff --name-only --diff-filter=U --relative"
