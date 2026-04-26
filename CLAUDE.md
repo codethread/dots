@@ -73,6 +73,23 @@ This repo defines Claude Code configurations such as commands and agents at `cla
 
 ## Verification
 
+### Nushell
+
+After editing `.nu` files, validate syntax with absolute paths. Use `--as-module` for module files only:
+
+```bash
+nu -c 'nu-check --debug --as-module /abs/path/to/module.nu'
+nu -c 'nu-check --debug /abs/path/to/script-or-env.nu'
+```
+
+For config-level Nushell changes, also validate the real config load:
+
+```bash
+nu --config config/nushell/config.nu --env-config config/nushell/env.nu -c 'print ok'
+```
+
+### Cross-cutting smoke test
+
 For larger cross-cutting changes, especially ones touching `cc-sandbox`, container build inputs, Claude/Codex wiring, or major rebases, consider running:
 
 ```bash
@@ -80,3 +97,14 @@ nu -I ./config/nushell/scripts -c 'use ct/interactive/claude.nu *; cc-sandbox-sm
 ```
 
 This is intentionally not a default check for every change. It is expensive, but it verifies the no-cache container rebuild, linked configs, binaries on `PATH`, and headless `claude`/`codex` execution end-to-end without requiring interactive TUI steps.
+
+## Tool deprecation
+
+Given the monorepo nature of this repo, we want to exercise discretion, to that end, if we delete a tool from the repo, e.g lets say vim:
+
+- remove the obvious code `config/vim/vimrc`
+- remove any specs
+- flag any other tooling that is expecting said tool, e.g a tmux workflow that tries to use `vim` directly.
+  - where apparent, we would remove this dependency
+  - where difficult, discuss alternatives or fallbacks
+- finally commit in one single commit with convention `GOODBYE <tool>\n\n<Reason and details if needed>`, this makes it easy to dig out old features at a later date to revisit
