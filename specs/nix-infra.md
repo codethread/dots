@@ -66,7 +66,7 @@ Two nixpkgs inputs provide version flexibility:
 - `pkgs` ← `nixpkgs` (unstable) — default for most packages
 - `pkgsMaster` ← `nixpkgs-master` (bleeding edge) — for packages needing latest versions
 
-In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available, falling back to `pkgs`. Packages like `claude-code`, `nodejs_24`, `typescript`, `typescript-language-server`, and `opencode` use `agentPkgSet.*` to track master. `codexCliPackage` is a special case — injected via `specialArgs` from the flake, falling back to `agentPkgSet.codex` if null.
+In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available, falling back to `pkgs`. Packages like `claude-code`, `nodejs_24`, `typescript`, `typescript-language-server` use `agentPkgSet.*` to track master. `codexCliPackage` is a special case — injected via `specialArgs` from the flake, falling back to `agentPkgSet.codex` if null.
 
 ### Custom Overlays
 

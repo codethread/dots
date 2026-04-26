@@ -9,7 +9,7 @@ Prevent Kitty desktop notifications from firing for agent CLI processes while le
 
 ## Scope
 
-Applies to the agent CLIs listed in [agentic-config.md](./agentic-config.md): `claude-code`, `codex`, `opencode`, and `pi`.
+Applies to the agent CLIs listed in [agentic-config.md](./agentic-config.md): `claude-code`, `codex`, and `pi`.
 
 ## Intended Behavior
 

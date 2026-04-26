@@ -12,7 +12,7 @@
 
 set -u
 
-AGENT_REGEX='(claude([-/ ]code)?|@anthropic-ai/claude-code|\bcl\b|codex([-/ ]raw)?|\bpi\b|\bpim\b|opencode)'
+AGENT_REGEX='(claude([-/ ]code)?|@anthropic-ai/claude-code|\bcl\b|codex([-/ ]raw)?|\bpi\b|\bpim\b)'
 
 DEBUG_MODE=0
 
@@ -71,8 +71,6 @@ agent_label() {
 		echo 'pi'
 	elif [[ "$exec" == "codex" || "$exec" == "codex-raw" ]] || [[ "$args" =~ codex ]]; then
 		echo 'codex'
-	elif [[ "$exec" == "opencode" ]] || [[ "$args" =~ opencode ]]; then
-		echo 'opencode'
 	elif [[ "$exec" == "claude" || "$exec" == "cl" ]] || [[ "$args" =~ claude([-/ ]code)? ]] || [[ "$args" =~ @anthropic-ai/claude-code ]]; then
 		echo 'claude'
 	else
@@ -94,7 +92,7 @@ list_agent_panes() {
 		[[ -z "$fg" ]] && continue
 		IFS=$'\t' read -r pid exec args <<< "$fg"
 
-		if [[ ! "$args" =~ $AGENT_REGEX ]] && [[ ! "$exec" =~ ^(claude|cl|codex|codex-raw|pi|pim|opencode|node)$ ]]; then
+		if [[ ! "$args" =~ $AGENT_REGEX ]] && [[ ! "$exec" =~ ^(claude|cl|codex|codex-raw|pi|pim|node)$ ]]; then
 			continue
 		fi
 

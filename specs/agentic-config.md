@@ -35,7 +35,7 @@ Four configuration layers compose at runtime:
 ┌─────────────────────────────────────────────────────┐
 │ Package layer: Nix flake inputs + overlays          │
 │   nix/flake.nix, nix/features/common.nix            │
-│   Owns: claude-code, codex, opencode, pi binaries   │
+│   Owns: claude-code, codex, pi binaries   │
 ├─────────────────────────────────────────────────────┤
 │                                                     │
 │ Layer 1: Nix-generated globals                      │
@@ -79,7 +79,7 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 
 - `nix/flake.nix` imports `github:numtide/llm-agents.nix`
 - Its overlay is applied to both the system package set and `pkgsMaster`
-- `nix/features/common.nix` installs `llm-agents` packages for `claude-code`, `codex`, `opencode`, and `pi`
+- `nix/features/common.nix` installs `llm-agents` packages for `claude-code`, `codex`, and `pi`
 - `config/dotty/dotty.toml` links the tracked `pi/` directory into `~/.pi/agent`
 - Most mutable Pi config now lives in `https://github.com/codethread/agents`; this repo keeps the `pi/agent.njk` template plus minimal bootstrap files and symlinks that make Pi consume the shared prompt/config layout
 
@@ -242,7 +242,7 @@ Direct `pi` invocation with shared repo-aware configuration:
 ### Agent CLI Packages (`nix/flake.nix`, `nix/features/common.nix`)
 
 - Source: `llm-agents.nix` overlay
-- Installed CLIs: `claude-code`, `codex`, `opencode`, `pi`
+- Installed CLIs: `claude-code`, `codex`, `pi`
 - `pkgsMaster` remains the preferred source for fast-moving supporting packages like Node.js and TypeScript
 
 ### Nushell Wrappers (`config/nushell/scripts/ct/interactive/claude.nu`)

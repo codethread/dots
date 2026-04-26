@@ -30,6 +30,5 @@
 
     # TODO: verify/add overlays for packages not yet in nixpkgs:
     #   vault-token-helper — third-party, may need overlay
-    #   opencode — new tool, check current nixpkgs status
   ];
 }
