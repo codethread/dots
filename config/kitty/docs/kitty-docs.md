@@ -125,7 +125,7 @@ From `docs/mapping.rst`:
 #### **`panel`** (`docs/kittens/panel.rst`)
 
 - **Purpose**: Draw desktop panels/wallpapers with terminal programs
-- **Usage**: `kitten panel htop` or `kitten panel --edge=background htop`
+- **Usage**: `kitten panel <program>` or `kitten panel --edge=background <program>`
 - **Features**: Desktop backgrounds, dock panels, quick access terminals
 - **Platform**: Wayland (most compositors), macOS, X11 (limited)
 
