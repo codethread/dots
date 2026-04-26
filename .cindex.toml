@@ -29,7 +29,6 @@ nvim = "Neovim configuration with extensive custom plugins, LSP setup, and keybi
 kitty = "Kitty terminal emulator configuration with custom actions and session management"
 nushell = "Nushell modern shell configuration with custom scripts and commands (see dotty/ for symlink management)"
 dotty = "Intelligent dotfile symlink management system configuration (main implementation in nushell/scripts/ct/dotty/)"
-wezterm = "WezTerm terminal multiplexer configuration with custom Lua modules"
 zsh = "Z shell configuration with plugins, aliases, and environment setup"
 tmux = "Terminal multiplexer configuration for session management"
 aerospace = "MacOS window manager configuration"
@@ -92,7 +91,3 @@ dir = "config/kitty/bin"
 pattern = "^config/kitty/bin/.*\\.sh$"
 desc = "[summary] Kitty terminal helper scripts for vim integration and window management"
 
-[[summarise]]
-dir = "config/wezterm"
-pattern = "^config/wezterm/.*\\.lua$"
-desc = "[summary] WezTerm Lua configuration modules for terminal customization"

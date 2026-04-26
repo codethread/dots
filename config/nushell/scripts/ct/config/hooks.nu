@@ -6,7 +6,6 @@ export def main [] {
 		pre_prompt: [] # run before the prompt is shown
 		env_change: {
 			PWD: [
-				# ...(wezterm_hooks),
 				...(fe-stuff),
 				...(be-stuff),
 			]
@@ -19,14 +18,6 @@ export def main [] {
 const fes = [
 	~/work/app
 ]
-
-def wezterm_hooks [] {
-	[
-		{|_,after|
-			wezterm cli set-tab-title ($after | path basename)
-		}
-	]
-}
 
 def fe-stuff [] {
 	[

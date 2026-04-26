@@ -20,8 +20,6 @@ return {
 	{
 		'folke/lazydev.nvim',
 		dependencies = {
-			-- { 'gonstoll/wezterm-types', lazy = true }, -- update of below
-			-- { 'justinsgithub/wezterm-types', lazy = true },
 			{ 'Bilal2453/luvit-meta', lazy = true },
 			'neovim/nvim-lspconfig',
 		},
@@ -31,7 +29,6 @@ return {
 			---@type lazydev.Library.spec[]
 			library = {
 				{ path = 'luvit-meta/library', words = { 'vim%.uv' } },
-				{ path = 'wezterm-types', mods = { 'wezterm' } },
 				'snacks.nvim',
 				'lazy.nvim',
 				'nvim-dap-ui',
