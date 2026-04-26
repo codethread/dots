@@ -33,7 +33,6 @@ wezterm = "WezTerm terminal multiplexer configuration with custom Lua modules"
 zsh = "Z shell configuration with plugins, aliases, and environment setup"
 tmux = "Terminal multiplexer configuration for session management"
 aerospace = "MacOS window manager configuration"
-alacritty = "Fast GPU-accelerated terminal emulator configuration"
 git = "Git version control configuration with aliases and ignore patterns"
 
 # Key file descriptions for cross-referencing
