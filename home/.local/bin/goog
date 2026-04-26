@@ -1,7 +1,6 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 # :module: Quick web search utility from command line
 
-local cols sep google_history open
 cols=$((COLUMNS / 3))
 sep='{::}'
 

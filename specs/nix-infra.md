@@ -245,7 +245,7 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 - **Generated shell init scripts** — `atuin`, `carapace`, and `direnv` init scripts are generated at Nix eval time and written to `~/.local/cache/`. This avoids runtime generation costs in shell startup.
 
-- **`boot.zsh` is legacy** — `boot/boot.zsh` is an older macOS-only bootstrap script. `boot/boot.sh` is the current entry point and handles both platforms. `boot.zsh` has no error handling and depends on pre-set environment variables.
+- **Single bootstrap entrypoint** — `boot/boot.sh` is the current entry point and handles both macOS and NixOS. Older shell-specific bootstrap scripts were removed to keep machine setup paths unambiguous.
 
 - **XDG_CONFIG_HOME points to repo during bootstrap** — `boot.sh` sets `XDG_CONFIG_HOME="${DOTFILES}/config"` so tools find configs before dotty has run. After `dottyLink` activation, configs are symlinked to `~/.config/`.
 
@@ -265,6 +265,5 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 ## 7. Open Questions
 
-- `boot.zsh` status — is it still used or should it be removed?
 - WiFi secrets (`/etc/codethread/nm.env`) are manually managed — consider `agenix` or `sops-nix` if more secrets are needed
 - VM profile (`nixosConfigurations.vm`) appears minimal — unclear if actively used or a testing artifact

@@ -1,0 +1,8 @@
+# Keep bash state out of $HOME. Interactive shell is Nushell.
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+mkdir -p "$XDG_STATE_HOME/bash" 2>/dev/null
+export HISTFILE="$XDG_STATE_HOME/bash/history"
+
+if [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/bash/env.local" ]]; then
+  source "${XDG_CONFIG_HOME:-$HOME/.config}/bash/env.local"
+fi

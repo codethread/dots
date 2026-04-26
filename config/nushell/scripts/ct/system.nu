@@ -22,7 +22,7 @@ export def symlink [original: path, symbolic: path] {
 	ln -s $original $symbolic
 }
 
-# export most common envs to a zsh file for compatibility
+# export most common envs for POSIX-shell compatibility
 export def dump-env [] {
-	hide-all {|| zsh -c 'export' | rg "(.*)" --replace "export $0" | save -f ~/.config/zsh/.envs }
+	hide-all {|| bash -lc 'export' | save -f ~/.config/bash/env.local }
 }

@@ -20,6 +20,7 @@ $env.XDG_CONFIG_HOME = ($env.XDG_CONFIG_HOME? | default (home ".config"))
 $env.XDG_DATA_HOME = ($env.XDG_DATA_HOME? | default (home ".local/share"))
 $env.XDG_CACHE_HOME = ($env.XDG_CACHE_HOME? | default (home ".local/cache"))
 $env.XDG_STATE_HOME = ($env.XDG_STATE_HOME? | default (home ".local/state"))
+$env.HISTFILE = ($env.HISTFILE? | default ($env.XDG_STATE_HOME | path join "bash/history"))
 $env.RIPGREP_CONFIG_PATH = ([$env.XDG_CONFIG_HOME ripgrep/config] | path join)
 $env.CT_VENDOR_DIR = (home "dev/vendor")
 
@@ -205,7 +206,7 @@ if (sys host).name == "Darwin" {
 #: nushell {{{
 
 # not sure if needed
-$env.CARAPACE_BRIDGES = 'zsh,fish,bash,inshellisense' # optional
+$env.CARAPACE_BRIDGES = 'fish,bash,inshellisense' # optional
 
 # Directories to search for scripts when calling source or use
 $env.NU_LIB_DIRS = [

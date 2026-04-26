@@ -24,7 +24,7 @@ def main [--clean] {
 		git clean -dfX # clear the CMake cache
 	}
 
-	zsh -c 'make CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=$HOME/.local" && make install'
+	bash -lc 'make CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=$HOME/.local" && make install'
 
 	print $'(ansi green)installed to(ansi reset) "($bin)"'
 

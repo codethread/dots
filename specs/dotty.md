@@ -158,7 +158,6 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 | **Nix activation** (`dottyLink`) | `dotty link --no-cache` | Every `*-rebuild switch` | Runs after `userBootstrap` phase. Exports `DOTFILES`, `XDG_*` vars. Explicit `PATH` with git, coreutils, findutils, gnugrep, gnused, nushell, bash. Skips gracefully if `$DOTFILES` directory missing. |
 | **Neovim** | `dotty link`, `dotty format`, `dotty chmod`, `dotty is-cwd`, `dotty test` | Editor events | Auto-links on `BufWritePost`/`BufFilePost`/`VimLeavePre`. Detects dotfiles project via `is-cwd` on git root. Runs `chmod` after every link. |
 | **cc-sandbox** | `dotty link --no-cache` | Container image build | Step 3 of dots integration: after `git init`, before `bun run build` |
-| **boot.zsh** (legacy) | `dotty setup` | macOS bootstrap | Legacy script; current bootstrap uses Nix activation instead |
 
 ### Worktree / Feature-Branch Support
 
@@ -200,7 +199,6 @@ The Nix activation hook exports `DOTFILES` as `$HOME/dev/dots` (the canonical cl
 
 ## 7. Open Questions
 
-- `boot.zsh` calls `dotty setup` which doesn't match any current command — confirms this script is stale
 - The `deals` project links a `_git` directory as individual files to `.git` — fragile if git internals change structure
 - `work` and `home` projects both target `~` — relies on non-overlapping file trees with no enforcement beyond duplicate-target detection
 - `detect-path-overlaps` call is commented out in `mod.nu` — the function exists in `helpers.nu` but is not invoked during linking

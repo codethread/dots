@@ -125,7 +125,7 @@ export def git_reset_files [...files: string] {
 	$files | each {|f|
 		let c = $"git checkout origin/develop ($f)"
 		print $c
-		zsh -c $c
+		bash -lc $c
 	}
 }
 
@@ -133,7 +133,7 @@ export def git_pick_files [branch: string]: list<string> -> nothing {
 	each {|f|
 		let c = $"git checkout origin/($branch) ($f)"
 		print $c
-		zsh -c $c
+		bash -lc $c
 	}
 	ignore
 }

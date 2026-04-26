@@ -126,12 +126,8 @@
 
   // MARK: terminal
   "terminal.integrated.cursorBlinking": false,
-  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.defaultProfile.osx": "nu",
   "terminal.integrated.profiles.osx": {
-    "zsh": {
-      "path": "zsh",
-      "args": ["-l"],
-    },
     "tmux": {
       "path": "tmux",
       "icon": "terminal-tmux",

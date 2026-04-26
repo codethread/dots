@@ -124,7 +124,7 @@ Example window JSON:
 	"title": "~/dev/project",
 	"pid": 12345,
 	"cwd": "/Users/user/dev/project",
-	"cmdline": ["zsh", "-l"],
+	"cmdline": ["nu", "--login", "--interactive"],
 	"env": {
 		"KITTY_WINDOW_ID": "1",
 		"PWD": "/Users/user/dev/project"
