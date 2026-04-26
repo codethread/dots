@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # vim:foldmethod=marker:foldlevel=0
 
 export DOTFILES="${DOTFILES:-${HOME}/dev/dots}"
