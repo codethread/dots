@@ -6,7 +6,7 @@ use ct/core clog
 # Checks XDG_CONFIG_HOME first, then falls back to ~/.config
 export def load [
 	config_path?: path # override config path for testing or bootstrapping a new system
-]: nothing -> table<name: string, origin: path, target: path, excludes: list<path>, link_directory: bool> {
+]: nothing -> table<name: string, origin: path, target: path, excludes: list<path>> {
 	let config_file = $config_path | default (get-config-path)
 
 	# Check if the configuration file exists
@@ -89,12 +89,6 @@ def validate-toml-config [toml_config: record] {
 				}
 			}
 
-			if ("link_directory" in $proj) and not (($proj.link_directory | describe) == "bool") {
-				error make {
-					msg: $"Error: Field 'link_directory' in project '($proj.name)' must be a boolean"
-					help: "Use true or false for the link_directory field"
-				}
-			}
 		}
 	}
 
@@ -112,7 +106,7 @@ def validate-toml-config [toml_config: record] {
 }
 
 # Load configuration from TOML file
-def load-config-from-toml [config_file: path]: nothing -> table<name: string, origin: path, target: path, excludes: list<path>, link_directory: bool> {
+def load-config-from-toml [config_file: path]: nothing -> table<name: string, origin: path, target: path, excludes: list<path>> {
 	# Load and parse the TOML file with enhanced error handling
 	try {
 		let raw_toml = open $config_file
@@ -139,14 +133,7 @@ def load-config-from-toml [config_file: path]: nothing -> table<name: string, or
 					name: $proj.name,
 					origin: $origin_path,
 					target: $target_path,
-					excludes: (if "link_directory" in $proj and $proj.link_directory {
-						[]
-					} else if "excludes" in $proj {
-						$proj.excludes
-					} else {
-						[]
-					}),
-					link_directory: (if "link_directory" in $proj { $proj.link_directory } else { false })
+					excludes: (if "excludes" in $proj { $proj.excludes } else { [] })
 				}
 			}
 		} else {
@@ -156,13 +143,7 @@ def load-config-from-toml [config_file: path]: nothing -> table<name: string, or
 		# Combine project-specific excludes with global excludes and apply lazy filtering
 		$projects
 		| each { |project|
-			$project | upsert excludes {
-				if $project.link_directory {
-					[]  # No excludes for directory symlinks
-				} else {
-					$project.excludes ++ $global_excludes
-				}
-			}
+			$project | upsert excludes { $project.excludes ++ $global_excludes }
 		}
 		| where {|proj| $proj.origin | path exists }  # Filter only once at the end
 

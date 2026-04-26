@@ -7,15 +7,14 @@
 
 ### Purpose
 
-General-purpose dotfile symlink manager written in Nushell. Takes a TOML configuration declaring source-to-target directory mappings and creates symlinks for every file within each mapping. Supports two linking modes (file-level and directory-level), incremental caching for fast re-runs, git-ignore-aware file enumeration, and interactive conflict resolution.
+General-purpose dotfile symlink manager written in Nushell. Takes a TOML configuration declaring source-to-target directory mappings and creates symlinks for every file within each mapping. Supports incremental caching for fast re-runs, git-ignore-aware file enumeration, and force-gated conflict resolution.
 
 ### Goals
 
 - Declarative symlink management via a single TOML config
 - Incremental linking via per-project caches (only process changes)
-- Two linking modes: per-file symlinks (default) and whole-directory symlinks
 - Git-ignore-aware file enumeration (never link ignored files)
-- Safe conflict resolution: detect duplicate targets across projects, prompt before overwriting real files
+- Safe conflict resolution: detect duplicate targets across projects, require `--force` before overwriting real files
 - Editor integration: auto-link on save, project detection, formatted output for UI
 - Zero external dependencies beyond Nushell, git, and coreutils
 
@@ -76,24 +75,12 @@ Two strategies in `list-files.nu`, selected by cache state:
 
 Both strategies apply project + global exclude patterns after enumeration.
 
-### Linking Modes
-
-| Aspect | File mode (default) | Directory mode (`link_directory = true`) |
-|---|---|---|
-| Symlink granularity | One symlink per file | One symlink for entire directory |
-| Cache entry | Relative file paths | Special `"."` marker |
-| Excludes | Supported (global + project) | Ignored (warning printed) |
-| Conflict on existing target | Per-file check | Removes existing target directory entirely |
-| Teardown | Removes individual symlinks + empty parent dirs | Removes directory symlink only |
-
 ### Conflict Detection
 
 Two conflict classes are actively enforced by `helpers.nu`:
 
 1. **Duplicate targets** — multiple projects map files to the same target path. Hard error, no override.
-2. **Existing real files** — a non-symlink file already exists at a target path. Interactive: prompts user. Non-interactive (hooks/CI): auto-removes.
-
-A third class — **path overlaps** (parent/child target conflicts between `link_directory` and file-mode projects) — is implemented in `helpers.nu` (`detect-path-overlaps`) but the call is currently commented out in `mod.nu`.
+2. **Existing real files** — a non-symlink file already exists at a target path. Hard error unless `--force` is passed.
 
 Existing symlinks at target paths are not conflicts — they're silently overwritten.
 
@@ -109,20 +96,19 @@ excludes = ["glob_pattern", ...]          # Optional. Applied to all file-mode p
 name = "string"                           # Required. Unique across all projects.
 origin = "~/path/to/source"               # Required. Supports `~` and `${ENV}` expansion. Must exist at load time (projects with missing origins silently skipped).
 target = "~/path/to/destination"          # Required. Supports `~` and `${ENV}` expansion. Expanded without following symlinks.
-excludes = ["glob_pattern", ...]          # Optional. Combined with global excludes. Ignored when link_directory=true.
-link_directory = false                    # Optional. Default: false.
+excludes = ["glob_pattern", ...]          # Optional. Combined with global excludes.
 ```
 
 ### Current Projects
 
-| Name | Origin | Target | Mode | Project-Specific Excludes |
-|---|---|---|---|---|
-| home | `${DOTFILES}/home` | `~` | file | — |
-| config | `${DOTFILES}/config` | `~/.config` | file | — |
-| claude | `${DOTFILES}/claude` | `~/.claude` | file | `**/settings.json`, `**/settings.local.json` |
-| pi | `${DOTFILES}/pi` | `~/.pi/agent` | file | — |
-| work | `~/workfiles/home` | `~` | file | — |
-| deals | `~/workfiles/work/app/deals-light-ui/_git` | `~/work/app/deals-light-ui/.git` | file | — |
+| Name | Origin | Target | Project-Specific Excludes |
+|---|---|---|---|
+| home | `${DOTFILES}/home` | `~` | — |
+| config | `${DOTFILES}/config` | `~/.config` | — |
+| claude | `${DOTFILES}/claude` | `~/.claude` | `**/settings.json`, `**/settings.local.json` |
+| pi | `${DOTFILES}/pi` | `~/.pi/agent` | — |
+| work | `~/workfiles/home` | `~` | — |
+| deals | `~/workfiles/work/app/deals-light-ui/_git` | `~/work/app/deals-light-ui/.git` | — |
 
 Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.md`
 
@@ -142,13 +128,11 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 
 | Command | Purpose |
 |---|---|
-| `dotty link [--no-cache] [config_path]` | Create/update symlinks. `--no-cache` forces full re-sync. Optional config path overrides default. |
+| `dotty link [--no-cache] [--force] [config_path]` | Create/update symlinks. `--no-cache` forces full re-sync. `--force` removes conflicting real files. Optional config path overrides default. |
 | `dotty format` | Format link output for editor integration (pipe: `dotty link \| dotty format`) |
 | `dotty is-cwd [dir] [--exit]` | Check if directory is a dotty project. `--exit` returns exit code instead of bool. |
-| `dotty test ...files` | Test whether specific files are managed by a dotty project |
 | `dotty prune [target]` | Remove broken symlinks under target (default: `~/.config/**/*`) |
 | `dotty teardown` | Remove all dotty-managed symlinks and caches |
-| `dotty chmod` | Make all files in `~/.local/bin` executable |
 
 ### Integration Points
 
@@ -156,7 +140,7 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 |---|---|---|---|
 | **Makefile** (`make link`) | `DOTFILES=$(ROOT) dotty link --no-cache <repo>/config/dotty/dotty.toml` | Manual rebuild | Exports `DOTFILES` as the current checkout root for worktree support |
 | **Nix activation** (`dottyLink`) | `dotty link --no-cache` | Every `*-rebuild switch` | Runs after `userBootstrap` phase. Exports `DOTFILES`, `XDG_*` vars. Explicit `PATH` with git, coreutils, findutils, gnugrep, gnused, nushell, bash. Skips gracefully if `$DOTFILES` directory missing. |
-| **Neovim** | `dotty link`, `dotty format`, `dotty chmod`, `dotty is-cwd`, `dotty test` | Editor events | Auto-links on `BufWritePost`/`BufFilePost`/`VimLeavePre`. Detects dotfiles project via `is-cwd` on git root. Runs `chmod` after every link. |
+| **Neovim** | `dotty link`, `dotty format`, `dotty is-cwd` | Editor events | Auto-links on `BufWritePost`/`BufFilePost`/`VimLeavePre`. Detects dotfiles project via `is-cwd` on git root. |
 | **cc-sandbox** | `dotty link --no-cache` | Container image build | Step 3 of dots integration: after `git init`, before `bun run build` |
 
 ### Worktree / Feature-Branch Support
@@ -181,9 +165,7 @@ The Nix activation hook exports `DOTFILES` as `$HOME/dev/dots` (the canonical cl
 
 - **git-ignore awareness** — dotty uses git's own ignore machinery (`git ls-files`, `git check-ignore`) rather than reimplementing glob exclusion. Files that git ignores are never linked, preventing accidental exposure of build artifacts or secrets.
 
-- **Interactive conflict resolution** — when a real file exists at a target path, dotty prompts in interactive mode and auto-removes in non-interactive mode (hooks, Nix activation). This balances safety for manual runs with reliability for automation.
-
-- **`chmod` as separate command** — making `~/.local/bin/*` executable is decoupled from linking because file permissions don't survive symlink creation (`ln -sf` creates a new symlink regardless). Neovim calls `chmod` after every `link`; other callers don't need it (Nix sets permissions via activation scripts).
+- **Force-gated conflict resolution** — when a real file exists at a target path, dotty fails loudly unless `--force` is passed.
 
 ## 6. Testing
 
@@ -194,11 +176,9 @@ The Nix activation hook exports `DOTFILES` as `$HOME/dev/dots` (the canonical cl
 ### Manual
 
 - **`nix-smoke`** — verifies config symlinks are valid (checks that expected symlinks in `~/.config` point to real files).
-- **Neovim `:DottyTest`** — tests whether the current buffer is managed by dotty.
 - **`dotty prune`** — finds and removes broken symlinks (useful after file deletions).
 
 ## 7. Open Questions
 
 - The `deals` project links a `_git` directory as individual files to `.git` — fragile if git internals change structure
 - `work` and `home` projects both target `~` — relies on non-overlapping file trees with no enforcement beyond duplicate-target detection
-- `detect-path-overlaps` call is commented out in `mod.nu` — the function exists in `helpers.nu` but is not invoked during linking

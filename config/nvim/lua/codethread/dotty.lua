@@ -20,17 +20,6 @@ local function dotty_info(msg)
 	)
 end
 
----Run dotty test to check if the current file is a dotty file
----@return boolean
-function M.dotty_test(file)
-	if not in_dotfiles then return false end
-	log.info('running test for', file)
-
-	local res = U.nush([[use ct/dotty; dotty test ]] .. file)
-	log.debug(res)
-	return res.code == 0
-end
-
 ---Run dotty link
 ---@return nil
 function M.dotty_link()
@@ -48,22 +37,12 @@ function M.dotty_link()
 			local changes = vim.json.decode(res.stdout)
 			if changes.changes then dotty_info(changes.diff) end
 		end
-
-		U.nush([[use ct/dotty; dotty chmod]], {}, function(chmod_res)
-			if chmod_res.code ~= 0 then log.error(chmod_res.stderr) end
-			log.debug('chmod res:', chmod_res)
-		end)
 	end)
 end
 
 local function setup_autocmds()
 	log.info 'setting up autocmds'
 	vim.api.nvim_create_user_command('Dotty', function() M.dotty_link() end, {})
-
-	vim.api.nvim_create_user_command('DottyTest', function()
-		local is_dotty_file = M.dotty_test(vim.fn.bufname())
-		dotty_info(is_dotty_file and 'Buf is a dotty file' or 'Buf is not a dotty file')
-	end, {})
 
 	vim.api.nvim_create_autocmd({ 'BufWritePost', 'BufFilePost', 'VimLeavePre' }, {
 		desc = 'Run dotty when saving and deleting buffers',

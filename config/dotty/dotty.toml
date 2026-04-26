@@ -28,12 +28,6 @@ origin = "${DOTFILES}/claude"
 target = "~/.claude"
 excludes = ["**/settings.json", "**/settings.local.json"]
 # excludes = ["**/agents/**"]
-#
-# [[project]]
-# name = "claude-agents"
-# origin = "${DOTFILES}/claude/agents"
-# target = "~/.claude/agents"
-# link_directory = true
 
 # Pi user config
 [[project]]
