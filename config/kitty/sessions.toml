@@ -6,7 +6,7 @@ version = "1.0"
 
 [search]
 dirs = [
-  "~/PersonalConfigs",
+  "$DOTFILES",
   "~/workfiles",
   "~/.local/share/nvim/lazy/*",
   "~/.local/share/nvim/mason/packages/*",
@@ -15,7 +15,7 @@ vsc = ["~/dev", "~/work"]
 cmd = []
 
 [projects]
-dots = "~/PersonalConfigs"
+dots = "$DOTFILES"
 qmk = "~/dev/projects/qmk_firmware/keyboards/preonic/keymaps/codethread"
 ct_nvim = "~/dev/projects/ct.nvim"
 ksm = "~/dev/projects/ksm"
@@ -66,7 +66,7 @@ P0 = "notes"
 
 [profiles.homelab.search]
 dirs = [
-  "~/PersonalConfigs",
+  "$DOTFILES",
   "~/.local/share/nvim/lazy/*",
   "~/.local/share/nvim/mason/packages/*",
   "~/dev/projects/notes"

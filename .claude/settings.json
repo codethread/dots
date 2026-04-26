@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "make -C $HOME/PersonalConfigs link build >&2"
+            "command": "make -C \"$(git rev-parse --show-toplevel)\" link build >&2"
           }
         ]
       }

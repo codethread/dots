@@ -141,17 +141,17 @@ ARG ARCH_GNU=x86_64
 RUN curl -fsSL "https://github.com/nushell/nushell/releases/download/${NUSHELL_VERSION}/nu-${NUSHELL_VERSION}-${ARCH_GNU}-unknown-linux-gnu.tar.gz" \
        | tar xz --strip-components=1 -C "$HOME/.local/bin" "nu-${NUSHELL_VERSION}-${ARCH_GNU}-unknown-linux-gnu/nu"
 
-# PersonalConfigs — build hooks and CLI tools natively inside the container.
+# dots — build hooks and CLI tools natively inside the container.
+ENV DOTFILES=/home/user/dev/dots
 # Copy oven first so dependency installation is cached unless oven/ changes.
-COPY --chown=user:user oven /home/user/PersonalConfigs/oven
-ENV DOTFILES=/home/user/PersonalConfigs
+COPY --chown=user:user oven $DOTFILES/oven
 
 # Pre-install oven dependencies before the rest of the repo invalidates later layers.
 RUN cd $DOTFILES/oven && bun install
 
 # Copy the rest of the repo after oven deps are cached.
 # The repo is COPY'd (not bind-mounted) so binaries link against container glibc.
-COPY --chown=user:user . /home/user/PersonalConfigs
+COPY --chown=user:user . $DOTFILES
 
 # Git context for dotty — list-files.nu uses git ls-files / git check-ignore.
 # Only need an index (not history), so init fresh rather than copying .git.
@@ -159,7 +159,7 @@ RUN cd $DOTFILES && git init --initial-branch main && git add .
 
 # Dotty link — creates all symlinks (hooks, ~/.claude agents/commands/CLAUDE.md)
 RUN mkdir -p ~/.local/data \
-    && nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --no-cache "/home/user/PersonalConfigs/config/dotty/dotty.toml" | ignore'
+    && nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --no-cache ($env.DOTFILES | path join "config/dotty/dotty.toml") | ignore'
 
 # Generate oven wrapper scripts (thin bash shims that exec bun run <source>).
 # Runs after dotty link which creates the ~/.local/bin/ directory structure.

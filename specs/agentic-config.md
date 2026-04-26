@@ -125,7 +125,7 @@ I/O protocol: JSON on stdin (HookInput), JSON on stdout (HookOutput), exit code 
 
 The `claude` project definition:
 
-- Origin: `~/PersonalConfigs/claude/`
+- Origin: `~/dev/dots/claude/`
 - Target: `~/.claude/`
 - Excludes: `**/settings.json`, `**/settings.local.json`
 - 21 files tracked, cached at `~/.local/data/dotty-cache-claude.nuon`
@@ -141,7 +141,7 @@ The `config` project covers `config/codex/` → `~/.config/codex/` as part of th
 - Allow: `Bash`, `Edit(.claude)`, `WebFetch`, `WebSearch`, `Skill`, context7 MCP tools
 - Deny: secret file reads (`*.key`, `*.pem`, `.env*`, `.netrc`, `id_rsa*`, `secrets/**`), dangerous git ops (`reset --hard`, `clean -f`, `branch -D`, `config`, `commit --amend`, `rebase -i`), `.git/hooks/**`, Plan/statusline-setup agents, `NotebookEdit`, `AskUserQuestion`, `EnterPlanMode`, `ExitPlanMode`
 - Default mode: `acceptEdits`
-- Additional directories: `~/PersonalConfigs`, `~/.local`, `~/.claude`, `~/dev`, `~/work`, `~/workfiles`
+- Additional directories: `~/dev/dots`, `~/.local`, `~/.claude`, `~/dev`, `~/work`, `~/workfiles`
 
 **Hooks (global):**
 
@@ -286,7 +286,7 @@ Disables Ctrl+A in Global context.
 
 - **`llm-agents.nix` for agent CLI packaging.** Agent binaries come from a dedicated upstream flake rather than ad hoc package sources. This reduces custom packaging maintenance and makes adding new CLIs like `pi` trivial.
 
-- **Dotty for asset linking, not Nix.** Agents, skills, commands, and rules are symlinked by dotty rather than Nix home-manager. This allows editing assets in PersonalConfigs and seeing changes immediately without a nix rebuild. Settings.json (which is JSON and auto-generated) stays in Nix.
+- **Dotty for asset linking, not Nix.** Agents, skills, commands, and rules are symlinked by dotty rather than Nix home-manager. This allows editing assets in dots and seeing changes immediately without a nix rebuild. Settings.json (which is JSON and auto-generated) stays in Nix.
 
 - **x-agents/ prefix convention.** Disabled agents live in `claude/x-agents/` — the prefix keeps them out of Claude's discovery path while keeping them version-controlled for re-enablement.
 

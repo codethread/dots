@@ -31,6 +31,16 @@ def get-config-path [] {
 	$config_file
 }
 
+# Expand simple shell-style environment variables in paths, e.g. ${DOTFILES}/config.
+def expand-env-vars []: string -> string {
+	mut expanded = $in
+
+	for env_var in ($env | transpose name value | where { |item| ($item.value | describe) == "string" }) {
+		$expanded = ($expanded | str replace --all $"\${($env_var.name)}" $env_var.value)
+	}
+
+	$expanded
+}
 
 # Validate TOML configuration schema and content
 def validate-toml-config [toml_config: record] {
@@ -120,10 +130,10 @@ def load-config-from-toml [config_file: path]: nothing -> table<name: string, or
 		let projects = if "project" in $toml_config {
 			$toml_config.project | each { |proj|
 				# Expand paths once (no validation yet)
-				let origin_path = ($proj.origin | path expand)
-				# expand for things like `~` but don't resolve symlinks or we end up in a cycle.
+				let origin_path = ($proj.origin | expand-env-vars | path expand)
+				# expand for things like `~` and `${ENV}` but don't resolve symlinks or we end up in a cycle.
 				# we want the target to be exactly as the config is saying
-				let target_path = ($proj.target | path expand --no-symlink)
+				let target_path = ($proj.target | expand-env-vars | path expand --no-symlink)
 
 				{
 					name: $proj.name,

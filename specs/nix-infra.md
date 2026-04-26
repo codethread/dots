@@ -82,7 +82,7 @@ boot/boot.sh
 ├─ Parse flags: --profile, --branch
 ├─ Detect OS (Darwin via uname / NixOS via /etc/NIXOS)
 ├─ Resolve profile (default: homelab on NixOS, username-based on macOS)
-├─ Clone PersonalConfigs (SSH if ~/.ssh exists, else HTTPS)
+├─ Clone dots (SSH if ~/.ssh exists, else HTTPS)
 ├─ Set XDG environment variables
 ├─ [NixOS] Copy hardware-configuration.nix if placeholder
 ├─ [NixOS] Generate flake.lock if missing → nixos-rebuild switch
@@ -104,7 +104,7 @@ make system [PROFILE=<name>]
    ├─ [--update] nfu → nix flake update
    ├─ Resolve profile → flake reference
    ├─ Prefer current git worktree root when it looks like the dotfiles repo
-   ├─ Else fall back to `$DOTFILES` / `~/PersonalConfigs`
+   ├─ Else fall back to `$DOTFILES` / `~/dev/dots`
    ├─ darwin-rebuild switch / nixos-rebuild switch
    └─ [NixOS] Kernel reboot check
 ```
@@ -113,7 +113,7 @@ make system [PROFILE=<name>]
 
 Three ordered activation scripts run during every rebuild:
 
-1. **bootDotfiles** (NixOS only, after `installPackages`) — clones PersonalConfigs if missing
+1. **bootDotfiles** (NixOS only, after `installPackages`) — clones dots if missing
 2. **userBootstrap** (after `writeBoundary`) — creates directory structure, clones vendor repos (nu_scripts, gitwatch, Alfred on macOS), sets git hooks path
 3. **clone-\<name\>** (per service, after `installPackages`) — each `repo-service.nix` instance generates its own activation hook that clones its repo via SSH with a 5s BatchMode auth test; skips gracefully if SSH auth unavailable
 4. **dottyLink** (after `userBootstrap`) — symlinks dotfiles into place via dotty (see [dotty spec](./dotty.md))
@@ -169,10 +169,10 @@ When adding or renaming NixOS hosts, update both `nix/flake.nix` and `boot/boot.
 
 | Variable | Value |
 |---|---|
-| `DOTFILES` | `~/PersonalConfigs` by default |
+| `DOTFILES` | `~/dev/dots` by default |
 | `EDITOR` | `nvim` |
 | `SHELL` | `<pkgs.nushell>/bin/nu` |
-| `XDG_CONFIG_HOME` | `~/.config` (macOS: `~/PersonalConfigs/config` during bootstrap) |
+| `XDG_CONFIG_HOME` | `~/.config` (macOS: `~/dev/dots/config` during bootstrap) |
 | `XDG_DATA_HOME` | `~/.local/share` |
 | `XDG_STATE_HOME` | `~/.local/state` |
 | `XDG_CACHE_HOME` | `~/.local/cache` |
@@ -249,7 +249,7 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 - **XDG_CONFIG_HOME points to repo during bootstrap** — `boot.sh` sets `XDG_CONFIG_HOME="${DOTFILES}/config"` so tools find configs before dotty has run. After `dottyLink` activation, configs are symlinked to `~/.config/`.
 
-- **Current worktree preferred for rebuild commands** — The canonical clone path remains `~/PersonalConfigs`, but flake-backed Nushell commands and the root `Makefile` prefer the current git worktree when it contains the expected repo structure. This allows testing changes from feature branches and linked worktrees without rewriting the base shell environment.
+- **Current worktree preferred for rebuild commands** — The canonical clone path remains `~/dev/dots`, but flake-backed Nushell commands and the root `Makefile` prefer the current git worktree when it contains the expected repo structure. This allows testing changes from feature branches and linked worktrees without rewriting the base shell environment.
 
 ## 6. Testing
 

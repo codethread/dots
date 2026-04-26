@@ -81,7 +81,7 @@ function ct() {
 }
 
 export HOMEBREW_PREFIX="/opt/homebrew"
-export DOTFILES="${HOME}/PersonalConfigs"
+export DOTFILES="${DOTFILES:-${HOME}/dev/dots}"
 ssource "${ZDOTDIR}/shellenv.zsh"
 
 #: }}}

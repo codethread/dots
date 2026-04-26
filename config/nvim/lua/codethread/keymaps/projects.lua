@@ -1,5 +1,6 @@
 -- Project based keymaps
 local root = U.git_root()
+local dotfiles = vim.env.DOTFILES or vim.fn.expand '~/dev/dots'
 local p = function(path) return root == vim.fn.expand(path) end
 
 ---comment
@@ -19,7 +20,7 @@ local function run(cmd, opts)
 	end
 end
 
-if p '~/PersonalConfigs' then
+if root == dotfiles then
 	Keys.list({ prefix = '<leader>p' }, {
 		{ 'p', 'lint', function() print 'hey' end },
 	})

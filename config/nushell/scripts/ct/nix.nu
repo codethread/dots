@@ -27,7 +27,7 @@ def _resolve_profile [profile: string] {
 }
 
 def _dotfiles_root [] {
-	let fallback = ($env.DOTFILES? | default ($env.HOME | path join "PersonalConfigs"))
+	let fallback = ($env.DOTFILES? | default ($env.HOME | path join "dev" "dots"))
 	let git_root = (do { ^git rev-parse --show-toplevel } | complete)
 
 	if $git_root.exit_code == 0 {
@@ -237,7 +237,7 @@ export def nix-smoke [
 	let flake = $"path:((_flake_path))"
 	let config_type = if ($p in ["home" "work" "work-adamhall"]) { "darwinConfigurations" } else { "nixosConfigurations" }
 	let hm_user = (_hm_user_for_profile $p)
-	let dotfiles = ($env.DOTFILES? | default ($env.HOME | path join "PersonalConfigs"))
+	let dotfiles = ($env.DOTFILES? | default ($env.HOME | path join "dev" "dots"))
 	let xdg_config = ($env.XDG_CONFIG_HOME? | default ($env.HOME | path join ".config"))
 	let is_nixos = ("/etc/NIXOS" | path exists)
 

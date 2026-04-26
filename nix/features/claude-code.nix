@@ -57,7 +57,7 @@ in {
         ];
         defaultMode = "acceptEdits";
         additionalDirectories = [
-          "~/PersonalConfigs"
+          "$DOTFILES"
           "~/.local"
           "~/.claude"
           "~/dev"

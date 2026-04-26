@@ -10,7 +10,7 @@ def home [p: string] {
 #: }}}
 #: envs {{{
 
-$env.DOTFILES = ($env.DOTFILES? | default (home PersonalConfigs))
+$env.DOTFILES = ($env.DOTFILES? | default (home "dev/dots"))
 $env.EDITOR = "nvim"
 # $env.VISUAL = "zed --wait"
 $env.SHELL = ($env.SHELL? | default (which nu | get 0.path))
@@ -211,7 +211,7 @@ $env.CARAPACE_BRIDGES = 'zsh,fish,bash,inshellisense' # optional
 # Directories to search for scripts when calling source or use
 $env.NU_LIB_DIRS = [
     ($nu.default-config-dir | path join "scripts")
-    ("~/PersonalConfigs/config/nushell/scripts" | path expand)
+    ($env.DOTFILES | path join "config/nushell/scripts")
     ("~/dev/vendor/nu_scripts/sourced" | path expand)
 ]
 

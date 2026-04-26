@@ -9,10 +9,7 @@ ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 
 link:
 	@printf '%s\n' '==> link'
-	@tmp_config="$$(mktemp "$${TMPDIR:-/tmp}/dotty.XXXXXX.toml")"; \
-		sed 's|~/PersonalConfigs|$(ROOT)|g' "$(ROOT)/config/dotty/dotty.toml" > "$$tmp_config"; \
-		$(NU) -c 'use ct/dotty; dotty link --no-cache "'"$$tmp_config"'" | ignore'; \
-		rm -f "$$tmp_config"
+	@$(NU) -c 'use ct/dotty; dotty link --no-cache "$(ROOT)/config/dotty/dotty.toml" | ignore'
 
 build:
 	@printf '%s\n' '==> build'

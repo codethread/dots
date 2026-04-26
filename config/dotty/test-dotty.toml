@@ -8,5 +8,5 @@ excludes = [
 
 [[project]]
 name = "test"
-origin = "~/PersonalConfigs/config/dotty"
+origin = "${DOTFILES}/config/dotty"
 target = "~/dotty-test"

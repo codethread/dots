@@ -14,31 +14,31 @@ excludes = [
 
 [[project]]
 name = "home"
-origin = "~/PersonalConfigs/home"
+origin = "${DOTFILES}/home"
 target = "~"
 
 [[project]]
 name = "config"
-origin = "~/PersonalConfigs/config"
+origin = "${DOTFILES}/config"
 target = "~/.config"
 
 [[project]]
 name = "claude"
-origin = "~/PersonalConfigs/claude"
+origin = "${DOTFILES}/claude"
 target = "~/.claude"
 excludes = ["**/settings.json", "**/settings.local.json"]
 # excludes = ["**/agents/**"]
 #
 # [[project]]
 # name = "claude-agents"
-# origin = "~/PersonalConfigs/claude/agents"
+# origin = "${DOTFILES}/claude/agents"
 # target = "~/.claude/agents"
 # link_directory = true
 
 # Pi user config
 [[project]]
 name = "pi"
-origin = "~/PersonalConfigs/pi"
+origin = "${DOTFILES}/pi"
 target = "~/.pi/agent"
 
 [[project]]

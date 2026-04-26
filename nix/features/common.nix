@@ -128,8 +128,9 @@ in {
       clone_if_missing_ssh "git@github.com:codethread/alfred.git" "$HOME/sync/Alfred" "Alfred"
     ''}
 
-    if [ -d "$HOME/PersonalConfigs/.git" ]; then
-      ${pkgs.git}/bin/git -C "$HOME/PersonalConfigs" config core.hooksPath .githooks
+    DOTFILES="${DOTFILES:-$HOME/dev/dots}"
+    if [ -d "$DOTFILES/.git" ]; then
+      ${pkgs.git}/bin/git -C "$DOTFILES" config core.hooksPath .githooks
     fi
   '';
 
@@ -152,7 +153,7 @@ in {
   '';
 
   home.activation.dottyLink = lib.hm.dag.entryAfter [ "nativeAgentBootstrap" ] ''
-    DOTFILES="$HOME/PersonalConfigs"
+    DOTFILES="${DOTFILES:-$HOME/dev/dots}"
     if [ ! -d "$DOTFILES" ]; then
       echo ">>> WARN: skipping dotty link; $DOTFILES missing"
       return 0

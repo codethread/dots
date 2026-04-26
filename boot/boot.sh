@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # vim:foldmethod=marker:foldlevel=0
 
-export DOTFILES="${HOME}/PersonalConfigs"
+export DOTFILES="${DOTFILES:-${HOME}/dev/dots}"
 
 cd "${HOME}" || exit 1
 
@@ -125,12 +125,13 @@ echo ""
 
 if [ ! -d "${DOTFILES}" ]; then
   printf "${_cyan}( ◕ ◡ ◕ )${_reset} Cloning dotfiles\n"
+  mkdir -p "$(dirname "${DOTFILES}")"
   _clone_url=""
   if [ -d "${HOME}/.ssh" ]; then
-    _clone_url="git@github.com:codethread/PersonalConfigs.git"
+    _clone_url="git@github.com:codethread/dots.git"
   else
     echo "  (no ~/.ssh found, cloning via HTTPS)"
-    _clone_url="https://github.com/codethread/PersonalConfigs.git"
+    _clone_url="https://github.com/codethread/dots.git"
   fi
 
   if command -v git >/dev/null 2>&1; then

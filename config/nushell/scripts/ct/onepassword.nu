@@ -22,7 +22,7 @@ export def slacky [] {
 			--allow-write=/var/folders
 			--allow-net=127.0.0.1
 			--allow-run="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-			~/PersonalConfigs/_scripts/getSlackCreds.ts
+			($env.DOTFILES | path join "_scripts/getSlackCreds.ts")
 			--email adam.hall@perkbox.com
 			--password $p
 			--domain https://perkbox.slack.com)

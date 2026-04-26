@@ -2,11 +2,12 @@
 
 {
   home.activation.bootDotfiles = lib.hm.dag.entryAfter [ "installPackages" ] ''
-    DOTFILES="$HOME/PersonalConfigs"
+    DOTFILES="${DOTFILES:-$HOME/dev/dots}"
     if [ ! -d "$DOTFILES" ]; then
-      echo ">>> Cloning PersonalConfigs..."
+      echo ">>> Cloning dots..."
+      mkdir -p "$(${pkgs.coreutils}/bin/dirname "$DOTFILES")"
       ${pkgs.git}/bin/git clone --branch main \
-        https://github.com/codethread/PersonalConfigs.git "$DOTFILES"
+        https://github.com/codethread/dots.git "$DOTFILES"
     fi
   '';
 

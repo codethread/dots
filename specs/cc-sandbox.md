@@ -36,7 +36,7 @@ cc-sandbox (launcher)
   │     └── node:22-slim base
   │         + system deps (chromium, ffmpeg, git, jq, ...)
   │         + tools (claude, codex, pi, bun, nu, gh, neovim, playwright-cli)
-  │         + PersonalConfigs copied + dotty link + bun run build
+  │         + dots copied + dotty link + bun run build
   │
   ├── podman run
   │     ├── Mounts:
@@ -219,11 +219,11 @@ Each shim: `#!/usr/bin/env bash\nexec cc-bridge exec CMD "$@"`
 
 Multi-stage build:
 1. **todoist-build** — Go build of custom todoist fork (`codethread/todoist`, branch `codethread`)
-2. **Final stage** — node:22-slim + system deps + tool installation + PersonalConfigs integration
+2. **Final stage** — node:22-slim + system deps + tool installation + dots integration
 
 Tool installation order: system packages → neovim → bun → claude binary → yt-dlp → todoist → playwright-cli → codex → pi → gh → nushell.
 
-PersonalConfigs integration:
+dots integration:
 1. Copy `oven/`, run `bun install` (dependency layer cache)
 2. Copy full repo, `git init` (fresh, no history)
 3. `dotty link --no-cache` (creates ~/.claude symlinks for agents/commands/skills/rules)
@@ -275,7 +275,7 @@ Filtered SSH config: macOS-only directives (`usekeychain`) stripped before mount
 - Local checks: binary existence (claude, codex, pi, playwright-cli, bun, nu), versions, PATH (includes ~/.local/bin, ~/.bun/bin), CODEX_HOME and PI_CODING_AGENT_DIR set, settings.json mounted, codex config linked, pi config linked, project under /vm/, neovim plugins loaded
 - Model checks (`--with-models`): headless Claude ping (haiku, 30s timeout), headless Codex exec (read-only sandbox, 30s timeout)
 - Output: formatted table with check/ok/detail columns
-- Full invocation from host: `nu -I ~/PersonalConfigs/config/nushell/scripts -c 'use ct/interactive/claude.nu *; cc-sandbox-smoke --stream --no-cache --with-models'`
+- Full invocation from repo root: `nu -I ./config/nushell/scripts -c 'use ct/interactive/claude.nu *; cc-sandbox-smoke --stream --no-cache --with-models'`
 
 **No unit tests for:** cc-sandbox launcher script, Containerfile. Verified via smoke test and manual usage.
 

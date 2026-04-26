@@ -73,8 +73,6 @@ Even if you think you are done, double check with the user via `questionnaire` t
 {% if cwd | regex_test("~/dev/") and has_tools("write") -%}
 ## Development practices
 - Do not consider backwards compatible systems, modules or flags unless explicity stated in the project rules, when creating or modifying features
-{% elseif cwd | regex_test("~/PersonalConfigs/") and has_tools("write") -%}
-- Do not consider backwards compatible systems, modules or flags unless explicity stated in the project rules, when creating or modifying features
 {% endif -%}
 {%- if is_gpt55 %}
 - Code should be built for correctness or fail loudly, it should not quietly fallback to default values; this will lead to confusing and hard to trace bugs

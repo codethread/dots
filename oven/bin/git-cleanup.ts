@@ -27,7 +27,7 @@ const SKIP_DIRS = new Set(["node_modules", "target", ".cargo", ".next", "dist", 
 
 // Directory globs to search for additional sessions
 const SEARCH_GLOBS = [
-	"~/PersonalConfigs",
+	process.env.DOTFILES ?? "~/dev/dots",
 	"~/workfiles",
 	"~/.local/share/nvim/lazy/*",
 	"~/.local/share/nvim/mason/packages/*",

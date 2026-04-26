@@ -13,7 +13,7 @@
 
 ```sh
 # Install Dotfiles (this is meant for me)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/codethread/PersonalConfigs/main/boot/boot.sh)"
+DOTFILES="$HOME/dev/dots" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/codethread/dots/main/boot/boot.sh)"
 ```
 
 <p align="center">

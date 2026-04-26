@@ -53,6 +53,14 @@ resolve_profile() {
 
 _PROFILE=$(resolve_profile)
 
+expand_config_path() {
+	local p="$1"
+	p="${p/#\~/$HOME}"
+	p="${p//\$DOTFILES/${DOTFILES:-$HOME/dev/dots}}"
+	p="${p//\$\{DOTFILES\}/${DOTFILES:-$HOME/dev/dots}}"
+	echo "$p"
+}
+
 get_keys_section() {
 	if [[ -n "$_PROFILE" ]]; then
 		echo "profiles.$_PROFILE.keys"
@@ -95,7 +103,7 @@ resolve_project_path() {
 		exit 1
 	fi
 
-	echo "${path/#\~/$HOME}"
+	expand_config_path "$path"
 }
 
 # Create or switch to a tmux session for a given project path
@@ -141,7 +149,7 @@ interactive_select() {
 	local vsc_json
 	vsc_json=$(cat "$SESSIONS_TOML" | fx --toml ".$search_section.vsc" 2>/dev/null || echo "[]")
 	while IFS= read -r root; do
-		root="${root/#\~/$HOME}"
+		root=$(expand_config_path "$root")
 		[[ -d "$root" ]] && dirs+=("$root")
 	done < <(echo "$vsc_json" | fx '.map(x=>x).join("\n")')
 
@@ -150,7 +158,7 @@ interactive_select() {
 	local dirs_json
 	dirs_json=$(cat "$SESSIONS_TOML" | fx --toml ".$search_section.dirs" 2>/dev/null || echo "[]")
 	while IFS= read -r d; do
-		d="${d/#\~/$HOME}"
+		d=$(expand_config_path "$d")
 		# expand globs
 		if [[ "$d" == *"*"* ]]; then
 			for expanded in $d; do

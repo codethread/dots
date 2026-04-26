@@ -82,7 +82,7 @@ in {
   environment.shells = [ pkgs.nushell ];
 
   launchd.user.envVariables = {
-    DOTFILES = "${homeDir}/PersonalConfigs";
+    DOTFILES = "${homeDir}/dev/dots";
     EDITOR = "nvim";
     SHELL = "${pkgs.nushell}/bin/nu";
     XDG_CONFIG_HOME = "${homeDir}/.config";

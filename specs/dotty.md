@@ -107,8 +107,8 @@ excludes = ["glob_pattern", ...]          # Optional. Applied to all file-mode p
 
 [[project]]
 name = "string"                           # Required. Unique across all projects.
-origin = "~/path/to/source"               # Required. Must exist at load time (projects with missing origins silently skipped).
-target = "~/path/to/destination"          # Required. Expanded without following symlinks.
+origin = "~/path/to/source"               # Required. Supports `~` and `${ENV}` expansion. Must exist at load time (projects with missing origins silently skipped).
+target = "~/path/to/destination"          # Required. Supports `~` and `${ENV}` expansion. Expanded without following symlinks.
 excludes = ["glob_pattern", ...]          # Optional. Combined with global excludes. Ignored when link_directory=true.
 link_directory = false                    # Optional. Default: false.
 ```
@@ -117,10 +117,10 @@ link_directory = false                    # Optional. Default: false.
 
 | Name | Origin | Target | Mode | Project-Specific Excludes |
 |---|---|---|---|---|
-| home | `~/PersonalConfigs/home` | `~` | file | — |
-| config | `~/PersonalConfigs/config` | `~/.config` | file | — |
-| claude | `~/PersonalConfigs/claude` | `~/.claude` | file | `**/settings.json`, `**/settings.local.json` |
-| pi | `~/PersonalConfigs/pi` | `~/.pi/agent` | file | — |
+| home | `${DOTFILES}/home` | `~` | file | — |
+| config | `${DOTFILES}/config` | `~/.config` | file | — |
+| claude | `${DOTFILES}/claude` | `~/.claude` | file | `**/settings.json`, `**/settings.local.json` |
+| pi | `${DOTFILES}/pi` | `~/.pi/agent` | file | — |
 | work | `~/workfiles/home` | `~` | file | — |
 | deals | `~/workfiles/work/app/deals-light-ui/_git` | `~/work/app/deals-light-ui/.git` | file | — |
 
@@ -154,22 +154,21 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 
 | System | Command | When | Notes |
 |---|---|---|---|
-| **Makefile** (`make link`) | `dotty link --no-cache` | Manual rebuild | Creates temp TOML with `sed` path substitution (`~/PersonalConfigs` → current checkout root) for worktree support |
+| **Makefile** (`make link`) | `DOTFILES=$(ROOT) dotty link --no-cache <repo>/config/dotty/dotty.toml` | Manual rebuild | Exports `DOTFILES` as the current checkout root for worktree support |
 | **Nix activation** (`dottyLink`) | `dotty link --no-cache` | Every `*-rebuild switch` | Runs after `userBootstrap` phase. Exports `DOTFILES`, `XDG_*` vars. Explicit `PATH` with git, coreutils, findutils, gnugrep, gnused, nushell, bash. Skips gracefully if `$DOTFILES` directory missing. |
 | **Neovim** | `dotty link`, `dotty format`, `dotty chmod`, `dotty is-cwd`, `dotty test` | Editor events | Auto-links on `BufWritePost`/`BufFilePost`/`VimLeavePre`. Detects dotfiles project via `is-cwd` on git root. Runs `chmod` after every link. |
-| **cc-sandbox** | `dotty link --no-cache` | Container image build | Step 3 of PersonalConfigs integration: after `git init`, before `bun run build` |
+| **cc-sandbox** | `dotty link --no-cache` | Container image build | Step 3 of dots integration: after `git init`, before `bun run build` |
 | **boot.zsh** (legacy) | `dotty setup` | macOS bootstrap | Legacy script; current bootstrap uses Nix activation instead |
 
 ### Worktree / Feature-Branch Support
 
 The Makefile `link` target enables testing dotty from any checkout:
 
-1. `sed` rewrites `~/PersonalConfigs` in `dotty.toml` to the current repo root (`$(ROOT)`)
-2. Writes to a temp file (avoids modifying tracked config)
-3. Passes temp config as explicit argument to `dotty link --no-cache`
-4. Cleans up temp file after execution
+1. `dotty.toml` uses `${DOTFILES}` for repo-local project origins
+2. The Makefile exports `DOTFILES=$(ROOT)` before invoking Nushell
+3. `dotty link --no-cache` receives the checkout's tracked `config/dotty/dotty.toml` directly
 
-The Nix activation hook always uses `$HOME/PersonalConfigs` (the canonical clone path).
+The Nix activation hook exports `DOTFILES` as `$HOME/dev/dots` (the canonical clone path).
 
 ## 5. Design Decisions
 
@@ -191,7 +190,7 @@ The Nix activation hook always uses `$HOME/PersonalConfigs` (the canonical clone
 
 ### Automated
 
-- **Test config** — `config/dotty/test-dotty.toml` provides a sandboxed project (`~/PersonalConfigs/config/dotty` → `~/dotty-test`) for validation without touching real dotfiles.
+- **Test config** — `config/dotty/test-dotty.toml` provides a sandboxed project (`${DOTFILES}/config/dotty` → `~/dotty-test`) for validation without touching real dotfiles.
 
 ### Manual
 

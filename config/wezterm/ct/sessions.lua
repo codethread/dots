@@ -3,6 +3,7 @@ local wezterm = require 'wezterm' --[[@as Wezterm]]
 local utils = require 'ct.utils'
 
 local M = {}
+local dotfiles = os.getenv 'DOTFILES' or dotfiles
 
 local projects = utils.machine 'work'
 		and {
@@ -11,7 +12,7 @@ local projects = utils.machine 'work'
 				utils.home 'dev/projects/qmk_firmware/keyboards/preonic/keymaps/codethread',
 				'preonic',
 			},
-			{ 1, utils.home 'PersonalConfigs' },
+			{ 1, dotfiles },
 
 			{ 2, utils.home 'work/deals-light-ui' },
 			{ 3, utils.home 'work/fe-review' },
@@ -28,7 +29,7 @@ local projects = utils.machine 'work'
 			utils.home 'dev/projects/qmk_firmware/keyboards/preonic/keymaps/codethread',
 			'preonic',
 		},
-		{ 1, utils.home 'PersonalConfigs' },
+		{ 1, dotfiles },
 
 		-- { 3, utils.home 'dev/projects/tstl-result' },
 		-- { 4, utils.home 'dev/projects/tstl-fn' },

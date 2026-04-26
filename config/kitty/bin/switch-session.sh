@@ -78,6 +78,15 @@ resolve_profile() {
 }
 
 _PROFILE=$(resolve_profile)
+
+expand_config_path() {
+  local p="$1"
+  p="${p/#\~/$HOME}"
+  p="${p//\$DOTFILES/${DOTFILES:-$HOME/dev/dots}}"
+  p="${p//\$\{DOTFILES\}/${DOTFILES:-$HOME/dev/dots}}"
+  echo "$p"
+}
+
 KEYS_SECTION="keys"
 PROJECTS_SECTION="projects"
 
@@ -108,8 +117,7 @@ if [[ "$PRINT_MODE" == true ]]; then
     exit 1
   fi
 
-  # Expand tilde to home directory
-  PROJECT_PATH="${PROJECT_PATH/#\~/$HOME}"
+  PROJECT_PATH=$(expand_config_path "$PROJECT_PATH")
 
   echo "$PROJECT_PATH"
   exit 0
@@ -133,8 +141,7 @@ if [[ ! -f "$SESSION_FILE" ]]; then
     exit 1
   fi
 
-  # Expand tilde to home directory
-  PROJECT_PATH="${PROJECT_PATH/#\~/$HOME}"
+  PROJECT_PATH=$(expand_config_path "$PROJECT_PATH")
 
   # Ensure sessions directory exists
   mkdir -p "$SESSIONS_DIR"

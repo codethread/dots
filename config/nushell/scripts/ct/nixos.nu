@@ -1,7 +1,7 @@
 # NixOS-only utilities — boot target, store info, Wi-Fi helpers
 
 def _dotfiles_root [] {
-	let fallback = ($env.DOTFILES? | default ($env.HOME | path join "PersonalConfigs"))
+	let fallback = ($env.DOTFILES? | default ($env.HOME | path join "dev" "dots"))
 	let git_root = (do { ^git rev-parse --show-toplevel } | complete)
 
 	if $git_root.exit_code == 0 {

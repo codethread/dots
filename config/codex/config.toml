@@ -14,7 +14,7 @@ model_reasoning_effort = "low"
 model = "gpt-5.5"
 model_reasoning_effort = "high"
 
-[projects."/Users/codethread/PersonalConfigs"]
+[projects."/Users/codethread/dev/dots"]
 trust_level = "trusted"
 
 [projects."/home/codethread/dev"]
@@ -23,7 +23,7 @@ trust_level = "trusted"
 [projects."/Users/adamhall/dev"]
 trust_level = "trusted"
 
-[projects."/Users/adamhall/PersonalConfigs"]
+[projects."/Users/adamhall/dev/dots"]
 trust_level = "trusted"
 
 [projects."/Users/adamhall/work"]
@@ -35,7 +35,7 @@ trust_level = "trusted"
 [projects."/Users/adamhall/dev/projects/ai-tools"]
 trust_level = "trusted"
 
-[projects."/home/codethread/PersonalConfigs"]
+[projects."/home/codethread/dev/dots"]
 trust_level = "trusted"
 
 [projects."/Users/adamhall/dev/projects/cc-inspect"]
