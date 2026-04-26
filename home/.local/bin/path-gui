@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-# :module: Graphical path manipulation and display tool
-
-# update global PATH varible with it's current value in shell
-# this allows programs like emacs and kitty to see everything in the PATH
-# sometimes Alfred needs its cache reset after
-
-sudo launchctl config user path "${PATH}"

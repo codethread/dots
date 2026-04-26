@@ -1,8 +1,0 @@
-#!/bin/sh
-# :module: Git push with error handling and retry mechanism
-
-if [[ "$1" == *.gpg ]]; then
-  gpg --recipient adamhalldesigns@gmail.com --quiet --decrypt $1
-else
-  echo "$1"
-fi
