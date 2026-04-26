@@ -124,8 +124,17 @@ echo ""
 #: clone {{{
 
 if [ ! -d "${DOTFILES}" ]; then
+  printf "${_cyan}( ◕ ◡ ◕ )${_reset} Creating dotfiles directory: %s\n" "${DOTFILES}"
+  mkdir -p "${DOTFILES}"
+fi
+
+if [ ! -d "${DOTFILES}/.git" ]; then
+  if [ "$(ls -A "${DOTFILES}")" ]; then
+    printf "${_red}( •_• )${_reset} Dotfiles directory exists but is not empty: %s\n" "${DOTFILES}" >&2
+    exit 1
+  fi
+
   printf "${_cyan}( ◕ ◡ ◕ )${_reset} Cloning dotfiles\n"
-  mkdir -p "$(dirname "${DOTFILES}")"
   _clone_url=""
   if [ -d "${HOME}/.ssh" ]; then
     _clone_url="git@github.com:codethread/dots.git"
@@ -142,7 +151,7 @@ if [ ! -d "${DOTFILES}" ]; then
   fi
 fi
 
-if [ ! -d "${DOTFILES}" ]; then
+if [ ! -d "${DOTFILES}/.git" ]; then
   printf "${_red}( •_• )${_reset} Expected dotfiles checkout at %s but it was not found\n" "${DOTFILES}" >&2
   exit 1
 fi
