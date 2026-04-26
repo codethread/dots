@@ -128,7 +128,7 @@ in {
       clone_if_missing_ssh "git@github.com:codethread/alfred.git" "$HOME/sync/Alfred" "Alfred"
     ''}
 
-    DOTFILES="${DOTFILES:-$HOME/dev/dots}"
+    DOTFILES="''${DOTFILES:-$HOME/dev/dots}"
     if [ -d "$DOTFILES/.git" ]; then
       ${pkgs.git}/bin/git -C "$DOTFILES" config core.hooksPath .githooks
     fi
@@ -153,29 +153,28 @@ in {
   '';
 
   home.activation.dottyLink = lib.hm.dag.entryAfter [ "nativeAgentBootstrap" ] ''
-    DOTFILES="${DOTFILES:-$HOME/dev/dots}"
+    DOTFILES="''${DOTFILES:-$HOME/dev/dots}"
     if [ ! -d "$DOTFILES" ]; then
       echo ">>> WARN: skipping dotty link; $DOTFILES missing"
-      return 0
+    else
+      export DOTFILES
+      export XDG_CONFIG_HOME="$DOTFILES/config"
+      export XDG_DATA_HOME="$HOME/.local/share"
+      export XDG_STATE_HOME="$HOME/.local/state"
+      export XDG_CACHE_HOME="$HOME/.local/cache"
+      export PATH="${lib.makeBinPath [
+        pkgs.git
+        pkgs.coreutils
+        pkgs.findutils
+        pkgs.gnugrep
+        pkgs.gnused
+        pkgs.nushell
+        pkgs.bash
+      ]}:$PATH"
+
+      ${pkgs.nushell}/bin/nu -n -I "$DOTFILES/config/nushell/scripts" -c \
+        'use ct/dotty; dotty link --no-cache | ignore'
     fi
-
-    export DOTFILES
-    export XDG_CONFIG_HOME="$DOTFILES/config"
-    export XDG_DATA_HOME="$HOME/.local/share"
-    export XDG_STATE_HOME="$HOME/.local/state"
-    export XDG_CACHE_HOME="$HOME/.local/cache"
-    export PATH="${lib.makeBinPath [
-      pkgs.git
-      pkgs.coreutils
-      pkgs.findutils
-      pkgs.gnugrep
-      pkgs.gnused
-      pkgs.nushell
-      pkgs.bash
-    ]}:$PATH"
-
-    ${pkgs.nushell}/bin/nu -n -I "$DOTFILES/config/nushell/scripts" -c \
-      'use ct/dotty; dotty link --no-cache | ignore'
   '';
 
   home.packages = with pkgs; [

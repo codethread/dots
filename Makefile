@@ -9,7 +9,7 @@ ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 
 link:
 	@printf '%s\n' '==> link'
-	@$(NU) -c 'use ct/dotty; dotty link --no-cache "$(ROOT)/config/dotty/dotty.toml" | ignore'
+	@$(NU) -c 'use ct/dotty; dotty link --force --no-cache "$(ROOT)/config/dotty/dotty.toml" | ignore'
 
 build:
 	@printf '%s\n' '==> build'

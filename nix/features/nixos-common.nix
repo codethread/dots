@@ -2,7 +2,7 @@
 
 {
   home.activation.bootDotfiles = lib.hm.dag.entryAfter [ "installPackages" ] ''
-    DOTFILES="${DOTFILES:-$HOME/dev/dots}"
+    DOTFILES="''${DOTFILES:-$HOME/dev/dots}"
     if [ ! -d "$DOTFILES" ]; then
       echo ">>> Cloning dots..."
       mkdir -p "$(${pkgs.coreutils}/bin/dirname "$DOTFILES")"
