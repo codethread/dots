@@ -12,7 +12,7 @@
 
 set -u
 
-AGENT_REGEX='(claude([-/ ]code)?|@anthropic-ai/claude-code|\bcl\b|codex([-/ ]raw)?|\bpi\b|\bpim\b)'
+AGENT_REGEX='(^|[^[:alnum:]_-])(claude([-/ ]code)?|@anthropic-ai/claude-code|cl|codex([-/ ]raw)?|pi|pim)([^[:alnum:]_-]|$)'
 
 DEBUG_MODE=0
 
@@ -45,18 +45,23 @@ fi
 
 pane_process() {
 	local pane_pid=$1
-	local child_line pid args exec self_line
+	local pid args exec line children
 
-	child_line=$(pgrep -a -P "$pane_pid" 2>/dev/null | tail -n 1 || true)
-	if [[ -n "$child_line" ]]; then
-		pid=${child_line%% *}
-		args=${child_line#* }
+	children=$(pgrep -P "$pane_pid" 2>/dev/null || true)
+	if [[ -n "$children" ]]; then
+		# Prefer the most recent direct child of the pane shell. This intentionally
+		# avoids `pgrep -a`: on macOS it may emit only PIDs, while the original
+		# NixOS implementation expected args too. If NixOS process trees differ,
+		# replace this with a small cross-platform process lookup abstraction.
+		pid=$(printf '%s\n' "$children" | tail -n 1)
 	else
-		self_line=$(ps -o pid=,args= -p "$pane_pid" 2>/dev/null | awk 'NF {print; exit}' || true)
-		[[ -z "$self_line" ]] && return 1
-		pid=$(awk '{print $1}' <<< "$self_line")
-		args=${self_line#* }
+		pid=$pane_pid
 	fi
+
+	line=$(ps -o pid=,args= -p "$pid" 2>/dev/null | awk 'NF {print; exit}' || true)
+	[[ -z "$line" ]] && return 1
+	pid=$(awk '{print $1}' <<< "$line")
+	args=${line#* }
 
 	exec=${args%% *}
 	exec=${exec##*/}

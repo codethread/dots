@@ -83,58 +83,49 @@ def wk-run-post-create-runner [runner_path: string, tree_dir: string] {
 	}
 }
 
-# open a directory as a kitty session (matching git-session naming), or cd if not in kitty
+# open a directory as a tmux session, or cd when outside tmux
 export def --env wk-open-dir [path: string, title: string, root_dir?: string, hooks?: list<any>] {
 	let created_path = ($path | path expand)
 	let root_path = if $root_dir == null { $created_path } else { $root_dir | path expand }
 	let matched_hooks = ($hooks | default [])
+	let session_name = (wk-session-name $created_path)
+	let state_dir = ($env.XDG_STATE_HOME? | default ($env.HOME | path join ".local" "state") | path join "tmux-worktree")
+	mkdir $state_dir
+	let runner_path = if ($matched_hooks | is-empty) {
+		null
+	} else {
+		wk-post-create-runner $state_dir $session_name $root_path $created_path $matched_hooks
+	}
 
-	if "KITTY_WINDOW_ID" in $env {
-		let session_name = (wk-session-name $created_path)
-		let sessions_dir = ($env.HOME | path join ".config" "kitty" "sessions")
-		mkdir $sessions_dir
-		let session_file = ($sessions_dir | path join $"($session_name).session")
-		let runner_path = (wk-post-create-runner $sessions_dir $session_name $root_path $created_path $matched_hooks)
-		let launch_line = if $runner_path == null {
-			$"launch --title ($title | to json -r) --cwd ($created_path | to json -r)"
-		} else {
-			$"launch --title ($title | to json -r) --cwd ($created_path | to json -r) --hold bash ($runner_path | to json -r)"
+	if "TMUX" in $env {
+		let has_session = (tmux has-session -t $"=($session_name)" | complete)
+		if $has_session.exit_code != 0 {
+			tmux new-session -d -s $session_name -n $title -c $created_path
 		}
-
-		[$launch_line ""] | str join "\n" | save -f $session_file
-		kitten @ action goto_session $session_file
+		if $runner_path != null {
+			tmux new-window -d -t $session_name -n post-create -c $created_path bash $runner_path
+		}
+		tmux switch-client -t $session_name
 	} else {
 		cd $created_path
-		let runner_path = if ($matched_hooks | is-empty) {
-			null
-		} else {
-			let session_name = (wk-session-name $created_path)
-			let sessions_dir = ($env.HOME | path join ".config" "kitty" "sessions")
-			mkdir $sessions_dir
-			wk-post-create-runner $sessions_dir $session_name $root_path $created_path $matched_hooks
-		}
-
 		if $runner_path != null {
 			wk-run-post-create-runner $runner_path $created_path
 		}
 	}
 }
 
-# close any kitty tabs that have windows rooted inside path
+# close tmux sessions rooted at path
 export def wk-close-dir [path: string] {
-	if "KITTY_WINDOW_ID" not-in $env { return }
-	let listing = (kitten @ ls | complete)
-	if $listing.exit_code != 0 { return }
-	let tab_ids = ($listing.stdout
-		| from json
-		| each {|os_win|
-			$os_win.tabs | where {|tab|
-				$tab.windows | any {|win| $win.cwd == $path or ($win.cwd | str starts-with $"($path)/") }
-			} | get id
+	if "TMUX" not-in $env { return }
+	let target_path = ($path | path expand)
+	let sessions = (tmux list-sessions -F "#{session_name}\t#{session_path}" | lines)
+	for row in $sessions {
+		let parsed = ($row | split row "\t")
+		if ($parsed | length) < 2 { continue }
+		let name = ($parsed | get 0)
+		let session_path = ($parsed | get 1 | path expand)
+		if $session_path == $target_path or ($session_path | str starts-with $"($target_path)/") {
+			tmux kill-session -t $name
 		}
-		| flatten
-	)
-	for id in $tab_ids {
-		kitten @ close-tab --match $"id:($id)"
 	}
 }

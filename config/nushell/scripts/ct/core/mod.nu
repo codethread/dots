@@ -114,13 +114,13 @@ export def hide-all [closure: closure] {
 }
 
 
-export alias cd0 = cd (~/.config/kitty/bin/switch-session.sh --print 0)
-export alias cd1 = cd (~/.config/kitty/bin/switch-session.sh --print 1)
-export alias cd2 = cd (~/.config/kitty/bin/switch-session.sh --print 2)
-export alias cd3 = cd (~/.config/kitty/bin/switch-session.sh --print 3)
-export alias cd4 = cd (~/.config/kitty/bin/switch-session.sh --print 4)
-export alias cd5 = cd (~/.config/kitty/bin/switch-session.sh --print 5)
-export alias cd6 = cd (~/.config/kitty/bin/switch-session.sh --print 6)
-export alias cd7 = cd (~/.config/kitty/bin/switch-session.sh --print 7)
-export alias cd8 = cd (~/.config/kitty/bin/switch-session.sh --print 8)
-export alias cd9 = cd (~/.config/kitty/bin/switch-session.sh --print 9)
+export alias cd0 = cd (tmux-session --print 0)
+export alias cd1 = cd (tmux-session --print 1)
+export alias cd2 = cd (tmux-session --print 2)
+export alias cd3 = cd (tmux-session --print 3)
+export alias cd4 = cd (tmux-session --print 4)
+export alias cd5 = cd (tmux-session --print 5)
+export alias cd6 = cd (tmux-session --print 6)
+export alias cd7 = cd (tmux-session --print 7)
+export alias cd8 = cd (tmux-session --print 8)
+export alias cd9 = cd (tmux-session --print 9)

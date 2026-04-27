@@ -1,5 +1,5 @@
 use helpers.nu *
-use kitty.nu *
+use tmux.nu *
 
 # print the stable root path for the current repo
 export def "wk root" [] {

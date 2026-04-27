@@ -262,7 +262,7 @@ echo "$MODE" > "$MODE_FILE"
 echo "$FAMILY" > "$FAMILY_FILE"
 cp "$THEME_CONF" "$ACTIVE_THEME_CONF"
 
-# reload live kitty sessions; silence errors if no instance is running
+# reload live kitty instances; silence errors if no instance is running
 if command -v kitty >/dev/null 2>&1; then
   kitty @ --to "$KITTY_SOCKET" set-colors --all --configured "$THEME_CONF" 2>/dev/null \
     || kitty @ set-colors --all --configured "$THEME_CONF" 2>/dev/null \

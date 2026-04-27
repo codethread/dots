@@ -1,32 +1,31 @@
-# :module: Interactive tmux session switching utility with preview support
+# :module: Interactive tmux session switching utility with fzf preview
 
-# alternative to fzf scripts which seem to fallover a lot
+# Unlike tmux choose-tree, this is session-only and uses fzf-tmux with preview.
 export def main [] {
-	let attatched = (tmux list-session
-		| lines
-		| find -i "(attached)"
-		| parse "{name}:{rest}"
-		| get name
-		| first)
+	let current = (tmux display-message -p "#{session_name}" | str trim)
 
-	let sessions = (tmux list-session
+	let sessions = (tmux list-sessions -F "#{session_name}"
 		| lines
-		| parse "{name}:{rest}"
-		| get name
-		| where $it !~ $attatched)
+		| where {|name| $name != $current })
 
-	let target = (echo $sessions
+	if ($sessions | is-empty) {
+		tmux display-message "No other tmux sessions"
+		return
+	}
+
+	let preview = ($env.HOME | path join ".config/tmux/plugins/tmux-fzf/scripts/.preview")
+	let target = ($sessions
 		| str join "\n"
-		| fzf-tmux -p -w 80% -h 70% --preview $"($env.HOME)/.config/tmux/plugins/tmux-fzf/scripts/.preview {}" --preview-window "right,70%,follow,border-left"
+		| fzf-tmux -p -w 80% -h 70% --preview $"($preview) {}" --preview-window "right,70%,follow,border-left"
 		| complete)
 
-	# see fzf: exit status
-	match [$target.exit_code, $target.stdout] {
-		[130, _] => {} # exit C-c / Esc
+	# see fzf exit status
+	match [$target.exit_code, ($target.stdout | str trim)] {
+		[130, _] => {} # C-c / Esc
 		[1, _] => {} # no selection
-		[0, $chosen] => { tmux switch-client -t ($target.stdout | str trim) }
+		[0, $chosen] => { tmux switch-client -t $chosen }
 		_ => {
-			print $"(ansi red)something went wrong(ansi reset), probably in fzf-tmux"
+			print $"(ansi red)tmux switch failed(ansi reset)"
 			$target
 		}
 	}

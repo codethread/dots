@@ -6,17 +6,14 @@ This directory contains configuration for the Kitty terminal emulator.
 
 **Structure:**
 
-- `kitty.conf` - Main configuration file
-- `keys.conf` - Keyboard bindings
-- `geninclude_config.py` - Dynamic config generator (called via geninclude directive)
-- `tab_bar.py` - Custom tab bar rendering
-- `bin/` - Helper scripts and utilities
-- `sessions/` - Session files for startup layouts
+- `kitty.conf` - Main terminal-emulator configuration
+- `keys.macos.conf` / `keys.linux.conf` - Terminal-level keyboard bindings
+- `bin/menu.sh` - Small kitty-only action menu for opacity/debug/key inspection
 - `themes/` - Color schemes
 
 ## Config Style
 
-- when adding keybindings, they should always use the tmux mode, e.g `map --mode tmux R load_config_file` unless stated
+- tmux owns multiplexing/session behavior; kitty keybindings should stay terminal-focused unless explicitly requested
 - use vim fold markers for grouping config sections:
 
   ```
@@ -26,21 +23,3 @@ This directory contains configuration for the Kitty terminal emulator.
 
   #: }}}
   ```
-
-## Python code style
-
-When writing Python scripts for Kitty (e.g., watchers, geninclude scripts):
-
-- Follow Clean Code principles - structure like a newspaper with public API first
-- Separate public and private sections with comments:
-
-  ```python
-  # Public API
-  def generate_config(): ...
-
-  # Private implementation
-  def _helper_function(): ...
-  ```
-
-- Type hints for function signatures
-- Keep public functions minimal and testable

@@ -12,7 +12,7 @@ def home [p: string] {
 
 $env.DOTFILES = ($env.DOTFILES? | default (home "dev/dots"))
 $env.EDITOR = "nvim"
-$env.SHELL = ($env.SHELL? | default (which nu | get 0.path))
+$env.SHELL = (which nu | get 0.path)
 $env.MANPAGER = ($env.MANPAGER? | default "nvim +Man! -c 'lua require(\"codethread.manpager\")'")
 $env.MANWIDTH = ($env.MANWIDTH? | default 80)
 $env.LESSHISTFILE = ($env.LESSHISTFILE? | default "-") # no .lesshst

@@ -1,29 +1,17 @@
 #!/usr/bin/env bash
+#:module: Small kitty terminal action menu
 set -euo pipefail
 
-export PATH="$HOME/.config/kitty/bin:$PATH"
-
-# Define menu items as "description|command" pairs
+# Define menu items as "description|command" pairs.
+# Keep this terminal-focused; tmux owns multiplexing/session actions.
 menu_items=(
-    # ui
-    "Toggle opacity 1      | kitten @ action set_background_opacity 1"
-    "Toggle opacity trans  | kitten @ action set_background_opacity 0.85"
-    # tabs and sessions
-    "Switch session        | git-session"
-    "Close other windows   | kitten @ action close_other_windows_in_tab"
-    "Close tab             | kitten @ close-tab"
-    "New tab               | kitten @ new-tab"
-    "Goto session          | kitten @ action goto_session"
-    # layout
-    "Move window to prime  | kitten @ action move_window_to_top"
-    "Change layout         | kitten @ action next_layout"
-    "Toggle Layout         | toggle-layout.sh"
-    "Layout bias 50-62-70  | kitten @ action layout_action bias 50 62 70"
-    # debugging
-    "Show kitty env vars   | kitten @ action show_kitty_env_vars"
-    "Debug config          | kitten @ action debug_config"
-    "Show key mappings     | kitty kitten show-key"
-    "Show kitty mappings   | kitty kitten show-key -m kitty"
+    "Opacity solid        | kitten @ action set_background_opacity 1"
+    "Opacity transparent  | kitten @ action set_background_opacity 0.85"
+    "Reload kitty config  | kitten @ action load_config_file"
+    "Show kitty env vars  | kitten @ action show_kitty_env_vars"
+    "Debug kitty config   | kitten @ action debug_config"
+    "Show key mappings    | kitty kitten show-key"
+    "Show kitty mappings  | kitty kitten show-key -m kitty"
 )
 
 # Extract descriptions and commands for fzf display

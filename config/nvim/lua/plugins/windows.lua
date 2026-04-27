@@ -10,19 +10,8 @@ return {
 	{
 		'mrjones2014/smart-splits.nvim',
 		lazy = false,
-		build = './kitty/install-kittens.bash',
-		init = function()
-			do -- handle kitty keybinding passthrough
-				local function on_init() io.stdout:write '\x1b]1337;SetUserVar=IS_NVIM=MQo\007' end
-				local function on_exit() io.stdout:write '\x1b]1337;SetUserVar=IS_NVIM\007' end
-
-				on_init()
-				vim.api.nvim_create_autocmd('VimResume', { callback = on_init })
-				vim.api.nvim_create_autocmd({ 'VimSuspend', 'VimLeavePre' }, { callback = on_exit })
-			end
-		end,
-			-- these keymaps will also accept a range,
-			-- for example `10<A-h>` will `resize_left` by `(10 * config.default_amount)`
+		-- these keymaps will also accept a range,
+		-- for example `10<A-h>` will `resize_left` by `(10 * config.default_amount)`
 		--[[stylua: ignore]] --format
 		keys = {
 			{ '<A-h>', function() require('smart-splits').resize_left() end },
@@ -38,7 +27,7 @@ return {
 		},
 		opts = {
 			log_level = 'warn',
-			multiplexer_integration = 'kitty',
+			multiplexer_integration = 'tmux',
 			-- Ignored buffer types (only while resizing)
 			ignored_buftypes = {
 				'nofile',

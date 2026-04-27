@@ -29,6 +29,10 @@ in {
   };
   nixpkgs.config.allowUnfree = true;
 
+  # Make xterm-kitty/tmux-256color terminfo available to nix-darwin activation
+  # and sudo contexts while keeping kitty's native TERM=xterm-kitty.
+  environment.enableAllTerminfo = true;
+
   # Keyboard repeat: lower values are faster on macOS.
   system.defaults.NSGlobalDomain = {
     ApplePressAndHoldEnabled = false;

@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-#:module: Tmux session switcher using shared sessions.toml config
+#:module: Tmux session switcher using tmux sessions.toml config
 #:
-#: Usage: tmux-session [number|--interactive]
+#: Usage: tmux-session [number|--print number]
 #:
-#: Maps numbered keys (0-9) to project sessions via sessions.toml (shared with kitty).
+#: Maps numbered keys (0-9) to project sessions via tmux/sessions.toml.
 #: Without arguments, launches interactive fzf project picker.
 #:
 #: Options:
 #:   0-9             Jump to numbered project session
+#:   --print 0-9     Print numbered project path instead of switching
 #:   (no args)       Interactive project discovery via fzf
 
 set -euo pipefail
 
-SESSIONS_TOML="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/sessions.toml"
+SESSIONS_TOML="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/sessions.toml"
 
 if [[ ! -f "$SESSIONS_TOML" ]]; then
 	echo "Error: sessions.toml not found at $SESSIONS_TOML" >&2
@@ -192,6 +193,13 @@ interactive_select() {
 }
 
 case "${1:-}" in
+--print)
+	if [[ ! "${2:-}" =~ ^[0-9]$ ]]; then
+		echo "Usage: tmux-session --print <number>" >&2
+		exit 1
+	fi
+	resolve_project_path "$2"
+	;;
 [0-9])
 	project_path=$(resolve_project_path "$1")
 	switch_to_project "$project_path"

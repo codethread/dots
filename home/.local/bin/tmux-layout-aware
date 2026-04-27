@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+#:module: Apply client-size-aware tmux layouts
+#:
+#: Usage: tmux-layout-aware [tall|fat|toggle]
+#:
+#: Chooses tmux main-pane dimensions from the current client size.
+#: Uses tmux client dimensions, not physical display APIs, so it works over SSH.
+
+set -euo pipefail
+
+usage() {
+	grep '^#:' "$0" | sed 's/^#: \{0,1\}//'
+}
+
+mode="${1:-toggle}"
+case "$mode" in
+	-h|--help)
+		usage
+		exit 0
+		;;
+esac
+
+if ! command -v tmux >/dev/null 2>&1; then
+	echo "tmux-layout-aware: tmux is required" >&2
+	exit 1
+fi
+
+if ! tmux display-message -p '#{client_width}' >/dev/null 2>&1; then
+	echo "tmux-layout-aware: must run from an attached tmux client" >&2
+	exit 1
+fi
+
+client_width="$(tmux display-message -p '#{client_width}')"
+client_height="$(tmux display-message -p '#{client_height}')"
+
+choose_width_percent() {
+	local width="$1"
+
+	if ((width <= 120)); then
+		echo "55%"
+	elif ((width <= 160)); then
+		echo "60%"
+	elif ((width <= 220)); then
+		echo "65%"
+	elif ((width <= 280)); then
+		echo "70%"
+	else
+		echo "75%"
+	fi
+}
+
+choose_height_percent() {
+	local height="$1"
+
+	if ((height <= 35)); then
+		echo "50%"
+	elif ((height <= 50)); then
+		echo "55%"
+	else
+		echo "60%"
+	fi
+}
+
+apply_tall() {
+	local width_percent
+	width_percent="$(choose_width_percent "$client_width")"
+
+	tmux set-window-option @ct_layout_mode tall >/dev/null
+	tmux set-window-option main-pane-width "$width_percent" >/dev/null
+	tmux select-layout main-vertical >/dev/null
+	tmux display-message "layout: tall main-pane-width=$width_percent client=${client_width}x${client_height}"
+}
+
+apply_fat() {
+	local height_percent
+	height_percent="$(choose_height_percent "$client_height")"
+
+	tmux set-window-option @ct_layout_mode fat >/dev/null
+	tmux set-window-option main-pane-height "$height_percent" >/dev/null
+	tmux select-layout main-horizontal >/dev/null
+	tmux display-message "layout: fat main-pane-height=$height_percent client=${client_width}x${client_height}"
+}
+
+case "$mode" in
+	tall)
+		apply_tall
+		;;
+	fat)
+		apply_fat
+		;;
+	toggle)
+		state="$(tmux show-window-option -v @ct_layout_mode 2>/dev/null || true)"
+		if [[ "$state" == "fat" ]]; then
+			apply_tall
+		else
+			apply_fat
+		fi
+		;;
+	*)
+		usage >&2
+		exit 1
+		;;
+esac
