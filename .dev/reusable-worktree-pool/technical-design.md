@@ -1,6 +1,6 @@
 # Technical design — `wktree` binary
 
-Companion to [prd.md](./prd.md). Covers module layout, Effect service definitions, git command inventory, control flow per subcommand, nushell integration, and testing strategy.
+Companion to [prd.md](./prd.md). Covers module layout, dependency-injected services, git command inventory, control flow per subcommand, nushell integration, and testing strategy.
 
 Scope: the binary owns all worktree-engine logic (both pooled and non-pooled flows), is the sole reader of `trees.toml`, and generates the unified hook runner script. Nushell keeps only shell-specific primitives.
 
@@ -11,35 +11,35 @@ oven/
 ├── bin/
 │   └── wktree.ts                    # CLI entry, subcommand dispatch, and all wktree logic
 │                                    # Types, config, pool state, hook gen, progress, fzf picker
-│                                    # Effect Services, Layers, and all subcommand implementations
+│                                    # Types, small DI interfaces, and subcommand implementations
 ├── shared/
 │   ├── git/
-│   │   ├── executor.ts              # Git Service (Context.Tag + live Layer via Bun.spawn)
+│   │   ├── executor.ts              # GitRunner interface + live Bun.spawn implementation
 │   │   └── worktrees.ts             # pure parsers: parseWorktreeList, detectTrunk, branchExists
 │   ├── fzf.ts                       # extended: header, preview, confirm opts (replaces picker.ts)
 │   ├── report.ts                    # existing
 │   ├── ansi.ts                      # existing
 │   └── claude-hooks.ts              # existing
 └── tests/
-    └── wktree.test.ts               # single file; real git in mkdtemp /tmp; Layer substitution
+    └── wktree.test.ts               # single file; real git in mkdtemp /tmp; injected test doubles
 ```
 
 `shared/git/executor.ts` and `shared/git/worktrees.ts` are deliberately outside `wktree.ts` — they contain reusable git infrastructure any future `oven/bin` tool can import. Everything specific to the worktree pool feature lives directly in `wktree.ts`.
 
-## Effect dependency
+## Dependency approach
 
-Add to `oven/package.json`:
+Do not add a framework for v1. Keep the binary plain TypeScript with small dependency-injected interfaces for the few IO seams that tests need to replace. Production implementations use Bun-native APIs (`Bun.spawn`, `Bun.file`, `Bun.write`).
 
-```json
-"dependencies": {
-  "effect": "^3",
-  "@effect/platform-bun": "<version>"
+```ts
+interface Deps {
+  git: GitRunner;
+  hook: HookRunner;
+  picker: PickerService;
+  progress: ProgressReporter;
 }
 ```
 
-Clarification: we are **not** adopting the generic `@effect/platform` service layer for file system / command / terminal abstractions. Bun-native IO (`Bun.spawn`, `Bun.file`, `Bun.write`) is still wrapped directly in `Effect.tryPromise`.
-
-We **do** add `@effect/platform-bun` for `BunRuntime.runMain`, so the CLI gets Bun-native Effect runtime wiring for process lifecycle, exit handling, and signal teardown without introducing the broader `@effect/platform` abstraction surface.
+`main()` creates live deps once, dispatches to async subcommand functions, catches domain errors, maps exit codes, and prints human-readable errors to stderr.
 
 ## Type surface
 
@@ -113,83 +113,75 @@ interface RemovePlan {
 
 ## Error types
 
-All domain errors use `Data.TaggedError`. `catchTag` / `catchTags` provide exhaustive handling at call sites.
+Use small custom error classes. Each carries enough structured data for tests and enough message text for CLI users.
 
 ```ts
-import { Data } from "effect";
-
-class ConfigError extends Data.TaggedError("ConfigError")<{ message: string }> {}
-class GitError extends Data.TaggedError("GitError")<{
-  args: string[]; stderr: string; exitCode: number
-}> {}
-class DuplicateBranchError extends Data.TaggedError("DuplicateBranchError")<{
-  branch: string; worktreePath: string
-}> {}
-class DirtySlotError extends Data.TaggedError("DirtySlotError")<{ slotPath: string }> {}
-class UnmergedBranchError extends Data.TaggedError("UnmergedBranchError")<{ branch: string }> {}
-class ReservedPrefixError extends Data.TaggedError("ReservedPrefixError")<{ branch: string }> {}
-class CanonicalRootError extends Data.TaggedError("CanonicalRootError")<{ path: string }> {}
-class PickerCancelled extends Data.TaggedError("PickerCancelled")<{}> {}
-class HookError extends Data.TaggedError("HookError")<{ exitCode: number; slotPath: string }> {}
-class TrunkDetectionError extends Data.TaggedError("TrunkDetectionError")<{}> {}
+class WktreeError extends Error {
+  constructor(message: string, public exitCode = 1) { super(message); }
+}
+class ConfigError extends WktreeError { constructor(message: string) { super(message, 2); } }
+class PickerCancelled extends WktreeError { constructor() { super("cancelled", 130); } }
+class GitError extends WktreeError {
+  constructor(public args: string[], public stderr: string, public gitExitCode: number) {
+    super(`git ${args.join(" ")} failed: ${stderr.trim()}`);
+  }
+}
+class DuplicateBranchError extends WktreeError {}
+class DirtySlotError extends WktreeError {}
+class UnmergedBranchError extends WktreeError {}
+class ReservedPrefixError extends WktreeError {}
+class CanonicalRootError extends WktreeError {}
+class HookError extends WktreeError { constructor(public hookExitCode: number, public slotPath: string) { super(`hook failed in ${slotPath} (${hookExitCode})`); } }
+class TrunkDetectionError extends WktreeError {}
 ```
 
-## Effect services (`shared/git/executor.ts` + `wktree.ts`)
+## Injected services (`shared/git/executor.ts` + `wktree.ts`)
 
-Services replace the manual `Executors` bag. Each IO-touching concern is a `Context.Tag` with a live `Layer`. Tests substitute layers without touching production code.
+Services are plain interfaces. Tests pass fakes; production passes live implementations.
 
 ### `shared/git/executor.ts`
 
 ```ts
-import { Context, Effect, Layer } from "effect";
-
 export interface GitResult { stdout: string; stderr: string; exitCode: number }
 
-export class Git extends Context.Tag("Git")<Git, {
-  // Fails with GitError when exit code is non-zero. Use for most git calls.
-  run(args: string[], opts?: { cwd?: string }): Effect.Effect<GitResult, GitError>;
-  // Always succeeds. Use when exit code itself is the signal (e.g. merge-base --is-ancestor).
-  runRaw(args: string[], opts?: { cwd?: string }): Effect.Effect<GitResult, GitError>;
-}>() {}
+export interface GitRunner {
+  // Throws GitError when exit code is non-zero. Use for most git calls.
+  run(args: string[], opts?: { cwd?: string }): Promise<GitResult>;
+  // Never throws for non-zero exit. Use when exit code itself is the signal.
+  runRaw(args: string[], opts?: { cwd?: string }): Promise<GitResult>;
+}
+
+export class LiveGitRunner implements GitRunner { /* Bun.spawn implementation */ }
 ```
 
 ### Services defined in `wktree.ts`
 
 ```ts
-import { Context, Effect, Layer } from "effect";
-
-// ── Hook service ──────────────────────────────────────────────────────────────
-interface HookExecutor {
+interface HookRunner {
   runInline(
     scriptPath: string,
     cwd: string,
     env: Record<string, string>,
     onLine: (stream: "stdout" | "stderr", line: string) => void,
-  ): Effect.Effect<void, HookError>;
+  ): Promise<void>;
 }
-class Hook extends Context.Tag("Hook")<Hook, HookExecutor>() {}
 
-// ── Picker service ─────────────────────────────────────────────────────────────
 interface PickerItem { key: string; display: string; preview: string }
 interface PickerService {
-  // attaches fzf to /dev/tty directly — never uses process.stdin/stdout
-  pick(items: PickerItem[], header: string): Effect.Effect<PickerItem, PickerCancelled>;
-  confirm(prompt: string): Effect.Effect<boolean, never>;
+  pick(items: PickerItem[], header: string): Promise<PickerItem>;
+  confirm(prompt: string): Promise<boolean>;
 }
-class Picker extends Context.Tag("Picker")<Picker, PickerService>() {}
 
-// ── Progress service ──────────────────────────────────────────────────────────
-interface ProgressService {
-  banner(line: string): Effect.Effect<void>;
-  stream(stream: "stdout" | "stderr", line: string): Effect.Effect<void>;
-  error(msg: string): Effect.Effect<void>;
+interface ProgressReporter {
+  banner(line: string): void;
+  stream(stream: "stdout" | "stderr", line: string): void;
+  error(msg: string): void;
 }
-class Progress extends Context.Tag("Progress")<Progress, ProgressService>() {}
 ```
 
 ## `shared/git/worktrees.ts` — pure parsers
 
-No Effects, no services — pure functions that parse git porcelain output. Usable by any future tool.
+Pure functions that parse git porcelain output. Usable by any future tool.
 
 ```ts
 // Parse `git worktree list --porcelain` output into Worktree[]
@@ -206,25 +198,23 @@ export function branchExistsInList(listOutput: string, branch: string): boolean
 
 ## CLI entry point
 
-`main()` parses the subcommand, builds a single `program` Effect with all services provided, then hands off to `BunRuntime.runMain` — which handles exit codes, uncaught errors, and signal teardown.
+`main()` parses the subcommand, creates live deps, dispatches to an async subcommand function, and catches errors at the boundary.
 
-> **Note:** `@effect/platform-bun` is added to dependencies for `BunRuntime.runMain`. This does **not** mean the design uses `@effect/platform` abstractions for IO services — `@effect/platform-bun` is only the runtime bridge.
+Exit code mapping:
 
-Exit code mapping via `Effect.mapError` at the dispatch boundary:
-
-| Error tag | Exit code |
+| Error | Exit code |
 |---|---|
 | `ConfigError` | 2 |
 | `PickerCancelled` | 130 |
-| any other failure | 1 (default) |
+| any other failure | 1 default, unless the error class sets another code |
 
 ## Subcommand implementations (inside `wktree.ts`)
 
-Each subcommand is an `Effect.Effect<..., ..., Git | Hook | Picker | Progress>`. Dependencies flow in via `yield* ServiceName` inside `Effect.gen`. There are no explicit parameter bags — Effect's context carries them.
+Each subcommand is a plain async function taking parsed args and `Deps`. Keep helpers small and testable; no hidden global process cwd.
 
 ## Git commands
 
-Unchanged from the original design — see the original `technical-design.md` git command inventory. Every call goes through the `Git` service; `yield* git.run([...], { cwd })` in `Effect.gen` blocks.
+Unchanged from the original design — see the original `technical-design.md` git command inventory. Every call goes through the injected `GitRunner`; use `await deps.git.run([...], { cwd })`.
 
 ### Trunk + canonical root
 
@@ -321,6 +311,7 @@ Forced:
 git -C <root> fetch origin
 git -C <slot> checkout -f -B wk-pool/feat<N> origin/<trunk>
 git -C <slot> reset --hard wk-pool/feat<N>
+git -C <slot> clean -fd
 if <old-branch> != wk-pool/feat<N>:
     git -C <root> branch -D <old-branch>
 ```
@@ -381,7 +372,7 @@ write RemovePlan → --result-file
 ### `wktree list --cwd <c> [--json]`
 
 ```
-parse config (non-fatal on broken — emit warning, continue)
+parse config (ConfigError is fatal, same as every other subcommand)
 git worktree list --porcelain
 annotate pool slots via branchRef + path pattern
 emit human rows or JSON
@@ -521,11 +512,11 @@ One test file: `oven/tests/wktree.test.ts`. No separate unit test files per modu
 
 ### Approach
 
-Tests use **real git repos** created in `mkdtemp` within `/tmp`. This gives accurate coverage of git behaviour without mocking porcelain output. The two IO-touching services that are impractical to use in tests (`Hook`, `Picker`) are substituted via Effect Layers.
+Tests use **real git repos** created in `mkdtemp` within `/tmp`. This gives accurate coverage of git behaviour without mocking porcelain output. The two IO-touching services that are impractical to use in tests (`Hook`, `Picker`) are substituted with small injected test doubles.
 
 For pure functions (`parseWorktreeList`, `parseTrunkFromSymbolicRef`, `generateRunnerScript`, `parseConfig`) — test them directly in the same file; they take plain inputs and return plain outputs.
 
-### Layer substitution
+### Test double substitution
 
 Three test layer factories are defined:
 
@@ -533,7 +524,7 @@ Three test layer factories are defined:
 - `TestPicker(choice: PickerItem | null)` — returns a pre-determined item, or fails with `PickerCancelled` when `null`
 - `StrictGit(responses: Map<string, GitResult>)` — rejects any git call not in the response map; for unit-style assertions
 
-A `runWith` helper composes these overrides over the live layers and returns a `Promise<A>` for use with `expect`.
+A `runWith` helper builds a `Deps` object from live defaults plus overrides and returns a `Promise<A>` for use with `expect`.
 
 ### Coverage
 
@@ -562,7 +553,7 @@ Pool coverage:
 - Duplicate across pool: branch in feat2 → `add` errors without side effects.
 - Reserved namespace: `add --branch wk-pool/mine` → errors.
 - Dirty gate: tracked modification → recycle without `--force` fails; with `--force` succeeds AND dirt gone.
-- Dirty gate: untracked non-gitignored file → recycle without `--force` fails; with `--force` succeeds, file survives.
+- Dirty gate: untracked non-gitignored file → recycle without `--force` fails; with `--force` succeeds and `git clean -fd` removes it.
 - Dirty gate: gitignored path (`node_modules/`) → NOT reported, gate not triggered, survives recycle in both modes.
 - Safe branch delete: unmerged commits without `--force` → `branch -d` fails; with `--force` → `branch -D` succeeds.
 - `--base` handling: new branch from `origin/<base>`; existing branch + `--base` emits warning, ignores base.
@@ -596,4 +587,3 @@ The picker's `/dev/tty` discipline is handled at the `fzf` call site by passing 
 - In `mod.nu`: remove `use helpers.nu *`; rewrite `wk add` / `wk remove` / `wk list` / `wk path` / `wk root` to the shapes above.
 - Grep for `wk-canonical-root`, `wk-worktree-path`, `wk-encode-branch`, `wk-default-branch`, `wk-list-data`, `wk-post-create-hooks`, `wk-matching-post-create-hooks`, `wk-post-create-runner` before deletion; migrate any external caller to `wktree` subcommand invocations.
 - Update `specs/git-worktrees.md` to reflect the layer split.
-- Add `effect` and `@effect/platform-bun` to `oven/package.json` (`effect` for services/layers/control flow; `@effect/platform-bun` only for `BunRuntime.runMain`).

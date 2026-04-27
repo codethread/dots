@@ -3,7 +3,6 @@
 **Status:** Planned
 **Created:** 2026-04-21
 **Related spec:** [specs/git-worktrees.md](../../specs/git-worktrees.md)
-**Related research:** [learning-tests.md](./learning-tests.md)
 
 ## 1. Overview
 
@@ -55,15 +54,14 @@ The existing system is documented in `specs/git-worktrees.md`. Current touchpoin
 - `wk-list-data` in `helpers.nu` — parses `git worktree list --porcelain`. **Moves to binary**.
 - `config/nushell/scripts/ct/git/worktree/mod.nu` — public `wk` surface. **Thinned** to a glue layer that invokes the binary, reads a JSON plan, then performs the shell-only follow-up (cd, `wk-open-dir`, `wk-close-dir`).
 
-## 3. Learning-test findings
+## 3. Git behaviour assumptions
 
-See [learning-tests.md](./learning-tests.md) for raw output. Load-bearing results:
+The design relies on a small set of git behaviours verified in throwaway repos:
 
-1. **node_modules survives across `git checkout -B`** — both branch switching and recycle. This is the whole feature's premise and it holds.
-2. **Recycle is a two-command sequence:** `git -C <slot> checkout -B wk-pool/featN origin/<trunk>` then `git branch -D <old>`. Tracked files from the old branch are cleared; gitignored paths are not touched.
-3. **`git checkout -B` silently carries dirty tracked changes into the new branch.** Recycle must gate on dirty state — any `git status --porcelain=v1` output, including untracked non-gitignored files — and refuse without `--force`.
-4. **Git refuses to check out the same branch into two worktrees** — so allocation must error if the requested branch is already in any slot.
-5. **Pool slots are detectable** via `branch_ref` starting with `refs/heads/wk-pool/`.
+1. **Gitignored install output survives branch switching.** `git checkout -B` does not remove ignored paths such as `node_modules/`; this is the whole feature premise.
+2. **Tracked dirty state can be carried by `checkout -B`.** Recycle must preflight dirty state and refuse by default before mutating a slot.
+3. **Git refuses the same branch in two worktrees.** Allocation performs an explicit duplicate scan first so the error is clear.
+4. **Pool slots are detectable** via the slot path convention and placeholder branch namespace.
 
 ## 4. Architecture
 
@@ -213,7 +211,7 @@ Rules:
 See `technical-design.md` for full git commands. High-level shape:
 
 - Default (no `--force`): refuse if dirty (any porcelain output — tracked OR untracked non-gitignored), refuse if feature branch unmerged upstream (`branch -d` semantics). Otherwise checkout placeholder on latest trunk, delete feature branch.
-- Forced: `checkout -f -B` + `reset --hard` to actually discard tracked dirt; `branch -D` to force-delete unmerged branch. Untracked non-gitignored files are NOT explicitly deleted — `checkout -B` leaves them in place, and the user consented to losing state via `--force`. Gitignored files (node_modules/, caches) are always preserved — that's the feature.
+- Forced: `checkout -f -B` + `reset --hard` + `git clean -fd` to discard tracked dirt and untracked non-gitignored files; `branch -D` force-deletes the old branch. Gitignored files (node_modules/, caches) are preserved — never use `git clean -fdx`.
 
 Invoked from three places: `wktree remove` on a pooled slot, `wktree recycle`, and inside the picker's confirm path (always `--force` because picker confirmation IS the consent).
 
@@ -329,9 +327,10 @@ Subsequent invocations skip init entirely.
   - On success: slot checked out to placeholder on latest trunk; feature branch deleted; kitty tab closed.
 - Forced recycle (`wk remove <branch> --force`):
   - Skips dirty gate and merged-upstream check.
-  - Uses `git checkout -f -B` + `git reset --hard` to ensure tracked dirt is actually discarded (learning test LT10 showed `checkout -B` alone can carry dirt).
+  - Uses `git checkout -f -B` + `git reset --hard` to discard tracked dirt.
+  - Uses `git clean -fd` to delete untracked non-gitignored files while preserving ignored paths such as `node_modules/` (`-x` is never used).
   - Uses `git branch -D` to force-delete the old branch even if unmerged.
-  - Gitignored paths (`node_modules/`, caches) are preserved in both cases — the whole point. Untracked non-gitignored files reach the forced path only when the user explicitly opted in via `--force`; `checkout -B` leaves them in place rather than deleting them.
+  - Gitignored paths (`node_modules/`, caches) are preserved in both safe and forced paths — the whole point.
 - The slot's worktree directory is NOT removed in either case.
 - After recycle, `wk list` reports the slot as `[pool:free]`.
 
@@ -378,7 +377,7 @@ The recycle step uses `git checkout -B wk-pool/featN origin/<trunk>`, which rese
 
 The recycle dirty gate blocks on ANY line in `git status --porcelain=v1` — tracked modifications AND untracked non-gitignored files (`??` lines). A `??` line represents a file the user created but hasn't added yet; silently losing that on recycle would be a footgun. Gitignored paths (`node_modules/`, `.cache/`, build outputs covered by `.gitignore`) do not appear in porcelain output and so don't trigger the gate — preserving them is the feature's point, and they survive recycle independently via `checkout -B`'s behaviour.
 
-Consequence: if the user explicitly wants to throw away an untracked scratch file on a pool slot, they pass `--force` (or delete the file first). Consistent with `git clean`'s own default safety stance.
+Consequence: if the user explicitly wants to throw away an untracked scratch file on a pool slot, they pass `--force` (or delete the file first). Forced recycle uses `git clean -fd`, not `git clean -fdx`, so ignored install output remains.
 
 ### Hook execution parity
 
@@ -390,10 +389,10 @@ Open question from the original spec: hook failures in kitty don't bubble back t
 
 ### TypeScript layer details
 
-- Follow `oven/CLAUDE.md` conventions: per-subcommand lib functions exported from `shared/wktree/`, CLI wrapper in `bin/wktree.ts` guarded by `import.meta.main`, dependency-injected executors (`GitExecutor`, `HookExecutor`, `Picker`, `ProgressReporter`) for tests.
-- Use `Bun.spawn` (not `Bun.$`) inside `GitExecutor` so tests can introspect args exactly.
+- Keep the implementation plain TypeScript with small dependency-injected interfaces (`GitRunner`, `HookRunner`, `Picker`, `Progress`) rather than introducing a framework.
+- Use `Bun.spawn` (not `Bun.$`) inside `GitRunner` so tests can introspect args exactly.
 - Subcommand dispatch: first positional arg picks the subcommand; remaining args go through `parseArgs`.
-- Tests in `oven/tests/wktree/`. Two rings as described in technical-design.md — ring 1 mocked, ring 2 real git in tmp repos.
+- Tests live in `oven/tests/wktree.test.ts`. Two rings as described in technical-design.md — pure/unit tests and real git integration tests in tmp repos.
 
 ### What stays in nushell (and why)
 
@@ -450,7 +449,7 @@ export def --env "wk add" [branch: string, base?: string, --force] {
 
 | Risk | Mitigation |
 |---|---|
-| `yarn install` reconciliation isn't as fast as hoped on the real repo | Timing is human-verifiable before merge; if disappointing, revisit (maybe `yarn install --offline --prefer-offline` in the hook) |
+| `yarn install` reconciliation isn't as fast as hoped on the real repo | Timing is human-verifiable before merge; if disappointing, adjust the project hook after real use |
 | Placeholder branches accumulate cruft (e.g. rebased commits) across recycles | `checkout -B … origin/<trunk>` resets them every recycle — no accumulation |
 | User commits on a placeholder branch by mistake | Dirty-gate blocks recycle; user can rescue via normal git; feature surface doesn't add new ways to lose work |
 | `wktree` binary not built yet on fresh machine | `make build` is part of bootstrap; nushell wrappers fail loudly with "wktree not in PATH" if missing; boot order is: `make build` before any `wk …` invocation |

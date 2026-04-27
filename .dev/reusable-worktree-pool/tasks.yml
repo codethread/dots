@@ -18,25 +18,23 @@ requirements:
 
 tasks:
   - id: "001"
-    title: "Scaffold wktree binary + Effect deps + tagged errors"
+    title: "Scaffold wktree binary + plain DI + domain errors"
     description: |
-      Lay the foundation for the new binary. Add `effect` and `@effect/platform-bun` to
-      `oven/package.json`. Create `oven/bin/wktree.ts` with:
+      Lay the foundation for the new binary. Create `oven/bin/wktree.ts` with:
         - Top-of-file type declarations (ProjectConfig, TreesConfig, Worktree, Slot, PoolState,
           Allocation, AddPlan, RemovePlan) per technical-design.md §Type surface
-        - `Data.TaggedError` classes per technical-design.md §Error types
-        - Context.Tag definitions for `Hook`, `Picker`, `Progress` (interfaces only; live layer
-          implementations filled in by later tasks) with placeholder live Layer stubs that
-          throw "not implemented" so typecheck passes
+        - custom domain error classes per technical-design.md §Error types
+        - plain interfaces for `HookRunner`, `PickerService`, `ProgressReporter`, and `Deps`
+          (live implementations filled in by later tasks) with placeholder stubs that throw
+          "not implemented" so typecheck passes
         - Subcommand dispatch skeleton: first positional arg picks subcommand; unrecognized
           subcommands exit 1 with usage message
-        - `main()` builds a program Effect and hands off to `BunRuntime.runMain` from
-          `@effect/platform-bun`; exit-code mapping via `Effect.mapError` — ConfigError → 2,
-          PickerCancelled → 130, else → 1
+        - `main()` creates live deps, dispatches to async subcommand functions, catches domain
+          errors, and maps exit codes — ConfigError → 2, PickerCancelled → 130, else → 1
         - `import.meta.main` guard around `main()`
-      Create `oven/shared/git/executor.ts` with the `Git` Context.Tag (run + runRaw) and a live
-      layer using `Bun.spawn`; `run` fails with `GitError` on non-zero exit, `runRaw` always
-      succeeds.
+      Create `oven/shared/git/executor.ts` with a `GitRunner` interface (run + runRaw) and a
+      `LiveGitRunner` using `Bun.spawn`; `run` fails with `GitError` on non-zero exit,
+      `runRaw` always succeeds.
       Create `oven/shared/git/worktrees.ts` with exported stubs (typed signatures only) for
       `parseWorktreeList`, `parseTrunkFromSymbolicRef`, `parseTrunkFromRemoteShow`,
       `branchExistsInList`.
@@ -49,13 +47,9 @@ tasks:
         - "oven/shared/git/executor.ts"
         - "oven/shared/git/worktrees.ts"
         - "oven/tests/wktree.test.ts"
-      modify:
-        - "oven/package.json"
-        - "oven/bun.lock"
     acceptance:
-      - "`bun install` runs clean"
       - "`wktree --help` or `wktree somebogus` exits with usage and correct code"
-      - "Git service live layer can execute `git --version` via `yield* git.run([...])` (ad-hoc smoke)"
+      - "GitRunner live implementation can execute `git --version` via `await git.run([...])` (ad-hoc smoke)"
       - "`cd oven && bun run verify` passes"
       - "Typecheck passes"
     notes: ""
@@ -63,7 +57,7 @@ tasks:
   - id: "002"
     title: "Implement parseConfig with full error matrix + tests"
     description: |
-      Add a pure `parseConfig(toml: string): Effect.Effect<TreesConfig, ConfigError>` to
+      Add a pure `parseConfig(toml: string): TreesConfig` to
       `bin/wktree.ts`. Parse `config/ct-worktrees/trees.toml` shape — top-level
       `[[project]]` array. Rules (per PRD §Config shape):
         - `root` and `command` required on each entry
@@ -258,7 +252,7 @@ tasks:
     title: "Implement pool state model + wktree status debug subcommand"
     description: |
       Add pool-state detection functions inside `bin/wktree.ts`:
-        - `buildPoolState(cfg: ProjectConfig, worktrees: Worktree[], git: Git): Effect<PoolState, ...>`
+        - `buildPoolState(cfg: ProjectConfig, worktrees: Worktree[], git: GitRunner): Promise<PoolState>`
         - Per-slot probe: existence (from `parseWorktreeList`), branch (`branch --show-current`),
           placeholder (branch === `wk-pool/feat<N>`), dirty (`git status --porcelain=v1` → any
           output), lastCommitIso + subject (`git log -1 --format=%cI%x1f%s`), initialized
@@ -382,17 +376,19 @@ tasks:
         - Forced:
           1. `git fetch origin`.
           2. `git -C <slot> checkout -f -B wk-pool/feat<N> origin/<trunk>`.
-          3. `git -C <slot> reset --hard wk-pool/feat<N>` (actually discards dirt — LT10).
-          4. `git -C <root> branch -D <old>` (skipped if old == placeholder).
+          3. `git -C <slot> reset --hard wk-pool/feat<N>` (discards tracked dirt).
+          4. `git -C <slot> clean -fd` (deletes untracked non-gitignored files; never use `-x`).
+          5. `git -C <root> branch -D <old>` (skipped if old == placeholder).
       Gitignored paths (`node_modules/`, caches) preserved in both paths.
       Expose as `wktree recycle --cwd <c> --slot <path> [--force]`.
       Extend `wktree remove` (task 007): if target is a pool slot, delegate to recycle with
       the corresponding `--force` flag. On recycle, RemovePlan has `removed: false` and
       `worktree_path` still set.
       Ring-2 tests: safe-recycle happy path; dirty tracked modification blocks without `--force`;
-      untracked non-gitignored file blocks without `--force`; gitignored file ignored;
-      unmerged-upstream blocks without `--force`; missing-upstream blocks without `--force`;
-      forced path discards tracked dirt and force-deletes unmerged branch; node_modules
+      untracked non-gitignored file blocks without `--force` and is removed by `--force`;
+      gitignored file ignored; unmerged-upstream blocks without `--force`; missing-upstream
+      blocks without `--force`; forced path discards tracked dirt and force-deletes unmerged
+      branch; node_modules
       survives both paths; preflight failure leaves slot + branch unchanged.
     status: "pending"
     files:
@@ -404,7 +400,7 @@ tasks:
       - "Forced recycle discards tracked modifications and force-deletes unmerged branch"
       - "node_modules preserved across both safe + forced recycle"
       - "Pool `wktree remove` delegates to recycle; RemovePlan.removed = false"
-      - "Untracked non-gitignored file blocks safe recycle; survives forced recycle"
+      - "Untracked non-gitignored file blocks safe recycle; forced recycle removes it with `git clean -fd`"
       - "`bun run test` passes"
       - "Typecheck passes"
     notes: ""
