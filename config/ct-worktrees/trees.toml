@@ -8,8 +8,9 @@
 #   WK_CREATED  newly created worktree path
 #
 # `shell` can be `bash` or `nu` and defaults to `bash`.
-# When `wk add` is run from tmux, hooks run in a post-create window in the
-# worktree session. Outside tmux, hooks run in the current shell after `cd`.
+# When `wk add` is run from kitty, the command is executed inside the newly
+# opened kitty session/window for that worktree. Outside kitty, it runs in the
+# current shell after `cd`-ing into the new worktree.
 #
 # Example:
 [[post_create]]

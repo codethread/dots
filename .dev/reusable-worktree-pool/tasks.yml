@@ -1,0 +1,565 @@
+project: "reusable-worktree-pool"
+prd: ".dev/reusable-worktree-pool/prd.md"
+description: "Pooled reusable worktree slots + new `wktree` TypeScript binary owning all `wk` engine logic"
+
+requirements:
+  - name: "Bun available"
+    check: "command -v bun"
+  - name: "Git available"
+    check: "command -v git"
+  - name: "Nushell available"
+    check: "command -v nu"
+  - name: "fzf available"
+    check: "command -v fzf"
+  - name: "Inside oven workspace"
+    check: "test -f oven/package.json"
+  - name: "Feature branch / worktree isolation"
+    check: "git rev-parse --abbrev-ref HEAD | grep -v '^main$'"
+
+tasks:
+  - id: "001"
+    title: "Scaffold wktree binary + Effect deps + tagged errors"
+    description: |
+      Lay the foundation for the new binary. Add `effect` and `@effect/platform-bun` to
+      `oven/package.json`. Create `oven/bin/wktree.ts` with:
+        - Top-of-file type declarations (ProjectConfig, TreesConfig, Worktree, Slot, PoolState,
+          Allocation, AddPlan, RemovePlan) per technical-design.md §Type surface
+        - `Data.TaggedError` classes per technical-design.md §Error types
+        - Context.Tag definitions for `Hook`, `Picker`, `Progress` (interfaces only; live layer
+          implementations filled in by later tasks) with placeholder live Layer stubs that
+          throw "not implemented" so typecheck passes
+        - Subcommand dispatch skeleton: first positional arg picks subcommand; unrecognized
+          subcommands exit 1 with usage message
+        - `main()` builds a program Effect and hands off to `BunRuntime.runMain` from
+          `@effect/platform-bun`; exit-code mapping via `Effect.mapError` — ConfigError → 2,
+          PickerCancelled → 130, else → 1
+        - `import.meta.main` guard around `main()`
+      Create `oven/shared/git/executor.ts` with the `Git` Context.Tag (run + runRaw) and a live
+      layer using `Bun.spawn`; `run` fails with `GitError` on non-zero exit, `runRaw` always
+      succeeds.
+      Create `oven/shared/git/worktrees.ts` with exported stubs (typed signatures only) for
+      `parseWorktreeList`, `parseTrunkFromSymbolicRef`, `parseTrunkFromRemoteShow`,
+      `branchExistsInList`.
+      Create empty `oven/tests/wktree.test.ts`.
+      Build the binary via `bun run build` (wires it into `~/.local/bin/`).
+    status: "pending"
+    files:
+      create:
+        - "oven/bin/wktree.ts"
+        - "oven/shared/git/executor.ts"
+        - "oven/shared/git/worktrees.ts"
+        - "oven/tests/wktree.test.ts"
+      modify:
+        - "oven/package.json"
+        - "oven/bun.lock"
+    acceptance:
+      - "`bun install` runs clean"
+      - "`wktree --help` or `wktree somebogus` exits with usage and correct code"
+      - "Git service live layer can execute `git --version` via `yield* git.run([...])` (ad-hoc smoke)"
+      - "`cd oven && bun run verify` passes"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "002"
+    title: "Implement parseConfig with full error matrix + tests"
+    description: |
+      Add a pure `parseConfig(toml: string): Effect.Effect<TreesConfig, ConfigError>` to
+      `bin/wktree.ts`. Parse `config/ct-worktrees/trees.toml` shape — top-level
+      `[[project]]` array. Rules (per PRD §Config shape):
+        - `root` and `command` required on each entry
+        - `pool_size` optional; when present must be integer ≥ 1
+        - `name` optional; default derived from basename(root)
+        - `root` paths are tilde-expanded + resolved to absolute; duplicate `root` → error
+        - Legacy `[[post_create]]` section → error with hint "rename [[post_create]] to [[project]]"
+        - `shell` field → error with hint "`shell` is no longer supported; command always runs under bash"
+        - Unknown fields ignored for forward-compat
+      Use Bun's built-in TOML parser (`Bun.TOML` / `import ... with { type: "toml" }`), or the
+      minimal `@iarna/toml` equivalent already present — check what the rest of the codebase uses.
+      All error messages must be human-readable and actionable.
+
+      Add pure-function tests covering: valid pooled, valid non-pooled, mixed, missing `root`,
+      missing `command`, `pool_size` = 0 / negative / non-integer, duplicate `root` across
+      entries, legacy `[[post_create]]` rejected with migration hint, `shell` field rejected,
+      unknown field ignored.
+    status: "pending"
+    files:
+      modify:
+        - "oven/bin/wktree.ts"
+        - "oven/tests/wktree.test.ts"
+    acceptance:
+      - "All listed error cases covered by tests and each produces a ConfigError"
+      - "Valid configs parse into TreesConfig with expanded root paths"
+      - "Unknown top-level fields on [[project]] entries do not fail parse"
+      - "`bun run test` passes"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "003"
+    title: "Implement pure git parsers + tests"
+    description: |
+      Fill in the four stubs in `oven/shared/git/worktrees.ts`:
+        - `parseWorktreeList(porcelainOutput: string): Worktree[]` — parses
+          `git worktree list --porcelain`. Captures path, HEAD, branch, branchRef, detached,
+          bare, canonical. Annotates `pool` field by matching:
+            * path suffix `__feat<N>` AND branchRef is `refs/heads/wk-pool/feat<N>` → placeholder slot
+            * path suffix `__feat<N>` AND branchRef ≠ `refs/heads/wk-pool/feat<N>` → taken slot
+        - `parseTrunkFromSymbolicRef(stdout: string)` — strip `refs/remotes/origin/` prefix
+        - `parseTrunkFromRemoteShow(stdout: string)` — parse `HEAD branch:` line
+        - `branchExistsInList(listOutput: string, branch: string)` — exact line match
+      Add pure-function tests with fixture strings (canonical-only, canonical + pool slots,
+      detached HEAD, bare repo, custom default branch `develop`).
+    status: "pending"
+    files:
+      modify:
+        - "oven/shared/git/worktrees.ts"
+        - "oven/tests/wktree.test.ts"
+    acceptance:
+      - "Pool-slot annotation correctly distinguishes free vs taken slots"
+      - "Detached HEAD and bare-repo edge cases parse without error"
+      - "Tests cover each parser with at least one happy and one edge case"
+      - "`bun run test` passes"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "004"
+    title: "Implement wktree root / list / path subcommands"
+    description: |
+      Read-only subcommands. All resolve canonical root from `--cwd` via
+      `git -C <cwd> worktree list --porcelain` + `parseWorktreeList`.
+        - `wktree root --cwd <c>` — print canonical root to stdout.
+        - `wktree list --cwd <c> [--json]` — emit human text OR JSON. Human format must match
+          the existing nushell `wk list` output shape closely enough to not break muscle
+          memory. Each row annotated `[pool:free]` / `[pool:feat<N>]` where applicable. JSON
+          adds a `pool` field (null, or `{index, placeholder}`).
+        - `wktree path --cwd <c> --branch <b>` — for non-pooled projects (no `pool_size`), pure
+          derivation: `<canonical-root>__<encoded-branch>` (encoding matches today's
+          `wk-encode-branch` — inspect `helpers.nu` for the exact scheme). For pooled projects
+          WITHOUT slot state yet, return error "wktree path for pooled repos requires slot
+          state — not yet implemented" (task 010 wires the real lookup).
+      Add ring-1 integration tests using a real tmp git repo with `parseConfig` + a test
+      `trees.toml` fixture. Assert output shape for each subcommand.
+      Also add the ring-2 integration-test skip switch now (earliest integration coverage
+      lives here): wrap git-in-tmp tests in a guard that skips when `WKTREE_SKIP_INTEGRATION=1`.
+      Provide a small `integrationDescribe` helper in the test file so later tasks reuse it.
+      Pool-ensure trigger from `wk list` is NOT wired here — task 009 updates this call site
+      once ensure exists. Leave a TODO comment referencing task 009.
+    status: "pending"
+    files:
+      modify:
+        - "oven/bin/wktree.ts"
+        - "oven/tests/wktree.test.ts"
+    acceptance:
+      - "`wktree root --cwd <path>` prints canonical root for a real test repo"
+      - "`wktree list --cwd <path>` human output mirrors today's nushell `wk list` columns"
+      - "`wktree list --cwd <path> --json` emits valid JSON with `pool` field"
+      - "`wktree path` non-pool derivation matches nushell encoding"
+      - "`WKTREE_SKIP_INTEGRATION=1 bun run test` skips ring-2 tests cleanly"
+      - "`bun run test` passes"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "005"
+    title: "Implement generateRunnerScript + Hook service live layer"
+    description: |
+      Pure function `generateRunnerScript(spec: {...}): string` in `bin/wktree.ts` that
+      produces the bash runner script content per technical-design.md §Unified hook runner
+      generation. Two shapes:
+        - Non-pooled: `set -euo pipefail`; export `WK_ROOT` / `WK_CREATED`; echo
+          `project: <name>`; `bash '<hook-body-path>'`.
+        - Pooled: same plus trailing `: > "$(git -C "$WK_CREATED" rev-parse --git-path wk-pool-initialized)"`.
+      Quote all paths via single-quote wrapping with `'\''` escape for embedded single quotes.
+      Add snapshot tests for both shapes + shell-quoting with spaces and single quotes.
+
+      Implement the live `Hook` layer using `Bun.spawn`. `runInline(scriptPath, cwd, env,
+      onLine)` spawns `bash <scriptPath>` with the provided env and cwd, pumps stdout/stderr
+      line-by-line into `onLine`, and fails with `HookError` on non-zero exit.
+    status: "pending"
+    files:
+      modify:
+        - "oven/bin/wktree.ts"
+        - "oven/tests/wktree.test.ts"
+      create:
+        - "oven/tests/__snapshots__/wktree.test.ts.snap"
+    acceptance:
+      - "Snapshot tests for both runner shapes pass on first run"
+      - "Shell-quoting test covers a path with spaces and a path with a single quote"
+      - "Hook live layer streams lines live (test asserts `onLine` called before exit)"
+      - "HookError carries exit code + slot path on non-zero exit"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "006"
+    title: "Implement non-pool wktree add"
+    description: |
+      Implement `wktree add --cwd <c> --branch <b> --result-file <p> [--base <b>] [--force]`
+      for non-pooled projects (PRD §wk add flow §Non-pooled, technical-design.md §Non-pool add).
+      Flow:
+        1. parseConfig → find matching `[[project]]` entry (if any); non-pooled = no `pool_size`.
+        2. Reject reserved branch prefix `wk-pool/`.
+        3. Resolve canonical root from `--cwd`.
+        4. `git fetch origin` in canonical root.
+        5. Detect branch state: local-only / remote-only / local+remote / new.
+        6. `git worktree add` via correct variant (see technical-design.md §Non-pool add).
+        7. If `origin/<branch>` exists after checkout, `git merge --ff-only origin/<branch>`;
+           non-fatal warning on failure (preserve local work).
+        8. If matching project entry exists, emit a runner script at
+           `~/.config/kitty/sessions/<session>.runner.sh` via `generateRunnerScript` (non-pool
+           shape); write hook body to a tmp `*.hook.sh` sibling and reference from the runner.
+        9. Atomically write AddPlan JSON (snake_case keys) to `--result-file`.
+        10. Exit 0 on success; non-zero + stderr on failure.
+      Add ring-2 integration tests (real git in `/tmp`) covering new branch, existing local,
+      existing remote-only, existing local with diverged remote (warning path, no error),
+      `--base` supplied for new branch, `--base` warning-ignored for existing branch,
+      project-entry-present vs absent (runner_script_path null).
+    status: "pending"
+    files:
+      modify:
+        - "oven/bin/wktree.ts"
+        - "oven/tests/wktree.test.ts"
+    acceptance:
+      - "All five non-pool branch-state variants succeed with expected git commands issued"
+      - "AddPlan JSON has snake_case keys and valid paths"
+      - "Runner script is idempotent and re-executable by bash"
+      - "Canonical root refused as target"
+      - "`bun run test` passes"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "007"
+    title: "Implement non-pool wktree remove"
+    description: |
+      Implement `wktree remove --cwd <c> --result-file <p> (--branch <b> | --self <path>)
+      [--force]` for non-pool worktrees (PRD §wk remove flow, technical-design.md §Non-pool
+      remove). Flow:
+        1. Resolve target path — via `--branch` lookup against `git worktree list --porcelain`,
+           or `--self <path>` directly.
+        2. Refuse if target == canonical root (CanonicalRootError).
+        3. `git worktree remove [--force] <path>` + `git branch -d/-D <branch>` matching today's
+           nushell semantics.
+        4. Write RemovePlan JSON with `worktree_path` + `removed: true`.
+      Pool-slot path is NOT handled here; task 011 adds recycle dispatch.
+      Ring-2 tests: remove non-pool tree, unmerged branch fails without `--force`, --force
+      succeeds, canonical root refused, target-not-a-worktree errors cleanly.
+    status: "pending"
+    files:
+      modify:
+        - "oven/bin/wktree.ts"
+        - "oven/tests/wktree.test.ts"
+    acceptance:
+      - "Non-pool remove deletes the worktree and branch as today's nushell does"
+      - "Canonical-root removal is refused with a clear message"
+      - "Unmerged branch without `--force` errors; with `--force` succeeds"
+      - "RemovePlan has `removed: true` when fs entry gone"
+      - "`bun run test` passes"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "008"
+    title: "Implement pool state model + wktree status debug subcommand"
+    description: |
+      Add pool-state detection functions inside `bin/wktree.ts`:
+        - `buildPoolState(cfg: ProjectConfig, worktrees: Worktree[], git: Git): Effect<PoolState, ...>`
+        - Per-slot probe: existence (from `parseWorktreeList`), branch (`branch --show-current`),
+          placeholder (branch === `wk-pool/feat<N>`), dirty (`git status --porcelain=v1` → any
+          output), lastCommitIso + subject (`git log -1 --format=%cI%x1f%s`), initialized
+          (marker file at `git -C <slot> rev-parse --git-path wk-pool-initialized` exists).
+      Add `wktree status --cwd <c>` debug subcommand — builds PoolState, emits as JSON to
+      stdout. Non-pooled repos return an empty-or-stub object (documented shape).
+      Ring-2 tests: empty repo → all slots absent; one slot present + initialized + free; one
+      taken; one dirty; half-init (present + marker missing).
+    status: "pending"
+    files:
+      modify:
+        - "oven/bin/wktree.ts"
+        - "oven/tests/wktree.test.ts"
+    acceptance:
+      - "PoolState accurately reflects slot existence / placeholder / dirty / initialized / branch"
+      - "`wktree status --cwd <p>` emits valid JSON matching PoolState shape"
+      - "Gitignored files in a slot do NOT flip the dirty flag"
+      - "`bun run test` passes"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "009"
+    title: "Implement wktree ensure with sequential slot materialisation"
+    description: |
+      Implement `wktree ensure --cwd <c>` (PRD Story 2, technical-design.md §Pool materialise
+      slot):
+        - Non-pooled repos: exit 0 immediately.
+        - Pooled repos: build PoolState. For each slot 1..N in order (lowest index first):
+            * If absent OR present but not initialized → materialise / re-run hook.
+            * `git fetch origin` once before the loop.
+            * Create `wk-pool/feat<N>` branch from `origin/<trunk>` if missing.
+            * `git worktree add <slot_path> wk-pool/feat<N>` if worktree absent.
+            * Generate hook runner (pooled shape) + run inline with cwd=slot_path, streaming
+              stdout/stderr to caller's terminal with `[wk-pool] initializing feat<N>…` banner.
+            * On hook failure: `git worktree remove --force <slot_path>` (rollback); exit non-zero
+              immediately. Already-initialized slots untouched.
+        - Marker file creation is already in the pooled runner (task 005) — verify it lands.
+      Wire ensure into the other pooled dispatch paths per PRD Story 2 (any `wk` command
+      against a pooled repo on first run triggers materialisation):
+        - `wktree list` (task 004): call `ensurePool` before reading worktree list when the
+          project is pooled.
+        - `wktree remove` (task 007): call `ensurePool` before resolving target for pooled
+          projects. (Pool add is wired later in task 010.)
+      Ring-2 tests: empty repo → N slots materialised; hook fails on slot 3 → slots 1-2 intact,
+      slot 3 rolled back, slots 4-5 untouched; re-run recovers; half-init (worktree present,
+      marker absent) → hook re-runs; first-run `wktree list` on a pooled repo materialises
+      slots; first-run `wktree remove` on a pooled repo materialises slots before dispatch.
+    status: "pending"
+    files:
+      modify:
+        - "oven/bin/wktree.ts"
+        - "oven/tests/wktree.test.ts"
+    acceptance:
+      - "Sequential ordering — feat1 completes before feat2 starts"
+      - "Hook failure rolls back only the in-flight slot"
+      - "Half-init state re-runs the hook on next ensure"
+      - "Banner and hook output stream live (not buffered) — verified via onLine callback timing"
+      - "First-run `wktree list` on pooled repo triggers ensure (test asserts slot sentinels appear)"
+      - "First-run `wktree remove` on pooled repo triggers ensure before target resolution"
+      - "`bun run test` passes"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "010"
+    title: "Implement pool allocation (free-slot path) in wktree add"
+    description: |
+      Extend `wktree add` from task 006 to handle pooled projects for the free-slot case (PRD
+      Story 3, Story 5). Flow for pooled repos:
+        1. Run `ensure` inline (reuses task 009 logic) — streams to caller's terminal.
+        2. Reject reserved `wk-pool/` prefix before any other check.
+        3. Scan EVERY worktree for duplicate branch; if found, DuplicateBranchError naming
+           the offending worktree path; no side effects.
+        4. `git fetch origin`.
+        5. Pick lowest-index free slot (branchRef === `refs/heads/wk-pool/feat<N>` AND
+           initialized). If none free → leave pool-full handling for task 012; for now exit
+           non-zero with a clear "pool full; picker not yet wired" message.
+        6. Checkout target branch into that slot via the correct variant (new / existing-local
+           / existing-remote-only / existing-local+remote → merge --ff-only). Warn on
+           diverged; preserve user work.
+        7. `--base` handling per Story 3: for NEW branches, create from `origin/<base>` (if
+           supplied) or `origin/<trunk>` (default). For EXISTING branches (local or remote),
+           ignore `--base` and emit a stderr warning ("--base ignored: branch already exists").
+           Use same handling as the non-pool path (task 006) — factor into shared helper if
+           natural.
+        8. Generate runner script (pooled shape, with marker line appended).
+        9. Write AddPlan (worktree_path = slot_path, runner_script_path set).
+      Also wire pooled branch of `wktree path` — look up branch in slot state (error if not
+      found).
+      Ring-2 tests: allocate new branch, allocate existing remote-only, allocate existing local,
+      allocate diverged (warning), duplicate-in-canonical errors, duplicate-in-slot errors,
+      reserved prefix errors, `wktree path` lookup for pooled branch, `--base <b>` creates new
+      branch from `origin/<b>`, `--base` with existing branch emits warning and is ignored.
+    status: "pending"
+    files:
+      modify:
+        - "oven/bin/wktree.ts"
+        - "oven/tests/wktree.test.ts"
+    acceptance:
+      - "Free-slot allocation uses lowest index"
+      - "Duplicate branch across any worktree is detected and errors without side effects"
+      - "Reserved `wk-pool/` prefix rejected with targeted message"
+      - "Pooled runner script contains the marker-writing tail"
+      - "`wktree path` pooled-branch lookup works; absent branch errors cleanly"
+      - "`--base <b>` on new branch creates from `origin/<b>`; on existing branch warns and is ignored"
+      - "`bun run test` passes"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "011"
+    title: "Implement wktree recycle + pool branch of wktree remove"
+    description: |
+      Implement recycle engine (PRD Story 6, technical-design.md §Pool recycle). Two code paths,
+      preflight-before-mutation mandatory on the safe path:
+        - Safe (default):
+          1. `git fetch origin`.
+          2. Dirty gate: `git status --porcelain=v1` → any output → DirtySlotError.
+          3. Unmerged gate (if old branch ≠ placeholder): verify `@{upstream}` exists; verify
+             `merge-base --is-ancestor <old> <old>@{upstream}`; fail → UnmergedBranchError.
+          4. Only after BOTH gates pass: `git -C <slot> checkout -B wk-pool/feat<N> origin/<trunk>`.
+          5. `git -C <root> branch -d <old>` (skipped if old == placeholder).
+        - Forced:
+          1. `git fetch origin`.
+          2. `git -C <slot> checkout -f -B wk-pool/feat<N> origin/<trunk>`.
+          3. `git -C <slot> reset --hard wk-pool/feat<N>` (actually discards dirt — LT10).
+          4. `git -C <root> branch -D <old>` (skipped if old == placeholder).
+      Gitignored paths (`node_modules/`, caches) preserved in both paths.
+      Expose as `wktree recycle --cwd <c> --slot <path> [--force]`.
+      Extend `wktree remove` (task 007): if target is a pool slot, delegate to recycle with
+      the corresponding `--force` flag. On recycle, RemovePlan has `removed: false` and
+      `worktree_path` still set.
+      Ring-2 tests: safe-recycle happy path; dirty tracked modification blocks without `--force`;
+      untracked non-gitignored file blocks without `--force`; gitignored file ignored;
+      unmerged-upstream blocks without `--force`; missing-upstream blocks without `--force`;
+      forced path discards tracked dirt and force-deletes unmerged branch; node_modules
+      survives both paths; preflight failure leaves slot + branch unchanged.
+    status: "pending"
+    files:
+      modify:
+        - "oven/bin/wktree.ts"
+        - "oven/tests/wktree.test.ts"
+    acceptance:
+      - "Safe-recycle preflight failure leaves slot + branch untouched (atomic refusal)"
+      - "Forced recycle discards tracked modifications and force-deletes unmerged branch"
+      - "node_modules preserved across both safe + forced recycle"
+      - "Pool `wktree remove` delegates to recycle; RemovePlan.removed = false"
+      - "Untracked non-gitignored file blocks safe recycle; survives forced recycle"
+      - "`bun run test` passes"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "012"
+    title: "Extend fzf helper + implement picker path for full-pool allocate"
+    description: |
+      Extend `oven/shared/fzf.ts` to accept `header` and `preview` options — preview takes a
+      shell command string and is wired via fzf `--preview`. Pass `--tty` so interactive pick
+      attaches to `/dev/tty` directly (so progress on stdout/stderr doesn't collide).
+      Implement the `Picker` live layer inside `bin/wktree.ts`:
+        - `pick(items, header)` — formats each PickerItem as a line, spawns fzf via the
+          extended helper, resolves to the selected item; fails with `PickerCancelled` on
+          exit 130 / empty selection.
+        - `confirm(prompt)` — writes prompt to `/dev/tty`, reads a single char from `/dev/tty`,
+          returns true for `y` / `Y`, false otherwise.
+      Wire the pool-full branch of `wktree add` (PRD Story 4, technical-design.md §Picker UX):
+        1. Build picker rows: `feat<N>  <branch>  <relative-age>  [dirty]?  [N ahead]?`.
+        2. Preview: `git -C <slot> log -5 --format=%h %s`, `git status --porcelain | head`,
+           plus an ahead/behind/upstream-state line with "⚠ N unpushed commits will be lost"
+           or "⚠ local-only branch" as appropriate.
+        3. `picker.pick` → on `PickerCancelled` exit 130 with "cancelled" on stderr (nushell
+           surfaces).
+        4. `picker.confirm` with dirty / unpushed / local-only warnings inline → on false
+           exit 130.
+        5. On `y`: recycle with `--force` (picker consent), then allocate into that slot (reuse
+           task 010's allocation variants).
+        6. If `--force` passed to `wk add`, skip confirm step entirely.
+      Ring-2 tests: use `TestPicker(choice)` layer substitution — happy path (pick a slot,
+      recycle, allocate succeeds); TestPicker returns null → exit 130 + no side effects;
+      confirm-no → exit 130; `--force` skips confirm; preview text shape validated on a slot
+      with unpushed commits.
+    status: "pending"
+    files:
+      modify:
+        - "oven/shared/fzf.ts"
+        - "oven/bin/wktree.ts"
+        - "oven/tests/wktree.test.ts"
+    acceptance:
+      - "Pool-full allocate triggers picker; selection + confirm recycles forcibly and allocates"
+      - "Cancel (esc or confirm-no) exits 130 with no side effects"
+      - "Preview includes ahead/behind counts and unpushed-commit warning"
+      - "`--force` flag on `wk add` bypasses confirm prompt (picker still shown)"
+      - "Existing fzf helper callers in the repo still compile (`multi` / `tmux` paths unchanged)"
+      - "`bun run test` passes"
+      - "Typecheck passes"
+    notes: ""
+
+  - id: "013"
+    title: "Rewrite nushell wrapper; delete helpers.nu"
+    description: |
+      Collapse the nushell layer into thin adapters (PRD §Nushell shape after the move,
+      technical-design.md §Nushell integration §mod.nu after refactor).
+        - `config/nushell/scripts/ct/git/worktree/mod.nu`: rewrite `wk root`, `wk path`,
+          `wk list`, `wk add`, `wk remove` to the shapes in technical-design.md. Add the
+          shared `wktree-plan` helper. Remove `use helpers.nu *`. Keep `use kitty.nu *`.
+          `wk add` and `wk remove` MUST invoke `^wktree …` without `| complete` so stdin/
+          stdout/stderr pass through to fzf + confirm + progress streaming.
+        - `config/nushell/scripts/ct/git/worktree/kitty.nu`: delete `wk-post-create-runner`
+          and `wk-run-post-create-runner`. Update `wk-open-dir` to take a `--runner-path`
+          arg supplied by the binary and use it when writing the session file.
+        - Delete `config/nushell/scripts/ct/git/worktree/helpers.nu` in full.
+      Confirm there are no external callers of the deleted helpers (already verified
+      in-module only at plan time; re-grep before deletion as a safety net).
+      Verify with `nu -c 'nu-check --debug --as-module config/nushell/scripts/ct/git/worktree/mod.nu'`
+      and the equivalent for kitty.nu.
+    status: "pending"
+    files:
+      modify:
+        - "config/nushell/scripts/ct/git/worktree/mod.nu"
+        - "config/nushell/scripts/ct/git/worktree/kitty.nu"
+      delete:
+        - "config/nushell/scripts/ct/git/worktree/helpers.nu"
+    acceptance:
+      - "`nu-check` passes on mod.nu and kitty.nu"
+      - "No references to deleted helpers remain anywhere in the repo (grep clean)"
+      - "`wk add`, `wk remove`, `wk list`, `wk path`, `wk root` resolve at module load"
+      - "Interactive TTY passthrough preserved (no `| complete` on `wk add` / `wk remove`)"
+      - "Typecheck passes (oven)"
+    notes: ""
+
+  - id: "014"
+    title: "Migrate trees.toml + update specs/git-worktrees.md"
+    description: |
+      Rename the existing `[[post_create]]` entry in `config/ct-worktrees/trees.toml` to a
+      single `[[project]]` entry for `~/work/app/deals-light-ui` with `pool_size = 5`. The
+      new `command` body must still set up node_modules (yarn install is idempotent and will
+      reconcile the preserved tree); drop the rsync from `$WK_ROOT/node_modules` — the pool
+      mechanism makes it unnecessary. Keep the `notif worktree wk "$WK_CREATED" ready` tail.
+      Remove the obsolete comment mentioning `shell = "bash" | "nu"`.
+      Update `specs/git-worktrees.md`:
+        - Document the new `wktree` binary + nushell-wrapper split (reference
+          technical-design.md).
+        - Document the `[[project]]` config shape, `pool_size` semantics, and the migration
+          from `[[post_create]]` (rejection messages for legacy keys).
+        - Document the reserved `wk-pool/` branch prefix and slot path convention
+          `<root>__feat<N>`.
+        - Document that hooks always run under bash; `shell` is rejected.
+      Run `wktree list` against the actual deals-light-ui repo manually to spot-check
+      (optional; noted as smoke step).
+    status: "pending"
+    files:
+      modify:
+        - "config/ct-worktrees/trees.toml"
+        - "specs/git-worktrees.md"
+    acceptance:
+      - "trees.toml parses via `wktree list --cwd ~/work/app/deals-light-ui` without error"
+      - "`specs/git-worktrees.md` reflects the binary + nushell split"
+      - "Legacy `[[post_create]]` text removed from trees.toml comments"
+      - "Typecheck passes (oven)"
+    notes: ""
+
+  - id: "015"
+    title: "Extend existing worktree smoke test for pool + non-pool flows"
+    description: |
+      Locate the existing worktree smoke test (search for nushell-driven harness that sets
+      `$XDG_CONFIG_HOME` to a temp dir and exercises `wk add` / `wk remove`). Extend it:
+        - Non-pool `[[project]]`: verify `wk add <branch>` runs post-create command (assert
+          sentinel file created by the command in the temp worktree), `wk remove <branch>`
+          deletes cleanly.
+        - Pool `[[project]]` (`pool_size = 2`): first `wk add` materialises both slots
+          inline (assert banner + sentinel file in each slot); `wk add <feat1>` allocates
+          feat1; `wk remove <feat1>` recycles (filesystem dir still present, branch back to
+          `wk-pool/feat1`); second `wk add <feat2>` allocates the other slot.
+      Smoke must run non-interactively — skip the picker/confirm path (covered by ring-2).
+      Wire into `Makefile` or `bun run verify` if not already automatic.
+    status: "pending"
+    files:
+      modify:
+        - "config/nushell/scripts/ct/git/worktree/mod.nu"
+      create:
+        - "oven/tests/wktree.smoke.test.ts"
+    acceptance:
+      - "Smoke test runs against a synthetic `$XDG_CONFIG_HOME` without touching user state"
+      - "Pool init phase creates sentinel file in every slot"
+      - "Recycle leaves slot filesystem entry in place and branch reset to placeholder"
+      - "Second allocation picks the other slot correctly"
+      - "Non-pool project post-create command executes and verification sentinel appears"
+      - "`bun run verify` passes end-to-end"
+      - "Typecheck passes"
+    notes: ""
+
+qa:
+  agent:
+    - "`cd oven && bun run verify` passes (includes ring-1 pure + ring-2 integration tests)"
+    - "`nu-check` passes on mod.nu and kitty.nu; helpers.nu deleted"
+    - "No stale references to removed nushell helpers anywhere in the repo"
+    - "Snapshot tests for both runner-script shapes pass"
+    - "`WKTREE_SKIP_INTEGRATION=1 bun run test` skips ring-2 tests cleanly"
+    - "Smoke test covers a non-pool `[[project]]` and a pooled `[[project]]` end-to-end"
+  human:
+    - "Real run on deals-light-ui: first `wk add cool-feature` materialises 5 slots inline (cold; multi-minute expected, visible progress)"
+    - "Second `wk add another-feature` on the same repo allocates in seconds (yarn install fast path verified by wall-clock)"
+    - "`wk remove cool-feature` recycles; `wk list` shows the slot as `[pool:free]`"
+    - "`wk add` when pool is full shows the fzf picker with readable rows + preview (log, dirty, ahead/behind); cancel returns cleanly"
+    - "Kitty session opens for handoff; init phase stays in caller terminal (no rogue windows)"
+    - "Kill network mid-`wk add` → failure bubbles back, half-materialised slot rolled back, retry recovers"
+    - "`wk add <branch>` with branch already checked out elsewhere errors clearly naming the offending worktree"
