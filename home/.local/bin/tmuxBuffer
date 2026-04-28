@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # :module: tmux clipboard and buffer management utility
 
-# $HOME/bin/vim-edit-tmux-output
-
-file=$(mktemp).sh
+file=$(mktemp)
 tmux capture-pane -pS -32768 >"$file"
-tmux new-window -n:history "$EDITOR '+ normal G $' $file"
+line_count=$(wc -l <"$file" | tr -d ' ')
+tmux new-window -n:history "nvim -u NONE -R -c \"lua require('codethread.kitty+page')($line_count, $line_count, 1)\" '$file'"
