@@ -7,12 +7,12 @@ model_reasoning_effort = "low"
 model = "gpt-5.5"
 
 [profiles.fast-review]
-model = "gpt-5.5"
-model_reasoning_effort = "low"
+model = "gpt-5.4-mini"
+model_reasoning_effort = "high"
 
 [profiles.deep-review]
 model = "gpt-5.5"
-model_reasoning_effort = "high"
+model_reasoning_effort = "low"
 
 [projects."/Users/codethread/dev/dots"]
 trust_level = "trusted"

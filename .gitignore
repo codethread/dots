@@ -12,3 +12,5 @@ node_modules
 bun.lockb
 .audio/
 .py_venv/
+
+.pi/bench-matrix.json

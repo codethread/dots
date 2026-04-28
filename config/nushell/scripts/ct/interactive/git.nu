@@ -160,12 +160,13 @@ export alias lg = lazygit
 
 # use kitty as pager
 export def "git diff" [...args] {
-	if ("KITTY_WINDOW_ID" in $env) {
-		^git -c pager.difftool=true difftool -t kitty --no-symlinks --dir-diff ...$args
-	} else {
+	# disable while using tmux in kitty, might find a workaround
+	# if ("KITTY_WINDOW_ID" in $env) {
+	# 	^git -c pager.difftool=true difftool -t kitty --no-symlinks --dir-diff ...$args
+	# } else {
 		# ^git diff ...$args
 		git -c diff.external=difft diff ...$args
-	}
+	# }
 }
 
 export def "git lg" [] {
