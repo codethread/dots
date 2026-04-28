@@ -42,5 +42,5 @@ fi
 prompt="$*"
 
 echo "$prompt" \
-  | codex exec --json --sandbox read-only --profile "$profile" review --skip-git-repo-check - \
-  | jq -rs '[.[] | select(.type=="item.completed" and .item.type=="agent_message") | .item.text] | last // ""'
+  | codex exec --json --ephemeral --sandbox read-only --profile "$profile" review --skip-git-repo-check - \
+  | jq -rsr '[.[] | select(.type=="item.completed" and .item.type=="agent_message") | .item.text] | last // ""'
