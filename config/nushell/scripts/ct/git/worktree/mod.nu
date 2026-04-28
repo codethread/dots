@@ -120,3 +120,61 @@ export def "wk list" [
 		git worktree list
 	}
 }
+
+# fuzzy-pick and switch to a worktree in the current repository
+export def --env "wk switch" [] {
+	let git_check = (git rev-parse --git-dir | complete)
+	if $git_check.exit_code != 0 {
+		^tmux display-message "not in a git repository"
+		return
+	}
+
+	let worktrees = wk-list-data
+	let current_path = (git rev-parse --show-toplevel | complete).stdout | str trim
+	let others = $worktrees | where path != $current_path
+
+	if ($others | is-empty) {
+		^tmux display-message "only one worktree (current)"
+		return
+	}
+
+	# build map of pane_current_path -> pane_id from live tmux panes
+	let tmux_panes = (^tmux list-panes -a -F "#{pane_id}\t#{pane_current_path}" | complete).stdout
+		| lines
+		| parse "{pane_id}\t{pane_path}"
+
+	# tab fields: display \t pane_id \t path \t branch
+	# fzf refs are 1-indexed ({2}=pane_id, {3}=path); nushell split column is 0-indexed (column2=path, column3=branch)
+	let candidates = $worktrees | each { |wt|
+		let branch = if $wt.detached { "(detached)" } else { $wt.branch }
+		let marker = if $wt.path == $current_path { "*" } else { " " }
+		let matched = $tmux_panes | where { |p| $p.pane_path == $wt.path or ($p.pane_path | str starts-with $"($wt.path)/") }
+		let pane_id = if ($matched | is-empty) { "" } else { $matched | first | get pane_id }
+		$"($marker) ($branch)\t($pane_id)\t($wt.path)\t($branch)"
+	}
+
+	let result = (
+		$candidates
+		| str join "\n"
+		| fzf-tmux -p -w 80% -h 70%
+			--prompt "Worktree > "
+			--delimiter $"\t"
+			--with-nth 1
+			--preview "bash -c 'p={2}; [ -n \"$p\" ] && tmux capture-pane -ep -t \"$p\" 2>/dev/null || git -C \"{3}\" log --oneline -20 2>/dev/null'"
+			--preview-window "down,70%,wrap"
+		| complete
+	)
+
+	match $result.exit_code {
+		0 => {
+			let line = $result.stdout | str trim
+			let parts = $line | split column "\t"
+			let path = $parts | get column2.0
+			let branch = $parts | get column3.0
+			let repo_root = wk-canonical-root
+			wk-open-dir $path $branch $repo_root []
+		}
+		130 | 1 => {}
+		_ => { print $"(ansi red)fzf error ($result.exit_code)(ansi reset)" }
+	}
+}
