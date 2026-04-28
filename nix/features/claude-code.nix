@@ -116,10 +116,10 @@ in {
       };
       enabledPlugins = {
         "frontend-design@claude-plugins-official" = true;
-        "typescript-lsp@claude-plugins-official" = true;
+        # "typescript-lsp@claude-plugins-official" = true;
         "claude-md-management@claude-plugins-official" = true;
         "claude-code-knowledge@codethread-plugins" = true;
-        "bdfl@codethread-plugins" = true;
+        # "bdfl@codethread-plugins" = true;
         "dev@codethread-plugins" = true;
       } // lib.optionalAttrs cfg.enableNotify {
         "cc-notify@cc-notify-marketplace" = true;
@@ -168,6 +168,14 @@ in {
       includeGitInstructions = false;
       promptSuggestionEnabled = false;
       skipDangerousModePermissionPrompt = true;
+      theme = "auto";
+      editorMode = "vim";
+      verbose = false;
+      preferredNotifChannel = "kitty";
+      autoCompactEnabled = false;
+      fileCheckpointingEnabled = false;
+      showTurnDuration = true;
+      terminalProgressBarEnabled = true;
     };
   };
 }

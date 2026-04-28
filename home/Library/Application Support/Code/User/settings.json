@@ -516,7 +516,6 @@
     "track",
     "wbr",
   ],
-  "workbench.colorTheme": "VS Code Light",
   "colorize.languages": [
     "css",
     "sass",
