@@ -1,0 +1,168 @@
+#!/bin/sh
+
+get_default_cache_dir() {
+	if [ -n "$XDG_CACHE_HOME" ]; then
+		echo "$XDG_CACHE_HOME"
+	elif [ "$(uname)" = "Darwin" ]; then
+		echo "$HOME/Library/Caches"
+	else
+		echo "$HOME/.cache"
+	fi
+}
+
+cachefile="$(get_default_cache_dir)/.tmux-harpoon-sessions"
+
+help() {
+	echo
+	echo "Usage:"
+	echo "    ${0##*/} [options] [args]"
+	echo "Options:"
+	echo "    -a                    Track current tmux session"
+	echo "    -A                    Track pane within current tmux session"
+	echo "    -r <index>            Replace tracked entry at index with current session"
+	echo "    -R <index>            Replace tracked entry at index with current pane within session"
+	echo "    -d [session_name]     Stop tracking session with session name. If"
+	echo "                          session_name is not passed then remove current session"
+	echo "    -l                    List tracked sessions"
+	echo "    -s <index>            Switch to the session at the specified index in the"
+	echo "                          list of tracked sessions"
+	echo "    -e                    Edit the sessions file"
+	echo "    -h                    Display this help message"
+}
+
+remove() {
+	session_name="$1"
+	sed -i "/^$session_name/d" "$cachefile"
+}
+
+view() {
+	FZF_CMD="$(_getFZFCmd)"
+	entry="$(awk -v home="$HOME" -v bold="$(tput setaf 4)" -v sgr0="$(tput sgr0)" '{
+        split($0, parts, "=")
+        key = parts[1]
+        value = parts[2]
+        sub(home "/", "", value)
+        printf "%s%s%s %s\n", bold, key, sgr0, value
+    }' "$cachefile" | $FZF_CMD --ansi)"
+	name="$(echo "$entry" | cut -d ' ' -f 1)"
+	path="$HOME/$(echo "$entry" | rev | cut -d ' ' -f 1 | rev)"
+	{ [ -z "$name" ] || [ -z "$path" ]; } && exit 0
+	_switch "$name" "$path"
+}
+
+_getFZFCmd() {
+	! type fzf >/dev/null 2>&1 && echo "Harpoon depends on fzf" && exit 1
+	FZF_VERSION=$(fzf --version | cut -d ' ' -f1)
+	REQUIRED_VERSION="0.53.0"
+
+	version_gt() { [ "$(printf '%s\n' "$@" | sort -V | head -n1)" != "$1" ] || [ "$1" = "$2" ]; }
+
+	if version_gt "$FZF_VERSION" "$REQUIRED_VERSION"; then
+		echo "fzf --tmux 50%"
+		return 0
+	fi
+	if type fzf-tmux >/dev/null 2>&1; then
+		echo "fzf-tmux -p '50%,50%'"
+		return 0
+	fi
+	echo "fzf"
+	return 0
+}
+
+_getBookmark() {
+	extended=$1
+
+	base_info='#{session_name}=#{session_path}'
+	pane_info=':#{window_index}.#{pane_index}'
+	tmux display -p "$base_info$([ "$extended" = true ] && echo "$pane_info")"
+}
+
+_dedupe() {
+	tmpfile="$(mktemp)"
+	command cat -n "$cachefile" | sort -uk2 | sort -n | cut -f2- >"$tmpfile"
+	mv "$tmpfile" "$cachefile"
+	rm "$tmpfile"
+}
+
+replace() {
+	bookmark=$(_getBookmark "$1")
+	index=$2
+
+	linenumbers=$(wc -l <"$cachefile")
+	if [ "$linenumbers" -ge "$index" ]; then
+		escaped_bookmark=$(echo "$bookmark" | sed 's/\//\\\//g')
+		sed -i "${index}s/.*/$escaped_bookmark/" "$cachefile"
+	else
+		echo "$bookmark" >>"$cachefile"
+	fi
+
+	_dedupe
+	exec tmux display "Tracking session #{session_name} in index $index"
+}
+
+add() {
+	bookmark=$(_getBookmark "$1")
+	echo "$bookmark" >>"$cachefile"
+	_dedupe
+	exec tmux display 'Tracking session #{session_name}'
+}
+
+_switch() {
+	name="$1"
+	path="$2"
+	dirpath="${path%%:*}"
+	pane="${path#*:}"
+	[ "$dirpath" = "$pane" ] && pane=""
+	tmux_base_index=$(tmux show-option -gqv base-index 2>/dev/null || echo 0)
+	tmux_pane_base_index=$(tmux show-option -gqv pane-base-index 2>/dev/null || echo 0)
+	if ! sessions_has_match "$name=$dirpath"; then
+		if [ "$(uname)" = "Darwin" ]; then sedi="sed -i ''"; else sedi="sed -i"; fi
+		$sedi "s|^$name=.*|$name=$dirpath:$tmux_base_index.$tmux_pane_base_index|" "$cachefile"
+		tmux new -ds "$name" -c "$dirpath"
+	fi
+	if [ -n "$pane" ]; then
+		exec tmux switch-client -t "$name:$pane"
+	else
+		exec tmux switch-client -t "$name"
+	fi
+}
+
+switch() {
+	index="$1"
+	count=1
+	while IFS='=' read -r name path; do
+		if [ "$count" = "$index" ]; then
+			_switch "$name" "$path"
+		fi
+		count=$((count + 1))
+	done <"$cachefile"
+}
+
+edit_file() { exec tmux popup -E "$EDITOR -u NONE -c \"lua require('codethread.minimal')(1,1,1)\" $cachefile"; }
+# edit_file() { exec tmux popup -E "NVIM_APPNAME=minimal-nvim $EDITOR $cachefile"; }
+
+sessions_has_match() { list_sessions | grep -wq "^$1"; }
+
+list_sessions() { tmux ls -F '#{session_name}=#{session_path}'; }
+
+bold() { printf "\033[1m%s\033[0m\n" "$*"; }
+
+main() {
+	! [ -f "$cachefile" ] && touch "$cachefile"
+	while getopts ":haAr:R:d:ls:e" opt; do
+		case "$opt" in
+		h | :) help && exit 0 ;;
+		a) add false ;;
+		A) add true ;;
+		r) replace false "$OPTARG" ;;
+		R) replace true "$OPTARG" ;;
+		d) remove "$OPTARG" ;;
+		l) view ;;
+		s) switch "$OPTARG" ;;
+		e) edit_file ;;
+		\?) help && exit 1 ;;
+		esac
+	done
+}
+
+main "$@"
