@@ -163,10 +163,12 @@ in {
       "font-victor-mono"
       "font-symbols-only-nerd-font"
     ];
-    masApps = {
-      "DaisyDisk" = 411643860;
-      "Spokenly" = 6740315592;
-    };
+	# enable on boot load machine
+	# bug requires login on every switch
+    # masApps = {
+    #   "DaisyDisk" = 411643860;
+    #   "Spokenly" = 6740315592;
+    # };
     # shared extensions (work-specific ones live in hosts/darwin/work/)
     vscode = [
       # vim
