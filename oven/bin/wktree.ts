@@ -580,48 +580,61 @@ export async function buildPoolState(
 	if (!cfg.poolSize) throw new ConfigError(`project ${cfg.name ?? cfg.root} is not pooled`);
 	const root = normalizeExistingPath(cfg.root);
 	const trunk = await detectOriginDefaultBranch(git, root);
-	const slots: Slot[] = [];
-	for (let index = 1; index <= cfg.poolSize; index++) {
-		const slotPath = `${root}__feat${index}`;
-		const worktree = worktrees.find((candidate) => normalizeExistingPath(candidate.path) === slotPath);
-		if (!worktree) {
-			slots.push({
-				index,
-				path: slotPath,
-				exists: false,
-				branch: null,
-				placeholder: false,
-				dirty: false,
-				lastCommitIso: null,
-				lastCommitSubject: null,
-				initialized: false,
-			});
-			continue;
-		}
+	const slots = await Promise.all(
+		Array.from({length: cfg.poolSize}, (_, offset) =>
+			buildPoolSlotState({
+				index: offset + 1,
+				root,
+				worktrees,
+				git,
+			}),
+		),
+	);
+	return {root, trunk, size: cfg.poolSize, slots};
+}
 
-		const branchResult = await git.runRaw(["-C", slotPath, "branch", "--show-current"]);
-		const branch =
-			branchResult.exitCode === 0 && branchResult.stdout.trim() !== ""
-				? branchResult.stdout.trim()
-				: worktree.branch;
-		const dirty = (await git.runRaw(["-C", slotPath, "status", "--porcelain=v1"])).stdout.trim() !== "";
-		const log = await git.runRaw(["-C", slotPath, "log", "-1", "--format=%cI%x1f%s"]);
-		const [lastCommitIso, lastCommitSubject] =
-			log.exitCode === 0 && log.stdout.trim() !== "" ? log.stdout.trimEnd().split("\x1f", 2) : [null, null];
-		const marker = await git.runRaw(["-C", slotPath, "rev-parse", "--git-path", "wk-pool-initialized"]);
-		slots.push({
+async function buildPoolSlotState(options: {
+	index: number;
+	root: string;
+	worktrees: Worktree[];
+	git: GitRunner;
+}): Promise<Slot> {
+	const {index, root, worktrees, git} = options;
+	const slotPath = `${root}__feat${index}`;
+	const worktree = worktrees.find((candidate) => normalizeExistingPath(candidate.path) === slotPath);
+	if (!worktree) {
+		return {
 			index,
 			path: slotPath,
-			exists: true,
-			branch,
-			placeholder: branch === `wk-pool/feat${index}`,
-			dirty,
-			lastCommitIso,
-			lastCommitSubject,
-			initialized: marker.exitCode === 0 && existsSync(resolve(slotPath, marker.stdout.trim())),
-		});
+			exists: false,
+			branch: null,
+			placeholder: false,
+			dirty: false,
+			lastCommitIso: null,
+			lastCommitSubject: null,
+			initialized: false,
+		};
 	}
-	return {root, trunk, size: cfg.poolSize, slots};
+
+	const branch = worktree.branch;
+	const [status, log, marker] = await Promise.all([
+		git.runRaw(["-C", slotPath, "status", "--porcelain=v1"]),
+		git.runRaw(["-C", slotPath, "log", "-1", "--format=%cI%x1f%s"]),
+		git.runRaw(["-C", slotPath, "rev-parse", "--git-path", "wk-pool-initialized"]),
+	]);
+	const [lastCommitIso, lastCommitSubject] =
+		log.exitCode === 0 && log.stdout.trim() !== "" ? log.stdout.trimEnd().split("\x1f", 2) : [null, null];
+	return {
+		index,
+		path: slotPath,
+		exists: true,
+		branch,
+		placeholder: branch === `wk-pool/feat${index}`,
+		dirty: status.stdout.trim() !== "",
+		lastCommitIso,
+		lastCommitSubject,
+		initialized: marker.exitCode === 0 && existsSync(resolve(slotPath, marker.stdout.trim())),
+	};
 }
 
 async function removeCommand(args: string[], deps: Deps) {
@@ -836,10 +849,17 @@ function requireOption(opts: Record<string, string | boolean>, key: string): str
 type BranchState = "local" | "remote" | "local-remote" | "none";
 
 async function detectBranchState(git: GitRunner, root: string, branch: string): Promise<BranchState> {
-	const local =
-		(await git.runRaw(["-C", root, "show-ref", "--verify", `refs/heads/${branch}`])).exitCode === 0;
-	const remote =
-		(await git.runRaw(["-C", root, "show-ref", "--verify", `refs/remotes/origin/${branch}`])).exitCode === 0;
+	const refs = await git.runRaw([
+		"-C",
+		root,
+		"for-each-ref",
+		"--format=%(refname)",
+		"refs/heads",
+		"refs/remotes/origin",
+	]);
+	const lines = refs.stdout.split("\n");
+	const local = lines.includes(`refs/heads/${branch}`);
+	const remote = lines.includes(`refs/remotes/origin/${branch}`);
 	if (local && remote) return "local-remote";
 	if (local) return "local";
 	if (remote) return "remote";

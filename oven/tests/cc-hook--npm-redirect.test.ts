@@ -59,14 +59,16 @@ describe("ccHookNpmRedirectLib", () => {
 				expectedSuggestion: null,
 				shouldBlock: false,
 			},
-		])("should detect $expectedManager project from $lockFile", async ({
-			lockFile,
-			lockFileContent = "",
-			expectedManager,
-			command,
-			expectedSuggestion,
-			shouldBlock,
-		}) => {
+		])("should detect $expectedManager project from $lockFile", async (testCase) => {
+			const {
+				lockFile,
+				lockFileContent = "",
+				expectedManager,
+				command,
+				expectedSuggestion,
+				shouldBlock,
+			} = testCase;
+
 			await mkdir(testProjectRoot, {recursive: true});
 			await Promise.all([
 				writeFile(join(testProjectRoot, lockFile), lockFileContent),
@@ -330,7 +332,9 @@ describe("ccHookNpmRedirectLib", () => {
 			});
 
 			expect(result.shouldBlock).toBe(true);
-			expect(result.suggestedCommand).toBe("cd src && bun --max-old-space-size=4096 build.js --prod");
+			const expectedSuggestion = "cd src && bun --max-old-space-size=4096 build.js --prod";
+
+			expect(result.suggestedCommand).toBe(expectedSuggestion);
 		});
 
 		test("should not redirect node inside quoted strings", async () => {
@@ -392,7 +396,7 @@ describe("ccHookNpmRedirectLib", () => {
 			expect(result.shouldBlock).toBe(false);
 		});
 
-		test("should not redirect commands that contain package manager names but are not package manager commands", async () => {
+		test("should not redirect package-manager names in echo commands", async () => {
 			await mkdir(testProjectRoot, {recursive: true});
 			await writeFile(join(testProjectRoot, "bun.lockb"), "");
 
@@ -511,7 +515,7 @@ describe("ccHookNpmRedirectLib", () => {
 			expect(result.detectedPackageManager).toBe("bun");
 		});
 
-		test("should still redirect commands in non-skill contexts with same parent directory", async () => {
+		test("should redirect outside skill contexts with same parent directory", async () => {
 			// Create a regular project directory that's NOT in a skill context
 			const regularProjectPath = "/tmp/test-regular-project";
 			await mkdir(regularProjectPath, {recursive: true});

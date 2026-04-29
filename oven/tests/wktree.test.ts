@@ -1,6 +1,7 @@
-import {afterEach, beforeEach, describe, expect, test} from "bun:test";
+import {afterAll, afterEach, beforeEach, describe, expect, test} from "bun:test";
 import {
 	chmodSync,
+	cpSync,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
@@ -298,13 +299,13 @@ describe("LiveHookRunner", () => {
 
 	test("streams output before process exit", async () => {
 		const script = join(tmp, "hook.sh");
-		writeFileSync(script, "echo first\nsleep 0.2\necho second\n");
+		writeFileSync(script, "echo first\nsleep 0.05\necho second\n");
 		chmodSync(script, 0o755);
 		const seen: string[] = [];
 		const runner = new LiveHookRunner();
 
 		const promise = runner.runInline(script, tmp, {}, (stream, line) => seen.push(`${stream}:${line}`));
-		await Bun.sleep(50);
+		await Bun.sleep(25);
 		expect(seen).toEqual(["stdout:first"]);
 		await promise;
 		expect(seen).toEqual(["stdout:first", "stdout:second"]);
@@ -1310,19 +1311,18 @@ integrationDescribe("wktree ensure", () => {
 		writeConfig(
 			tmp,
 			root,
-			'case "$WK_CREATED" in *__feat3) if [ ! -f "$WK_ROOT/recover" ]; then exit 7; fi;; esac; touch sentinel',
-			5,
+			'case "$WK_CREATED" in *__feat2) if [ ! -f "$WK_ROOT/recover" ]; then exit 7; fi;; esac; touch sentinel',
+			3,
 		);
 
 		await expect(dispatch("ensure", ["--cwd", root], testDeps())).rejects.toThrow(HookError);
 		expect(existsSync(`${root}__feat1`)).toBe(true);
-		expect(existsSync(`${root}__feat2`)).toBe(true);
+		expect(existsSync(`${root}__feat2`)).toBe(false);
 		expect(existsSync(`${root}__feat3`)).toBe(false);
-		expect(existsSync(`${root}__feat4`)).toBe(false);
 
 		writeFileSync(join(root, "recover"), "ok\n");
 		await dispatch("ensure", ["--cwd", root], testDeps());
-		expect(existsSync(join(`${root}__feat5`, "sentinel"))).toBe(true);
+		expect(existsSync(join(`${root}__feat3`, "sentinel"))).toBe(true);
 	});
 
 	test("half-init reruns hook and preserves existing slot on failure", async () => {
@@ -1406,7 +1406,26 @@ function writeConfig(...args: [tmp: string, root: string, command: string, poolS
 	process.env.XDG_CONFIG_HOME = configHome;
 }
 
+let baseOriginFixture: {root: string; remote: string; tmp: string} | null = null;
+
+afterAll(() => {
+	if (baseOriginFixture) rmSync(baseOriginFixture.tmp, {recursive: true, force: true});
+});
+
 async function initRepoWithOrigin(tmp: string) {
+	const fixture = await ensureBaseOriginFixture();
+	let root = join(tmp, "repo");
+	const remote = join(tmp, "origin.git");
+	cpSync(fixture.root, root, {recursive: true});
+	cpSync(fixture.remote, remote, {recursive: true});
+	root = realpathSync(root);
+	await run(["git", "-C", root, "remote", "set-url", "origin", remote]);
+	return {root, remote};
+}
+
+async function ensureBaseOriginFixture() {
+	if (baseOriginFixture) return baseOriginFixture;
+	const tmp = mkdtempSync(join(tmpdir(), "wktree-origin-fixture-"));
 	let root = join(tmp, "repo");
 	await initRepo(root);
 	root = realpathSync(root);
@@ -1416,7 +1435,8 @@ async function initRepoWithOrigin(tmp: string) {
 	await run(["git", "-C", root, "push", "-u", "origin", "main"]);
 	await run(["git", "-C", remote, "symbolic-ref", "HEAD", "refs/heads/main"]);
 	await run(["git", "-C", root, "remote", "set-head", "origin", "-a"]);
-	return {root, remote};
+	baseOriginFixture = {root, remote, tmp};
+	return baseOriginFixture;
 }
 
 async function createPoolSlot(...args: [root: string, index: number, branch: string, initialized: boolean]) {

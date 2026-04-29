@@ -1,5 +1,14 @@
-import {afterEach, beforeEach, describe, expect, test} from "bun:test";
-import {existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync} from "node:fs";
+import {afterAll, afterEach, beforeEach, describe, expect, test} from "bun:test";
+import {
+	cpSync,
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	realpathSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 
@@ -17,7 +26,7 @@ describe("wk nushell smoke", () => {
 		mkdirSync(binDir, {recursive: true});
 		writeFileSync(
 			join(binDir, "wktree"),
-			`#!/usr/bin/env bash\ncd ${shellQuote(ovenRoot)}\nexec bun run ./bin/wktree.ts "$@"\n`,
+			`#!/usr/bin/env bash\nexec bun ${shellQuote(join(ovenRoot, "bin/wktree.ts"))} "$@"\n`,
 			{mode: 0o755},
 		);
 		const smokeEnv = {...process.env};
@@ -109,18 +118,38 @@ function writeConfig(spec: {configHome: string; root: string; command: string; p
 	);
 }
 
+let baseOriginFixture: {root: string; remote: string; tmp: string} | null = null;
+
+afterAll(() => {
+	if (baseOriginFixture) rmSync(baseOriginFixture.tmp, {recursive: true, force: true});
+});
+
 async function initRepoWithOrigin(parent: string) {
 	mkdirSync(parent, {recursive: true});
+	const fixture = await ensureBaseOriginFixture();
 	let root = join(parent, "repo");
+	const remote = join(parent, "origin.git");
+	cpSync(fixture.root, root, {recursive: true});
+	cpSync(fixture.remote, remote, {recursive: true});
+	root = realpathSync(root);
+	await run(["git", "-C", root, "remote", "set-url", "origin", remote]);
+	return {root, remote};
+}
+
+async function ensureBaseOriginFixture() {
+	if (baseOriginFixture) return baseOriginFixture;
+	const tmp = mkdtempSync(join(tmpdir(), "wk-smoke-origin-fixture-"));
+	let root = join(tmp, "repo");
 	await initRepo(root);
 	root = realpathSync(root);
-	const remote = join(parent, "origin.git");
+	const remote = join(tmp, "origin.git");
 	await run(["git", "init", "--bare", remote]);
 	await run(["git", "-C", root, "remote", "add", "origin", remote]);
 	await run(["git", "-C", root, "push", "-u", "origin", "main"]);
 	await run(["git", "-C", remote, "symbolic-ref", "HEAD", "refs/heads/main"]);
 	await run(["git", "-C", root, "remote", "set-head", "origin", "-a"]);
-	return {root, remote};
+	baseOriginFixture = {root, remote, tmp};
+	return baseOriginFixture;
 }
 
 async function initRepo(root: string) {
