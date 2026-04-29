@@ -115,9 +115,9 @@ export def gchanged [
 	--commit # just list for the current commit
 ] {
 	match [$commit, $branch] {
-	[true, _] => { git diff --name-only --diff-filter=d },
-	[_, $b] if $b != null => { git diff --name-only --diff-filter=d $"($b)...HEAD" },
-	_ => { git diff --name-only --diff-filter=d $"origin/(git_main_branch)...HEAD" },
+	[true, _] => { ^git diff --name-only --diff-filter=d },
+	[_, $b] if $b != null => { ^git diff --name-only --diff-filter=d $"($b)...HEAD" },
+	_ => { ^git diff --name-only --diff-filter=d $"origin/(git_main_branch)...HEAD" },
 }
 }
 

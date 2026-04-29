@@ -87,20 +87,19 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 	// Model name
 	parts.push(colorize.yellow(getShortModelName(input.model.display_name)));
 
-	// Token usage and remaining percentage
+	// Context window usage
 	const cw = input.context_window;
-	const totalTokens = (cw?.total_input_tokens ?? 0) + (cw?.total_output_tokens ?? 0);
-	parts.push(colorize.brightBlack(formatTokenCount(totalTokens)));
-
-	const remainingPercent = cw?.remaining_percentage ?? 100;
-	const remainingDisplay = `${remainingPercent.toFixed(0)}%`;
-	const coloredRemaining =
-		remainingPercent < 20
-			? colorize.red(remainingDisplay)
-			: remainingPercent < 50
-				? colorize.yellow(remainingDisplay)
-				: colorize.brightBlack(remainingDisplay);
-	parts.push(coloredRemaining);
+	if (cw) {
+		const usedPercent = cw.used_percentage;
+		const contextDisplay = `${usedPercent.toFixed(0)}% / ${formatContextSize(cw.context_window_size)}`;
+		const coloredContext =
+			usedPercent >= 80
+				? colorize.red(contextDisplay)
+				: usedPercent >= 60
+					? colorize.yellow(contextDisplay)
+					: colorize.brightBlack(contextDisplay);
+		parts.push(coloredContext);
+	}
 
 	return parts.join(" ");
 }
@@ -131,9 +130,9 @@ async function isInsideContainer(): Promise<boolean> {
 	}
 }
 
-function formatTokenCount(tokens: number): string {
-	if (tokens < 1000) return `${tokens}`;
-	return `${Math.round(tokens / 1000)}k`;
+function formatContextSize(tokens: number): string {
+	if (tokens >= 500_000) return `${Math.round(tokens / 1_000_000)}m`;
+	return `${Math.round(tokens / 1_000)}k`;
 }
 
 function getShortModelName(displayName: string): string {
