@@ -1,60 +1,69 @@
 #!/usr/bin/env bash
-#:module: Tmux session switcher using tmux sessions.toml config
+#:module: Tmux session switcher - numbered slots + interactive picker
 #:
-#: Usage: tmux-session [number|--print number]
+#: Numbered slots 0-9 are stored in a mutable state file, seeded on first
+#: use from tmux/sessions.toml. Slots can be reassigned interactively.
 #:
-#: Maps numbered keys (0-9) to project sessions via tmux/sessions.toml.
-#: Without arguments, launches interactive fzf project picker.
-#:
-#: Options:
-#:   0-9             Jump to numbered project session
-#:   --print 0-9     Print numbered project path instead of switching
-#:   (no args)       Interactive project discovery via fzf
+#: Usage:
+#:   tmux-session [0-9]         Jump to numbered slot
+#:   tmux-session --print 0-9   Print slot path (for shell cd aliases)
+#:   tmux-session --assign 0-9  Assign current tmux session to numbered slot
+#:   tmux-session --seed        Re-seed slots from sessions.toml defaults
+#:   tmux-session --edit        Open state file in editor popup
+#:   tmux-session --list        Pick a slot via fzf and jump to it
+#:   tmux-session               Interactive project discovery via fzf
 
 set -euo pipefail
 
 SESSIONS_TOML="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/sessions.toml"
+STATE_FILE="${XDG_CACHE_HOME:-$HOME/.local/cache}/tmux-slots"
 
 if [[ ! -f "$SESSIONS_TOML" ]]; then
 	echo "Error: sessions.toml not found at $SESSIONS_TOML" >&2
 	exit 1
 fi
 
-# Resolve active profile from auto_profile.rules in sessions.toml
-# Returns profile name (e.g. "work", "homelab") or empty for default
+# Key 0 maps to line 10 (lines 1-9 = keys 1-9, line 10 = key 0)
+key_to_line() {
+	[[ "$1" == "0" ]] && echo 10 || echo "$1"
+}
+
+# ─── Profile resolution ────────────────────────────────────────────────────────
+
 resolve_profile() {
-	local hostname
+	local hostname rules_len
 	hostname=$(hostname)
-	local rules_len
-	rules_len=$(cat "$SESSIONS_TOML" | fx --toml '.auto_profile.rules.length' 2>/dev/null || echo "0")
+	rules_len=$(fx --toml '.auto_profile.rules.length' <"$SESSIONS_TOML" 2>/dev/null || echo "0")
 
 	for ((i = 0; i < rules_len; i++)); do
-		local regex env_key env_val profile
-		regex=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].hostname_regex" 2>/dev/null || echo "")
-		profile=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].profile" 2>/dev/null || echo "")
+		local regex profile
+		regex=$(fx --toml ".auto_profile.rules[$i].hostname_regex" <"$SESSIONS_TOML" 2>/dev/null || echo "")
+		profile=$(fx --toml ".auto_profile.rules[$i].profile" <"$SESSIONS_TOML" 2>/dev/null || echo "")
 
 		if [[ -n "$regex" ]] && [[ "$hostname" =~ $regex ]]; then
 			echo "$profile"
 			return
 		fi
 
-		# Check env-based rules: iterate keys of the env object
 		local env_keys
-		env_keys=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].env" 'Object.keys(x).join("\n")' 2>/dev/null || echo "")
+		env_keys=$(fx --toml ".auto_profile.rules[$i].env" 'Object.keys(x).join("\n")' <"$SESSIONS_TOML" 2>/dev/null || echo "")
 		while IFS= read -r env_key; do
 			[[ -z "$env_key" ]] && continue
-			env_val=$(cat "$SESSIONS_TOML" | fx --toml ".auto_profile.rules[$i].env.$env_key" 2>/dev/null || echo "")
+			local env_val
+			env_val=$(fx --toml ".auto_profile.rules[$i].env.$env_key" <"$SESSIONS_TOML" 2>/dev/null || echo "")
 			if [[ "${!env_key:-}" == "$env_val" ]]; then
 				echo "$profile"
 				return
 			fi
-		done <<< "$env_keys"
+		done <<<"$env_keys"
 	done
 }
 
 _PROFILE=$(resolve_profile)
 
-expand_config_path() {
+# ─── Config helpers ────────────────────────────────────────────────────────────
+
+expand_path() {
 	local p="$1"
 	p="${p/#\~/$HOME}"
 	p="${p//\$DOTFILES/${DOTFILES:-$HOME/dev/dots}}"
@@ -63,63 +72,100 @@ expand_config_path() {
 }
 
 get_keys_section() {
-	if [[ -n "$_PROFILE" ]]; then
-		echo "profiles.$_PROFILE.keys"
-	else
-		echo "keys"
-	fi
+	[[ -n "$_PROFILE" ]] && echo "profiles.$_PROFILE.keys" || echo "keys"
 }
 
 get_projects_section() {
-	if [[ -n "$_PROFILE" ]]; then
-		echo "profiles.$_PROFILE.projects"
-	else
-		echo "projects"
-	fi
+	[[ -n "$_PROFILE" ]] && echo "profiles.$_PROFILE.projects" || echo "projects"
 }
 
-# Resolve a numbered project (0-9) to its filesystem path
-resolve_project_path() {
-	local num=$1
-	local keys_section projects_section project path
-
-	keys_section=$(get_keys_section)
+resolve_project_path_by_name() {
+	local project=$1 projects_section path
 	projects_section=$(get_projects_section)
-
-	project=$(cat "$SESSIONS_TOML" | fx --toml ".$keys_section.P$num" 2>/dev/null || echo "")
-	if [[ -z "$project" ]]; then
-		echo "Error: No mapping for P$num" >&2
-		exit 1
-	fi
-
-	path=$(cat "$SESSIONS_TOML" | fx --toml ".$projects_section.$project" 2>/dev/null || echo "")
-
-	# Fall back to base projects section
+	path=$(fx --toml ".$projects_section.$project" <"$SESSIONS_TOML" 2>/dev/null || echo "")
 	if [[ -z "$path" ]] && [[ "$projects_section" != "projects" ]]; then
-		path=$(cat "$SESSIONS_TOML" | fx --toml ".projects.$project" 2>/dev/null || echo "")
+		path=$(fx --toml ".projects.$project" <"$SESSIONS_TOML" 2>/dev/null || echo "")
 	fi
-
-	if [[ -z "$path" ]]; then
-		echo "Error: No path for '$project'" >&2
-		exit 1
-	fi
-
-	expand_config_path "$path"
+	[[ -n "$path" ]] && expand_path "$path" || echo ""
 }
 
-# Create or switch to a tmux session for a given project path
+# ─── State file ────────────────────────────────────────────────────────────────
+
+# Seed state file from sessions.toml [keys] for active profile.
+# Lines 1-9 = slots 1-9, line 10 = slot 0.
+seed_state() {
+	local keys_section
+	keys_section=$(get_keys_section)
+
+	mkdir -p "$(dirname "$STATE_FILE")"
+	local tmp
+	tmp=$(mktemp)
+
+	for num in 1 2 3 4 5 6 7 8 9 0; do
+		local project path session_name
+		project=$(fx --toml ".$keys_section.P$num" <"$SESSIONS_TOML" 2>/dev/null || echo "")
+		if [[ -n "$project" ]]; then
+			path=$(resolve_project_path_by_name "$project")
+			if [[ -n "$path" ]]; then
+				session_name=$(basename "$path" | tr '.' '_')
+				echo "$session_name=$path" >>"$tmp"
+			else
+				echo "" >>"$tmp"
+			fi
+		else
+			echo "" >>"$tmp"
+		fi
+	done
+
+	mv "$tmp" "$STATE_FILE"
+}
+
+ensure_seeded() {
+	mkdir -p "$(dirname "$STATE_FILE")"
+	if [[ ! -f "$STATE_FILE" ]] || [[ ! -s "$STATE_FILE" ]]; then
+		seed_state
+	fi
+}
+
+read_slot() {
+	local line
+	line=$(key_to_line "$1")
+	[[ -f "$STATE_FILE" ]] || return 0
+	awk "NR==$line{print; exit}" "$STATE_FILE"
+}
+
+write_slot() {
+	local key=$1 entry=$2
+	local line
+	line=$(key_to_line "$key")
+
+	touch "$STATE_FILE"
+
+	# Pad to 10 lines if needed
+	local n
+	n=$(awk 'END{print NR}' "$STATE_FILE")
+	while ((n < 10)); do
+		echo "" >>"$STATE_FILE"
+		n=$((n + 1))
+	done
+
+	local tmp
+	tmp=$(mktemp)
+	awk -v line="$line" -v entry="$entry" 'NR==line{print entry; next}1' "$STATE_FILE" >"$tmp"
+	mv "$tmp" "$STATE_FILE"
+}
+
+# ─── Session switching ─────────────────────────────────────────────────────────
+
 switch_to_project() {
 	local project_path=$1
 	local session_name
-
 	session_name=$(basename "$project_path" | tr '.' '_')
 
-	# Check if there's an active tmux server with clients
 	local has_clients
 	has_clients=$(tmux list-clients 2>/dev/null | head -1)
 
 	if [[ -z "$has_clients" ]] && [[ -z "${TMUX:-}" ]]; then
-		# No tmux clients and not inside tmux - start fresh
 		exec tmux new-session -s "$session_name" -c "$project_path"
 	fi
 
@@ -127,7 +173,6 @@ switch_to_project() {
 		tmux new-session -d -s "$session_name" -c "$project_path"
 	fi
 
-	# run-shell from tmux keybindings doesn't set $TMUX, so check for clients
 	if [[ -n "${TMUX:-}" ]] || [[ -n "$has_clients" ]]; then
 		tmux switch-client -t "$session_name"
 	else
@@ -135,32 +180,29 @@ switch_to_project() {
 	fi
 }
 
-# Interactive project discovery using fd + fzf-tmux
-# Reads search roots from sessions.toml [search] section
+# ─── Interactive picker ────────────────────────────────────────────────────────
+
 interactive_select() {
 	local dirs=()
-
-	# Read vsc dirs (git-walked roots) from sessions.toml (profile-specific overrides base)
 	local search_section="search"
 	if [[ -n "$_PROFILE" ]]; then
 		local profile_vsc
-		profile_vsc=$(cat "$SESSIONS_TOML" | fx --toml ".profiles.$_PROFILE.search.vsc" 2>/dev/null || echo "")
+		profile_vsc=$(fx --toml ".profiles.$_PROFILE.search.vsc" <"$SESSIONS_TOML" 2>/dev/null || echo "")
 		[[ -n "$profile_vsc" ]] && search_section="profiles.$_PROFILE.search"
 	fi
+
 	local vsc_json
-	vsc_json=$(cat "$SESSIONS_TOML" | fx --toml ".$search_section.vsc" 2>/dev/null || echo "[]")
+	vsc_json=$(fx --toml ".$search_section.vsc" <"$SESSIONS_TOML" 2>/dev/null || echo "[]")
 	while IFS= read -r root; do
-		root=$(expand_config_path "$root")
+		root=$(expand_path "$root")
 		[[ -d "$root" ]] && dirs+=("$root")
 	done < <(echo "$vsc_json" | fx '.map(x=>x).join("\n")')
 
-	# Read static dirs from sessions.toml (uses same section as vsc)
 	local static_dirs=()
 	local dirs_json
-	dirs_json=$(cat "$SESSIONS_TOML" | fx --toml ".$search_section.dirs" 2>/dev/null || echo "[]")
+	dirs_json=$(fx --toml ".$search_section.dirs" <"$SESSIONS_TOML" 2>/dev/null || echo "[]")
 	while IFS= read -r d; do
-		d=$(expand_config_path "$d")
-		# expand globs
+		d=$(expand_path "$d")
 		if [[ "$d" == *"*"* ]]; then
 			for expanded in $d; do
 				[[ -d "$expanded" ]] && static_dirs+=("$expanded")
@@ -175,7 +217,6 @@ interactive_select() {
 		exit 1
 	fi
 
-	# Discover git projects from vsc roots + include static dirs
 	local selected
 	selected=$({
 		if [[ ${#dirs[@]} -gt 0 ]]; then
@@ -187,22 +228,81 @@ interactive_select() {
 	} | sort -u \
 		| fzf-tmux -p -w 80% -h 70% --prompt='Select project: ') || exit 0
 
-	if [[ -n "$selected" ]]; then
-		switch_to_project "$selected"
-	fi
+	[[ -n "$selected" ]] && switch_to_project "$selected"
 }
 
+# ─── Slot list/picker ──────────────────────────────────────────────────────────
+
+list_slots() {
+	ensure_seeded
+	local selected
+	selected=$(awk -v home="$HOME" '
+		{
+			key = (NR <= 9) ? NR : 0
+			if ($0 ~ /^[^=]+=/) {
+				eq = index($0, "=")
+				name = substr($0, 1, eq - 1)
+				path = substr($0, eq + 1)
+				sub(home, "~", path)
+				printf "%s  %-25s %s\n", key, name, path
+			}
+		}
+	' "$STATE_FILE" \
+		| fzf-tmux -p -w 80% -h 60% --prompt='Jump to slot: ') || exit 0
+
+	[[ -z "$selected" ]] && exit 0
+	local key slot
+	key=$(echo "$selected" | awk '{print $1}')
+	slot=$(read_slot "$key")
+	[[ -z "$slot" ]] && exit 0
+	switch_to_project "${slot#*=}"
+}
+
+# ─── Dispatch ──────────────────────────────────────────────────────────────────
+
 case "${1:-}" in
+[0-9])
+	ensure_seeded
+	slot=$(read_slot "$1")
+	if [[ -z "$slot" ]]; then
+		tmux display-message "Slot $1 is empty — use <prefix>h $1 to assign"
+		exit 0
+	fi
+	switch_to_project "${slot#*=}"
+	;;
 --print)
 	if [[ ! "${2:-}" =~ ^[0-9]$ ]]; then
 		echo "Usage: tmux-session --print <number>" >&2
 		exit 1
 	fi
-	resolve_project_path "$2"
+	ensure_seeded
+	slot=$(read_slot "$2")
+	if [[ -z "$slot" ]]; then
+		echo "Error: Slot $2 is empty" >&2
+		exit 1
+	fi
+	echo "${slot#*=}"
 	;;
-[0-9])
-	project_path=$(resolve_project_path "$1")
-	switch_to_project "$project_path"
+--assign)
+	if [[ ! "${2:-}" =~ ^[0-9]$ ]]; then
+		echo "Usage: tmux-session --assign <number>" >&2
+		exit 1
+	fi
+	ensure_seeded
+	current=$(tmux display -p '#{session_name}=#{session_path}')
+	write_slot "$2" "$current"
+	tmux display-message "Slot $2 → $(tmux display -p '#{session_name}')"
+	;;
+--seed)
+	seed_state
+	tmux display-message "Slots reseeded from sessions.toml (profile: ${_PROFILE:-default})" 2>/dev/null || \
+		echo "Seeded $STATE_FILE (profile: ${_PROFILE:-default})"
+	;;
+--edit)
+	exec tmux popup -E "NVIM_APPNAME=minimal-nvim ${EDITOR:-nvim} $STATE_FILE"
+	;;
+--list)
+	list_slots
 	;;
 *)
 	interactive_select

@@ -1,10 +1,5 @@
 def wk-session-name [path: string] {
-	$path
-	| path basename
-	| str downcase
-	| str replace --all --regex '[^a-z0-9]' '-'
-	| str replace --all --regex '-+' '-'
-	| str replace --all --regex '^-|-$' ''
+	$path | path basename | str replace --all '.' '_'
 }
 
 def wk-post-create-runner [sessions_dir: string, session_name: string, root_dir: string, tree_dir: string, hooks: list<any>] {
