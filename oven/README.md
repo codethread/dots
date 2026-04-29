@@ -52,6 +52,7 @@ nix develop --command bun run verify
 - **notif** - Show macOS native notifications
 - **prepend-comment** - Add or update module documentation comments
 - **tts** - Optimized for text-to-speech (adds spoken indicators)
+- **wktree** - reusable git worktree pool manager
 
 ### Quick Usage
 

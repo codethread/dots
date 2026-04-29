@@ -13,7 +13,7 @@ link:
 
 build:
 	@printf '%s\n' '==> build'
-	@cd "$(ROOT)/oven" && nix develop --command sh -lc "bun install && bun run verify"
+	@cd "$(ROOT)/oven" && nix develop --command sh -lc 'eval "$${shellHook:-}"; bun install && bun run verify'
 
 system:
 	@printf '%s\n' '==> system $(ARGS)'

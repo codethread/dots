@@ -2,15 +2,23 @@
 interface Options {
 	multi?: boolean;
 	tmux?: boolean;
+	header?: string;
+	preview?: string;
+	withNth?: string;
+	tty?: boolean;
 }
 
 export async function fzf<Opts extends Options>(
 	lines: string[],
 	opts?: Opts,
 ): Promise<Opts["multi"] extends true ? string[] : string> {
-	const flags = Object.entries(opts || {})
-		.filter(([, v]) => !!v)
-		.map(([flag]) => `--${flag}`);
+	const flags = Object.entries(opts || {}).flatMap(([flag, value]) => {
+		if (!value || flag === "tty") return [];
+		const cliFlag = flag.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
+		if (typeof value === "string") return [`--${cliFlag}`, value];
+		if (flag === "tmux") return ["--tmux"];
+		return [`--${flag}`];
+	});
 
 	const fzf = Bun.spawn(["fzf", ...flags], {
 		stdio: ["pipe", "pipe", "inherit"],

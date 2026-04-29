@@ -23,8 +23,13 @@
           packages = with pkgs; [
             bun
             biome
+            git
             typescript
           ];
+
+          shellHook = ''
+            export PATH="${pkgs.bun}/bin:${pkgs.biome}/bin:${pkgs.git}/bin:${pkgs.typescript}/bin:$PATH"
+          '';
 
           BIOME_BINARY = "${pkgs.biome}/bin/biome";
         };

@@ -1,127 +1,115 @@
-use helpers.nu *
 use tmux.nu *
 
-# print the stable root path for the current repo
+# Run a wktree command that writes a JSON plan to a temp file, then return the parsed plan.
+def wktree-plan [body: closure] {
+	let result_file = (mktemp -t wktree-plan.XXXXXX)
+	do $body $result_file | ignore
+	let exit_code = ($env.LAST_EXIT_CODE? | default 0)
+	if $exit_code != 0 {
+		rm -f $result_file
+		return null
+	}
+	let plan = (open --raw $result_file | from json)
+	rm -f $result_file
+	$plan
+}
+
+# Print the canonical/root worktree path for the current git repository.
 export def "wk root" [] {
-	wk-canonical-root
+	^wktree root --cwd $env.PWD | str trim
 }
 
-# print the stable sibling worktree path for a branch
+# Print the worktree path for a branch without opening it.
+# Non-pooled repos use a stable sibling path; pooled repos require the branch to already occupy a slot.
 export def "wk path" [
-	branch: string
+	branch: string # branch whose worktree path should be printed
 ] {
-	wk-worktree-path $branch
+	^wktree path --cwd $env.PWD --branch $branch | str trim
 }
 
-# add a sibling worktree at <canonical-root>__<encoded-branch>
-# if branch exists (local or remote) it is checked out; otherwise created from base
+# Add or allocate a worktree for a branch, then open it in the current tmux workflow.
+# New branches default to origin's default branch/trunk, even when run from another worktree.
 export def --env "wk add" [
 	branch: string   # branch to create or checkout
-	base?: string    # base branch to create from (default: repo default branch)
+	base?: string    # branch to create from for new branches; defaults to origin's default branch/trunk
+	--self           # use the current worktree branch as --base
+	--force          # skip recycle confirmation when the pool is full
 ] {
-	let repo_root = wk-canonical-root
-	let tree_dir = wk-worktree-path $branch
-
-	# fetch all remote refs so branch existence checks are current
-	print $"(ansi green)fetching origin(ansi reset)"
-	git fetch origin
-
-	let base_branch = if $base == null { wk-default-branch } else { $base }
-
-	let local_branches = (git branch --format="%(refname:short)" | complete).stdout | lines | str trim
-	let remote_branches = (git branch -r --format="%(refname:short)" | complete).stdout | lines | str trim
-
-	if $branch in $local_branches {
-		print $"(ansi green)checking out existing local branch ($branch)(ansi reset)"
-		git worktree add $tree_dir $branch
-	} else if $"origin/($branch)" in $remote_branches {
-		print $"(ansi green)checking out existing remote branch ($branch)(ansi reset)"
-		git worktree add --no-track -b $branch $tree_dir $"origin/($branch)"
-	} else {
-		print $"(ansi green)creating ($branch) from origin/($base_branch)(ansi reset)"
-		git worktree add --no-track -b $branch $tree_dir $"origin/($base_branch)"
-	}
-
-	if $"origin/($branch)" in $remote_branches {
-		print $"(ansi green)updating ($branch) from origin(ansi reset)"
-		let ff = (git -C $tree_dir merge --ff-only $"origin/($branch)" | complete)
-		if $ff.exit_code == 0 {
-			print $"(ansi green)updated ($branch) to latest origin/($branch)(ansi reset)"
-		} else {
-			print $"(ansi yellow)warning:(ansi reset) couldn't fast-forward ($branch) to origin/($branch)"
-			if (($ff.stderr | str trim) != "") {
-				print ($ff.stderr | str trim)
-			}
+	let current_branch = if $self {
+		let result = (git branch --show-current | complete)
+		if $result.exit_code != 0 or ($result.stdout | str trim) == "" {
+			error make { msg: "--self requires the current worktree to be on a branch" }
 		}
+		$result.stdout | str trim
+	} else {
+		null
+	}
+	if $self and $base != null {
+		error make { msg: "provide either --self or an explicit base, not both" }
 	}
 
-	let post_create_hooks = (wk-matching-post-create-hooks $repo_root)
-	wk-open-dir $tree_dir $branch $repo_root $post_create_hooks
+	let plan = (wktree-plan {|result_file|
+		let selected_base = if $self { $current_branch } else { $base }
+		let args = [add --cwd $env.PWD --branch $branch --result-file $result_file]
+		let args = if $selected_base == null { $args } else { $args | append [--base $selected_base] | flatten }
+		let args = if $force { $args | append "--force" } else { $args }
+		^wktree ...$args
+	})
+
+	if $plan == null { return }
+	wk-open-dir $plan.worktree_path $plan.title --runner-path ($plan.runner_script_path | default "")
 }
 
-# remove a worktree by branch name and delete its branch
+# Remove a non-pooled worktree, or recycle a pooled slot back to its placeholder branch.
+# Pass a branch name, or use --self to target the current worktree.
 export def --env "wk remove" [
 	branch?: string  # branch name used when the worktree was added
-	--self           # use the current branch
-	--force          # pass force through to worktree + branch removal
+	--self           # use the current worktree
+	--force          # force removal/recycle
 ] {
-	let tree_dir = if $self {
-		# resolve to worktree root so removal works from any subdirectory
-		let rev = (git rev-parse --show-toplevel | complete)
-		if $rev.exit_code != 0 {
-			error make { msg: "couldn't resolve current worktree root" }
-		}
-		$rev.stdout | str trim
-	} else if $branch != null {
-		wk-worktree-path $branch
+	let self_path = if $self {
+		^git rev-parse --show-toplevel | str trim
 	} else {
-		error make { msg: "provide a branch name or pass --self" }
+		null
 	}
-	let repo_root = wk-canonical-root
-	if $tree_dir == $repo_root {
-		error make { msg: "cannot remove the canonical worktree" }
-	}
-
-	let worktree = (wk-list-data | where path == $tree_dir)
-	if ($worktree | is-empty) {
-		error make { msg: $"couldn't find worktree at ($tree_dir)" }
-	}
-	let target_branch = ($worktree | first | get branch)
-
-	# cd home only when currently inside the target worktree, so the shell
-	# isn't stranded in a deleted directory after removal
-	if ($env.PWD == $tree_dir or ($env.PWD | str starts-with $"($tree_dir)/")) {
+	let cwd = $env.PWD
+	if $self_path != null {
 		cd ~
 	}
 
-	if $force {
-		git -C $repo_root worktree remove --force $tree_dir
-	} else {
-		git -C $repo_root worktree remove $tree_dir
-	}
-
-	if $target_branch != null {
-		if $force {
-			git -C $repo_root branch -D $target_branch
+	let plan = (wktree-plan {|result_file|
+		let args = [remove --cwd $cwd --result-file $result_file]
+		let args = if $self_path != null {
+			$args | append [--self $self_path] | flatten
+		} else if $branch != null {
+			$args | append [--branch $branch] | flatten
 		} else {
-			git -C $repo_root branch -d $target_branch
+			error make { msg: "provide a branch name or pass --self" }
 		}
-	}
+		let args = if $force { $args | append "--force" } else { $args }
+		^wktree ...$args
+	})
 
-	wk-close-dir $tree_dir
+	if $plan == null { return }
+	wk-close-dir $plan.worktree_path
+	if ($env.PWD == $plan.worktree_path or ($env.PWD | str starts-with $"($plan.worktree_path)/")) {
+		cd ~
+	}
 }
 
+# List worktrees for the current repository, initializing configured pooled slots first.
 export def "wk list" [
-	--json
+	--json # return structured JSON/table data instead of formatted text
 ] {
 	if $json {
-		wk-list-data | to json
+		^wktree list --cwd $env.PWD --json | from json
 	} else {
-		git worktree list
+		^wktree list --cwd $env.PWD
 	}
 }
 
-# fuzzy-pick and switch to a worktree in the current repository
+# Fuzzy-pick a worktree in the current repository and switch/open it via the tmux workflow.
+# Shows existing tmux pane previews when a worktree is already open; otherwise previews recent git log.
 export def --env "wk switch" [] {
 	let git_check = (git rev-parse --git-dir | complete)
 	if $git_check.exit_code != 0 {
@@ -129,7 +117,7 @@ export def --env "wk switch" [] {
 		return
 	}
 
-	let worktrees = wk-list-data
+	let worktrees = (wk list --json)
 	let current_path = (git rev-parse --show-toplevel | complete).stdout | str trim
 	let others = $worktrees | where path != $current_path
 
@@ -144,7 +132,7 @@ export def --env "wk switch" [] {
 		| parse "{pane_id}\t{pane_path}"
 
 	# tab fields: display \t pane_id \t path \t branch
-	# fzf refs are 1-indexed ({2}=pane_id, {3}=path); nushell split column is 0-indexed (column2=path, column3=branch)
+	# fzf refs are 1-indexed ({2}=pane_id, {3}=path); nushell split column is 1-indexed (column3=path, column4=branch)
 	let candidates = $worktrees | each { |wt|
 		let branch = if $wt.detached { "(detached)" } else { $wt.branch }
 		let marker = if $wt.path == $current_path { "*" } else { " " }
@@ -169,10 +157,9 @@ export def --env "wk switch" [] {
 		0 => {
 			let line = $result.stdout | str trim
 			let parts = $line | split column "\t"
-			let path = $parts | get column2.0
-			let branch = $parts | get column3.0
-			let repo_root = wk-canonical-root
-			wk-open-dir $path $branch $repo_root []
+			let path = $parts | get column3.0
+			let branch = $parts | get column4.0
+			wk-open-dir $path $branch
 		}
 		130 | 1 => {}
 		_ => { print $"(ansi red)fzf error ($result.exit_code)(ansi reset)" }
