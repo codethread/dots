@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# :module: Minimal Codex review wrapper
+# :module: Minimal Pi review wrapper
 
 set -euo pipefail
 
@@ -7,7 +7,7 @@ usage() {
   echo 'Usage: code-review [--deep] "your review prompt"' >&2
 }
 
-profile="fast-review"
+pi_args=(--agent review)
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -16,7 +16,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     --deep)
-      profile="deep-review"
+      pi_args+=(--thinking high)
       shift
       ;;
     --)
@@ -42,5 +42,5 @@ fi
 prompt="$*"
 
 echo "$prompt" \
-  | codex exec --json --ephemeral --sandbox read-only --profile "$profile" review --skip-git-repo-check - \
-  | jq -rsr '[.[] | select(.type=="item.completed" and .item.type=="agent_message") | .item.text] | last // ""'
+  | pi "${pi_args[@]}"
+
