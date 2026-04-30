@@ -8,6 +8,7 @@
 #:   tmux-session [0-9]         Jump to numbered slot
 #:   tmux-session --print 0-9   Print slot path (for shell cd aliases)
 #:   tmux-session --assign 0-9  Assign current tmux session to numbered slot
+#:   tmux-session --add         Append current tmux session to state file if missing
 #:   tmux-session --seed        Re-seed slots from sessions.toml defaults
 #:   tmux-session --edit        Open state file in editor popup
 #:   tmux-session --list        Pick a slot via fzf and jump to it
@@ -155,6 +156,21 @@ write_slot() {
 	mv "$tmp" "$STATE_FILE"
 }
 
+add_current_session() {
+	ensure_seeded
+	local current session_name
+	current=$(tmux display -p '#{session_name}=#{session_path}')
+	session_name=${current%%=*}
+
+	if grep -Fxq "$current" "$STATE_FILE" || awk -F= -v name="$session_name" '$1 == name { found = 1 } END { exit !found }' "$STATE_FILE"; then
+		tmux display-message "Already present: $session_name"
+		return
+	fi
+
+	printf '%s\n' "$current" >>"$STATE_FILE"
+	tmux display-message "Added $session_name"
+}
+
 # ─── Session switching ─────────────────────────────────────────────────────────
 
 switch_to_project() {
@@ -238,24 +254,23 @@ list_slots() {
 	local selected
 	selected=$(awk -v home="$HOME" '
 		{
-			key = (NR <= 9) ? NR : 0
 			if ($0 ~ /^[^=]+=/) {
 				eq = index($0, "=")
 				name = substr($0, 1, eq - 1)
 				path = substr($0, eq + 1)
 				sub(home, "~", path)
-				printf "%s  %-25s %s\n", key, name, path
+				printf "%s  %-25s %s\n", NR, name, path
 			}
 		}
 	' "$STATE_FILE" \
 		| fzf-tmux -p -w 80% -h 60% --prompt='Jump to slot: ') || exit 0
 
 	[[ -z "$selected" ]] && exit 0
-	local key slot
-	key=$(echo "$selected" | awk '{print $1}')
-	slot=$(read_slot "$key")
-	[[ -z "$slot" ]] && exit 0
-	switch_to_project "${slot#*=}"
+	local linenum entry
+	linenum=$(echo "$selected" | awk '{print $1}')
+	entry=$(awk -v n="$linenum" 'NR==n{print; exit}' "$STATE_FILE")
+	[[ -z "$entry" ]] && exit 0
+	switch_to_project "${entry#*=}"
 }
 
 # ─── Dispatch ──────────────────────────────────────────────────────────────────
@@ -292,6 +307,9 @@ case "${1:-}" in
 	current=$(tmux display -p '#{session_name}=#{session_path}')
 	write_slot "$2" "$current"
 	tmux display-message "Slot $2 → $(tmux display -p '#{session_name}')"
+	;;
+--add)
+	add_current_session
 	;;
 --seed)
 	seed_state
