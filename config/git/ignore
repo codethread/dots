@@ -92,3 +92,5 @@ scratch.nu
 **/CLAUDE.local.md
 
 **/.claude/settings.local.json
+
+.pandora/
