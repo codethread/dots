@@ -141,13 +141,15 @@ align_candidates() {
 	[[ ${#lines[@]} -eq 0 ]] && return
 
 	local max_session=0 max_window=0 max_tool=0
-	local display_part active session window tool path
+	local display_part active session window tool path display_tool
 	for line in "${lines[@]}"; do
 		display_part="${line%%$'\t'*}"
 		IFS=$'\x1f' read -r active session window tool path <<< "$display_part"
-		[[ ${#session} -gt $max_session ]] && max_session=${#session}
-		[[ ${#window}  -gt $max_window  ]] && max_window=${#window}
-		[[ ${#tool}    -gt $max_tool    ]] && max_tool=${#tool}
+		display_tool="$tool"
+		[[ "$session" =~ ^pandora--([^_]+)__(.+)$ ]] && display_tool="${BASH_REMATCH[1]}"
+		[[ ${#session}      -gt $max_session ]] && max_session=${#session}
+		[[ ${#window}       -gt $max_window  ]] && max_window=${#window}
+		[[ ${#display_tool} -gt $max_tool    ]] && max_tool=${#display_tool}
 	done
 
 	local label rest
@@ -155,11 +157,13 @@ align_candidates() {
 		rest="${line#*$'\t'}"
 		display_part="${line%%$'\t'*}"
 		IFS=$'\x1f' read -r active session window tool path <<< "$display_part"
+		display_tool="$tool"
+		[[ "$session" =~ ^pandora--([^_]+)__(.+)$ ]] && display_tool="${BASH_REMATCH[1]}"
 		label=$(printf '%s  %-*s  %-*s  %-*s  %s' \
 			"$active" \
 			"$max_session" "$session" \
 			"$max_window"  "$window" \
-			"$max_tool"    "$tool" \
+			"$max_tool"    "$display_tool" \
 			"$path")
 		printf '%s\t%s\n' "$label" "$rest"
 	done
@@ -197,10 +201,20 @@ json_panes() {
 
 	local objects=()
 	while IFS=$'\t' read -r display_part pane_id window_target; do
-		local active_mark session window tool path active_bool preview
+		local active_mark session window tool path active_bool preview session_type envy_repo
 		IFS=$'\x1f' read -r active_mark session window tool path <<< "$display_part"
 		active_bool='false'
 		[[ "$active_mark" == '*' ]] && active_bool='true'
+		if [[ "$session" =~ ^pandora--([^_]+)__(.+)$ ]]; then
+			session_type='envy'
+			envy_repo="${BASH_REMATCH[2]}"
+		elif [[ "$session" == *'__'* ]]; then
+			session_type='worktree'
+			envy_repo=''
+		else
+			session_type='canonical'
+			envy_repo=''
+		fi
 		preview=$(tmux capture-pane -p -t "$pane_id" 2>/dev/null \
 			| grep -v '^[─━═ 	]*$' \
 			| grep -v '^[[:space:]]*--[[:space:]]' \
@@ -214,7 +228,9 @@ json_panes() {
 			--arg window_target "$window_target" \
 			--argjson active "$active_bool" \
 			--arg preview "$preview" \
-			'{session:$session,window:$window,tool:$tool,path:$path,pane_id:$pane_id,window_target:$window_target,active:$active,preview:$preview}')")
+			--arg session_type "$session_type" \
+			--arg envy_repo "$envy_repo" \
+			'{session:$session,window:$window,tool:$tool,path:$path,pane_id:$pane_id,window_target:$window_target,active:$active,preview:$preview,session_type:$session_type,envy_repo:$envy_repo}')")
 	done <<< "$raw"
 
 	printf '%s\n' "${objects[@]}" | jq -s '.'
