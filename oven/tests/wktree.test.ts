@@ -299,13 +299,23 @@ describe("LiveHookRunner", () => {
 
 	test("streams output before process exit", async () => {
 		const script = join(tmp, "hook.sh");
-		writeFileSync(script, "echo first\nsleep 0.05\necho second\n");
+		// sleep 0.1 ensures "second" hasn't arrived when we check after the first-line promise resolves
+		writeFileSync(script, "echo first\nsleep 0.1\necho second\n");
 		chmodSync(script, 0o755);
 		const seen: string[] = [];
 		const runner = new LiveHookRunner();
 
-		const promise = runner.runInline(script, tmp, {}, (stream, line) => seen.push(`${stream}:${line}`));
-		await Bun.sleep(25);
+		let resolveFirstLine!: () => void;
+		const firstLine = new Promise<void>((r) => {
+			resolveFirstLine = r;
+		});
+
+		const promise = runner.runInline(script, tmp, {}, (stream, line) => {
+			seen.push(`${stream}:${line}`);
+			resolveFirstLine();
+		});
+
+		await firstLine;
 		expect(seen).toEqual(["stdout:first"]);
 		await promise;
 		expect(seen).toEqual(["stdout:first", "stdout:second"]);

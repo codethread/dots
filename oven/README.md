@@ -48,6 +48,7 @@ nix develop --command bun run verify
 - **cindex** - Generate an index of files in the current project
 - **ghub** - Open GitHub/GitLab repository in browser
 - **git-cleanup** - Clean up build artifacts and log files from git projects
+- **git-pipeline--await** - Watch the current branch's MR pipeline to completion
 - **gitlab-pipeline-watcher** - Monitor GitLab pipelines and send notifications
 - **notif** - Show macOS native notifications
 - **prepend-comment** - Add or update module documentation comments
