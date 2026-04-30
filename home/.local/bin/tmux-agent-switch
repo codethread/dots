@@ -201,7 +201,10 @@ json_panes() {
 		IFS=$'\x1f' read -r active_mark session window tool path <<< "$display_part"
 		active_bool='false'
 		[[ "$active_mark" == '*' ]] && active_bool='true'
-		preview=$(tmux capture-pane -p -t "$pane_id" 2>/dev/null | tail -20)
+		preview=$(tmux capture-pane -p -t "$pane_id" 2>/dev/null \
+			| grep -v '^[─━═ 	]*$' \
+			| grep -v '^[[:space:]]*--[[:space:]]' \
+			| tail -20)
 		objects+=("$(jq -n \
 			--arg session "$session" \
 			--arg window "$window" \
