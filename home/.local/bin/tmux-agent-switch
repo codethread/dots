@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 #:module: Tmux agentic-pane switcher
 #:
-#: Usage: tmux-agent-switch [--debug]
+#: Usage: tmux-agent-switch [--debug] [--json]
 #:
 #: Finds tmux panes running agentic CLIs (Claude, Codex, Pi, etc.), shows them
 #: in an fzf-tmux popup with a live pane preview, and jumps to the selection.
 #:
 #: Options:
 #:   --debug   Print pane list and their captured content to stdout (no fzf)
+#:   --json    Print discovered agent panes as a JSON array to stdout and exit
 #:   -h|--help Show this help
 
 set -u
@@ -15,6 +16,7 @@ set -u
 AGENT_REGEX='(^|[^[:alnum:]_-])(claude([-/ ]code)?|@anthropic-ai/claude-code|cl|codex([-/ ]raw)?|pi|pim)([^[:alnum:]_-]|$)'
 
 DEBUG_MODE=0
+JSON_MODE=0
 
 usage() {
 	grep '^#:' "$0" | sed 's/^#: \{0,1\}//'
@@ -24,6 +26,7 @@ usage() {
 for arg in "$@"; do
 	case "$arg" in
 		--debug) DEBUG_MODE=1 ;;
+		--json)  JSON_MODE=1 ;;
 		-h|--help) usage ;;
 	esac
 done
@@ -33,8 +36,13 @@ if ! command -v tmux >/dev/null 2>&1; then
 	exit 1
 fi
 
-if [[ $DEBUG_MODE -eq 0 ]] && ! command -v fzf-tmux >/dev/null 2>&1; then
+if [[ $DEBUG_MODE -eq 0 ]] && [[ $JSON_MODE -eq 0 ]] && ! command -v fzf-tmux >/dev/null 2>&1; then
 	echo 'tmux-agent-switch: fzf-tmux is required' >&2
+	exit 1
+fi
+
+if [[ $JSON_MODE -eq 1 ]] && ! command -v jq >/dev/null 2>&1; then
+	echo 'tmux-agent-switch: jq is required for --json' >&2
 	exit 1
 fi
 
@@ -84,10 +92,10 @@ agent_label() {
 }
 
 # Outputs one line per matching pane:
-#   <active>|<session>|<window_name>|<tool>|<path>\t<pane_id>\t<window_target>
+#   <active>\x1f<session>\x1f<window_name>\x1f<tool>\x1f<path>\t<pane_id>\t<window_target>
 #
-# Fields are pipe-delimited so align_candidates can parse them without
-# ambiguity before assembling the final space-padded display label.
+# Fields within the display block use \x1f (ASCII unit separator) so the
+# delimiter cannot collide with session/window names or filesystem paths.
 list_agent_panes() {
 	local pane_format
 	pane_format=$'#{session_name}\t#{window_index}\t#{window_name}\t#{pane_index}\t#{pane_id}\t#{pane_pid}\t#{pane_current_command}\t#{pane_current_path}\t#{pane_active}\t#{pane_tty}\t#{pane_title}'
@@ -111,7 +119,7 @@ list_agent_panes() {
 
 		short_path="${pane_current_path/#$HOME/\~}"
 
-		printf '%s|%s|%s|%s|%s\t%s\t%s\n' \
+		printf $'%s\x1f%s\x1f%s\x1f%s\x1f%s\t%s\t%s\n' \
 			"$active_mark" \
 			"$session_name" \
 			"$window_name" \
@@ -136,7 +144,7 @@ align_candidates() {
 	local display_part active session window tool path
 	for line in "${lines[@]}"; do
 		display_part="${line%%$'\t'*}"
-		IFS='|' read -r active session window tool path <<< "$display_part"
+		IFS=$'\x1f' read -r active session window tool path <<< "$display_part"
 		[[ ${#session} -gt $max_session ]] && max_session=${#session}
 		[[ ${#window}  -gt $max_window  ]] && max_window=${#window}
 		[[ ${#tool}    -gt $max_tool    ]] && max_tool=${#tool}
@@ -146,7 +154,7 @@ align_candidates() {
 	for line in "${lines[@]}"; do
 		rest="${line#*$'\t'}"
 		display_part="${line%%$'\t'*}"
-		IFS='|' read -r active session window tool path <<< "$display_part"
+		IFS=$'\x1f' read -r active session window tool path <<< "$display_part"
 		label=$(printf '%s  %-*s  %-*s  %-*s  %s' \
 			"$active" \
 			"$max_session" "$session" \
@@ -178,7 +186,43 @@ debug_panes() {
 	done <<< "$candidates"
 }
 
+json_panes() {
+	local raw
+	raw=$(list_agent_panes)
+
+	if [[ -z "$raw" ]]; then
+		printf '[]\n'
+		return
+	fi
+
+	local objects=()
+	while IFS=$'\t' read -r display_part pane_id window_target; do
+		local active_mark session window tool path active_bool preview
+		IFS=$'\x1f' read -r active_mark session window tool path <<< "$display_part"
+		active_bool='false'
+		[[ "$active_mark" == '*' ]] && active_bool='true'
+		preview=$(tmux capture-pane -p -t "$pane_id" 2>/dev/null | tail -20)
+		objects+=("$(jq -n \
+			--arg session "$session" \
+			--arg window "$window" \
+			--arg tool "$tool" \
+			--arg path "$path" \
+			--arg pane_id "$pane_id" \
+			--arg window_target "$window_target" \
+			--argjson active "$active_bool" \
+			--arg preview "$preview" \
+			'{session:$session,window:$window,tool:$tool,path:$path,pane_id:$pane_id,window_target:$window_target,active:$active,preview:$preview}')")
+	done <<< "$raw"
+
+	printf '%s\n' "${objects[@]}" | jq -s '.'
+}
+
 main() {
+	if [[ $JSON_MODE -eq 1 ]]; then
+		json_panes
+		exit 0
+	fi
+
 	local candidates selected pane_id window_target
 	candidates=$(list_agent_panes | align_candidates)
 
