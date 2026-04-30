@@ -85,23 +85,6 @@ in {
   # Register nushell as a valid login shell.
   environment.shells = [ pkgs.nushell ];
 
-  launchd.user.envVariables = {
-    DOTFILES = "${homeDir}/dev/dots";
-    EDITOR = "nvim";
-    SHELL = "${pkgs.nushell}/bin/nu";
-    XDG_CONFIG_HOME = "${homeDir}/.config";
-    XDG_DATA_HOME = "${homeDir}/.local/share";
-    XDG_STATE_HOME = "${homeDir}/.local/state";
-    XDG_CACHE_HOME = "${homeDir}/.local/cache";
-    ZDOTDIR = "${homeDir}/.config/zsh";
-    HISTFILE = "${homeDir}/.local/state/bash/history";
-    VOLTA_HOME = "${homeDir}/.volta";
-    CARGO_HOME = "${homeDir}/.local/share/cargo";
-    CARGO_BIN = "${homeDir}/.local/share/cargo/bin";
-    CODEX_HOME = "${homeDir}/.config/codex";
-    PATH = guiPath;
-  };
-
   launchd.user.agents.syncengine = {
     serviceConfig = {
       Label = "com.codethread.syncengine";

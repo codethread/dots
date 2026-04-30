@@ -11,16 +11,21 @@ def home [p: string] {
 #: envs {{{
 
 $env.DOTFILES = ($env.DOTFILES? | default (home "dev/dots"))
-$env.EDITOR = "nvim"
+$env.EDITOR = ($env.EDITOR? | default "nvim")
 $env.SHELL = (which nu | get 0.path)
-$env.MANPAGER = ($env.MANPAGER? | default "nvim +Man! -c 'lua require(\"codethread.manpager\")'")
-$env.MANWIDTH = ($env.MANWIDTH? | default 80)
-$env.LESSHISTFILE = ($env.LESSHISTFILE? | default "-") # no .lesshst
 $env.XDG_CONFIG_HOME = ($env.XDG_CONFIG_HOME? | default (home ".config"))
 $env.XDG_DATA_HOME = ($env.XDG_DATA_HOME? | default (home ".local/share"))
 $env.XDG_CACHE_HOME = ($env.XDG_CACHE_HOME? | default (home ".local/cache"))
 $env.XDG_STATE_HOME = ($env.XDG_STATE_HOME? | default (home ".local/state"))
+$env.ZDOTDIR = ($env.ZDOTDIR? | default (home ".config/zsh"))
 $env.HISTFILE = ($env.HISTFILE? | default ($env.XDG_STATE_HOME | path join "bash/history"))
+$env.VOLTA_HOME = ($env.VOLTA_HOME? | default (home ".volta"))
+$env.CARGO_HOME = ($env.CARGO_HOME? | default ($env.XDG_DATA_HOME | path join 'cargo'))
+$env.CARGO_BIN = ($env.CARGO_BIN? | default ($env.CARGO_HOME | path join 'bin'))
+$env.CODEX_HOME = ($env.CODEX_HOME? | default (home ".config/codex"))
+$env.MANPAGER = ($env.MANPAGER? | default "nvim +Man! -c 'lua require(\"codethread.manpager\")'")
+$env.MANWIDTH = ($env.MANWIDTH? | default 80)
+$env.LESSHISTFILE = ($env.LESSHISTFILE? | default "-") # no .lesshst
 $env.RIPGREP_CONFIG_PATH = ([$env.XDG_CONFIG_HOME ripgrep/config] | path join)
 $env.CT_VENDOR_DIR = (home "dev/vendor")
 
@@ -74,7 +79,6 @@ $env.CT_NOTES = (match $env.CT_USER {
 })
 
 $env.WAKATIME_HOME = ($env.WAKATIME_HOME? | default (home ".config/wakatime"))
-$env.ZDOTDIR = ($env.ZDOTDIR? | default (home ".config/zsh"))
 $env.STARSHIP_CACHE = ($env.STARSHIP_CACHE? | default ($env.XDG_CACHE_HOME | path join "starship"))
 
 if (sys host).name == "Darwin" {
@@ -143,7 +147,6 @@ if (sys host).name == "Darwin" {
 	path add "/opt/homebrew/lib/ruby/gems/3.1.0/bin"
 }
 
-$env.VOLTA_HOME = ($env.VOLTA_HOME? | default (home ".volta"))
 path add ($env.VOLTA_HOME | path join "bin")
 $env.VOLTA_FEATURE_PNPM = "1"
 # $env.HUSKY = "0" # don"t hold my hand
@@ -154,8 +157,6 @@ path add "~/.bun/bin"
 #: rust {{{
 
 $env.RUSTUP_HOME = ($env.RUSTUP_HOME? | default ($env.XDG_DATA_HOME | path join 'rustup'))
-$env.CARGO_HOME = ($env.CARGO_HOME? | default ($env.XDG_DATA_HOME | path join 'cargo'))
-$env.CARGO_BIN = ($env.CARGO_BIN? | default ($env.CARGO_HOME | path join 'bin'))
 path add $env.CARGO_BIN
 
 # $env.RUSTFLAGS = (match $env.CT_USER {
@@ -186,7 +187,6 @@ $env.PIP_REQUIRE_VIRTUALENV = "false"  # Allow pip outside virtualenv (set to "t
 #: claude {{{
 
 $env.CT_PLUGINS_DIR = echo "~/dev/learn/claude-plugins/plugins" | path expand
-$env.CODEX_HOME = ($env.CODEX_HOME? | default (home ".config/codex"))
 $env.PI_CODING_AGENT_DIR = ($env.PI_CODING_AGENT_DIR? | default (home ".pi/agent"))
 
 #: }}}

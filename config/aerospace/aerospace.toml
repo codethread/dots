@@ -16,8 +16,6 @@ automatically-unhide-macos-hidden-apps = true
 
 [exec]
 inherit-env-vars = true
-[exec.env-vars]
-PATH = '${PATH}:/opt/homebrew/bin:/opt/homebrew/sbin:~/.local/bin:${DOTFILES}/oven/bin'
 
 [key-mapping]
 preset = 'qwerty'
