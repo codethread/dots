@@ -250,7 +250,7 @@ async function validateDependencies() {
 }
 
 async function findMRForBranch(branch: string): Promise<MR | null> {
-	const result = await $`glab mr list --source-branch=${branch} --state=opened --output=json`.quiet();
+	const result = await $`glab mr list --source-branch=${branch} --output=json`.quiet();
 	const mrs = JSON.parse(result.text()) as MR[];
 	return mrs[0] ?? null;
 }
