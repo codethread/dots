@@ -88,26 +88,26 @@ in {
             ];
           }
         ];
-        SessionEnd = [
-          {
-            hooks = [
-              {
-                type = "command";
-                command = "cc-hook--context-injector session-end";
-              }
-            ];
-          }
-        ];
-        SessionStart = [
-          {
-            hooks = [
-              {
-                type = "command";
-                command = "cc-hook--context-injector session-start";
-              }
-            ];
-          }
-        ];
+        # SessionEnd = [
+        #   {
+        #     hooks = [
+        #       {
+        #         type = "command";
+        #         command = "cc-hook--context-injector session-end";
+        #       }
+        #     ];
+        #   }
+        # ];
+        # SessionStart = [
+        #   {
+        #     hooks = [
+        #       {
+        #         type = "command";
+        #         command = "cc-hook--context-injector session-start";
+        #       }
+        #     ];
+        #   }
+        # ];
       };
       statusLine = {
         type = "command";

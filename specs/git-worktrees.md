@@ -30,14 +30,14 @@ The binary uses plain dependency-injected interfaces (`GitRunner`, `HookRunner`,
 
 The Nushell module exposes:
 
-| Command | Backing behavior |
-| --- | --- |
-| `wk root` | `wktree root` |
-| `wk path <branch>` | `wktree path` |
-| `wk list [--json]` | `wktree list` |
-| `wk add <branch> [base] [--self] [--force]` | `wktree add`, then tmux/open handoff from returned AddPlan. `--self` derives `--base` from the current worktree's branch. |
-| `wk remove [branch] --self --force` | `wktree remove`, then local shell/tmux cleanup from returned RemovePlan |
-| `wk switch` | fzf picker over all worktrees; switches tmux focus to selected worktree. Preview shows captured tmux pane output when a pane is open, otherwise recent git log. |
+| Command                                     | Backing behavior                                                                                                                                                |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wk root`                                   | `wktree root`                                                                                                                                                   |
+| `wk path <branch>`                          | `wktree path`                                                                                                                                                   |
+| `wk list [--json]`                          | `wktree list`                                                                                                                                                   |
+| `wk add <branch> [base] [--self] [--force]` | `wktree add`, then tmux/open handoff from returned AddPlan. `--self` derives `--base` from the current worktree's branch.                                       |
+| `wk remove [branch] --self --force`         | `wktree remove`, then local shell/tmux cleanup from returned RemovePlan                                                                                         |
+| `wk switch`                                 | fzf picker over all worktrees; switches tmux focus to selected worktree. Preview shows captured tmux pane output when a pane is open, otherwise recent git log. |
 
 `wk add` and `wk remove` intentionally call `wktree` without piping through `complete` so stdout/stderr/stdin remain attached for hook progress, fzf, and confirmation prompts.
 
@@ -152,14 +152,14 @@ For the pooled deals-light-ui project, the first command against the repo may ma
 
 ## 10. Code Locations
 
-| File | Description |
-| --- | --- |
-| `oven/bin/wktree.ts` | Worktree engine, config parsing, pool state, allocation/recycle, hook runner generation |
-| `oven/shared/git/executor.ts` | Git command runner interface and live implementation |
-| `oven/shared/git/worktrees.ts` | Pure parsers for git worktree/trunk/branch output |
-| `oven/shared/fzf.ts` | Shared fzf invocation helper used by picker integration |
-| `config/nushell/scripts/ct/git/worktree/mod.nu` | Public `wk` command wrappers |
-| `config/nushell/scripts/ct/git/worktree/tmux.nu` | Tmux/opening handoff helpers |
-| `config/ct-worktrees/trees.toml` | Per-project worktree config |
-| `oven/tests/wktree.test.ts` | Binary unit/integration coverage |
-| `oven/tests/wktree.smoke.test.ts` | Nushell-driven end-to-end smoke for non-pool and pooled flows |
+| File                                             | Description                                                                             |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `oven/bin/wktree.ts`                             | Worktree engine, config parsing, pool state, allocation/recycle, hook runner generation |
+| `oven/shared/git/executor.ts`                    | Git command runner interface and live implementation                                    |
+| `oven/shared/git/worktrees.ts`                   | Pure parsers for git worktree/trunk/branch output                                       |
+| `oven/shared/fzf.ts`                             | Shared fzf invocation helper used by picker integration                                 |
+| `config/nushell/scripts/ct/git/worktree/mod.nu`  | Public `wk` command wrappers                                                            |
+| `config/nushell/scripts/ct/git/worktree/tmux.nu` | Tmux/opening handoff helpers                                                            |
+| `config/ct-worktrees/trees.toml`                 | Per-project worktree config                                                             |
+| `oven/tests/wktree.test.ts`                      | Binary unit/integration coverage                                                        |
+| `oven/tests/wktree.smoke.test.ts`                | Nushell-driven end-to-end smoke for non-pool and pooled flows                           |
