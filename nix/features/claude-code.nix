@@ -150,7 +150,7 @@ in {
         DISABLE_FEEDBACK_COMMAND = "1";
         DISABLE_ERROR_REPORTING = "1";
         ENABLE_TOOL_SEARCH = "0";
-        DISABLE_TELEMETRY = "1";
+        DISABLE_TELEMETRY = "0";
         DISABLE_AUTOUPDATER = "0";
         ENABLE_CLAUDEAI_MCP_SERVERS = "0";
         # so we can see files

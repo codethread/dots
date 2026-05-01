@@ -1,0 +1,20 @@
+{
+	"entries": [
+		{"bin": "bra", "entry": "bra.ts"},
+		{"bin": "cc-bridge", "entry": "cc-bridge.ts"},
+		{"bin": "cc-hook--context-injector", "entry": "cc-hook--context-injector.ts"},
+		{"bin": "cc-hook--npm-redirect", "entry": "cc-hook--npm-redirect.ts"},
+		{"bin": "cc-speak", "entry": "cc-speak.ts"},
+		{"bin": "cc-statusline", "entry": "cc-statusline.ts"},
+		{"bin": "cindex", "entry": "cindex.ts"},
+		{"bin": "ghub", "entry": "ghub.ts"},
+		{"bin": "git-cleanup", "entry": "git-cleanup.ts"},
+		{"bin": "git-pipeline--await", "entry": "git-pipeline--await.ts"},
+		{"bin": "gitlab-pipeline-watcher", "entry": "gitlab-pipeline-watcher.ts"},
+		{"bin": "notif", "entry": "notif.ts"},
+		{"bin": "prepend-comment", "entry": "prepend-comment.ts"},
+		{"bin": "strip-markdown", "entry": "strip-markdown.ts"},
+		{"bin": "tts", "entry": "tts.ts"},
+		{"bin": "wktree", "entry": "wktree.ts"}
+	]
+}

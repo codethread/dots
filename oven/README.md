@@ -1,10 +1,10 @@
 # Oven Workspace
 
-Bun workspace for managing TypeScript/JavaScript executables, all `bin` files will be built to `~/local/bin/*`
+Bun workspace for managing TypeScript/JavaScript executables. Entrypoints listed in `bin/manifest.json` are built to `~/.local/bin/*`.
 
 ## Structure
 
-- `bin/` - Source TypeScript files for CLI tools
+- `bin/` - Source TypeScript files for CLI tools plus `manifest.json` entrypoint map
 - `shared/` - Shared modules used by CLI tools
 - `tests/` - Tests for `bin` files, following rails convention of `bin/myBin.ts` -> `tests/myBin.test.ts`
 - `scripts/` - Build and utility scripts
@@ -33,9 +33,10 @@ nix develop --command bun run verify
 
 ## Adding New Tools
 
-1. Create a new `.ts` file in `bin/` directory
-2. Run `bun run fmt` to format the code
-3. Run `bun run build` to compile to executable
+1. Create a `.ts` entrypoint in `bin/` or a nested folder under `bin/`
+2. Add it to `bin/manifest.json` with explicit `{ "bin": "tool-name", "entry": "path/to/main.ts" }`
+3. Run `bun run fmt` to format the code
+4. Run `bun run build` to create the executable
 
 ## Tools Included
 
@@ -52,7 +53,8 @@ nix develop --command bun run verify
 - **gitlab-pipeline-watcher** - Monitor GitLab pipelines and send notifications
 - **notif** - Show macOS native notifications
 - **prepend-comment** - Add or update module documentation comments
-- **tts** - Optimized for text-to-speech (adds spoken indicators)
+- **strip-markdown** - Strip markdown formatting from text, optimized for text-to-speech or plain text output.
+- **tts** - Basic OpenAI text-to-speech wrapper
 - **wktree** - reusable git worktree pool manager
 
 ### Quick Usage

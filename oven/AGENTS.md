@@ -5,7 +5,8 @@
 The build process generates thin bash wrapper scripts that `exec bun run <source>`:
 
 - Outputs to `~/.local/bin` for system-wide PATH availability
-- during development run code with `bun run ./bin/<file name>`
+- entrypoints are declared in `oven/bin/manifest.json`
+- during development run code with `bun run ./bin/<entry path>`
 
 ### Commands
 
@@ -17,7 +18,7 @@ bun run check    # Check formatting and linting
 bun run fix      # Fix issues (quiet by default)
 bun run build    # Build executables to ~/.local/bin (quiet by default, use -v for verbose)
 bun run sync-docs   # Update documentation (quiet by default, use -v for verbose)
-bun run ./bin/<filename>  # Test before building
+bun run ./bin/<entry path>  # Test before building
 ```
 
 ## Package structure
@@ -26,23 +27,31 @@ bun run ./bin/<filename>  # Test before building
 - **Claude Code hooks**: Import types from `oven/shared/claude-hooks.ts` for hook development
 - **Quiet by default**: Build scripts support `--verbose` flag for detailed output
 
-### Naming Convention for bin files
+### Bin manifest and naming convention
+
+Each executable must be listed in `oven/bin/manifest.json`:
+
+```json
+{"bin": "tool-name", "entry": "tool-name.ts"}
+```
+
+`entry` paths are relative to `oven/bin/`, may be nested, and must not escape `bin/`. Direct `oven/bin/*.ts` files must be listed; nested `.ts` files may be helper modules.
 
 **Short Format:**
 
 - `<name>`: concise, potentially ambiguous
 - Use case: extremely common commands (as dictated by user request)
 - Examples:
-  - `oven/bin/bra.ts` -> `bra`
-  - `oven/bin/ghub.ts` -> `ghub`
+  - `{ "bin": "bra", "entry": "bra.ts" }`
+  - `{ "bin": "ghub", "entry": "ghub.ts" }`
 
 **Long Format:**
 
 - `<domain>-<contex>--<action>`: clear and scoped,
 - Use case: most scripts
 - Examples:
-  - `oven/bin/cc-hook--context-injector.ts` -> `cc-hook--context-injector`
-  - `oven/bin/cc-logs--analyze-subagents.ts` -> `cc-logs--analyze-subagents`
+  - `{ "bin": "cc-hook--context-injector", "entry": "cc-hook--context-injector.ts" }`
+  - `{ "bin": "cc-logs--analyze-subagents", "entry": "cc-logs--analyze-subagents.ts" }`
 
 existing domains:
 

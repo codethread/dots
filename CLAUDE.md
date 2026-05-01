@@ -50,10 +50,10 @@ Build tools in order of increasing complexity
      - Use `-h` or `--help` flag for usage info
 
 4. **TypeScript/Bun** (>200 lines or needs dependencies)
-   - Location: `oven/bin/*.ts`
+   - Location: entrypoints declared in `oven/bin/manifest.json`
    - When: Complex logic, dependencies, async task control or shared code
    - Notes:
-     - `$ make build` builds executables to `~/.local/bin/` (in PATH)
+     - `$ make build` builds manifest-declared executables to `~/.local/bin/` (in PATH)
      - Full development environment with testing
 
 ### Script Evolution Path

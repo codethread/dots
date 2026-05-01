@@ -3,8 +3,7 @@
 import {parseArgs} from "util";
 
 function showHelp() {
-	console.log(`
-Strip markdown formatting from text, optimized for text-to-speech or plain text output.
+	console.log(`strip-markdown - Strip markdown formatting from text, optimized for text-to-speech or plain text output.
 
 Usage:
     strip-markdown [options] < input.md

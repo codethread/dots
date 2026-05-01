@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+#:module: Switch to the special Pandora tmux session
+#:
+#: Usage: tmux-pandora
+
+set -euo pipefail
+
+SESSION_NAME='pandora--pandora'
+SESSION_PATH="$HOME/Library/CloudStorage/OneDrive-Vivup/_docs/notes"
+
+main() {
+	if ! command -v tmux >/dev/null 2>&1; then
+		echo 'tmux-pandora: tmux is required' >&2
+		exit 1
+	fi
+
+	if tmux has-session -t "=$SESSION_NAME" 2>/dev/null; then
+		if [[ -n "${TMUX:-}" ]]; then
+			tmux switch-client -t "$SESSION_NAME"
+		else
+			exec tmux attach-session -t "$SESSION_NAME"
+		fi
+		return
+	fi
+
+	if [[ -n "${TMUX:-}" ]] || tmux list-clients >/dev/null 2>&1; then
+		tmux new-session -d -s "$SESSION_NAME" -c "$SESSION_PATH"
+		tmux switch-client -t "$SESSION_NAME"
+	else
+		exec tmux new-session -s "$SESSION_NAME" -c "$SESSION_PATH"
+	fi
+}
+
+main "$@"

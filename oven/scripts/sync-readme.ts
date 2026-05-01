@@ -1,6 +1,6 @@
 import {$} from "bun";
-import {access, readdir, readFile, writeFile} from "fs/promises";
-import {basename, join} from "path";
+import {access, readFile, writeFile} from "fs/promises";
+import {isAbsolute, join, normalize, sep} from "path";
 import {parseArgs} from "util";
 
 interface ToolInfo {
@@ -9,24 +9,27 @@ interface ToolInfo {
 	usage?: string;
 }
 
+interface BinEntry {
+	bin: string;
+	entry: string;
+}
+
+interface BinManifest {
+	entries: BinEntry[];
+}
+
 async function main(verbose = false) {
 	try {
-		// Get all TypeScript files in bin directory
-		const binDir = join(process.cwd(), "bin");
-		const files = await readdir(binDir);
-		const tsFiles = files
-			.filter((file) => file.endsWith(".ts"))
-			.filter((file) => !file.includes(".test.")) // Exclude test files
-			.map((file) => basename(file, ".ts")); // Remove .ts extension to get executable names
+		const entries = await loadManifestEntries();
 
 		if (verbose) {
-			console.log(`Found ${tsFiles.length} TypeScript files in bin/`);
+			console.log(`Found ${entries.length} tools in bin/manifest.json`);
 			console.log("Extracting help information from built executables...");
 		}
 
 		// Extract help information from all tools in parallel
-		const toolPromises = tsFiles.map((toolName) => {
-			return extractHelpInfo(toolName);
+		const toolPromises = entries.map((entry) => {
+			return extractHelpInfo(entry.bin);
 		});
 
 		// Wait for all tools to be processed
@@ -59,6 +62,73 @@ async function main(verbose = false) {
 		console.error("Error:", error);
 		process.exit(1);
 	}
+}
+
+async function loadManifestEntries(): Promise<BinEntry[]> {
+	const manifestPath = join(process.cwd(), "bin", "manifest.json");
+	const manifest = await Bun.file(manifestPath).json();
+	assertManifestShape(manifest);
+	const entries = manifest.entries.toSorted((a, b) => a.bin.localeCompare(b.bin));
+	assertUnique(entries, "bin");
+	assertUnique(entries, "entry");
+	for (const entry of entries) {
+		assertSafeRelativeEntry(entry.entry);
+		if (!entry.entry.endsWith(".ts")) {
+			throw new Error(`Manifest entry must end with .ts: ${entry.entry}`);
+		}
+	}
+	return entries;
+}
+
+function assertManifestShape(manifest: unknown): asserts manifest is BinManifest {
+	if (!isPlainObject(manifest)) {
+		throw new Error("bin/manifest.json must be a JSON object");
+	}
+	assertKnownKeys(manifest, ["entries"], "manifest");
+	if (!Array.isArray(manifest.entries)) {
+		throw new Error("bin/manifest.json must contain an entries array");
+	}
+	manifest.entries.forEach((entry, index) => {
+		if (!isPlainObject(entry)) {
+			throw new Error(`manifest entry ${index} must be an object`);
+		}
+		assertKnownKeys(entry, ["bin", "entry"], `manifest entry ${index}`);
+		if (typeof entry.bin !== "string" || entry.bin.length === 0) {
+			throw new Error(`manifest entry ${index} must contain non-empty string bin`);
+		}
+		if (typeof entry.entry !== "string" || entry.entry.length === 0) {
+			throw new Error(`manifest entry ${index} must contain non-empty string entry`);
+		}
+	});
+}
+
+function assertKnownKeys(object: Record<string, unknown>, allowed: string[], label: string) {
+	const unknownKeys = Object.keys(object).filter((key) => !allowed.includes(key));
+	if (unknownKeys.length > 0) {
+		throw new Error(`${label} contains unknown keys: ${unknownKeys.join(", ")}`);
+	}
+}
+
+function assertUnique(entries: BinEntry[], key: keyof BinEntry) {
+	const seen = new Set<string>();
+	for (const entry of entries) {
+		const value = entry[key];
+		if (seen.has(value)) {
+			throw new Error(`Duplicate manifest ${key}: ${value}`);
+		}
+		seen.add(value);
+	}
+}
+
+function assertSafeRelativeEntry(entry: string) {
+	const normalized = normalize(entry);
+	if (isAbsolute(entry) || normalized === ".." || normalized.startsWith(`..${sep}`)) {
+		throw new Error(`Manifest entry must stay inside bin/: ${entry}`);
+	}
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 async function extractHelpInfo(toolName: string): Promise<ToolInfo | null> {
