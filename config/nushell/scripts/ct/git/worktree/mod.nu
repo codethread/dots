@@ -1,17 +1,60 @@
 use tmux.nu *
 
-# Run a wktree command that writes a JSON plan to a temp file, then return the parsed plan.
-def wktree-plan [body: closure] {
-	let result_file = (mktemp -t wktree-plan.XXXXXX)
-	do $body $result_file | ignore
-	let exit_code = ($env.LAST_EXIT_CODE? | default 0)
-	if $exit_code != 0 {
-		rm -f $result_file
+# Run a wktree command and return its structured JSON payload plus exit status.
+def wktree-outcome [body: closure] {
+	let result = (do $body | complete)
+	if $result.stderr != "" {
+		print --stderr --no-newline $result.stderr
+	}
+	let stdout = ($result.stdout | str trim)
+	let payload = if $stdout == "" { null } else { $stdout | from json }
+	{
+		exit_code: $result.exit_code
+		payload: $payload
+	}
+}
+
+def wktree-message [payload: record fallback: string] {
+	if "message" in $payload {
+		$payload.message
+	} else {
+		$fallback
+	}
+}
+
+def pick-pool-slot [branch: string candidates: list<record> force: bool] {
+	let items = ($candidates | each {|candidate|
+		let branch_name = ($candidate.branch | default "(detached)")
+		let risk = ([
+			(if $candidate.dirty { "[dirty]" } else { "" })
+			(if $candidate.ahead > 0 { $"[($candidate.ahead) ahead]" } else { "" })
+			(if $candidate.local_only { "[local-only]" } else { "" })
+		] | where {|flag| $flag != "" } | str join " ")
+		let risk_suffix = if $risk == "" { "" } else { $"  ($risk)" }
+		{
+			label: $"feat($candidate.slot)  ($branch_name)  ($candidate.path)($risk_suffix)"
+			path: $candidate.path
+			branch: $branch_name
+		}
+	})
+
+	let selection = (try {
+		$items | get label | input list --fuzzy $"Recycle which worktree for ($branch)?"
+	} catch {
+		null
+	})
+	if $selection == null or $selection == "" {
 		return null
 	}
-	let plan = (open --raw $result_file | from json)
-	rm -f $result_file
-	$plan
+	let selected = ($items | where label == $selection | first)
+	if $force {
+		return $selected
+	}
+	let answer = ((input $"Recycle ($selected.branch) at ($selected.path)? [y/N]: ") | str trim | str downcase)
+	if $answer not-in ["y", "yes"] {
+		return null
+	}
+	$selected
 }
 
 # Print the canonical/root worktree path for the current git repository.
@@ -48,16 +91,53 @@ export def --env "wk add" [
 		error make { msg: "provide either --self or an explicit base, not both" }
 	}
 
-	let plan = (wktree-plan {|result_file|
-		let selected_base = if $self { $current_branch } else { $base }
-		let args = [add --cwd $env.PWD --branch $branch --result-file $result_file]
+	let selected_base = if $self { $current_branch } else { $base }
+	let outcome = (wktree-outcome {||
+		let args = [add --cwd $env.PWD --branch $branch --json]
 		let args = if $selected_base == null { $args } else { $args | append [--base $selected_base] | flatten }
 		let args = if $force { $args | append "--force" } else { $args }
 		^wktree ...$args
 	})
 
-	if $plan == null { return }
-	wk-open-dir $plan.worktree_path $plan.title --runner-path ($plan.runner_script_path | default "")
+	if $outcome.payload == null {
+		if $outcome.exit_code != 0 {
+			error make { msg: "wktree add failed" }
+		}
+		return
+	}
+
+	match $outcome.payload.kind {
+		"ready" => {
+			wk-open-dir $outcome.payload.worktree_path $outcome.payload.title --runner-path ($outcome.payload.runner_script_path | default "")
+		}
+		"pool_full" => {
+			let selected = (pick-pool-slot $branch $outcome.payload.candidates $force)
+			if $selected == null {
+				return
+			}
+			let retry = (wktree-outcome {||
+				let args = [add --cwd $env.PWD --branch $branch --json --slot $selected.path --force]
+				let args = if $selected_base == null { $args } else { $args | append [--base $selected_base] | flatten }
+				^wktree ...$args
+			})
+			if $retry.payload == null {
+				if $retry.exit_code != 0 {
+					error make { msg: "wktree add failed" }
+				}
+				return
+			}
+			if $retry.payload.kind != "ready" {
+				error make { msg: (wktree-message $retry.payload $"wktree add returned ($retry.payload.kind)") }
+			}
+			wk-open-dir $retry.payload.worktree_path $retry.payload.title --runner-path ($retry.payload.runner_script_path | default "")
+		}
+		"blocked" => {
+			error make { msg: (wktree-message $outcome.payload "wktree add blocked") }
+		}
+		_ => {
+			error make { msg: $"unexpected wktree add result: ($outcome.payload.kind)" }
+		}
+	}
 }
 
 # Remove a non-pooled worktree, or recycle a pooled slot back to its placeholder branch.
@@ -77,8 +157,8 @@ export def --env "wk remove" [
 		cd ~
 	}
 
-	let plan = (wktree-plan {|result_file|
-		let args = [remove --cwd $cwd --result-file $result_file]
+	let outcome = (wktree-outcome {||
+		let args = [remove --cwd $cwd --json]
 		let args = if $self_path != null {
 			$args | append [--self $self_path] | flatten
 		} else if $branch != null {
@@ -90,9 +170,23 @@ export def --env "wk remove" [
 		^wktree ...$args
 	})
 
-	if $plan == null { return }
-	wk-close-dir $plan.worktree_path
-	if ($env.PWD == $plan.worktree_path or ($env.PWD | str starts-with $"($plan.worktree_path)/")) {
+	if $outcome.payload == null {
+		if $self_path != null {
+			cd $cwd
+		}
+		if $outcome.exit_code != 0 {
+			error make { msg: "wktree remove failed" }
+		}
+		return
+	}
+	if $outcome.payload.kind != "ready" {
+		if $self_path != null {
+			cd $cwd
+		}
+		error make { msg: (wktree-message $outcome.payload $"wktree remove returned ($outcome.payload.kind)") }
+	}
+	wk-close-dir $outcome.payload.worktree_path
+	if ($env.PWD == $outcome.payload.worktree_path or ($env.PWD | str starts-with $"($outcome.payload.worktree_path)/")) {
 		cd ~
 	}
 }
