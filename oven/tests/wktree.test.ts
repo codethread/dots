@@ -11,12 +11,13 @@ import {
 	writeFileSync,
 } from "node:fs";
 import {homedir, tmpdir} from "node:os";
-import {join, resolve} from "node:path";
+import {basename, join, resolve} from "node:path";
 import type {Deps} from "../bin/wktree";
 import {
 	buildPoolState,
 	ConfigError,
 	dispatch,
+	EXIT_CODES,
 	generateRunnerScript,
 	HookError,
 	LiveHookRunner,
@@ -54,9 +55,9 @@ describe("wktree dispatch", () => {
 		expect(result.stdout).toContain("Usage: wktree <subcommand>");
 	});
 
-	test("prints usage with exit code 1 for unknown subcommands", async () => {
+	test("prints usage with exit code 12 for unknown subcommands", async () => {
 		const result = await dispatch("somebogus", [], deps);
-		expect(result.exitCode).toBe(1);
+		expect(result.exitCode).toBe(12);
 		expect(result.stderr).toContain("Usage: wktree <subcommand>");
 	});
 });
@@ -367,29 +368,29 @@ integrationDescribe("wktree non-pool add", () => {
 		rmSync(tmp, {recursive: true, force: true});
 	});
 
-	test("adds a new branch, writes snake_case AddPlan, and runner is re-executable", async () => {
+	test("adds a new branch, writes ready JSON to stdout, and runner is re-executable", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, `echo hook > "$WK_CREATED/hook-sentinel"`);
-		const resultFile = join(tmp, "plan.json");
 
-		const result = await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/new", "--result-file", resultFile],
-			deps,
-		);
+		const result = await dispatch("add", ["--cwd", root, "--branch", "feature/new", "--json"], deps);
 
 		expect(result.exitCode).toBe(0);
 		const worktreePath = `${root}__feature--new`;
 		expect(existsSync(join(worktreePath, ".git"))).toBe(true);
-		const plan = JSON.parse(readFileSync(resultFile, "utf8"));
+		const plan = JSON.parse(result.stdout ?? "{}");
 		expect(plan).toMatchObject({
+			kind: "ready",
 			worktree_path: worktreePath,
 			branch: "feature/new",
 			root,
 			title: "feature/new",
 			created_new_branch: true,
+			session: {
+				name: basename(worktreePath).replaceAll(".", "_"),
+				path: worktreePath,
+			},
 		});
-		expect(plan.runner_script_path).toContain(".runner.sh");
+		expect(plan.runner_script_path).toContain(`/${plan.session.name}.runner.sh`);
 		await run(["bash", plan.runner_script_path]);
 		await run(["bash", plan.runner_script_path]);
 		expect(readFileSync(join(worktreePath, "hook-sentinel"), "utf8")).toBe("hook\n");
@@ -419,16 +420,15 @@ integrationDescribe("wktree non-pool add", () => {
 		const {root, remote} = await initRepoWithOrigin(tmp);
 		await setup(root, remote);
 		writeConfig(tmp, root, "echo ready");
-		const resultFile = join(tmp, `${branch.replaceAll("/", "-")}.json`);
 
 		const result = await dispatch(
 			"add",
-			["--cwd", root, "--branch", branch, "--result-file", resultFile],
+			["--cwd", root, "--branch", branch, "--json"],
 			deps,
 		);
 
 		expect(result.exitCode).toBe(0);
-		expect(JSON.parse(readFileSync(resultFile, "utf8")).worktree_path).toBe(
+		expect(JSON.parse(result.stdout ?? "{}").worktree_path).toBe(
 			`${root}__${branch.replaceAll("/", "--")}`,
 		);
 	});
@@ -448,7 +448,7 @@ integrationDescribe("wktree non-pool add", () => {
 
 		const result = await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/diverged", "--result-file", join(tmp, "diverged.json")],
+			["--cwd", root, "--branch", "feature/diverged", "--json"],
 			warnDeps,
 		);
 
@@ -466,7 +466,7 @@ integrationDescribe("wktree non-pool add", () => {
 
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/default-base", "--result-file", join(tmp, "default-base.json")],
+			["--cwd", root, "--branch", "feature/default-base", "--json"],
 			deps,
 		);
 
@@ -493,8 +493,7 @@ integrationDescribe("wktree non-pool add", () => {
 				"feature/from-base",
 				"--base",
 				"base/topic",
-				"--result-file",
-				join(tmp, "base.json"),
+				"--json",
 			],
 			warnDeps,
 		);
@@ -515,8 +514,7 @@ integrationDescribe("wktree non-pool add", () => {
 				"feature/from-local-base",
 				"--base",
 				"local/base",
-				"--result-file",
-				join(tmp, "local-base.json"),
+				"--json",
 			],
 			warnDeps,
 		);
@@ -533,8 +531,7 @@ integrationDescribe("wktree non-pool add", () => {
 				"feature/from-base",
 				"--base",
 				"base/topic",
-				"--result-file",
-				join(tmp, "base-ignored.json"),
+				"--json",
 			],
 			warnDeps,
 		).catch(() => undefined);
@@ -546,7 +543,7 @@ integrationDescribe("wktree non-pool add", () => {
 		writeConfig(tmp, root, "echo ready");
 		const result = await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/force", "--force", "--result-file", join(tmp, "force.json")],
+			["--cwd", root, "--branch", "feature/force", "--force", "--json"],
 			deps,
 		);
 
@@ -557,15 +554,14 @@ integrationDescribe("wktree non-pool add", () => {
 	test("without project config runner_script_path is null", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		process.env.XDG_CONFIG_HOME = join(tmp, "empty-config");
-		const resultFile = join(tmp, "plan.json");
 
-		await dispatch(
+		const result = await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/no-project", "--result-file", resultFile],
+			["--cwd", root, "--branch", "feature/no-project", "--json"],
 			deps,
 		);
 
-		expect(JSON.parse(readFileSync(resultFile, "utf8")).runner_script_path).toBeNull();
+		expect(JSON.parse(result.stdout ?? "{}").runner_script_path).toBeNull();
 	});
 
 	test("rejects reserved pool branch prefix", async () => {
@@ -573,7 +569,7 @@ integrationDescribe("wktree non-pool add", () => {
 		await expect(
 			dispatch(
 				"add",
-				["--cwd", root, "--branch", "wk-pool/feat1", "--result-file", join(tmp, "x.json")],
+				["--cwd", root, "--branch", "wk-pool/feat1", "--json"],
 				deps,
 			),
 		).rejects.toThrow("reserved");
@@ -600,25 +596,30 @@ integrationDescribe("wktree non-pool remove", () => {
 		writeConfig(tmp, root, "echo ready");
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/remove", "--result-file", join(tmp, "add.json")],
+			["--cwd", root, "--branch", "feature/remove", "--json"],
 			deps,
 		);
-		const resultFile = join(tmp, "remove.json");
 
 		const result = await dispatch(
 			"remove",
-			["--cwd", root, "--branch", "feature/remove", "--result-file", resultFile],
+			["--cwd", root, "--branch", "feature/remove", "--json"],
 			deps,
 		);
 
 		expect(result.exitCode).toBe(0);
+		const plan = JSON.parse(result.stdout ?? "{}");
 		expect(existsSync(`${root}__feature--remove`)).toBe(false);
 		expect(
 			(await runRaw(["git", "-C", root, "show-ref", "--verify", "refs/heads/feature/remove"])).exitCode,
 		).not.toBe(0);
-		expect(JSON.parse(readFileSync(resultFile, "utf8"))).toEqual({
+		expect(plan).toMatchObject({
+			kind: "ready",
 			worktree_path: `${root}__feature--remove`,
 			removed: true,
+			session: {
+				name: "repo__feature--remove",
+				path: `${root}__feature--remove`,
+			},
 		});
 	});
 
@@ -627,13 +628,13 @@ integrationDescribe("wktree non-pool remove", () => {
 		writeConfig(tmp, root, "echo ready");
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/self", "--result-file", join(tmp, "add.json")],
+			["--cwd", root, "--branch", "feature/self", "--json"],
 			deps,
 		);
 
 		await dispatch(
 			"remove",
-			["--cwd", root, "--self", `${root}__feature--self`, "--result-file", join(tmp, "self.json")],
+			["--cwd", root, "--self", `${root}__feature--self`, "--json"],
 			deps,
 		);
 
@@ -643,11 +644,11 @@ integrationDescribe("wktree non-pool remove", () => {
 	test("removes non-pool branches whose encoded paths resemble pool slots", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready");
-		await dispatch("add", ["--cwd", root, "--branch", "feat1", "--result-file", join(tmp, "add.json")], deps);
+		await dispatch("add", ["--cwd", root, "--branch", "feat1", "--json"], deps);
 
 		await dispatch(
 			"remove",
-			["--cwd", root, "--branch", "feat1", "--result-file", join(tmp, "feat1.json")],
+			["--cwd", root, "--branch", "feat1", "--json"],
 			deps,
 		);
 
@@ -659,25 +660,30 @@ integrationDescribe("wktree non-pool remove", () => {
 		writeConfig(tmp, root, "echo ready");
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/unmerged", "--result-file", join(tmp, "add.json")],
+			["--cwd", root, "--branch", "feature/unmerged", "--json"],
 			deps,
 		);
 		writeFileSync(join(`${root}__feature--unmerged`, "unmerged.txt"), "work\n");
 		await run(["git", "-C", `${root}__feature--unmerged`, "add", "unmerged.txt"]);
 		await run(["git", "-C", `${root}__feature--unmerged`, "commit", "-m", "unmerged"]);
 
-		await expect(
-			dispatch(
-				"remove",
-				["--cwd", root, "--branch", "feature/unmerged", "--result-file", join(tmp, "fail.json")],
-				deps,
-			),
-		).rejects.toThrow("not merged");
+		const blocked = await dispatch(
+			"remove",
+			["--cwd", root, "--branch", "feature/unmerged", "--json"],
+			deps,
+		);
+		expect(blocked.exitCode).toBe(EXIT_CODES.UNSAFE);
+		expect(JSON.parse(blocked.stdout ?? "{}")).toMatchObject({
+			kind: "blocked",
+			reason: "unmerged_branch",
+			branch: "feature/unmerged",
+			worktree_path: `${root}__feature--unmerged`,
+		});
 		expect(existsSync(`${root}__feature--unmerged`)).toBe(true);
 
 		await dispatch(
 			"remove",
-			["--cwd", root, "--branch", "feature/unmerged", "--force", "--result-file", join(tmp, "force.json")],
+			["--cwd", root, "--branch", "feature/unmerged", "--force", "--json"],
 			deps,
 		);
 		expect(existsSync(`${root}__feature--unmerged`)).toBe(false);
@@ -686,17 +692,48 @@ integrationDescribe("wktree non-pool remove", () => {
 		).not.toBe(0);
 	});
 
+	test("machine json remove reports blocked outcomes with unsafe exit codes", async () => {
+		const {root} = await initRepoWithOrigin(tmp);
+		writeConfig(tmp, root, "echo ready");
+		await dispatch(
+			"add",
+			["--cwd", root, "--branch", "feature/unmerged-json", "--json"],
+			deps,
+		);
+		writeFileSync(join(`${root}__feature--unmerged-json`, "unmerged.txt"), "work\n");
+		await run(["git", "-C", `${root}__feature--unmerged-json`, "add", "unmerged.txt"]);
+		await run(["git", "-C", `${root}__feature--unmerged-json`, "commit", "-m", "unmerged"]);
+
+		const result = await dispatch(
+			"remove",
+			["--cwd", root, "--branch", "feature/unmerged-json", "--json"],
+			deps,
+		);
+
+		expect(result.exitCode).toBe(EXIT_CODES.UNSAFE);
+		expect(JSON.parse(result.stdout ?? "{}")).toMatchObject({
+			kind: "blocked",
+			reason: "unmerged_branch",
+			branch: "feature/unmerged-json",
+			worktree_path: `${root}__feature--unmerged-json`,
+		});
+		expect(existsSync(`${root}__feature--unmerged-json`)).toBe(true);
+	});
+
 	test("refuses canonical root and non-worktree targets", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready");
 
-		await expect(
-			dispatch("remove", ["--cwd", root, "--self", root, "--result-file", join(tmp, "root.json")], deps),
-		).rejects.toThrow("canonical root");
+		const canonicalRoot = await dispatch("remove", ["--cwd", root, "--self", root, "--json"], deps);
+		expect(canonicalRoot.exitCode).toBe(EXIT_CODES.UNSAFE);
+		expect(JSON.parse(canonicalRoot.stdout ?? "{}")).toMatchObject({
+			kind: "blocked",
+			reason: "canonical_root",
+		});
 		await expect(
 			dispatch(
 				"remove",
-				["--cwd", root, "--self", join(tmp, "missing"), "--result-file", join(tmp, "missing.json")],
+				["--cwd", root, "--self", join(tmp, "missing"), "--json"],
 				deps,
 			),
 		).rejects.toThrow("not a git worktree");
@@ -913,15 +950,14 @@ integrationDescribe("wktree pooled add", () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "touch pooled-sentinel", 2);
 		await dispatch("ensure", ["--cwd", root], testDeps());
-		const resultFile = join(tmp, "plan.json");
 
-		await dispatch(
+		const result = await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/pooled", "--result-file", resultFile],
+			["--cwd", root, "--branch", "feature/pooled", "--json"],
 			testDeps(),
 		);
 
-		const plan = JSON.parse(readFileSync(resultFile, "utf8"));
+		const plan = JSON.parse(result.stdout ?? "{}");
 		const runnerScriptPath = plan.runner_script_path as string;
 		expect(plan).toMatchObject({
 			worktree_path: `${root}__feat1`,
@@ -956,7 +992,7 @@ integrationDescribe("wktree pooled add", () => {
 
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", branch, "--result-file", join(tmp, "plan.json")],
+			["--cwd", root, "--branch", branch, "--json"],
 			testDeps(),
 		);
 
@@ -980,17 +1016,13 @@ integrationDescribe("wktree pooled add", () => {
 
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/diverged-pool", "--result-file", join(tmp, "diverged.json")],
+			["--cwd", root, "--branch", "feature/diverged-pool", "--json"],
 			warnDeps,
 		);
 		expect(warnings.join("\n")).toContain("couldn't fast-forward");
 
 		await expect(
-			dispatch(
-				"add",
-				["--cwd", root, "--branch", "feature/diverged-pool", "--result-file", join(tmp, "dup.json")],
-				testDeps(),
-			),
+			dispatch("add", ["--cwd", root, "--branch", "feature/diverged-pool", "--json"], testDeps()),
 		).rejects.toThrow(`${root}__feat1`);
 		expect((await run(["git", "-C", `${root}__feat2`, "branch", "--show-current"])).stdout.trim()).toBe(
 			"wk-pool/feat2",
@@ -1004,14 +1036,14 @@ integrationDescribe("wktree pooled add", () => {
 		await expect(
 			dispatch(
 				"add",
-				["--cwd", root, "--branch", "main", "--result-file", join(tmp, "main.json")],
+				["--cwd", root, "--branch", "main", "--json"],
 				testDeps(),
 			),
 		).rejects.toThrow(root);
 		await expect(
 			dispatch(
 				"add",
-				["--cwd", root, "--branch", "wk-pool/feat9", "--result-file", join(tmp, "reserved.json")],
+				["--cwd", root, "--branch", "wk-pool/feat9", "--json"],
 				testDeps(),
 			),
 		).rejects.toThrow("reserved");
@@ -1036,8 +1068,7 @@ integrationDescribe("wktree pooled add", () => {
 				"feature/from-base",
 				"--base",
 				"base/pool",
-				"--result-file",
-				join(tmp, "base.json"),
+				"--json",
 			],
 			warnDeps,
 		);
@@ -1060,75 +1091,147 @@ integrationDescribe("wktree pooled add", () => {
 				"feature/existing-base",
 				"--base",
 				"base/pool",
-				"--result-file",
-				join(tmp, "ignored.json"),
+				"--json",
 			],
 			warnDeps,
 		);
 		expect(warnings.join("\n")).toContain("--base ignored");
 	});
 
-	test("pool full picker recycles selected slot and allocates", async () => {
+	test("machine json add reports pool_full and --slot selects a specific slot", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready", 1);
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/one", "--result-file", join(tmp, "one.json")],
+			["--cwd", root, "--branch", "feature/one", "--json"],
+			testDeps(),
+		);
+
+		const blocked = await dispatch(
+			"add",
+			["--cwd", root, "--branch", "feature/two", "--json"],
+			testDeps({picker: new TestPicker(null, true)}),
+		);
+
+		expect(blocked.exitCode).toBe(EXIT_CODES.BLOCKED);
+		expect(JSON.parse(blocked.stdout ?? "{}")).toMatchObject({
+			kind: "pool_full",
+			root,
+			branch: "feature/two",
+			candidates: [
+				{
+					slot: 1,
+					path: `${root}__feat1`,
+					branch: "feature/one",
+					dirty: false,
+					local_only: true,
+				},
+			],
+		});
+
+		const selected = await dispatch(
+			"add",
+			["--cwd", root, "--branch", "feature/two", "--json", "--slot", `${root}__feat1`, "--force"],
+			testDeps({picker: new TestPicker(null, true)}),
+		);
+
+		expect(selected.exitCode).toBe(EXIT_CODES.SUCCESS);
+		expect(JSON.parse(selected.stdout ?? "{}")).toMatchObject({
+			kind: "ready",
+			worktree_path: `${root}__feat1`,
+			branch: "feature/two",
+			session: {name: "repo__feat1", path: `${root}__feat1`},
+		});
+		expect((await run(["git", "-C", `${root}__feat1`, "branch", "--show-current"])).stdout.trim()).toBe(
+			"feature/two",
+		);
+	});
+
+	test("machine json pool_full bypasses picker and leaves the occupied slot untouched", async () => {
+		const {root} = await initRepoWithOrigin(tmp);
+		writeConfig(tmp, root, "echo ready", 1);
+		await dispatch(
+			"add",
+			["--cwd", root, "--branch", "feature/one", "--json"],
 			testDeps(),
 		);
 		await run(["git", "-C", `${root}__feat1`, "branch", "--set-upstream-to", "origin/main", "feature/one"]);
 		const picker = new TestPicker("1", true);
 
-		await dispatch(
+		const blocked = await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/two", "--result-file", join(tmp, "two.json")],
+			["--cwd", root, "--branch", "feature/two", "--json"],
 			testDeps({picker}),
 		);
 
+		expect(blocked.exitCode).toBe(EXIT_CODES.BLOCKED);
+		expect(JSON.parse(blocked.stdout ?? "{}")).toMatchObject({
+			kind: "pool_full",
+			branch: "feature/two",
+			candidates: [{slot: 1, path: `${root}__feat1`, branch: "feature/one"}],
+		});
 		expect((await run(["git", "-C", `${root}__feat1`, "branch", "--show-current"])).stdout.trim()).toBe(
-			"feature/two",
+			"feature/one",
 		);
-		expect(picker.items[0]?.display).toContain("feature/one");
-		expect(picker.items[0]?.preview).toContain("rev-list --left-right --count");
+		expect(picker.items).toEqual([]);
+		expect(picker.confirmCalls).toBe(0);
 	});
 
-	test("pool full cancel and confirm-no exit 130 without side effects; --force skips confirm", async () => {
+	test("machine json pool_full ignores picker state and --force without mutating the slot", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready", 1);
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/one", "--result-file", join(tmp, "one.json")],
+			["--cwd", root, "--branch", "feature/one", "--json"],
 			testDeps(),
 		);
-		await expect(
-			dispatch(
-				"add",
-				["--cwd", root, "--branch", "feature/cancel", "--result-file", join(tmp, "cancel.json")],
-				testDeps({picker: new TestPicker(null, true)}),
-			),
-		).rejects.toThrow("cancelled");
-		expect((await run(["git", "-C", `${root}__feat1`, "branch", "--show-current"])).stdout.trim()).toBe(
-			"feature/one",
-		);
-		await expect(
-			dispatch(
-				"add",
-				["--cwd", root, "--branch", "feature/no", "--result-file", join(tmp, "no.json")],
-				testDeps({picker: new TestPicker("1", false)}),
-			),
-		).rejects.toThrow("cancelled");
-		expect((await run(["git", "-C", `${root}__feat1`, "branch", "--show-current"])).stdout.trim()).toBe(
-			"feature/one",
-		);
-		const picker = new TestPicker("1", false);
-		await dispatch(
+
+		const cancelPicker = new TestPicker(null, true);
+		const cancelBlocked = await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/forced", "--force", "--result-file", join(tmp, "forced.json")],
-			testDeps({picker}),
+			["--cwd", root, "--branch", "feature/cancel", "--json"],
+			testDeps({picker: cancelPicker}),
 		);
-		expect(picker.confirmCalls).toBe(0);
+		expect(cancelBlocked.exitCode).toBe(EXIT_CODES.BLOCKED);
+		expect(JSON.parse(cancelBlocked.stdout ?? "{}")).toMatchObject({
+			kind: "pool_full",
+			branch: "feature/cancel",
+		});
+		expect(cancelPicker.items).toEqual([]);
+		expect(cancelPicker.confirmCalls).toBe(0);
 		expect((await run(["git", "-C", `${root}__feat1`, "branch", "--show-current"])).stdout.trim()).toBe(
-			"feature/forced",
+			"feature/one",
+		);
+
+		const noPicker = new TestPicker("1", false);
+		const noBlocked = await dispatch(
+			"add",
+			["--cwd", root, "--branch", "feature/no", "--json"],
+			testDeps({picker: noPicker}),
+		);
+		expect(noBlocked.exitCode).toBe(EXIT_CODES.BLOCKED);
+		expect(JSON.parse(noBlocked.stdout ?? "{}")).toMatchObject({kind: "pool_full", branch: "feature/no"});
+		expect(noPicker.items).toEqual([]);
+		expect(noPicker.confirmCalls).toBe(0);
+		expect((await run(["git", "-C", `${root}__feat1`, "branch", "--show-current"])).stdout.trim()).toBe(
+			"feature/one",
+		);
+
+		const forcePicker = new TestPicker("1", false);
+		const forceBlocked = await dispatch(
+			"add",
+			["--cwd", root, "--branch", "feature/forced", "--force", "--json"],
+			testDeps({picker: forcePicker}),
+		);
+		expect(forceBlocked.exitCode).toBe(EXIT_CODES.BLOCKED);
+		expect(JSON.parse(forceBlocked.stdout ?? "{}")).toMatchObject({
+			kind: "pool_full",
+			branch: "feature/forced",
+		});
+		expect(forcePicker.items).toEqual([]);
+		expect(forcePicker.confirmCalls).toBe(0);
+		expect((await run(["git", "-C", `${root}__feat1`, "branch", "--show-current"])).stdout.trim()).toBe(
+			"feature/one",
 		);
 	});
 });
@@ -1154,7 +1257,7 @@ integrationDescribe("wktree recycle", () => {
 		writeConfig(tmp, root, "echo ready", 1);
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/safe", "--result-file", join(tmp, "add.json")],
+			["--cwd", root, "--branch", "feature/safe", "--json"],
 			testDeps(),
 		);
 		await run([
@@ -1166,11 +1269,10 @@ integrationDescribe("wktree recycle", () => {
 			"origin/feature/safe",
 			"feature/safe",
 		]);
-		const resultFile = join(tmp, "remove.json");
 
-		await dispatch(
+		const result = await dispatch(
 			"remove",
-			["--cwd", root, "--branch", "feature/safe", "--result-file", resultFile],
+			["--cwd", root, "--branch", "feature/safe", "--json"],
 			testDeps(),
 		);
 
@@ -1181,9 +1283,14 @@ integrationDescribe("wktree recycle", () => {
 		expect(
 			(await runRaw(["git", "-C", root, "show-ref", "--verify", "refs/heads/feature/safe"])).exitCode,
 		).not.toBe(0);
-		expect(JSON.parse(readFileSync(resultFile, "utf8"))).toEqual({
+		expect(JSON.parse(result.stdout ?? "{}")).toMatchObject({
+			kind: "ready",
 			worktree_path: `${root}__feat1`,
 			removed: false,
+			session: {
+				name: "repo__feat1",
+				path: `${root}__feat1`,
+			},
 		});
 	});
 
@@ -1192,7 +1299,7 @@ integrationDescribe("wktree recycle", () => {
 		writeConfig(tmp, root, "echo ready", 1);
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/dirty", "--result-file", join(tmp, "add.json")],
+			["--cwd", root, "--branch", "feature/dirty", "--json"],
 			testDeps(),
 		);
 		writeFileSync(join(`${root}__feat1`, "dirty.txt"), "dirty\n");
@@ -1216,7 +1323,7 @@ integrationDescribe("wktree recycle", () => {
 		writeConfig(tmp, root, "echo ready", 1);
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/force-recycle", "--result-file", join(tmp, "add.json")],
+			["--cwd", root, "--branch", "feature/force-recycle", "--json"],
 			testDeps(),
 		);
 		writeFileSync(join(`${root}__feat1`, "tracked.txt"), "tracked\n");
@@ -1246,7 +1353,7 @@ integrationDescribe("wktree recycle", () => {
 		writeConfig(tmp, root, "echo ready", 1);
 		await dispatch(
 			"add",
-			["--cwd", root, "--branch", "feature/upstream-blocked", "--result-file", join(tmp, "add.json")],
+			["--cwd", root, "--branch", "feature/upstream-blocked", "--json"],
 			testDeps(),
 		);
 		await expect(
@@ -1362,13 +1469,13 @@ integrationDescribe("wktree ensure", () => {
 		expect(listResult.stdout).toContain("[pool:free]");
 		expect(existsSync(join(`${root}__feat1`, "ensured"))).toBe(true);
 
-		await expect(
-			dispatch(
-				"remove",
-				["--cwd", root, "--self", `${root}__feat1`, "--result-file", join(tmp, "remove.json")],
-				testDeps(),
-			),
-		).rejects.toThrow("uncommitted changes");
+		const blocked = await dispatch("remove", ["--cwd", root, "--self", `${root}__feat1`, "--json"], testDeps());
+		expect(blocked.exitCode).toBe(EXIT_CODES.UNSAFE);
+		expect(JSON.parse(blocked.stdout ?? "{}")).toMatchObject({
+			kind: "blocked",
+			reason: "dirty_slot",
+			worktree_path: `${root}__feat1`,
+		});
 	});
 });
 

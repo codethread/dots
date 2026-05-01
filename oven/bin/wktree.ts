@@ -1,4 +1,11 @@
 // :module: Reusable git worktree pool manager
+// Exit-code taxonomy:
+//   0   success / ready
+//   10  blocked / recoverable state (for example `pool_full`)
+//   11  unsafe operation refused without explicit force
+//   12  usage or config error
+//   130 cancelled by picker / user
+//   1   unexpected runtime or hook failure
 
 import {
 	closeSync,
@@ -8,11 +15,10 @@ import {
 	readFileSync,
 	readSync,
 	realpathSync,
-	renameSync,
 	writeFileSync,
 } from "node:fs";
 import {homedir} from "node:os";
-import {basename, dirname, resolve} from "node:path";
+import {basename, resolve} from "node:path";
 import {TOML} from "bun";
 import {fzf} from "../shared/fzf";
 import {type GitRunner, LiveGitRunner} from "../shared/git/executor";
@@ -84,6 +90,56 @@ export interface RemovePlan {
 	removed: boolean;
 }
 
+export interface SessionInfo {
+	name: string;
+	path: string;
+}
+
+export interface ReadyAddPayload {
+	kind: "ready";
+	worktree_path: string;
+	branch: string;
+	root: string;
+	title: string;
+	session: SessionInfo;
+	runner_script_path: string | null;
+	created_new_branch: boolean;
+}
+
+export interface ReadyRemovePayload {
+	kind: "ready";
+	worktree_path: string;
+	removed: boolean;
+	session: SessionInfo;
+}
+
+export interface PoolFullCandidate {
+	slot: number;
+	path: string;
+	branch: string | null;
+	dirty: boolean;
+	ahead: number;
+	local_only: boolean;
+	last_commit_iso: string | null;
+	last_commit_subject: string | null;
+}
+
+export interface PoolFullPayload {
+	kind: "pool_full";
+	root: string;
+	branch: string;
+	candidates: PoolFullCandidate[];
+}
+
+export interface BlockedPayload {
+	kind: "blocked";
+	reason: string;
+	message: string;
+	branch?: string;
+	worktree_path?: string;
+	slot_path?: string;
+}
+
 export interface RunnerScriptSpec {
 	projectName: string;
 	root: string;
@@ -92,40 +148,63 @@ export interface RunnerScriptSpec {
 	pooled: boolean;
 }
 
+export const EXIT_CODES = {
+	SUCCESS: 0,
+	BLOCKED: 10,
+	UNSAFE: 11,
+	USAGE: 12,
+	CANCELLED: 130,
+	FAILURE: 1,
+} as const;
+
 export class WktreeError extends Error {
 	constructor(
 		message: string,
-		public exitCode = 1,
+		public exitCode: number = EXIT_CODES.FAILURE,
 	) {
 		super(message);
 		this.name = new.target.name;
 	}
 }
 
-export class ConfigError extends WktreeError {
+export class UsageError extends WktreeError {
 	constructor(message: string) {
-		super(message, 2);
+		super(message, EXIT_CODES.USAGE);
 	}
 }
+
+export class BlockedError extends WktreeError {
+	constructor(message: string) {
+		super(message, EXIT_CODES.BLOCKED);
+	}
+}
+
+export class UnsafeOperationError extends WktreeError {
+	constructor(message: string) {
+		super(message, EXIT_CODES.UNSAFE);
+	}
+}
+
+export class ConfigError extends UsageError {}
 export class PickerCancelled extends WktreeError {
 	constructor() {
-		super("cancelled", 130);
+		super("cancelled", EXIT_CODES.CANCELLED);
 	}
 }
-export class DuplicateBranchError extends WktreeError {}
-export class DirtySlotError extends WktreeError {}
-export class UnmergedBranchError extends WktreeError {}
-export class ReservedPrefixError extends WktreeError {}
-export class CanonicalRootError extends WktreeError {}
+export class DuplicateBranchError extends BlockedError {}
+export class DirtySlotError extends UnsafeOperationError {}
+export class UnmergedBranchError extends UnsafeOperationError {}
+export class ReservedPrefixError extends UsageError {}
+export class CanonicalRootError extends UnsafeOperationError {}
 export class HookError extends WktreeError {
 	constructor(
 		public hookExitCode: number,
 		public slotPath: string,
 	) {
-		super(`hook failed in ${slotPath} (${hookExitCode})`);
+		super(`hook failed in ${slotPath} (${hookExitCode})`, EXIT_CODES.FAILURE);
 	}
 }
-export class TrunkDetectionError extends WktreeError {}
+export class TrunkDetectionError extends UsageError {}
 
 export interface HookRunner {
 	runInline(
@@ -213,6 +292,10 @@ export interface CommandResult {
 	exitCode: number;
 }
 
+interface OutputMode {
+	json: boolean;
+}
+
 export async function dispatch(
 	subcommand: string | undefined,
 	args: string[],
@@ -240,7 +323,7 @@ export async function dispatch(
 		case "recycle":
 			return recycleCommand(args, deps);
 		default:
-			return {stderr: USAGE, exitCode: 1};
+			return {stderr: USAGE, exitCode: EXIT_CODES.USAGE};
 	}
 }
 
@@ -254,7 +337,7 @@ async function main() {
 		if (result.stderr) process.stderr.write(result.stderr);
 		process.exit(result.exitCode);
 	} catch (error) {
-		const exitCode = error instanceof WktreeError ? error.exitCode : 1;
+		const exitCode = error instanceof WktreeError ? error.exitCode : EXIT_CODES.FAILURE;
 		const message = error instanceof Error ? error.message : String(error);
 		process.stderr.write(`${message}\n`);
 		process.exit(exitCode);
@@ -338,7 +421,7 @@ async function pathCommand(args: string[], deps: Deps) {
 	if (project?.poolSize) {
 		const state = await buildPoolState(project, await listWorktrees(deps.git, canonicalRoot), deps.git);
 		const slot = state.slots.find((candidate) => candidate.branch === branch);
-		if (!slot) throw new WktreeError(`no pooled worktree found for branch ${branch}`);
+		if (!slot) throw new BlockedError(`no pooled worktree found for branch ${branch}`);
 		return {stdout: `${slot.path}\n`, exitCode: 0};
 	}
 	return {stdout: `${canonicalRoot}__${encodeBranch(branch)}\n`, exitCode: 0};
@@ -348,57 +431,75 @@ async function addCommand(args: string[], deps: Deps) {
 	const opts = parseOptions(args);
 	const cwd = requireOption(opts, "cwd");
 	const branch = requireOption(opts, "branch");
-	const resultFile = requireOption(opts, "result-file");
+	const output = parseOutputMode(opts);
+	const machineDeps = withMachineJsonProgress(deps, output);
+	const slotPath = typeof opts.slot === "string" ? opts.slot : null;
 	const base = typeof opts.base === "string" ? opts.base : null;
-	if (branch.startsWith("wk-pool/"))
+	if (branch.startsWith("wk-pool/")) {
 		throw new ReservedPrefixError("branch names starting with wk-pool/ are reserved");
-
-	const canonicalRoot = await resolveCanonicalRoot(deps.git, cwd);
-	const project = findProjectForRoot(readConfig(), canonicalRoot);
-	if (project?.poolSize)
-		return addPooledWorktree({
-			deps,
-			project,
-			root: canonicalRoot,
-			branch,
-			resultFile,
-			base,
-			force: opts.force === true,
-		});
-
-	const worktreePath = `${canonicalRoot}__${encodeBranch(branch)}`;
-	if (normalizeExistingPath(worktreePath) === normalizeExistingPath(canonicalRoot)) {
-		throw new CanonicalRootError("refusing to use canonical root as worktree target");
 	}
 
-	await deps.git.run(["-C", canonicalRoot, "fetch", "origin"]);
-	const branchState = await detectBranchState(deps.git, canonicalRoot, branch);
-	const defaultBase =
-		branchState === "none" && !base ? await detectOriginDefaultBranch(deps.git, canonicalRoot) : null;
-	await addNonPoolWorktree({
-		git: deps.git,
-		root: canonicalRoot,
-		path: worktreePath,
-		branch,
-		state: branchState,
-		base: base ?? defaultBase,
-		progress: deps.progress,
-	});
-	await mergeOriginIfPresent({git: deps.git, worktreePath, branch, progress: deps.progress});
+	try {
+		const canonicalRoot = await resolveCanonicalRoot(machineDeps.git, cwd);
+		const project = findProjectForRoot(readConfig(), canonicalRoot);
+		if (slotPath && !project?.poolSize) {
+			throw new UsageError("--slot is only valid for pooled projects");
+		}
+		if (project?.poolSize) {
+			return addPooledWorktree({
+				deps: machineDeps,
+				project,
+				root: canonicalRoot,
+				branch,
+				slotPath,
+				output,
+				base,
+				force: opts.force === true,
+			});
+		}
 
-	const runnerScriptPath = project
-		? writeRunnerFiles({project, root: canonicalRoot, created: worktreePath, branch, pooled: false})
-		: null;
-	const plan: AddPlan = {
-		worktreePath,
-		branch,
-		root: canonicalRoot,
-		title: branch,
-		runnerScriptPath,
-		createdNewBranch: branchState === "none",
-	};
-	writeJsonAtomic(resultFile, toSnakeAddPlan(plan));
-	return {exitCode: 0};
+		const worktreePath = `${canonicalRoot}__${encodeBranch(branch)}`;
+		if (normalizeExistingPath(worktreePath) === normalizeExistingPath(canonicalRoot)) {
+			throw new CanonicalRootError("refusing to use canonical root as worktree target");
+		}
+
+		await machineDeps.git.run(["-C", canonicalRoot, "fetch", "origin"]);
+		const branchState = await detectBranchState(machineDeps.git, canonicalRoot, branch);
+		const defaultBase =
+			branchState === "none" && !base ? await detectOriginDefaultBranch(machineDeps.git, canonicalRoot) : null;
+		await addNonPoolWorktree({
+			git: machineDeps.git,
+			root: canonicalRoot,
+			path: worktreePath,
+			branch,
+			state: branchState,
+			base: base ?? defaultBase,
+			progress: machineDeps.progress,
+		});
+		await mergeOriginIfPresent({
+			git: machineDeps.git,
+			worktreePath,
+			branch,
+			progress: machineDeps.progress,
+		});
+
+		const runnerScriptPath = project
+			? writeRunnerFiles({project, root: canonicalRoot, created: worktreePath, branch, pooled: false})
+			: null;
+		const plan: AddPlan = {
+			worktreePath,
+			branch,
+			root: canonicalRoot,
+			title: branch,
+			runnerScriptPath,
+			createdNewBranch: branchState === "none",
+		};
+		return finalizeStructuredResult(toAddPayload(plan), output);
+	} catch (error) {
+		const blocked = toBlockedCommandResult(error, output, {branch, slot_path: slotPath ?? undefined});
+		if (blocked) return blocked;
+		throw error;
+	}
 }
 
 async function addPooledWorktree(options: {
@@ -406,11 +507,12 @@ async function addPooledWorktree(options: {
 	project: ProjectConfig;
 	root: string;
 	branch: string;
-	resultFile: string;
+	slotPath: string | null;
+	output: OutputMode;
 	base: string | null;
 	force: boolean;
 }): Promise<CommandResult> {
-	const {deps, project, root, branch, resultFile, base, force} = options;
+	const {deps, project, root, branch, slotPath, output, base, force} = options;
 	let worktrees = await listWorktrees(deps.git, root);
 	for (const worktree of worktrees) {
 		if (worktree.branch === branch) {
@@ -425,13 +527,36 @@ async function addPooledWorktree(options: {
 		}
 	}
 	await deps.git.run(["-C", root, "fetch", "origin"]);
-	const state = await buildPoolState(project, worktrees, deps.git);
-	const slot = state.slots.find(
-		(candidate) => candidate.exists && candidate.initialized && candidate.placeholder,
-	);
+	let state = await buildPoolState(project, worktrees, deps.git);
+
+	if (slotPath) {
+		const selected = state.slots.find(
+			(candidate) => normalizeExistingPath(candidate.path) === normalizeExistingPath(slotPath),
+		);
+		if (!selected?.exists) throw new UsageError(`pool slot not found: ${slotPath}`);
+		if (!selected.initialized) throw new BlockedError(`pool slot is not initialized: ${selected.path}`);
+		let targetSlot = selected;
+		if (!targetSlot.placeholder) {
+			await recycleSlot({git: deps.git, project, root, slotPath: targetSlot.path, force});
+			state = await buildPoolState(project, await listWorktrees(deps.git, root), deps.git);
+			targetSlot = state.slots.find((candidate) => candidate.index === selected.index) ?? targetSlot;
+		}
+		return finalizeStructuredResult(
+			await allocatePooledSlot({deps, project, root, slot: targetSlot, branch, base}),
+			output,
+		);
+	}
+
+	const slot = state.slots.find((candidate) => candidate.exists && candidate.initialized && candidate.placeholder);
 	if (slot) {
-		await allocatePooledSlot({deps, project, root, slot, branch, resultFile, base});
-		return {exitCode: 0};
+		return finalizeStructuredResult(
+			await allocatePooledSlot({deps, project, root, slot, branch, base}),
+			output,
+		);
+	}
+
+	if (output.json) {
+		return finalizeStructuredResult(await toPoolFullPayload(deps.git, state, branch), output, EXIT_CODES.BLOCKED);
 	}
 
 	const selected = await pickFullPoolSlot({deps, state});
@@ -440,11 +565,13 @@ async function addPooledWorktree(options: {
 		if (!confirmed) throw new PickerCancelled();
 	}
 	await recycleSlot({git: deps.git, project, root, slotPath: selected.path, force: true});
-	const refreshed = await buildPoolState(project, await listWorktrees(deps.git, root), deps.git);
-	const recycled = refreshed.slots.find((candidate) => candidate.index === selected.index);
+	state = await buildPoolState(project, await listWorktrees(deps.git, root), deps.git);
+	const recycled = state.slots.find((candidate) => candidate.index === selected.index);
 	if (!recycled) throw new WktreeError(`pool slot disappeared after recycle: ${selected.path}`);
-	await allocatePooledSlot({deps, project, root, slot: recycled, branch, resultFile, base});
-	return {exitCode: 0};
+	return finalizeStructuredResult(
+		await allocatePooledSlot({deps, project, root, slot: recycled, branch, base}),
+		output,
+	);
 }
 
 async function allocatePooledSlot(options: {
@@ -453,10 +580,9 @@ async function allocatePooledSlot(options: {
 	root: string;
 	slot: Slot;
 	branch: string;
-	resultFile: string;
 	base: string | null;
-}): Promise<void> {
-	const {deps, project, root, slot, branch, resultFile, base} = options;
+}): Promise<ReadyAddPayload> {
+	const {deps, project, root, slot, branch, base} = options;
 	const branchState = await detectBranchState(deps.git, root, branch);
 	const defaultBase =
 		branchState === "none" && !base ? await detectOriginDefaultBranch(deps.git, root) : null;
@@ -478,7 +604,7 @@ async function allocatePooledSlot(options: {
 		runnerScriptPath,
 		createdNewBranch: branchState === "none",
 	};
-	writeJsonAtomic(resultFile, toSnakeAddPlan(plan));
+	return toAddPayload(plan);
 }
 
 async function pickFullPoolSlot(options: {deps: Deps; state: PoolState}): Promise<Slot> {
@@ -640,46 +766,58 @@ async function buildPoolSlotState(options: {
 async function removeCommand(args: string[], deps: Deps) {
 	const opts = parseOptions(args);
 	const cwd = requireOption(opts, "cwd");
-	const resultFile = requireOption(opts, "result-file");
+	const output = parseOutputMode(opts);
+	const machineDeps = withMachineJsonProgress(deps, output);
 	const branch = typeof opts.branch === "string" ? opts.branch : null;
 	const self = typeof opts.self === "string" ? opts.self : null;
 	const force = opts.force === true;
-	if ((branch && self) || (!branch && !self))
-		throw new WktreeError("provide exactly one of --branch or --self");
-
-	let worktrees = await listWorktrees(deps.git, cwd);
-	const canonical = worktrees.find((worktree) => worktree.canonical);
-	if (!canonical) throw new WktreeError("couldn't determine canonical worktree");
-	const project = findProjectForRoot(readConfig(), canonical.path);
-	if (project?.poolSize) {
-		await ensurePool(project, deps, worktrees);
-		worktrees = await listWorktrees(deps.git, cwd);
-	}
-	const target = resolveRemoveTarget(worktrees, canonical.path, {branch, self});
-	if (normalizeExistingPath(target.path) === normalizeExistingPath(canonical.path)) {
-		throw new CanonicalRootError("refusing to remove canonical root");
-	}
-	if (project?.poolSize && target.pool) {
-		await recycleSlot({git: deps.git, project, root: canonical.path, slotPath: target.path, force});
-		const plan: RemovePlan = {worktreePath: target.path, removed: false};
-		writeJsonAtomic(resultFile, toSnakeRemovePlan(plan));
-		return {exitCode: 0};
+	if ((branch && self) || (!branch && !self)) {
+		throw new UsageError("provide exactly one of --branch or --self");
 	}
 
-	if (target.branch && !force) await assertBranchSafelyDeletable(deps.git, canonical.path, target.branch);
-	await deps.git.run([
-		"-C",
-		canonical.path,
-		"worktree",
-		"remove",
-		...(force ? ["--force"] : []),
-		target.path,
-	]);
-	if (target.branch) await deps.git.run(["-C", canonical.path, "branch", force ? "-D" : "-d", target.branch]);
+	let targetPath: string | undefined;
+	try {
+		let worktrees = await listWorktrees(machineDeps.git, cwd);
+		const canonical = worktrees.find((worktree) => worktree.canonical);
+		if (!canonical) throw new WktreeError("couldn't determine canonical worktree");
+		const project = findProjectForRoot(readConfig(), canonical.path);
+		if (project?.poolSize) {
+			await ensurePool(project, machineDeps, worktrees);
+			worktrees = await listWorktrees(machineDeps.git, cwd);
+		}
+		const target = resolveRemoveTarget(worktrees, canonical.path, {branch, self});
+		targetPath = target.path;
+		if (normalizeExistingPath(target.path) === normalizeExistingPath(canonical.path)) {
+			throw new CanonicalRootError("refusing to remove canonical root");
+		}
+		if (project?.poolSize && target.pool) {
+			await recycleSlot({git: machineDeps.git, project, root: canonical.path, slotPath: target.path, force});
+			return finalizeStructuredResult(toRemovePayload({worktreePath: target.path, removed: false}), output);
+		}
 
-	const plan: RemovePlan = {worktreePath: target.path, removed: !existsSync(target.path)};
-	writeJsonAtomic(resultFile, toSnakeRemovePlan(plan));
-	return {exitCode: 0};
+		if (target.branch && !force)
+			await assertBranchSafelyDeletable(machineDeps.git, canonical.path, target.branch);
+		await machineDeps.git.run([
+			"-C",
+			canonical.path,
+			"worktree",
+			"remove",
+			...(force ? ["--force"] : []),
+			target.path,
+		]);
+		if (target.branch) {
+			await machineDeps.git.run(["-C", canonical.path, "branch", force ? "-D" : "-d", target.branch]);
+		}
+
+		return finalizeStructuredResult(
+			toRemovePayload({worktreePath: target.path, removed: !existsSync(target.path)}),
+			output,
+		);
+	} catch (error) {
+		const blocked = toBlockedCommandResult(error, output, {branch: branch ?? undefined, worktree_path: targetPath});
+		if (blocked) return blocked;
+		throw error;
+	}
 }
 
 async function recycleCommand(args: string[], deps: Deps) {
@@ -689,7 +827,7 @@ async function recycleCommand(args: string[], deps: Deps) {
 	const force = opts.force === true;
 	const root = await resolveCanonicalRoot(deps.git, cwd);
 	const project = findProjectForRoot(readConfig(), root);
-	if (!project?.poolSize) throw new WktreeError("recycle requires a pooled project");
+	if (!project?.poolSize) throw new UsageError("recycle requires a pooled project");
 	await recycleSlot({git: deps.git, project, root, slotPath, force});
 	return {exitCode: 0};
 }
@@ -706,7 +844,7 @@ async function recycleSlot(options: {
 	const worktrees = await listWorktrees(git, root);
 	const state = await buildPoolState(project, worktrees, git);
 	const slot = state.slots.find((candidate) => normalizeExistingPath(candidate.path) === normalizedSlotPath);
-	if (!slot?.exists) throw new WktreeError(`pool slot not found: ${slotPath}`);
+	if (!slot?.exists) throw new UsageError(`pool slot not found: ${slotPath}`);
 	const placeholderBranch = `wk-pool/feat${slot.index}`;
 	const oldBranch = slot.branch;
 	await git.run(["-C", root, "fetch", "origin"]);
@@ -714,7 +852,10 @@ async function recycleSlot(options: {
 		await git.run(["-C", slot.path, "checkout", "-f", "-B", placeholderBranch, `origin/${state.trunk}`]);
 		await git.run(["-C", slot.path, "reset", "--hard", placeholderBranch]);
 		await git.run(["-C", slot.path, "clean", "-fd"]);
-		if (oldBranch && oldBranch !== placeholderBranch) await git.run(["-C", root, "branch", "-D", oldBranch]);
+		if (oldBranch && oldBranch !== placeholderBranch) {
+			await git.run(["-C", root, "branch", "-D", oldBranch]);
+			await killTmuxSessionForPath(slot.path);
+		}
 		return;
 	}
 
@@ -722,7 +863,10 @@ async function recycleSlot(options: {
 	if (dirty) throw new DirtySlotError(`slot ${slot.path} has uncommitted changes; pass --force to recycle`);
 	if (oldBranch && oldBranch !== placeholderBranch) await assertBranchHasMergedUpstream(git, root, oldBranch);
 	await git.run(["-C", slot.path, "checkout", "-B", placeholderBranch, `origin/${state.trunk}`]);
-	if (oldBranch && oldBranch !== placeholderBranch) await git.run(["-C", root, "branch", "-d", oldBranch]);
+	if (oldBranch && oldBranch !== placeholderBranch) {
+		await git.run(["-C", root, "branch", "-d", oldBranch]);
+		await killTmuxSessionForPath(slot.path);
+	}
 }
 
 async function assertBranchHasMergedUpstream(git: GitRunner, root: string, branch: string): Promise<void> {
@@ -804,10 +948,10 @@ function resolveRemoveTarget(
 		: worktrees.find(
 				(worktree) => normalizeExistingPath(worktree.path) === normalizeExistingPath(selector.self ?? ""),
 			);
-	if (!target)
-		throw new WktreeError(
-			selector.branch ? `no worktree found for branch ${selector.branch}` : "target is not a git worktree",
-		);
+	if (!target) {
+		if (selector.branch) throw new BlockedError(`no worktree found for branch ${selector.branch}`);
+		throw new UsageError("target is not a git worktree");
+	}
 	if (normalizeExistingPath(target.path) === normalizeExistingPath(canonicalRoot))
 		throw new CanonicalRootError("refusing to remove canonical root");
 	return target;
@@ -832,7 +976,7 @@ function parseOptions(args: string[]) {
 		if (arg?.startsWith("--")) {
 			const key = arg.slice(2);
 			const value = args[index + 1];
-			if (value === undefined || value.startsWith("--")) throw new WktreeError(`missing value for --${key}`);
+			if (value === undefined || value.startsWith("--")) throw new UsageError(`missing value for --${key}`);
 			opts[key] = value;
 			index++;
 		}
@@ -842,7 +986,7 @@ function parseOptions(args: string[]) {
 
 function requireOption(opts: Record<string, string | boolean>, key: string): string {
 	const value = opts[key];
-	if (typeof value !== "string" || value === "") throw new WktreeError(`missing required --${key}`);
+	if (typeof value !== "string" || value === "") throw new UsageError(`missing required --${key}`);
 	return value;
 }
 
@@ -905,7 +1049,7 @@ async function resolveBaseRef(git: GitRunner, root: string, base: string): Promi
 	const remote =
 		(await git.runRaw(["-C", root, "show-ref", "--verify", `refs/remotes/origin/${base}`])).exitCode === 0;
 	if (remote) return `origin/${base}`;
-	throw new WktreeError(`base branch not found locally or on origin: ${base}`);
+	throw new UsageError(`base branch not found locally or on origin: ${base}`);
 }
 
 async function checkoutBranchInSlot(options: {
@@ -954,7 +1098,7 @@ function writeRunnerFiles(options: {
 	pooled: boolean;
 }): string {
 	const {project, root, created, branch, pooled} = options;
-	const session = `${project.name ?? basename(root)}-${encodeBranch(branch)}`;
+	const session = sessionNameForWorktreePath(created);
 	const sessionDir = resolve(homedir(), ".config", "kitty", "sessions");
 	mkdirSync(sessionDir, {recursive: true});
 	const hookBodyPath = resolve(sessionDir, `${session}.hook.sh`);
@@ -968,29 +1112,122 @@ function writeRunnerFiles(options: {
 	return runnerScriptPath;
 }
 
-function writeJsonAtomic(path: string, value: unknown): void {
-	mkdirSync(dirname(path), {recursive: true});
-	const tmp = `${path}.${process.pid}.tmp`;
-	writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`);
-	renameSync(tmp, path);
+function parseOutputMode(opts: Record<string, string | boolean>): OutputMode {
+	return {
+		json: opts.json === true,
+	};
 }
 
-function toSnakeAddPlan(plan: AddPlan) {
+function finalizeStructuredResult(
+	payload: ReadyAddPayload | ReadyRemovePayload | PoolFullPayload | BlockedPayload,
+	output: OutputMode,
+	exitCode: number = EXIT_CODES.SUCCESS,
+): CommandResult {
 	return {
+		stdout: output.json ? `${JSON.stringify(payload, null, 2)}\n` : undefined,
+		exitCode,
+	};
+}
+
+function toBlockedCommandResult(
+	error: unknown,
+	output: OutputMode,
+	context: Omit<BlockedPayload, "kind" | "reason" | "message">,
+): CommandResult | null {
+	if (!output.json || !(error instanceof WktreeError)) return null;
+	const payload = toBlockedPayload(error, context);
+	return payload ? finalizeStructuredResult(payload, output, error.exitCode) : null;
+}
+
+function toBlockedPayload(
+	error: WktreeError,
+	context: Omit<BlockedPayload, "kind" | "reason" | "message">,
+): BlockedPayload | null {
+	if (!(error instanceof BlockedError) && !(error instanceof UnsafeOperationError)) return null;
+	let reason = "blocked";
+	if (error instanceof DuplicateBranchError) reason = "duplicate_branch";
+	else if (error instanceof DirtySlotError) reason = "dirty_slot";
+	else if (error instanceof UnmergedBranchError) reason = "unmerged_branch";
+	else if (error instanceof CanonicalRootError) reason = "canonical_root";
+	else if (error.exitCode === EXIT_CODES.UNSAFE) reason = "unsafe";
+	return {kind: "blocked", reason, message: error.message, ...context};
+}
+
+function withMachineJsonProgress(deps: Deps, output: OutputMode): Deps {
+	if (!output.json) return deps;
+	return {
+		...deps,
+		progress: {
+			banner: (line: string) => deps.progress.banner(line),
+			stream: (_stream: "stdout" | "stderr", line: string) => deps.progress.error(line),
+			error: (msg: string) => deps.progress.error(msg),
+		},
+	};
+}
+
+function toAddPayload(plan: AddPlan): ReadyAddPayload {
+	return {
+		kind: "ready",
 		worktree_path: plan.worktreePath,
 		branch: plan.branch,
 		root: plan.root,
 		title: plan.title,
+		session: toSessionInfo(plan.worktreePath),
 		runner_script_path: plan.runnerScriptPath,
 		created_new_branch: plan.createdNewBranch,
 	};
 }
 
-function toSnakeRemovePlan(plan: RemovePlan) {
+function toRemovePayload(plan: RemovePlan): ReadyRemovePayload {
 	return {
+		kind: "ready",
 		worktree_path: plan.worktreePath,
 		removed: plan.removed,
+		session: toSessionInfo(plan.worktreePath),
 	};
+}
+
+async function toPoolFullPayload(git: GitRunner, state: PoolState, branch: string): Promise<PoolFullPayload> {
+	const candidates = state.slots.filter((slot) => slot.exists && slot.initialized && !slot.placeholder);
+	return {
+		kind: "pool_full",
+		root: state.root,
+		branch,
+		candidates: await Promise.all(
+			candidates.map(async (slot) => {
+				const risk = await describeSlotRisk(git, slot);
+				return {
+					slot: slot.index,
+					path: slot.path,
+					branch: slot.branch,
+					dirty: slot.dirty,
+					ahead: risk.ahead,
+					local_only: risk.localOnly,
+					last_commit_iso: slot.lastCommitIso,
+					last_commit_subject: slot.lastCommitSubject,
+				};
+			}),
+		),
+	};
+}
+
+function sessionNameForWorktreePath(worktreePath: string): string {
+	return basename(worktreePath).replaceAll(".", "_");
+}
+
+function toSessionInfo(worktreePath: string): SessionInfo {
+	return {
+		name: sessionNameForWorktreePath(worktreePath),
+		path: worktreePath,
+	};
+}
+
+async function killTmuxSessionForPath(worktreePath: string): Promise<void> {
+	const proc = Bun.spawn(["tmux", "kill-session", "-t", `=${sessionNameForWorktreePath(worktreePath)}`], {
+		stdout: "ignore",
+		stderr: "ignore",
+	});
+	await proc.exited.catch(() => undefined);
 }
 
 async function listWorktrees(git: GitRunner, cwd: string): Promise<Worktree[]> {
@@ -1068,6 +1305,7 @@ function toListJson(worktree: Worktree) {
 		prunable_reason: metadata.prunableReason,
 		canonical: worktree.canonical,
 		pool: worktree.pool,
+		session: toSessionInfo(worktree.path),
 	};
 }
 
@@ -1092,7 +1330,7 @@ function formatPool(pool: Worktree["pool"]): string | null {
 
 function encodeBranch(branch: string): string {
 	const parts = branch.split("/").filter((part) => part !== "");
-	if (parts.length === 0) throw new WktreeError(`invalid branch name: ${branch}`);
+	if (parts.length === 0) throw new UsageError(`invalid branch name: ${branch}`);
 	return parts.join("--");
 }
 

@@ -36,7 +36,7 @@ The git worktree system provides a deterministic local engine for creating, reus
 
 - **Decision:** Session identity is concrete and derived from worktree path.
   - **Rationale:** Existing switching logic depends on stable tmux session names. Consumers must not invent names. The contract is:
-    - `session.name = basename(worktree_path).replace(".", "_")`
+    - `session.name = basename(worktree_path).replaceAll(".", "_")`
     - `session.path = worktree_path`
     - default window/title = branch name
 
@@ -76,11 +76,12 @@ The git worktree system provides a deterministic local engine for creating, reus
 - `wktree root --cwd <path>` prints canonical worktree root.
 - `wktree list --cwd <path> [--json]` lists worktrees and initializes configured pools.
 - `wktree path --cwd <path> --branch <branch>` prints the worktree path for a branch.
-- `wktree add --cwd <path> --branch <branch> --result-file <file> [--base <branch>] [--force]` creates/allocates a worktree and writes an add plan.
-- `wktree remove --cwd <path> (--branch <branch> | --self <path>) --result-file <file> [--force]` removes/recycles and writes a remove plan.
+- `wktree add --cwd <path> --branch <branch> [--json] [--slot <path>] [--base <branch>] [--force]` creates/allocates a worktree and emits a structured ready/pool-full/blocked payload in machine mode.
+- `wktree remove --cwd <path> (--branch <branch> | --self <path>) [--json] [--force]` removes/recycles and emits a structured ready/blocked payload in machine mode.
 - `wktree ensure --cwd <path>` materializes configured pool slots.
 - `wktree status --cwd <path>` prints pool status JSON.
 - `wktree recycle --cwd <path> --slot <path> [--force]` recycles a pooled slot.
+
 
 ### Machine-readable direction
 
@@ -88,6 +89,7 @@ Structured output is required where a command returns multi-field data or a deci
 
 Machine/JSON mode should follow these rules:
 
+- `--json` enables direct machine stdout for structured commands.
 - stdout contains only the structured payload.
 - stderr contains diagnostics, progress, warnings, and human-readable errors.
 - exit `0` means the requested action/query completed.
@@ -116,6 +118,22 @@ A successful add-like outcome should include at least:
   "created_new_branch": true
 }
 ```
+
+A successful remove-like outcome should include at least:
+
+```json
+{
+  "kind": "ready",
+  "worktree_path": "/repo__feature--foo",
+  "removed": true,
+  "session": {
+    "name": "repo__feature--foo",
+    "path": "/repo__feature--foo"
+  }
+}
+```
+
+`list --json` returns an array of worktree objects using snake_case metadata keys such as `branch_ref`, `lock_reason`, and `prunable_reason`, plus `session = { name, path }` derived from each worktree path.
 
 A pool-full outcome should provide enough data for a human or agent to choose deliberately:
 
@@ -212,8 +230,8 @@ Automated behavioral coverage lives in:
 
 The tests are the detailed reference for edge cases. This spec captures durable contracts, boundaries, and rationale rather than restating every assertion.
 
-## 9. Open Questions
+## 9. Resolved Questions
 
-- What exact flags should replace `--result-file` for direct machine stdout on add/remove?
-- What exit-code taxonomy should be standardized for blocked, unsafe, usage/config, and cancelled outcomes?
-- What explicit machine-mode flags should select a pool slot for recycling without interactive prompts?
+- Direct machine stdout uses `--json` on `add` and `remove`.
+- Exit codes are standardized as: `0` success/ready, `10` blocked/recoverable, `11` unsafe operation refused without force, `12` usage/config error, `130` cancelled.
+- Explicit non-interactive slot selection uses `wktree add --slot <path>` for allocation/recycle targeting, while `wktree recycle --slot <path>` remains the direct recycle primitive.
