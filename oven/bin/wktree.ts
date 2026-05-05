@@ -466,7 +466,9 @@ async function addCommand(args: string[], deps: Deps) {
 		await machineDeps.git.run(["-C", canonicalRoot, "fetch", "origin"]);
 		const branchState = await detectBranchState(machineDeps.git, canonicalRoot, branch);
 		const defaultBase =
-			branchState === "none" && !base ? await detectOriginDefaultBranch(machineDeps.git, canonicalRoot) : null;
+			branchState === "none" && !base
+				? await detectOriginDefaultBranch(machineDeps.git, canonicalRoot)
+				: null;
 		await addNonPoolWorktree({
 			git: machineDeps.git,
 			root: canonicalRoot,
@@ -547,7 +549,9 @@ async function addPooledWorktree(options: {
 		);
 	}
 
-	const slot = state.slots.find((candidate) => candidate.exists && candidate.initialized && candidate.placeholder);
+	const slot = state.slots.find(
+		(candidate) => candidate.exists && candidate.initialized && candidate.placeholder,
+	);
 	if (slot) {
 		return finalizeStructuredResult(
 			await allocatePooledSlot({deps, project, root, slot, branch, base}),
@@ -556,7 +560,11 @@ async function addPooledWorktree(options: {
 	}
 
 	if (output.json) {
-		return finalizeStructuredResult(await toPoolFullPayload(deps.git, state, branch), output, EXIT_CODES.BLOCKED);
+		return finalizeStructuredResult(
+			await toPoolFullPayload(deps.git, state, branch),
+			output,
+			EXIT_CODES.BLOCKED,
+		);
 	}
 
 	const selected = await pickFullPoolSlot({deps, state});
@@ -814,7 +822,10 @@ async function removeCommand(args: string[], deps: Deps) {
 			output,
 		);
 	} catch (error) {
-		const blocked = toBlockedCommandResult(error, output, {branch: branch ?? undefined, worktree_path: targetPath});
+		const blocked = toBlockedCommandResult(error, output, {
+			branch: branch ?? undefined,
+			worktree_path: targetPath,
+		});
 		if (blocked) return blocked;
 		throw error;
 	}

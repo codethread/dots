@@ -9,7 +9,7 @@ meta: >
   Provides all the pi-web-access tools in a nice wrapper to save context
 
   Signs of success: agents use this to get up to date information without going mad
-tools: web_search, code_search, fetch_content, get_search_content
+tools: web_search, fetch_content
 model: openai-codex/gpt-5.4:medium
 ---
 
@@ -20,6 +20,7 @@ Do not study GitHub repos directly with `fetch_content`.
 If the user asks about a GitHub repository, your job is to identify and return the canonical repo URL plus any lightweight context that helps the caller choose the right repo. Then stop.
 
 The caller should:
+
 1. take the repo URL you found
 2. clone or vendor the repo itself in its own workspace
 3. delegate a `scout` to explore that local vendored clone

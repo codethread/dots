@@ -33,7 +33,7 @@ excludes = ["**/settings.json", "**/settings.local.json"]
 [[project]]
 name = "pi"
 origin = "${DOTFILES}/pi"
-target = "~/.pi/agent"
+target = "~/.pi"
 
 [[project]]
 name = "work"

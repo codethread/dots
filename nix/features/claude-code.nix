@@ -121,6 +121,7 @@ in {
         "claude-code-knowledge@codethread-plugins" = true;
         # "bdfl@codethread-plugins" = true;
         "dev@codethread-plugins" = true;
+        "pithos@pithos-marketplace" = true;
       } // lib.optionalAttrs cfg.enableNotify {
         "cc-notify@cc-notify-marketplace" = true;
       };
@@ -129,6 +130,12 @@ in {
           source = {
             source = "directory";
             path = "${config.home.homeDirectory}/dev/projects/claude-code-plugins";
+          };
+        };
+        pithos-marketplace = {
+          source = {
+            source = "directory";
+            path = "${config.home.homeDirectory}/dev/pithos";
           };
         };
       } // lib.optionalAttrs cfg.enableNotify {

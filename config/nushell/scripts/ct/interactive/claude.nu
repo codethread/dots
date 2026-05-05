@@ -4,19 +4,135 @@
 # conditional system prompt injection. These nushell wrappers provide model
 # shortcuts.
 
+def cl-effort-completions [] {
+	["low" "medium" "high" "xhigh" "max"]
+}
+
+def cl-output-format-completions [] {
+	["text" "json" "stream-json"]
+}
+
+def cl-permission-mode-completions [] {
+	["acceptEdits" "auto" "bypassPermissions" "default" "dontAsk" "plan"]
+}
+
+def cl-tools-completions [] {
+	["Bash" "Edit" "Read" "Write" "Glob" "Grep" "LS" "WebFetch" "WebSearch" "default"]
+}
+
+# Build forwarded args list from common cl flags, then invoke cl with a fixed model
+def _cl-run [
+	model: string
+	continue: bool
+	dangerously_skip_permissions: bool
+	print: bool
+	verbose: bool
+	resume: string
+	effort: string
+	permission_mode: string
+	output_format: string
+	allowed_tools: string
+	disallowed_tools: string
+	tools: string
+	agent: string
+	add_dir: string
+	append_system_prompt: string
+	system_prompt: string
+	name: string
+	worktree: string
+	rest: list<string>
+] {
+	mut args = [--model $model]
+	if $continue { $args ++= [--continue] }
+	if $dangerously_skip_permissions { $args ++= [--dangerously-skip-permissions] }
+	if $print { $args ++= [--print] }
+	if $verbose { $args ++= [--verbose] }
+	if ($resume | is-not-empty) { $args ++= [--resume $resume] }
+	if ($effort | is-not-empty) { $args ++= [--effort $effort] }
+	if ($permission_mode | is-not-empty) { $args ++= [--permission-mode $permission_mode] }
+	if ($output_format | is-not-empty) { $args ++= [--output-format $output_format] }
+	if ($allowed_tools | is-not-empty) { $args ++= [--allowed-tools $allowed_tools] }
+	if ($disallowed_tools | is-not-empty) { $args ++= [--disallowed-tools $disallowed_tools] }
+	if ($tools | is-not-empty) { $args ++= [--tools $tools] }
+	if ($agent | is-not-empty) { $args ++= [--agent $agent] }
+	if ($add_dir | is-not-empty) { $args ++= [--add-dir $add_dir] }
+	if ($append_system_prompt | is-not-empty) { $args ++= [--append-system-prompt $append_system_prompt] }
+	if ($system_prompt | is-not-empty) { $args ++= [--system-prompt $system_prompt] }
+	if ($name | is-not-empty) { $args ++= [--name $name] }
+	if ($worktree | is-not-empty) { $args ++= [--worktree $worktree] }
+	^cl ...$args ...$rest
+}
+
 # cl with opus model
-export def clo --wrapped [--dangerously-skip-permissions(-d) ...rest] {
-	if $dangerously_skip_permissions { ^cl -d --model opus ...$rest } else { ^cl --model opus ...$rest }
+export def clo [
+	--continue(-c)                                           # Continue most recent conversation
+	--dangerously-skip-permissions(-d)                       # Bypass all permission checks
+	--print(-p)                                              # Print response and exit (non-interactive)
+	--verbose                                                # Override verbose mode
+	--resume(-r): string = ""                                # Resume a conversation by session ID
+	--effort: string@cl-effort-completions = "high"          # Effort level
+	--permission-mode: string@cl-permission-mode-completions = ""  # Permission mode
+	--output-format: string@cl-output-format-completions = ""      # Output format (--print only)
+	--allowed-tools: string@cl-tools-completions = ""        # Tools to allow
+	--disallowed-tools: string@cl-tools-completions = ""     # Tools to deny
+	--tools: string@cl-tools-completions = ""                # Available tools from built-in set
+	--agent: string = ""                                     # Agent for the session
+	--add-dir: string = ""                                   # Additional directory to allow tool access to
+	--append-system-prompt: string = ""                      # Append to default system prompt
+	--system-prompt: string = ""                             # System prompt for the session
+	--name(-n): string = ""                                  # Display name for this session
+	--worktree(-w): string = ""                              # Create a new git worktree for this session
+	...rest: string
+] {
+	_cl-run "opus" $continue $dangerously_skip_permissions $print $verbose $resume $effort $permission_mode $output_format $allowed_tools $disallowed_tools $tools $agent $add_dir $append_system_prompt $system_prompt $name $worktree $rest
 }
 
 # cl with sonnet model
-export def cls --wrapped [--dangerously-skip-permissions(-d) ...rest] {
-	if $dangerously_skip_permissions { ^cl -d --model sonnet ...$rest } else { ^cl --model sonnet ...$rest }
+export def cls [
+	--continue(-c)                                           # Continue most recent conversation
+	--dangerously-skip-permissions(-d)                       # Bypass all permission checks
+	--print(-p)                                              # Print response and exit (non-interactive)
+	--verbose                                                # Override verbose mode
+	--resume(-r): string = ""                                # Resume a conversation by session ID
+	--effort: string@cl-effort-completions = "high"          # Effort level
+	--permission-mode: string@cl-permission-mode-completions = ""  # Permission mode
+	--output-format: string@cl-output-format-completions = ""      # Output format (--print only)
+	--allowed-tools: string@cl-tools-completions = ""        # Tools to allow
+	--disallowed-tools: string@cl-tools-completions = ""     # Tools to deny
+	--tools: string@cl-tools-completions = ""                # Available tools from built-in set
+	--agent: string = ""                                     # Agent for the session
+	--add-dir: string = ""                                   # Additional directory to allow tool access to
+	--append-system-prompt: string = ""                      # Append to default system prompt
+	--system-prompt: string = ""                             # System prompt for the session
+	--name(-n): string = ""                                  # Display name for this session
+	--worktree(-w): string = ""                              # Create a new git worktree for this session
+	...rest: string
+] {
+	_cl-run "sonnet" $continue $dangerously_skip_permissions $print $verbose $resume $effort $permission_mode $output_format $allowed_tools $disallowed_tools $tools $agent $add_dir $append_system_prompt $system_prompt $name $worktree $rest
 }
 
 # cl with haiku model
-export def clh --wrapped [--dangerously-skip-permissions(-d) ...rest] {
-	if $dangerously_skip_permissions { ^cl -d --model haiku ...$rest } else { ^cl --model haiku ...$rest }
+export def clh [
+	--continue(-c)                                           # Continue most recent conversation
+	--dangerously-skip-permissions(-d)                       # Bypass all permission checks
+	--print(-p)                                              # Print response and exit (non-interactive)
+	--verbose                                                # Override verbose mode
+	--resume(-r): string = ""                                # Resume a conversation by session ID
+	--effort: string@cl-effort-completions = ""              # Effort level
+	--permission-mode: string@cl-permission-mode-completions = ""  # Permission mode
+	--output-format: string@cl-output-format-completions = ""      # Output format (--print only)
+	--allowed-tools: string@cl-tools-completions = ""        # Tools to allow
+	--disallowed-tools: string@cl-tools-completions = ""     # Tools to deny
+	--tools: string@cl-tools-completions = ""                # Available tools from built-in set
+	--agent: string = ""                                     # Agent for the session
+	--add-dir: string = ""                                   # Additional directory to allow tool access to
+	--append-system-prompt: string = ""                      # Append to default system prompt
+	--system-prompt: string = ""                             # System prompt for the session
+	--name(-n): string = ""                                  # Display name for this session
+	--worktree(-w): string = ""                              # Create a new git worktree for this session
+	...rest: string
+] {
+	_cl-run "haiku" $continue $dangerously_skip_permissions $print $verbose $resume $effort $permission_mode $output_format $allowed_tools $disallowed_tools $tools $agent $add_dir $append_system_prompt $system_prompt $name $worktree $rest
 }
 
 export alias _claude-session = jq 'select(.event == "PreToolUse")' .logs/claude-session-*.jsonl

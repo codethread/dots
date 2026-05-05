@@ -421,16 +421,10 @@ integrationDescribe("wktree non-pool add", () => {
 		await setup(root, remote);
 		writeConfig(tmp, root, "echo ready");
 
-		const result = await dispatch(
-			"add",
-			["--cwd", root, "--branch", branch, "--json"],
-			deps,
-		);
+		const result = await dispatch("add", ["--cwd", root, "--branch", branch, "--json"], deps);
 
 		expect(result.exitCode).toBe(0);
-		expect(JSON.parse(result.stdout ?? "{}").worktree_path).toBe(
-			`${root}__${branch.replaceAll("/", "--")}`,
-		);
+		expect(JSON.parse(result.stdout ?? "{}").worktree_path).toBe(`${root}__${branch.replaceAll("/", "--")}`);
 	});
 
 	test("warns but succeeds when local branch has diverged from remote", async () => {
@@ -446,11 +440,7 @@ integrationDescribe("wktree non-pool add", () => {
 		const warnings: string[] = [];
 		const warnDeps = {...deps, progress: {...deps.progress, error: (msg: string) => warnings.push(msg)}};
 
-		const result = await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/diverged", "--json"],
-			warnDeps,
-		);
+		const result = await dispatch("add", ["--cwd", root, "--branch", "feature/diverged", "--json"], warnDeps);
 
 		expect(result.exitCode).toBe(0);
 		expect(warnings.join("\n")).toContain("couldn't fast-forward");
@@ -464,11 +454,7 @@ integrationDescribe("wktree non-pool add", () => {
 		await run(["git", "-C", root, "add", "current-only.txt"]);
 		await run(["git", "-C", root, "commit", "-m", "current only"]);
 
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/default-base", "--json"],
-			deps,
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/default-base", "--json"], deps);
 
 		const missing = await Bun.spawn(
 			["git", "-C", `${root}__feature--default-base`, "show", "HEAD:current-only.txt"],
@@ -486,15 +472,7 @@ integrationDescribe("wktree non-pool add", () => {
 
 		await dispatch(
 			"add",
-			[
-				"--cwd",
-				root,
-				"--branch",
-				"feature/from-base",
-				"--base",
-				"base/topic",
-				"--json",
-			],
+			["--cwd", root, "--branch", "feature/from-base", "--base", "base/topic", "--json"],
 			warnDeps,
 		);
 		const baseFile = await run(["git", "-C", `${root}__feature--from-base`, "show", "HEAD:remote.txt"]);
@@ -507,15 +485,7 @@ integrationDescribe("wktree non-pool add", () => {
 		await run(["git", "-C", root, "checkout", "main"]);
 		await dispatch(
 			"add",
-			[
-				"--cwd",
-				root,
-				"--branch",
-				"feature/from-local-base",
-				"--base",
-				"local/base",
-				"--json",
-			],
+			["--cwd", root, "--branch", "feature/from-local-base", "--base", "local/base", "--json"],
 			warnDeps,
 		);
 		expect(
@@ -524,15 +494,7 @@ integrationDescribe("wktree non-pool add", () => {
 
 		await dispatch(
 			"add",
-			[
-				"--cwd",
-				root,
-				"--branch",
-				"feature/from-base",
-				"--base",
-				"base/topic",
-				"--json",
-			],
+			["--cwd", root, "--branch", "feature/from-base", "--base", "base/topic", "--json"],
 			warnDeps,
 		).catch(() => undefined);
 		expect(warnings.join("\n")).toContain("--base ignored");
@@ -555,11 +517,7 @@ integrationDescribe("wktree non-pool add", () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		process.env.XDG_CONFIG_HOME = join(tmp, "empty-config");
 
-		const result = await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/no-project", "--json"],
-			deps,
-		);
+		const result = await dispatch("add", ["--cwd", root, "--branch", "feature/no-project", "--json"], deps);
 
 		expect(JSON.parse(result.stdout ?? "{}").runner_script_path).toBeNull();
 	});
@@ -567,11 +525,7 @@ integrationDescribe("wktree non-pool add", () => {
 	test("rejects reserved pool branch prefix", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		await expect(
-			dispatch(
-				"add",
-				["--cwd", root, "--branch", "wk-pool/feat1", "--json"],
-				deps,
-			),
+			dispatch("add", ["--cwd", root, "--branch", "wk-pool/feat1", "--json"], deps),
 		).rejects.toThrow("reserved");
 	});
 });
@@ -594,17 +548,9 @@ integrationDescribe("wktree non-pool remove", () => {
 	test("removes a non-pool worktree and branch", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready");
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/remove", "--json"],
-			deps,
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/remove", "--json"], deps);
 
-		const result = await dispatch(
-			"remove",
-			["--cwd", root, "--branch", "feature/remove", "--json"],
-			deps,
-		);
+		const result = await dispatch("remove", ["--cwd", root, "--branch", "feature/remove", "--json"], deps);
 
 		expect(result.exitCode).toBe(0);
 		const plan = JSON.parse(result.stdout ?? "{}");
@@ -626,17 +572,9 @@ integrationDescribe("wktree non-pool remove", () => {
 	test("removes by --self path", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready");
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/self", "--json"],
-			deps,
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/self", "--json"], deps);
 
-		await dispatch(
-			"remove",
-			["--cwd", root, "--self", `${root}__feature--self`, "--json"],
-			deps,
-		);
+		await dispatch("remove", ["--cwd", root, "--self", `${root}__feature--self`, "--json"], deps);
 
 		expect(existsSync(`${root}__feature--self`)).toBe(false);
 	});
@@ -646,11 +584,7 @@ integrationDescribe("wktree non-pool remove", () => {
 		writeConfig(tmp, root, "echo ready");
 		await dispatch("add", ["--cwd", root, "--branch", "feat1", "--json"], deps);
 
-		await dispatch(
-			"remove",
-			["--cwd", root, "--branch", "feat1", "--json"],
-			deps,
-		);
+		await dispatch("remove", ["--cwd", root, "--branch", "feat1", "--json"], deps);
 
 		expect(existsSync(`${root}__feat1`)).toBe(false);
 	});
@@ -658,20 +592,12 @@ integrationDescribe("wktree non-pool remove", () => {
 	test("unmerged branch fails without --force and succeeds with --force", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready");
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/unmerged", "--json"],
-			deps,
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/unmerged", "--json"], deps);
 		writeFileSync(join(`${root}__feature--unmerged`, "unmerged.txt"), "work\n");
 		await run(["git", "-C", `${root}__feature--unmerged`, "add", "unmerged.txt"]);
 		await run(["git", "-C", `${root}__feature--unmerged`, "commit", "-m", "unmerged"]);
 
-		const blocked = await dispatch(
-			"remove",
-			["--cwd", root, "--branch", "feature/unmerged", "--json"],
-			deps,
-		);
+		const blocked = await dispatch("remove", ["--cwd", root, "--branch", "feature/unmerged", "--json"], deps);
 		expect(blocked.exitCode).toBe(EXIT_CODES.UNSAFE);
 		expect(JSON.parse(blocked.stdout ?? "{}")).toMatchObject({
 			kind: "blocked",
@@ -681,11 +607,7 @@ integrationDescribe("wktree non-pool remove", () => {
 		});
 		expect(existsSync(`${root}__feature--unmerged`)).toBe(true);
 
-		await dispatch(
-			"remove",
-			["--cwd", root, "--branch", "feature/unmerged", "--force", "--json"],
-			deps,
-		);
+		await dispatch("remove", ["--cwd", root, "--branch", "feature/unmerged", "--force", "--json"], deps);
 		expect(existsSync(`${root}__feature--unmerged`)).toBe(false);
 		expect(
 			(await runRaw(["git", "-C", root, "show-ref", "--verify", "refs/heads/feature/unmerged"])).exitCode,
@@ -695,11 +617,7 @@ integrationDescribe("wktree non-pool remove", () => {
 	test("machine json remove reports blocked outcomes with unsafe exit codes", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready");
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/unmerged-json", "--json"],
-			deps,
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/unmerged-json", "--json"], deps);
 		writeFileSync(join(`${root}__feature--unmerged-json`, "unmerged.txt"), "work\n");
 		await run(["git", "-C", `${root}__feature--unmerged-json`, "add", "unmerged.txt"]);
 		await run(["git", "-C", `${root}__feature--unmerged-json`, "commit", "-m", "unmerged"]);
@@ -731,11 +649,7 @@ integrationDescribe("wktree non-pool remove", () => {
 			reason: "canonical_root",
 		});
 		await expect(
-			dispatch(
-				"remove",
-				["--cwd", root, "--self", join(tmp, "missing"), "--json"],
-				deps,
-			),
+			dispatch("remove", ["--cwd", root, "--self", join(tmp, "missing"), "--json"], deps),
 		).rejects.toThrow("not a git worktree");
 	});
 });
@@ -951,11 +865,7 @@ integrationDescribe("wktree pooled add", () => {
 		writeConfig(tmp, root, "touch pooled-sentinel", 2);
 		await dispatch("ensure", ["--cwd", root], testDeps());
 
-		const result = await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/pooled", "--json"],
-			testDeps(),
-		);
+		const result = await dispatch("add", ["--cwd", root, "--branch", "feature/pooled", "--json"], testDeps());
 
 		const plan = JSON.parse(result.stdout ?? "{}");
 		const runnerScriptPath = plan.runner_script_path as string;
@@ -990,11 +900,7 @@ integrationDescribe("wktree pooled add", () => {
 		await setup(root, remote);
 		writeConfig(tmp, root, "echo ready", 1);
 
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", branch, "--json"],
-			testDeps(),
-		);
+		await dispatch("add", ["--cwd", root, "--branch", branch, "--json"], testDeps());
 
 		expect((await run(["git", "-C", `${root}__feat1`, "branch", "--show-current"])).stdout.trim()).toBe(
 			branch,
@@ -1014,11 +920,7 @@ integrationDescribe("wktree pooled add", () => {
 		const warnings: string[] = [];
 		const warnDeps = testDeps({progress: {...deps.progress, error: (msg: string) => warnings.push(msg)}});
 
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/diverged-pool", "--json"],
-			warnDeps,
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/diverged-pool", "--json"], warnDeps);
 		expect(warnings.join("\n")).toContain("couldn't fast-forward");
 
 		await expect(
@@ -1033,19 +935,11 @@ integrationDescribe("wktree pooled add", () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready", 1);
 
+		await expect(dispatch("add", ["--cwd", root, "--branch", "main", "--json"], testDeps())).rejects.toThrow(
+			root,
+		);
 		await expect(
-			dispatch(
-				"add",
-				["--cwd", root, "--branch", "main", "--json"],
-				testDeps(),
-			),
-		).rejects.toThrow(root);
-		await expect(
-			dispatch(
-				"add",
-				["--cwd", root, "--branch", "wk-pool/feat9", "--json"],
-				testDeps(),
-			),
+			dispatch("add", ["--cwd", root, "--branch", "wk-pool/feat9", "--json"], testDeps()),
 		).rejects.toThrow("reserved");
 		expect(existsSync(`${root}__feat1`)).toBe(false);
 	});
@@ -1061,15 +955,7 @@ integrationDescribe("wktree pooled add", () => {
 
 		await dispatch(
 			"add",
-			[
-				"--cwd",
-				root,
-				"--branch",
-				"feature/from-base",
-				"--base",
-				"base/pool",
-				"--json",
-			],
+			["--cwd", root, "--branch", "feature/from-base", "--base", "base/pool", "--json"],
 			warnDeps,
 		);
 		expect((await run(["git", "-C", `${root}__feat1`, "show", "HEAD:remote.txt"])).stdout).toBe(
@@ -1084,15 +970,7 @@ integrationDescribe("wktree pooled add", () => {
 
 		await dispatch(
 			"add",
-			[
-				"--cwd",
-				root,
-				"--branch",
-				"feature/existing-base",
-				"--base",
-				"base/pool",
-				"--json",
-			],
+			["--cwd", root, "--branch", "feature/existing-base", "--base", "base/pool", "--json"],
 			warnDeps,
 		);
 		expect(warnings.join("\n")).toContain("--base ignored");
@@ -1101,11 +979,7 @@ integrationDescribe("wktree pooled add", () => {
 	test("machine json add reports pool_full and --slot selects a specific slot", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready", 1);
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/one", "--json"],
-			testDeps(),
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/one", "--json"], testDeps());
 
 		const blocked = await dispatch(
 			"add",
@@ -1150,11 +1024,7 @@ integrationDescribe("wktree pooled add", () => {
 	test("machine json pool_full bypasses picker and leaves the occupied slot untouched", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready", 1);
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/one", "--json"],
-			testDeps(),
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/one", "--json"], testDeps());
 		await run(["git", "-C", `${root}__feat1`, "branch", "--set-upstream-to", "origin/main", "feature/one"]);
 		const picker = new TestPicker("1", true);
 
@@ -1180,11 +1050,7 @@ integrationDescribe("wktree pooled add", () => {
 	test("machine json pool_full ignores picker state and --force without mutating the slot", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready", 1);
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/one", "--json"],
-			testDeps(),
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/one", "--json"], testDeps());
 
 		const cancelPicker = new TestPicker(null, true);
 		const cancelBlocked = await dispatch(
@@ -1255,11 +1121,7 @@ integrationDescribe("wktree recycle", () => {
 		const {root, remote} = await initRepoWithOrigin(tmp);
 		await createRemoteBranch(remote, "feature/safe");
 		writeConfig(tmp, root, "echo ready", 1);
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/safe", "--json"],
-			testDeps(),
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/safe", "--json"], testDeps());
 		await run([
 			"git",
 			"-C",
@@ -1297,11 +1159,7 @@ integrationDescribe("wktree recycle", () => {
 	test("safe preflight blocks dirty slots and leaves branch untouched", async () => {
 		const {root} = await initRepoWithOrigin(tmp);
 		writeConfig(tmp, root, "echo ready", 1);
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/dirty", "--json"],
-			testDeps(),
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/dirty", "--json"], testDeps());
 		writeFileSync(join(`${root}__feat1`, "dirty.txt"), "dirty\n");
 
 		await expect(
@@ -1321,11 +1179,7 @@ integrationDescribe("wktree recycle", () => {
 		await run(["git", "-C", root, "commit", "-m", "ignore modules"]);
 		await run(["git", "-C", root, "push", "origin", "main"]);
 		writeConfig(tmp, root, "echo ready", 1);
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/force-recycle", "--json"],
-			testDeps(),
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/force-recycle", "--json"], testDeps());
 		writeFileSync(join(`${root}__feat1`, "tracked.txt"), "tracked\n");
 		await run(["git", "-C", `${root}__feat1`, "add", "tracked.txt"]);
 		await run(["git", "-C", `${root}__feat1`, "commit", "-m", "local unmerged"]);
@@ -1351,11 +1205,7 @@ integrationDescribe("wktree recycle", () => {
 		const {root, remote} = await initRepoWithOrigin(tmp);
 		await createRemoteBranch(remote, "feature/upstream-blocked");
 		writeConfig(tmp, root, "echo ready", 1);
-		await dispatch(
-			"add",
-			["--cwd", root, "--branch", "feature/upstream-blocked", "--json"],
-			testDeps(),
-		);
+		await dispatch("add", ["--cwd", root, "--branch", "feature/upstream-blocked", "--json"], testDeps());
 		await expect(
 			dispatch("recycle", ["--cwd", root, "--slot", `${root}__feat1`], testDeps()),
 		).rejects.toThrow("no upstream");
@@ -1469,7 +1319,11 @@ integrationDescribe("wktree ensure", () => {
 		expect(listResult.stdout).toContain("[pool:free]");
 		expect(existsSync(join(`${root}__feat1`, "ensured"))).toBe(true);
 
-		const blocked = await dispatch("remove", ["--cwd", root, "--self", `${root}__feat1`, "--json"], testDeps());
+		const blocked = await dispatch(
+			"remove",
+			["--cwd", root, "--self", `${root}__feat1`, "--json"],
+			testDeps(),
+		);
 		expect(blocked.exitCode).toBe(EXIT_CODES.UNSAFE);
 		expect(JSON.parse(blocked.stdout ?? "{}")).toMatchObject({
 			kind: "blocked",
