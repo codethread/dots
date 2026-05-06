@@ -26,6 +26,9 @@
         "-pi-extensions/claude-sync/index.ts"
       ]
     },
+    {
+      "source": "../../dev/pithos/packages/spawner"
+    },
     "npm:pi-mermaid",
     {
       "source": "npm:pi-web-access",
