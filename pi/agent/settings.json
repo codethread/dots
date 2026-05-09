@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.72.1",
+  "lastChangelogVersion": "0.73.0",
   "theme": "rose-pine",
   "quietStartup": true,
   "npmCommand": [
@@ -9,14 +9,10 @@
   ],
   "editorPaddingX": 1,
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4-mini",
+  "defaultModel": "gpt-5.5",
   "defaultThinkingLevel": "low",
   "enabledModels": [
-    "openai-codex/gpt-5.5",
-    "openai-codex/gpt-5.4",
-    "openai-codex/gpt-5.4-mini",
-    "github-copilot/claude-sonnet-4.6",
-    "anthropic/claude-haiku-4-5"
+    "openai-codex/gpt-5.5"
   ],
   "packages": [
     {

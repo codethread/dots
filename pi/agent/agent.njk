@@ -67,6 +67,7 @@ If you are unsure how to proceed in the best interests of the user, use the `que
 Even if you think you are done, double check with the user via `questionnaire` tool
 {%- endif %}
 {%- endif %}
+Always load Skills if you think they could be relevant
 
 ## Development practices
 
@@ -76,7 +77,8 @@ Even if you think you are done, double check with the user via `questionnaire` t
 {% endif -%}
 {%- if is_gpt55 %}
 - Code should be built for correctness or fail loudly, it should not quietly fallback to default values; this will lead to confusing and hard to trace bugs
-- Code should be built for to work as intended, it should not have guards in the code to protect against dead code or deprectaed approaches being used; this is noise in the codebase
+- Code should be built for to work as intended, it should not have guards in the code to protect against dead code or deprecated approaches being used; this is noise in the codebase
+- When writing embedded strings like SQL that aren't formatted automatically, format them for manually for readability
 {% endif -%}
 
 

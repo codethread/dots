@@ -80,3 +80,5 @@ source (if ($privates | path exists) { $privates } else { null })
 
 const pi_scripts = ("~/dev/projects/agents/scripts/pi.nu" | path expand)
 source (if ($pi_scripts | path exists) { $pi_scripts } else { null })
+
+use ~/dev/projects/agents/scripts/afk-loop.nu

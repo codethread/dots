@@ -82,4 +82,8 @@ if [[ "$DRY_RUN" == true ]]; then
     exit 0
 fi
 
+if [[ -n "${TMUX:-}" ]]; then
+    export CLAUDE_CODE_NO_FLICKER=1
+fi
+
 exec claude "${ARGS[@]}"
