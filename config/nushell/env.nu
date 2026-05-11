@@ -12,7 +12,7 @@ def home [p: string] {
 
 $env.DOTFILES = ($env.DOTFILES? | default (home "dev/dots"))
 $env.EDITOR = ($env.EDITOR? | default "nvim")
-$env.SHELL = ($env.SHELL? | default (which nu | get 0.path))
+$env.SHELL = (which nu | get 0.path)
 $env.XDG_CONFIG_HOME = ($env.XDG_CONFIG_HOME? | default (home ".config"))
 $env.XDG_DATA_HOME = ($env.XDG_DATA_HOME? | default (home ".local/share"))
 $env.XDG_CACHE_HOME = ($env.XDG_CACHE_HOME? | default (home ".local/cache"))
@@ -39,7 +39,8 @@ $env.CT_USER = ($env.CT_USER? | default (match ($env.USER? | default "") {
 	_ => "home",
 }))
 
-$env.KSM_WORK = ($env.KSM_WORK? | default ($env.CT_USER == 'work'))
+$env.KSM_WORK = $env.CT_USER == 'work'
+$env.IS_WORK = $env.CT_USER == 'work'
 
 #: nix {{{
 let _nix_per_user = $"/etc/profiles/per-user/($env.USER)/bin"
