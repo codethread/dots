@@ -55,7 +55,7 @@ nix develop --command bun run verify
 - **prepend-comment** - Add or update module documentation comments
 - **strip-markdown** - Strip markdown formatting from text, optimized for text-to-speech or plain text output.
 - **tts** - Basic OpenAI text-to-speech wrapper
-- **wktree** - reusable git worktree pool manager
+- **wktree** - Reusable git worktree pool manager
 
 ### Quick Usage
 

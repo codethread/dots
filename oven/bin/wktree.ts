@@ -20,6 +20,7 @@ import {
 import {homedir} from "node:os";
 import {basename, resolve} from "node:path";
 import {TOML} from "bun";
+import {Command, CommanderError} from "commander";
 import {fzf} from "../shared/fzf";
 import {type GitRunner, LiveGitRunner} from "../shared/git/executor";
 import {
@@ -329,19 +330,128 @@ export async function dispatch(
 
 async function main() {
 	const deps = createLiveDeps();
-	const [subcommand, ...args] = Bun.argv.slice(2);
+
+	const program = new Command();
+	program
+		.name("wktree")
+		.description("Reusable git worktree pool manager")
+		.configureOutput({
+			writeOut: (str) => process.stderr.write(str),
+			writeErr: (str) => process.stderr.write(str),
+		})
+		.exitOverride();
+
+	program
+		.command("root")
+		.description("Print canonical worktree root")
+		.requiredOption("--cwd <path>", "Path within git repository")
+		.action(async (opts) => {
+			await runAction("root", optsToArgs(opts), deps);
+		});
+
+	program
+		.command("list")
+		.description("List worktrees")
+		.requiredOption("--cwd <path>", "Path within git repository")
+		.option("--json", "Output as JSON")
+		.action(async (opts) => {
+			await runAction("list", optsToArgs(opts), deps);
+		});
+
+	program
+		.command("path")
+		.description("Print worktree path for branch")
+		.requiredOption("--cwd <path>", "Path within git repository")
+		.requiredOption("--branch <branch>", "Branch name")
+		.action(async (opts) => {
+			await runAction("path", optsToArgs(opts), deps);
+		});
+
+	program
+		.command("add")
+		.description("Add or allocate a worktree")
+		.requiredOption("--cwd <path>", "Path within git repository")
+		.requiredOption("--branch <branch>", "Branch name")
+		.option("--json", "Machine-readable output")
+		.option("--slot <path>", "Specific pool slot path")
+		.option("--base <branch>", "Base branch for new branches")
+		.option("--force", "Force operation")
+		.action(async (opts) => {
+			await runAction("add", optsToArgs(opts), deps);
+		});
+
+	program
+		.command("remove")
+		.description("Remove or recycle a worktree")
+		.requiredOption("--cwd <path>", "Path within git repository")
+		.option("--branch <branch>", "Branch to remove")
+		.option("--self <path>", "Remove the worktree at this path")
+		.option("--json", "Machine-readable output")
+		.option("--force", "Force removal")
+		.action(async (opts) => {
+			await runAction("remove", optsToArgs(opts), deps);
+		});
+
+	program
+		.command("ensure")
+		.description("Materialise pooled worktree slots")
+		.requiredOption("--cwd <path>", "Path within git repository")
+		.action(async (opts) => {
+			await runAction("ensure", optsToArgs(opts), deps);
+		});
+
+	program
+		.command("status")
+		.description("Print pool status JSON")
+		.requiredOption("--cwd <path>", "Path within git repository")
+		.action(async (opts) => {
+			await runAction("status", optsToArgs(opts), deps);
+		});
+
+	program
+		.command("recycle")
+		.description("Recycle a pooled slot")
+		.requiredOption("--cwd <path>", "Path within git repository")
+		.requiredOption("--slot <path>", "Pool slot path")
+		.option("--force", "Force recycle")
+		.action(async (opts) => {
+			await runAction("recycle", optsToArgs(opts), deps);
+		});
 
 	try {
-		const result = await dispatch(subcommand, args, deps);
+		await program.parseAsync(Bun.argv);
+	} catch (error) {
+		if (error instanceof CommanderError) {
+			process.exit(error.exitCode === 0 ? 0 : EXIT_CODES.USAGE);
+		}
+		const exitCode = error instanceof WktreeError ? error.exitCode : EXIT_CODES.FAILURE;
+		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+		process.exit(exitCode);
+	}
+}
+
+async function runAction(subcmd: string, args: string[], deps: Deps): Promise<void> {
+	try {
+		const result = await dispatch(subcmd, args, deps);
 		if (result.stdout) process.stdout.write(result.stdout);
 		if (result.stderr) process.stderr.write(result.stderr);
 		process.exit(result.exitCode);
 	} catch (error) {
-		const exitCode = error instanceof WktreeError ? error.exitCode : EXIT_CODES.FAILURE;
-		const message = error instanceof Error ? error.message : String(error);
-		process.stderr.write(`${message}\n`);
-		process.exit(exitCode);
+		if (error instanceof WktreeError) {
+			process.stderr.write(`${error.message}\n`);
+			process.exit(error.exitCode);
+		}
+		throw error;
 	}
+}
+
+function optsToArgs(opts: Record<string, unknown>): string[] {
+	const args: string[] = [];
+	for (const [key, value] of Object.entries(opts)) {
+		if (value === true) args.push(`--${key}`);
+		else if (value !== false && value !== undefined && value !== null) args.push(`--${key}`, String(value));
+	}
+	return args;
 }
 
 function createLiveDeps(): Deps {

@@ -168,6 +168,24 @@ async function extractHelpInfo(toolName: string): Promise<ToolInfo | null> {
 			};
 		}
 
+		// Commander format: "Usage: name [options]" followed by blank line then description
+		const usageIdx = lines.findIndex((line) => line.trim().startsWith("Usage:"));
+		if (usageIdx !== -1) {
+			const usageMatch = lines[usageIdx].trim().match(/^Usage:\s+(\S+)/);
+			const name = usageMatch ? usageMatch[1] : toolName;
+			for (let i = usageIdx + 1; i < lines.length; i++) {
+				const trimmed = lines[i].trim();
+				if (trimmed === "") continue;
+				if (
+					trimmed.startsWith("Options:") ||
+					trimmed.startsWith("Commands:") ||
+					trimmed.startsWith("Arguments:")
+				)
+					break;
+				return {name, description: trimmed};
+			}
+		}
+
 		// Fallback: just use the tool name
 		return {
 			name: toolName,

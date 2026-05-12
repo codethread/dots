@@ -173,27 +173,24 @@ describe("ccHookNpmRedirectLib", () => {
 				shouldBlock: false,
 				projectType: "npm",
 			},
-		])("should redirect npx commands in $projectType project", async ({
-			lockFile,
-			lockFileContent,
-			command,
-			expectedSuggestion,
-			shouldBlock,
-		}) => {
-			await mkdir(testProjectRoot, {recursive: true});
-			await writeFile(join(testProjectRoot, lockFile), lockFileContent);
+		])(
+			"should redirect npx commands in $projectType project",
+			async ({lockFile, lockFileContent, command, expectedSuggestion, shouldBlock}) => {
+				await mkdir(testProjectRoot, {recursive: true});
+				await writeFile(join(testProjectRoot, lockFile), lockFileContent);
 
-			const result = await ccHookNpmRedirectLib({
-				command,
-				cwd: testProjectRoot,
-			});
+				const result = await ccHookNpmRedirectLib({
+					command,
+					cwd: testProjectRoot,
+				});
 
-			expect(result.shouldBlock).toBe(shouldBlock);
-			if (shouldBlock) {
-				expect(result.blockedCommand).toBe(command);
-				expect(result.suggestedCommand).toBe(expectedSuggestion);
-			}
-		});
+				expect(result.shouldBlock).toBe(shouldBlock);
+				if (shouldBlock) {
+					expect(result.blockedCommand).toBe(command);
+					expect(result.suggestedCommand).toBe(expectedSuggestion);
+				}
+			},
+		);
 	});
 
 	describe("cross-package-manager command redirection", () => {
@@ -230,23 +227,21 @@ describe("ccHookNpmRedirectLib", () => {
 				sourceManager: "pnpm",
 				targetManager: "yarn",
 			},
-		])("should redirect $sourceManager to $targetManager in $targetManager project", async ({
-			lockFile,
-			lockFileContent,
-			command,
-			expectedSuggestion,
-		}) => {
-			await mkdir(testProjectRoot, {recursive: true});
-			await writeFile(join(testProjectRoot, lockFile), lockFileContent);
+		])(
+			"should redirect $sourceManager to $targetManager in $targetManager project",
+			async ({lockFile, lockFileContent, command, expectedSuggestion}) => {
+				await mkdir(testProjectRoot, {recursive: true});
+				await writeFile(join(testProjectRoot, lockFile), lockFileContent);
 
-			const result = await ccHookNpmRedirectLib({
-				command,
-				cwd: testProjectRoot,
-			});
+				const result = await ccHookNpmRedirectLib({
+					command,
+					cwd: testProjectRoot,
+				});
 
-			expect(result.shouldBlock).toBe(true);
-			expect(result.suggestedCommand).toBe(expectedSuggestion);
-		});
+				expect(result.shouldBlock).toBe(true);
+				expect(result.suggestedCommand).toBe(expectedSuggestion);
+			},
+		);
 	});
 
 	describe("node command redirection", () => {
@@ -265,29 +260,27 @@ describe("ccHookNpmRedirectLib", () => {
 				testDescription: "node command with flags",
 				shouldHaveSpecificWarning: false,
 			},
-		])("should redirect $testDescription to bun in bun project with warning", async ({
-			lockFile,
-			command,
-			expectedSuggestion,
-			shouldHaveSpecificWarning,
-		}) => {
-			await mkdir(testProjectRoot, {recursive: true});
-			await writeFile(join(testProjectRoot, lockFile), "");
+		])(
+			"should redirect $testDescription to bun in bun project with warning",
+			async ({lockFile, command, expectedSuggestion, shouldHaveSpecificWarning}) => {
+				await mkdir(testProjectRoot, {recursive: true});
+				await writeFile(join(testProjectRoot, lockFile), "");
 
-			const result = await ccHookNpmRedirectLib({
-				command,
-				cwd: testProjectRoot,
-			});
+				const result = await ccHookNpmRedirectLib({
+					command,
+					cwd: testProjectRoot,
+				});
 
-			expect(result.shouldBlock).toBe(true);
-			expect(result.blockedCommand).toBe(command);
-			expect(result.suggestedCommand).toBe(expectedSuggestion);
-			expect(result.detectedPackageManager).toBe("bun");
-			expect(result.warning).toBeDefined();
-			if (shouldHaveSpecificWarning) {
-				expect(result.warning).toContain("Node.js and Bun have different CLI flags");
-			}
-		});
+				expect(result.shouldBlock).toBe(true);
+				expect(result.blockedCommand).toBe(command);
+				expect(result.suggestedCommand).toBe(expectedSuggestion);
+				expect(result.detectedPackageManager).toBe("bun");
+				expect(result.warning).toBeDefined();
+				if (shouldHaveSpecificWarning) {
+					expect(result.warning).toContain("Node.js and Bun have different CLI flags");
+				}
+			},
+		);
 
 		test.each([
 			{
@@ -305,22 +298,21 @@ describe("ccHookNpmRedirectLib", () => {
 				lockFileContent: "",
 				expectedManager: "yarn",
 			},
-		])("should not redirect node in $expectedManager project", async ({
-			lockFile,
-			lockFileContent,
-			expectedManager,
-		}) => {
-			await mkdir(testProjectRoot, {recursive: true});
-			await writeFile(join(testProjectRoot, lockFile), lockFileContent);
+		])(
+			"should not redirect node in $expectedManager project",
+			async ({lockFile, lockFileContent, expectedManager}) => {
+				await mkdir(testProjectRoot, {recursive: true});
+				await writeFile(join(testProjectRoot, lockFile), lockFileContent);
 
-			const result = await ccHookNpmRedirectLib({
-				command: "node script.js",
-				cwd: testProjectRoot,
-			});
+				const result = await ccHookNpmRedirectLib({
+					command: "node script.js",
+					cwd: testProjectRoot,
+				});
 
-			expect(result.shouldBlock).toBe(false);
-			expect(result.detectedPackageManager).toBe(expectedManager);
-		});
+				expect(result.shouldBlock).toBe(false);
+				expect(result.detectedPackageManager).toBe(expectedManager);
+			},
+		);
 
 		test("should handle complex node commands", async () => {
 			await mkdir(testProjectRoot, {recursive: true});
@@ -494,26 +486,27 @@ describe("ccHookNpmRedirectLib", () => {
 				contextPath: "/tmp/test-user/.local/share/claude/plugins/marketplace-skill",
 				description: "nested plugin marketplace path",
 			},
-		])("should not redirect commands in $description even with package manager mismatch", async ({
-			contextPath,
-		}) => {
-			// Create a skill context directory with a bun.lock file
-			await mkdir(contextPath, {recursive: true});
-			await writeFile(join(contextPath, "bun.lock"), "");
+		])(
+			"should not redirect commands in $description even with package manager mismatch",
+			async ({contextPath}) => {
+				// Create a skill context directory with a bun.lock file
+				await mkdir(contextPath, {recursive: true});
+				await writeFile(join(contextPath, "bun.lock"), "");
 
-			// Try to run npm command (which would normally be blocked in a bun project)
-			const result = await ccHookNpmRedirectLib({
-				command: "npm install some-package",
-				cwd: contextPath,
-			});
+				// Try to run npm command (which would normally be blocked in a bun project)
+				const result = await ccHookNpmRedirectLib({
+					command: "npm install some-package",
+					cwd: contextPath,
+				});
 
-			// Should NOT block because we're in a skill context
-			expect(result.shouldBlock).toBe(false);
-			expect(result.blockedCommand).toBeNull();
-			expect(result.suggestedCommand).toBeNull();
-			// Package manager detection still happens, but blocking doesn't
-			expect(result.detectedPackageManager).toBe("bun");
-		});
+				// Should NOT block because we're in a skill context
+				expect(result.shouldBlock).toBe(false);
+				expect(result.blockedCommand).toBeNull();
+				expect(result.suggestedCommand).toBeNull();
+				// Package manager detection still happens, but blocking doesn't
+				expect(result.detectedPackageManager).toBe("bun");
+			},
+		);
 
 		test("should redirect outside skill contexts with same parent directory", async () => {
 			// Create a regular project directory that's NOT in a skill context
