@@ -68,6 +68,9 @@ export interface StatuslineInput extends BaseHookInput {
 		original_cwd: string;
 		original_branch: string;
 	};
+	effort?: {
+		level: "low" | "medium" | "high" | "xhigh" | "max";
+	};
 }
 
 /**

@@ -87,6 +87,11 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 	// Model name
 	parts.push(colorize.yellow(getShortModelName(input.model.display_name)));
 
+	// Effort level
+	if (input.effort) {
+		parts.push(formatEffort(input.effort.level));
+	}
+
 	// Context window usage
 	const cw = input.context_window;
 	if (cw) {
@@ -100,6 +105,9 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 					: colorize.brightBlack(contextDisplay);
 		parts.push(coloredContext);
 	}
+
+	parts.push(colorize.brightBlack(formatCost(input.cost.total_cost_usd)));
+	parts.push(colorize.brightBlack(formatTime(new Date())));
 
 	return parts.join(" ");
 }
@@ -133,6 +141,26 @@ async function isInsideContainer(): Promise<boolean> {
 function formatContextSize(tokens: number): string {
 	if (tokens >= 500_000) return `${Math.round(tokens / 1_000_000)}m`;
 	return `${Math.round(tokens / 1_000)}k`;
+}
+
+function formatCost(usd: number): string {
+	return `$${usd.toFixed(2)}`;
+}
+
+function formatTime(date: Date): string {
+	const hh = date.getHours().toString().padStart(2, "0");
+	const mm = date.getMinutes().toString().padStart(2, "0");
+	return `[${hh}:${mm}]`;
+}
+
+function formatEffort(level: "low" | "medium" | "high" | "xhigh" | "max"): string {
+	const labels: Record<string, string> = {low: "l", medium: "m", high: "h", xhigh: "xh", max: "m"};
+	const label = labels[level] ?? level[0];
+	if (level === "low") return colorize.blue(label);
+	if (level === "medium") return colorize.cyan(label);
+	if (level === "high") return colorize.green(label);
+	if (level === "xhigh") return colorize.magenta(label);
+	return colorize.red(label);
 }
 
 function getShortModelName(displayName: string): string {
