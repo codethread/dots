@@ -28,6 +28,7 @@ $env.MANWIDTH = ($env.MANWIDTH? | default 80)
 $env.LESSHISTFILE = ($env.LESSHISTFILE? | default "-") # no .lesshst
 $env.RIPGREP_CONFIG_PATH = ([$env.XDG_CONFIG_HOME ripgrep/config] | path join)
 $env.CT_VENDOR_DIR = (home "dev/vendor")
+$env.PDX_DATA_DIR = ($env.PDX_DATA_DIR? | default (home ".pdx"))
 
 # $env.CT_LOG = '1'
 $env.ENV_CONVERSIONS = {
@@ -225,4 +226,5 @@ path add "~/.linkerd2/bin"
 # keep this at the end
 path add -a "/usr/local/bin"
 path add "~/.local/bin"
+path add ($env.PDX_DATA_DIR | path join "bin")
 $env.path = ($env.path | uniq)
