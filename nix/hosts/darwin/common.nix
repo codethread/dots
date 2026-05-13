@@ -100,6 +100,17 @@ in {
 
   system.activationScripts.postActivation.text = ''
     /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${syncengineStateDir}
+
+    emacs_prefix="$(/opt/homebrew/bin/brew --prefix d12frosted/emacs-plus/emacs-plus@31 2>/dev/null || true)"
+    if [ -n "$emacs_prefix" ] && [ -d "$emacs_prefix/Emacs.app" ]; then
+      /usr/bin/rm -rf "/Applications/Emacs.app"
+      /usr/bin/ditto "$emacs_prefix/Emacs.app" "/Applications/Emacs.app"
+    fi
+    if [ -n "$emacs_prefix" ] && [ -d "$emacs_prefix/Emacs Client.app" ]; then
+      /usr/bin/rm -rf "/Applications/Emacs Client.app"
+      /usr/bin/ditto "$emacs_prefix/Emacs Client.app" "/Applications/Emacs Client.app"
+    fi
+
     /usr/bin/killall SystemUIServer >/dev/null 2>&1 || true
     /usr/bin/killall Finder >/dev/null 2>&1 || true
     /usr/bin/killall Dock >/dev/null 2>&1 || true
@@ -118,6 +129,7 @@ in {
     taps = [
       "nikitabobko/tap"          # aerospace
       "morantron/tmux-fingers"
+      "d12frosted/emacs-plus"
     ];
     brews = [
       "mas"           # required for masApps to function
@@ -126,8 +138,9 @@ in {
       "ical-buddy"
       "pngpaste"
       "volta"
-	  "yazi"
-	  "rsync"
+      "yazi"
+      "rsync"
+      "d12frosted/emacs-plus/emacs-plus@31"
     ];
     casks = [
       "aerospace"
