@@ -160,6 +160,7 @@ in {
         DISABLE_TELEMETRY = "0";
         DISABLE_AUTOUPDATER = "0";
         ENABLE_CLAUDEAI_MCP_SERVERS = "0";
+        CLAUDE_CODE_NO_FLICKER = "1";
         # so we can see files
         MANPAGER = "cat";
         # avoids old shell stuff
