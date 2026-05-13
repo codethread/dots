@@ -10,8 +10,10 @@ meta: >
 
   Signs of success: agents use this to get up to date information without going mad
 tools: web_search, fetch_content
-# model: openai-codex/gpt-5.4:medium
-model: deepseek/deepseek-v4-flash:high
+model:
+  - id: deepseek/deepseek-v4-flash:high
+    when: "!$IS_WORK"
+  - openai/gpt-5.4-mini:low
 ---
 
 You are an expert research specialist with access to the web.

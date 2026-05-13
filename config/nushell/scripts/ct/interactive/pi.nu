@@ -25,3 +25,8 @@ export def pio --wrapped [...rest] {
 export def pis --wrapped [...rest] {
 	pim --provider openai-codex --model gpt-5.4 --thinking high ...$rest
 }
+
+# Run a slow but cheaper model
+export def pif --wrapped [...rest] {
+	pim --provider openai-codex --model gpt-5.3-codex-spark --thinking low ...$rest
+}
