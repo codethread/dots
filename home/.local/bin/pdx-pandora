@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#:module: Open or jump to the Pdx Pandora tmux session.
+set -euo pipefail
+
+SESSION="pdx--pandora"
+PDX=(volta run --node 24 pdx)
+
+usage() {
+  cat <<'USAGE'
+Usage: pdx-pandora [-h|--help]
+
+If the pdx daemon is running, switch to the Pandora tmux session.
+Otherwise start pdx with Node 24 via Volta, then switch to Pandora.
+USAGE
+}
+
+case "${1:-}" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  "") ;;
+  *)
+    echo "pdx-pandora: unknown argument: $1" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
+
+status_json="$(${PDX[@]} daemon status 2>/dev/null || true)"
+running="$(jq -r '.daemon.running // false' <<<"$status_json" 2>/dev/null || printf 'false')"
+
+if [[ "$running" != "true" ]]; then
+  "${PDX[@]}" open
+fi
+
+tmux switch-client -t "$SESSION"
