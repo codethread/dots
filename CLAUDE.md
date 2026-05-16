@@ -73,6 +73,16 @@ This repo defines Claude Code configurations such as commands and agents at `cla
 
 ## Verification
 
+### Nix
+
+When checking flake builds, avoid leaving repo-local `result` symlinks. Use `--no-link` for `nix build` commands, for example:
+
+```bash
+nix build ./nix#darwinConfigurations.home.system --show-trace --no-link
+```
+
+`nrs` / `make system` switch the system and do not need a `result` link.
+
 ### Nushell
 
 After editing `.nu` files, validate syntax with absolute paths. Use `--as-module` for module files only:
