@@ -1,6 +1,6 @@
 {
   "lastChangelogVersion": "0.73.1",
-  "theme": "rose-pine-dawn",
+  "theme": "rose-pine-moon",
   "quietStartup": true,
   "npmCommand": [
     "npm",
@@ -9,8 +9,8 @@
   ],
   "editorPaddingX": 1,
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4",
-  "defaultThinkingLevel": "medium",
+  "defaultModel": "gpt-5.5",
+  "defaultThinkingLevel": "low",
   "enabledModels": [
     "openai-codex/gpt-5.5"
   ],
@@ -21,9 +21,6 @@
         "-pi-extensions/extensions/claude-sync/index.ts",
         "-pi-extensions/claude-sync/index.ts"
       ]
-    },
-    {
-      "source": "../../dev/pithos/packages/spawner"
     },
     "npm:pi-mermaid",
     {
