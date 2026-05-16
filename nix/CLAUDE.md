@@ -4,7 +4,7 @@ Architecture and design rationale are in `specs/nix-infra.md`. This file covers 
 
 ## Dual Channel Pattern
 
-Two nixpkgs channels: `pkgs` (unstable) and `pkgsMaster` (bleeding edge). In `common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available. Use `agentPkgSet.*` for fast-moving supporting packages from nixpkgs-master. On NixOS, agent CLIs (`claude-code`, `codex`, `pi`) come from the `llm-agents.nix` overlay via `agentPkgSet."llm-agents".*`. On Darwin, Claude/Codex/Pi are synced by Home Manager activation via helper scripts from the local `nativeAgentOverlay`, while shared supporting packages still come from Nix.
+Two nixpkgs channels: `pkgs` (unstable) and `pkgsMaster` (bleeding edge). In `common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available. Use `agentPkgSet.*` for fast-moving supporting packages from nixpkgs-master. Pi comes from `llm-agents.nix` via `agentPkgSet."llm-agents".pi` on all platforms. On NixOS, Claude Code also comes from `llm-agents.nix`; on Darwin, Claude/Codex are synced by Home Manager activation via helper scripts from the local `nativeAgentOverlay`, while shared supporting packages still come from Nix.
 
 ## Adding a New Package
 

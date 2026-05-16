@@ -59,9 +59,11 @@ in {
       source = direnvNushellInit;
       force = true;
     };
-  } // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
     # Stable short path so PI_PACKAGE_DIR avoids the hash-heavy nix store path in system prompts.
-    ".pi/pi-source".source = "${llmAgents.pi}/lib/node_modules/@mariozechner/pi-coding-agent";
+    ".pi/pi-source" = {
+      source = "${llmAgents.pi}/lib/node_modules/@earendil-works/pi-coding-agent";
+      force = true;
+    };
   };
 
   home.activation.userBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -148,7 +150,6 @@ in {
 
       sync_native_agent "Claude Code" ${pkgs.nativeAgentInstallClaude}/bin/native-agent-install-claude
       sync_native_agent "Codex" ${pkgs.nativeAgentInstallCodex}/bin/native-agent-install-codex
-      sync_native_agent "Pi" ${pkgs.nativeAgentInstallPi}/bin/native-agent-install-pi
     ''}
   '';
 
@@ -183,10 +184,10 @@ in {
     playwright-cli
     agentPkgSet.typescript
     agentPkgSet.typescript-language-server
+    llmAgents.pi
   ] ++ lib.optionals (!pkgs.stdenv.isDarwin) [
     codex
     llmAgents.claude-code
-    llmAgents.pi
   ] ++ [
     # --- Languages ---
     go
