@@ -1,0 +1,14 @@
+{
+  "size": {
+    "0": null,
+    "40": 6,
+    "70": 8,
+    "100": 10
+  },
+  "terminals": [
+    {
+      "match": "tmux",
+      "render": "kitty-unicode"
+    }
+  ]
+}
