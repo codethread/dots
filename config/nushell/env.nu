@@ -28,9 +28,6 @@ $env.MANWIDTH = ($env.MANWIDTH? | default 80)
 $env.LESSHISTFILE = ($env.LESSHISTFILE? | default "-") # no .lesshst
 $env.RIPGREP_CONFIG_PATH = ([$env.XDG_CONFIG_HOME ripgrep/config] | path join)
 $env.CT_VENDOR_DIR = (home "dev/vendor")
-$env.PDX_DATA_DIR = ($env.PDX_DATA_DIR? | default (home ".pdx"))
-$env.PDX_USER_DATA_DIR = ([$env.XDG_CONFIG_HOME pdx] | path join)
-$env.PITHOS_DB = ([$env.PDX_DATA_DIR pithos.sqlite] | path join)
 
 
 # $env.CT_LOG = '1'
@@ -46,32 +43,6 @@ $env.CT_USER = ($env.CT_USER? | default (match ($env.USER? | default "") {
 $env.KSM_WORK = $env.CT_USER == 'work'
 $env.IS_WORK = $env.CT_USER == 'work'
 
-#: nix {{{
-let _nix_per_user = $"/etc/profiles/per-user/($env.USER)/bin"
-
-if ("/etc/NIXOS" | path exists) or ("/run/current-system/sw/bin" | path exists) {
-	path add (home ".nix-profile/bin")
-	path add "/nix/var/nix/profiles/default/bin"
-	path add "/run/current-system/sw/bin"
-	path add $_nix_per_user
-}
-
-if ("/etc/NIXOS" | path exists) {
-	$env.IS_NIXOS = true
-	# setuid wrappers (sudo, etc.) — must come before /run/current-system/sw/bin
-	path add "/run/wrappers/bin"
-	path add ($env.XDG_STATE_HOME | path join "nix/profile/bin")
-	$env.DOCKER_HOST = $"unix:///run/user/(id -u)/podman/podman.sock"
-	$env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = $"($_nix_per_user)/chromium"
-} else {
-	$env.IS_NIXOS = false
-	$env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = "/Applications/Chromium.app/Contents/MacOS/Chromium"
-}
-
-# stable symlink to nix store path; avoids hash-heavy store path in pi system prompts (~130 tokens/session)
-$env.PI_PACKAGE_DIR = ("~/.pi/pi-source")
-
-#: }}}
 
 $env.CT_NOTES = (match $env.CT_USER {
 	"work" => (home 'gdrive/perks'),
@@ -98,6 +69,42 @@ if (sys host).name == "Darwin" {
 path add "/opt/podman/bin"
 
 path add -a "~/.local/share/nvim/mason/bin"
+
+#: }}}
+#: nix {{{
+let _nix_per_user = $"/etc/profiles/per-user/($env.USER)/bin"
+
+if ("/etc/NIXOS" | path exists) or ("/run/current-system/sw/bin" | path exists) {
+	path add (home ".nix-profile/bin")
+	path add "/nix/var/nix/profiles/default/bin"
+	path add "/run/current-system/sw/bin"
+	path add $_nix_per_user
+}
+
+if ("/etc/NIXOS" | path exists) {
+	$env.IS_NIXOS = true
+	# setuid wrappers (sudo, etc.) — must come before /run/current-system/sw/bin
+	path add "/run/wrappers/bin"
+	path add ($env.XDG_STATE_HOME | path join "nix/profile/bin")
+	$env.DOCKER_HOST = $"unix:///run/user/(id -u)/podman/podman.sock"
+	$env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = $"($_nix_per_user)/chromium"
+} else {
+	$env.IS_NIXOS = false
+	$env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = "/Applications/Chromium.app/Contents/MacOS/Chromium"
+}
+
+# stable symlink to nix store path; avoids hash-heavy store path in pi system prompts (~130 tokens/session)
+$env.PI_PACKAGE_DIR = ("~/.pi/pi-source")
+
+#: }}}
+#: pandora {{{
+
+$env.PDX_DATA_DIR = ($env.PDX_DATA_DIR? | default (home ".pdx"))
+$env.PITHOS_DB = ([$env.PDX_DATA_DIR pithos.sqlite] | path join)
+$env.PDX_USER_DATA_DIR = (match $env.CT_USER {
+  "work" => (home workfiles/pdx)
+  _ => ([$env.XDG_CONFIG_HOME pdx] | path join)
+})
 
 #: }}}
 #: homebrew {{{
