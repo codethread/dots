@@ -29,6 +29,7 @@ $env.LESSHISTFILE = ($env.LESSHISTFILE? | default "-") # no .lesshst
 $env.RIPGREP_CONFIG_PATH = ([$env.XDG_CONFIG_HOME ripgrep/config] | path join)
 $env.CT_VENDOR_DIR = (home "dev/vendor")
 $env.PDX_DATA_DIR = ($env.PDX_DATA_DIR? | default (home ".pdx"))
+$env.PDX_USER_DATA_DIR = ([$env.XDG_CONFIG_HOME pdx] | path join)
 $env.PITHOS_DB = ([$env.PDX_DATA_DIR pithos.sqlite] | path join)
 
 

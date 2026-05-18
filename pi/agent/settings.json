@@ -22,7 +22,6 @@
         "-pi-extensions/claude-sync/index.ts"
       ]
     },
-    "npm:pi-mermaid",
     {
       "source": "npm:pi-web-access",
       "skills": [
