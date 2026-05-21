@@ -17,4 +17,4 @@ nu \
   --error-style 'plain' \
   --no-std-lib \
   --no-history \
-  -c "$result" # --include-path $(echo -e "${HOME}/.config/nushell/scripts${sep}${HOME}/workfiles/nu${sep}${HOME}/dev/vendor/nu_scripts/sourced") \
+  -c "$result" # --include-path $(echo -e "${HOME}/.config/nushell/scripts${sep}${HOME}/work/me/workfiles/nu${sep}${HOME}/dev/vendor/nu_scripts/sourced") \

@@ -12,5 +12,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "perkbox@ai-tools-marketplace": true
   }
 }

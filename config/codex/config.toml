@@ -29,7 +29,7 @@ trust_level = "trusted"
 [projects."/Users/adamhall/work"]
 trust_level = "trusted"
 
-[projects."/Users/adamhall/workfiles"]
+[projects."/Users/adamhall/work/me/workfiles"]
 trust_level = "trusted"
 
 [projects."/Users/adamhall/dev/projects/ai-tools"]

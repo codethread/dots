@@ -62,7 +62,7 @@ in {
           "~/.claude"
           "~/dev"
           "~/work"
-          "~/workfiles"
+          "~/work/me/workfiles"
         ];
       };
       hooks = {
@@ -125,6 +125,13 @@ in {
         "cc-notify@cc-notify-marketplace" = true;
       };
       extraKnownMarketplaces = {
+        ai-tools-marketplace = {
+          source = {
+            source = "git";
+            url = "ssh://git@git.perkbox.io/adam.hall/ai-tools.git";
+          };
+          autoUpdate = true;
+        };
         claude-code-plugins = {
           source = {
             source = "directory";
@@ -138,6 +145,7 @@ in {
             repo = "codethread/cc-notify";
           };
         };
+
       };
 
       env = {

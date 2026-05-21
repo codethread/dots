@@ -107,8 +107,8 @@ excludes = ["glob_pattern", ...]          # Optional. Combined with global exclu
 | config | `${DOTFILES}/config` | `~/.config` | — |
 | claude | `${DOTFILES}/claude` | `~/.claude` | `**/settings.json`, `**/settings.local.json` |
 | pi | `${DOTFILES}/pi` | `~/.pi/agent` | — |
-| work | `~/workfiles/home` | `~` | — |
-| deals | `~/workfiles/work/app/deals-light-ui/_git` | `~/work/app/deals-light-ui/.git` | — |
+| work | `~/work/me/workfiles/home` | `~` | — |
+| deals | `~/work/me/workfiles/work/app/deals-light-ui/_git` | `~/work/app/deals-light-ui/.git` | — |
 
 Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.md`
 

@@ -141,7 +141,7 @@ The `config` project covers `config/codex/` → `~/.config/codex/` as part of th
 - Allow: `Bash`, `Edit(.claude)`, `WebFetch`, `WebSearch`, `Skill`, context7 MCP tools
 - Deny: secret file reads (`*.key`, `*.pem`, `.env*`, `.netrc`, `id_rsa*`, `secrets/**`), dangerous git ops (`reset --hard`, `clean -f`, `branch -D`, `config`, `commit --amend`, `rebase -i`), `.git/hooks/**`, Plan/statusline-setup agents, `NotebookEdit`, `AskUserQuestion`, `EnterPlanMode`, `ExitPlanMode`
 - Default mode: `acceptEdits`
-- Additional directories: `~/dev/dots`, `~/.local`, `~/.claude`, `~/dev`, `~/work`, `~/workfiles`
+- Additional directories: `~/dev/dots`, `~/.local`, `~/.claude`, `~/dev`, `~/work`, `~/work/me/workfiles`
 
 **Hooks (global):**
 

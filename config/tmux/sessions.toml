@@ -7,7 +7,7 @@ version = "1.0"
 [search]
 dirs = [
   "$DOTFILES",
-  "~/workfiles",
+  "~/work/me/workfiles",
   "~/.local/share/nvim/lazy/*",
   "~/.local/share/nvim/mason/packages/*",
 ]
@@ -47,7 +47,7 @@ notes = "~/Library/CloudStorage/OneDrive-Vivup/_docs/notes"
 advanced_budgets = "~/dev/projects/advanced-budgets"
 flexi_points = "~/work/perkbox-services/flexi-points/flexi-points-app"
 inspect_package = "~/work/libraries/inspect-my-package"
-workfiles = "~/workfiles"
+workfiles = "~/work/me/workfiles"
 protobuf = "~/work/perkbox-services/protobuf"
 karen = "~/dev/projects/claude-karen"
 ai_files = "~/dev/projects/ai-tools"

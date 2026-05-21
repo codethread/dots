@@ -37,10 +37,10 @@ target = "~/.pi"
 
 [[project]]
 name = "work"
-origin = "~/workfiles/home"
+origin = "~/work/me/workfiles/home"
 target = "~"
 
 [[project]]
 name = "deals"
-origin = "~/workfiles/work/app/deals-light-ui/_git"
+origin = "~/work/me/workfiles/work/app/deals-light-ui/_git"
 target = "~/work/app/deals-light-ui/.git"

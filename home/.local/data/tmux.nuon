@@ -41,7 +41,7 @@
 
 		[ P6 , "~/dev/projects/git-nudge", ]
 		[ P7 , "~/work/libraries/inspect-my-package", ]
-		[ P8 , "~/workfiles", ]
+		[ P8 , "~/work/me/workfiles", ]
 		[ P9 , "~/work/perkbox-services/protobuf", ]
 	]
 }

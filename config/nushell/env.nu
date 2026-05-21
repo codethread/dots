@@ -102,7 +102,7 @@ $env.PI_PACKAGE_DIR = ("~/.pi/pi-source")
 $env.PDX_DATA_DIR = ($env.PDX_DATA_DIR? | default (home ".pdx"))
 $env.PITHOS_DB = ([$env.PDX_DATA_DIR pithos.sqlite] | path join)
 $env.PDX_USER_DATA_DIR = (match $env.CT_USER {
-  "work" => (home workfiles/pdx)
+  "work" => (home work/me/workfiles/pdx)
   _ => ([$env.XDG_CONFIG_HOME pdx] | path join)
 })
 
