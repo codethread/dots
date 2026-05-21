@@ -32,7 +32,7 @@ trust_level = "trusted"
 [projects."/Users/adamhall/work/me/workfiles"]
 trust_level = "trusted"
 
-[projects."/Users/adamhall/dev/projects/ai-tools"]
+[projects."/Users/adamhall/work/me/ai-tools"]
 trust_level = "trusted"
 
 [projects."/home/codethread/dev/dots"]

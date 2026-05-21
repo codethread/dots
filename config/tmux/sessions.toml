@@ -50,7 +50,7 @@ inspect_package = "~/work/libraries/inspect-my-package"
 workfiles = "~/work/me/workfiles"
 protobuf = "~/work/perkbox-services/protobuf"
 karen = "~/dev/projects/claude-karen"
-ai_files = "~/dev/projects/ai-tools"
+ai_files = "~/work/me/ai-tools"
 
 [profiles.work.keys]
 P1 = "dots"
