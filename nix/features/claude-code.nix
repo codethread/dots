@@ -180,7 +180,7 @@ in {
       theme = "auto";
       editorMode = "vim";
       verbose = false;
-      preferredNotifChannel = "kitty";
+      preferredNotifChannel = "notifications_disabled";
       autoCompactEnabled = false;
       fileCheckpointingEnabled = false;
       showTurnDuration = true;
