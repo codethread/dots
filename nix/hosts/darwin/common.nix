@@ -158,6 +158,7 @@ in {
       "font-fira-code"
       "font-victor-mono"
       "font-symbols-only-nerd-font"
+	  "zed"
     ];
 	# enable on boot load machine
 	# bug requires login on every switch

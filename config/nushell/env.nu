@@ -11,7 +11,9 @@ def home [p: string] {
 #: envs {{{
 
 $env.DOTFILES = ($env.DOTFILES? | default (home "dev/dots"))
+# $env.EDITOR = ($env.EDITOR? | default "nvim")
 $env.EDITOR = ($env.EDITOR? | default "nvim")
+$env.VISUAL = "zed --wait"
 $env.SHELL = (which nu | get 0.path)
 $env.XDG_CONFIG_HOME = ($env.XDG_CONFIG_HOME? | default (home ".config"))
 $env.XDG_DATA_HOME = ($env.XDG_DATA_HOME? | default (home ".local/share"))

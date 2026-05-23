@@ -9,8 +9,8 @@
   ],
   "editorPaddingX": 1,
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4",
-  "defaultThinkingLevel": "medium",
+  "defaultModel": "gpt-5.5",
+  "defaultThinkingLevel": "low",
   "enabledModels": [
     "openai-codex/gpt-5.5"
   ],
@@ -20,12 +20,6 @@
       "extensions": [
         "-pi-extensions/extensions/claude-sync/index.ts",
         "-pi-extensions/claude-sync/index.ts"
-      ]
-    },
-    {
-      "source": "npm:pi-web-access",
-      "skills": [
-        "-skills/librarian/SKILL.md"
       ]
     },
     "npm:pi-nvim"
