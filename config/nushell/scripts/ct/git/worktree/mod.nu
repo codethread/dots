@@ -226,7 +226,7 @@ export def --env "wk switch" [] {
 		| parse "{pane_id}\t{pane_path}"
 
 	# tab fields: display \t pane_id \t path \t branch
-	# fzf refs are 1-indexed ({2}=pane_id, {3}=path); nushell split column is 1-indexed (column3=path, column4=branch)
+	# fzf refs are 1-indexed ({2}=pane_id, {3}=path); nushell split column names are 0-indexed (column2=path, column3=branch)
 	let candidates = $worktrees | each { |wt|
 		let branch = if $wt.detached { "(detached)" } else { $wt.branch }
 		let marker = if $wt.path == $current_path { "*" } else { " " }
@@ -251,8 +251,8 @@ export def --env "wk switch" [] {
 		0 => {
 			let line = $result.stdout | str trim
 			let parts = $line | split column "\t"
-			let path = $parts | get column3.0
-			let branch = $parts | get column4.0
+			let path = $parts | get column2.0
+			let branch = $parts | get column3.0
 			wk-open-dir $path $branch
 		}
 		130 | 1 => {}

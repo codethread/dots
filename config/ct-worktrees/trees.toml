@@ -10,7 +10,7 @@
 [[project]]
 name = "deals ui bootstrap"
 root = "~/work/app/deals-light-ui"
-pool_size = 5
+pool_size = 8
 command = '''
 printf '%s\n' 'worktree: running yarn install'
 yarn install
