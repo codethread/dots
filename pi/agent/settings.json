@@ -16,16 +16,12 @@
   ],
   "packages": [
     {
-      "source": "../../dev/projects/agents",
-      "extensions": [
-        "-pi-extensions/extensions/claude-sync/index.ts",
-        "-pi-extensions/claude-sync/index.ts"
-      ]
+      "source": "../../dev/projects/agents"
     },
     "npm:pi-nvim"
   ],
   "hideThinkingBlock": true,
-  "treeFilterMode": "default",
+  "treeFilterMode": "no-tools",
   "terminal": {
     "showTerminalProgress": false
   }

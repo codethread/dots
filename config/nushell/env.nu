@@ -97,6 +97,7 @@ if ("/etc/NIXOS" | path exists) {
 
 # stable symlink to nix store path; avoids hash-heavy store path in pi system prompts (~130 tokens/session)
 $env.PI_PACKAGE_DIR = ("~/.pi/pi-source")
+$env.PI_OFFLINE = 1
 
 #: }}}
 #: pandora {{{
