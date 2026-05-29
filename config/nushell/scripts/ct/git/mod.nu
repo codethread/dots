@@ -94,9 +94,8 @@ export def gnew [name: string] {
 
 export def gmm [] {
 	let main = (git_main_branch)
-	# fetch and update main
-	git fetch origin $"($main):($main)"
-	git rebase $main
+	git fetch origin
+	git rebase $"origin/($main)"
 }
 
 

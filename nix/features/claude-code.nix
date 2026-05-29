@@ -1,7 +1,51 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.ct.claude-code;
+
+  commonEnabledPlugins = {
+    "frontend-design@claude-plugins-official" = true;
+    # "typescript-lsp@claude-plugins-official" = true;
+    "claude-md-management@claude-plugins-official" = true;
+  };
+
+  claudeCodePluginsMarketplace = {
+    claude-code-plugins = {
+      source = {
+        source = "directory";
+        path = "${config.home.homeDirectory}/dev/projects/claude-code-plugins";
+      };
+    };
+  };
+
+  machineEnabledPlugins = if cfg.workMachine then {
+    "pb-go@pb-claude" = true;
+    "pb-aws@pb-claude" = true;
+    "pb-prose@pb-claude" = true;
+    "pb-claude-harness-engineering@pb-claude" = true;
+    "dev@claude-code-plugins" = true;
+  } else {
+    "claude-code-knowledge@claude-code-plugins" = true;
+    # "bdfl@claude-code-plugins" = true;
+    "dev@claude-code-plugins" = true;
+  };
+
+  machineMarketplaces = claudeCodePluginsMarketplace // lib.optionalAttrs cfg.workMachine {
+    ai-tools-marketplace = {
+      source = {
+        source = "git";
+        url = "ssh://git@git.perkbox.io/adam.hall/ai-tools.git";
+      };
+      autoUpdate = true;
+    };
+    pb-claude = {
+      source = {
+        source = "git";
+        url = "ssh://git@git.perkbox.io/ai/tools/claude-plugins.git";
+      };
+      autoUpdate = true;
+    };
+  };
 in {
   options.ct.claude-code = {
     enableNotify = lib.mkOption {
@@ -9,15 +53,33 @@ in {
       default = false;
       description = "Enable cc-notify plugin and marketplace";
     };
+
+    workMachine = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Use work-only Claude Code marketplaces and plugins";
+    };
   };
 
   config = {
+    home.activation.createClaudeTmpDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      mkdir -p /tmp/claude && chmod 1777 /tmp/claude
+    '';
+
+    # On Linux /tmp is a tmpfs cleared at reboot; recreate via systemd-tmpfiles
+    systemd.user.tmpfiles.rules = lib.optionals pkgs.stdenv.isLinux [
+      "d /tmp/claude 1777 - - -"
+    ];
+
     home.file.".claude/settings.json".text = builtins.toJSON {
       "$schema" = "https://json.schemastore.org/claude-code-settings.json";
       permissions = {
         allow = [
           "Bash"
           "Edit(.claude)"
+          "Read(//tmp/claude/**)"
+          "Write(//tmp/claude/**)"
+          "Edit(//tmp/claude/**)"
           "WebFetch"
           "WebSearch"
           "Skill"
@@ -114,41 +176,20 @@ in {
         command = "cc-statusline";
         padding = 0;
       };
-      enabledPlugins = {
-        "frontend-design@claude-plugins-official" = true;
-        # "typescript-lsp@claude-plugins-official" = true;
-        "claude-md-management@claude-plugins-official" = true;
-        "claude-code-knowledge@codethread-plugins" = true;
-        # "bdfl@codethread-plugins" = true;
-        "dev@codethread-plugins" = true;
-      } // lib.optionalAttrs cfg.enableNotify {
+      enabledPlugins = commonEnabledPlugins // machineEnabledPlugins // lib.optionalAttrs cfg.enableNotify {
         "cc-notify@cc-notify-marketplace" = true;
       };
-      extraKnownMarketplaces = {
-        ai-tools-marketplace = {
-          source = {
-            source = "git";
-            url = "ssh://git@git.perkbox.io/adam.hall/ai-tools.git";
-          };
-          autoUpdate = true;
-        };
-        claude-code-plugins = {
-          source = {
-            source = "directory";
-            path = "${config.home.homeDirectory}/dev/projects/claude-code-plugins";
-          };
-        };
-      } // lib.optionalAttrs cfg.enableNotify {
+      extraKnownMarketplaces = machineMarketplaces // lib.optionalAttrs cfg.enableNotify {
         cc-notify-marketplace = {
           source = {
             source = "github";
             repo = "codethread/cc-notify";
           };
         };
-
       };
 
       env = {
+        TMPDIR = "/tmp/claude";
         CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "true";
         CLAUDE_CODE_DISABLE_TERMINAL_TITLE = "1";
         CLAUDE_CODE_DISABLE_AUTO_MEMORY = "1";

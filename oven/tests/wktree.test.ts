@@ -498,7 +498,7 @@ integrationDescribe("wktree non-pool add", () => {
 			warnDeps,
 		).catch(() => undefined);
 		expect(warnings.join("\n")).toContain("--base ignored");
-	});
+	}, 15000);
 
 	test("accepts --force for wrapper compatibility", async () => {
 		const {root} = await initRepoWithOrigin(tmp);

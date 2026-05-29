@@ -168,6 +168,8 @@ RUN cd $DOTFILES/oven && bun run build --verbose
 # Pre-install neovim plugins for the lightweight minimal-nvim config.
 RUN nvim --headless "+Lazy! install" +qa
 
+RUN mkdir -p /tmp/claude && chmod 1777 /tmp/claude
+
 WORKDIR /project
 
 CMD ["bash"]
