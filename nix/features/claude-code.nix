@@ -5,8 +5,11 @@ let
 
   commonEnabledPlugins = {
     "frontend-design@claude-plugins-official" = true;
-    # "typescript-lsp@claude-plugins-official" = true;
     "claude-md-management@claude-plugins-official" = true;
+
+	"harness@agents" = true;
+	"devflow@agents" = true;
+	"coding@agents" = true;
   };
 
   claudeCodePluginsMarketplace = {
@@ -16,6 +19,12 @@ let
         path = "${config.home.homeDirectory}/dev/projects/claude-code-plugins";
       };
     };
+    agents = {
+      source = {
+        source = "directory";
+        path = "${config.home.homeDirectory}/dev/projects/agents";
+      };
+    };
   };
 
   machineEnabledPlugins = if cfg.workMachine then {
@@ -23,11 +32,12 @@ let
     "pb-aws@pb-claude" = true;
     "pb-prose@pb-claude" = true;
     "pb-claude-harness-engineering@pb-claude" = true;
-    "dev@claude-code-plugins" = true;
+
   } else {
     "claude-code-knowledge@claude-code-plugins" = true;
     # "bdfl@claude-code-plugins" = true;
     "dev@claude-code-plugins" = true;
+	"writing@agents" = true;
   };
 
   machineMarketplaces = claudeCodePluginsMarketplace // lib.optionalAttrs cfg.workMachine {
@@ -78,21 +88,38 @@ in {
           "Bash"
           "Edit(.claude)"
           "Read(//tmp/claude/**)"
+          "Read(//tmp/claude/**)"
           "Write(//tmp/claude/**)"
           "Edit(//tmp/claude/**)"
           "WebFetch"
           "WebSearch"
           "Skill"
-          "mcp__context7__resolve-library-id"
-          "mcp__context7__query-docs"
+          "mcp__context7__*"
+		  "mcp__claude_ai_Microsoft_365__*"
+		  "mcp__atlassian__*"
         ];
         deny = [
           "Agent(Plan)" # garbage
           "Agent(statusline-setup)" # not needed
+
           "NotebookEdit" # not needed
+		  "WaitForMcpServers"
+
 		  "AskUserQuestion" # cheaper to just chat
+
 		  "EnterPlanMode" # moving away from plan
 		  "ExitPlanMode" # moving away from plan
+
+		  "CronCreate"
+		  "CronDelete"
+		  "CronList"
+
+		  "EnterWorktree"
+		  "ExitWorktree"
+
+		  "LSP"
+		  "ScheduleWakeup"
+		  "Workflow"
 
 		  # TODO: block at hook level
           "Read(**/*.key)"
@@ -114,7 +141,7 @@ in {
           "Bash(git clean -f*)"
           "Bash(git branch -D*)"
           "Bash(git config*)"
-          "Bash(git commit --amend*)"
+          # "Bash(git commit --amend*)"
           "Bash(git rebase -i*)"
         ];
         defaultMode = "acceptEdits";
@@ -127,6 +154,9 @@ in {
           "~/work/me/workfiles"
         ];
       };
+
+	  enabledMcpjsonServers = [ "microsoft365" ];
+
       hooks = {
         PostToolUse = [
           {
@@ -201,31 +231,49 @@ in {
         ENABLE_TOOL_SEARCH = "0";
         DISABLE_TELEMETRY = "0";
         DISABLE_AUTOUPDATER = "0";
-        ENABLE_CLAUDEAI_MCP_SERVERS = "0";
         CLAUDE_CODE_NO_FLICKER = "1";
         # so we can see files
         MANPAGER = "cat";
         # avoids old shell stuff
-        ZDOTDIR = "~/.config/zsh-claude";
+        SHELL = "${pkgs.zsh}/bin/zsh";
+        ZDOTDIR = "${config.xdg.configHome}/zsh";
       };
 
-      spinnerTipsEnabled = false;
+	  autoScrollEnabled = true; # i assume its a bug that this jumps when viewing content, but turning it to false requires constant scrolling
+	  disableAutoMode = "disable";
+	  disableWorkflows = true;
+	  ultracode = false;
+	  useAutoModeDuringPlan = false;
+      autoCompactEnabled = false;
       autoMemoryEnabled = false;
       autoUpdatesChannel = "latest";
       cleanupPeriodDays = 999;
+      editorMode = "vim";
       fastMode = false;
+      fileCheckpointingEnabled = false;
       includeCoAuthoredBy = false;
       includeGitInstructions = false;
-      promptSuggestionEnabled = false;
-      skipDangerousModePermissionPrompt = true;
-      theme = "auto";
-      editorMode = "vim";
-      verbose = false;
       preferredNotifChannel = "notifications_disabled";
-      autoCompactEnabled = false;
-      fileCheckpointingEnabled = false;
+      promptSuggestionEnabled = false;
       showTurnDuration = true;
+      skipDangerousModePermissionPrompt = true;
+      spinnerTipsEnabled = false;
       terminalProgressBarEnabled = true;
+      theme = "auto";
+      verbose = false;
+
+      skillOverrides = {
+	    init = "off"; # doesn't work
+		claude-api = "off";
+		plan = "off";
+		autofix-pr =  "off";
+		batch = "off";
+		code-review = "off";
+		# debug = "off";
+		deep-research = "off";
+		fewer-permission-prompts = "off";
+		loop = "off";
+      };
     };
   };
 }
