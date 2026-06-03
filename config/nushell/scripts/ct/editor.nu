@@ -1,8 +1,11 @@
 # Editor and development environment utilities
 
-export alias v = nvim
 # see https://github.com/wbthomason/packer.nvim/issues/180 for MACOSX_DEPLOYMENT_TARGET=10.15
 export alias nvim-boot = MACOSX_DEPLOYMENT_TARGET=10.15 nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync'
+
+export def nvim-md []: string -> nothing {
+	$in | nvim - "+set ft=markdown"
+}
 
 export def nvim-profile [] {
 	nvim -c "lua require('lazy').profile()"

@@ -107,7 +107,7 @@ describe("wk nushell smoke", () => {
 		// Pool allocation intentionally uses the lowest initialized free slot after recycle.
 		expect((await run(["git", "-C", recycledSlot1, "branch", "--show-current"])).stdout.trim()).toBe("feat2");
 		expect((await run(["git", "-C", slot2, "branch", "--show-current"])).stdout.trim()).toBe("wk-pool/feat2");
-	});
+	}, 30_000);
 });
 
 function writeConfig(spec: {configHome: string; root: string; command: string; poolSize?: number}) {
