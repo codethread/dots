@@ -8,9 +8,21 @@
     shell = pkgs.nushell;
   };
 
+  system.activationScripts.nativeBitwardenCli.text = ''
+    home="/Users/${config.system.primaryUser}"
+
+    echo ">>> Syncing Bitwarden CLI"
+    if ! /usr/bin/sudo -u ${config.system.primaryUser} /usr/bin/env \
+      HOME="$home" \
+      NPM_CONFIG_PREFIX="$home/.local" \
+      ${pkgs.nativeAgentInstallBitwarden}/bin/native-agent-install-bitwarden --if-missing; then
+      echo ">>> WARN: failed to sync Bitwarden CLI; continuing"
+    fi
+  '';
+
   homebrew.brews = [
     "cocoapods"
-	"jira-cli"
+    "jira-cli"
   ];
 
   homebrew.casks = [

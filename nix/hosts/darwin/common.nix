@@ -31,7 +31,11 @@ in {
 
   # Make xterm-kitty/tmux-256color terminfo available to nix-darwin activation
   # and sudo contexts while keeping kitty's native TERM=xterm-kitty.
-  environment.enableAllTerminfo = true;
+  # enableAllTerminfo pulls in termite which fails to build on current Apple SDK.
+  environment.systemPackages = with pkgs; [
+    kitty.terminfo  # xterm-kitty
+    ncurses         # tmux-256color
+  ];
 
   # Keyboard repeat: lower values are faster on macOS.
   system.defaults.NSGlobalDomain = {
@@ -101,16 +105,6 @@ in {
   system.activationScripts.postActivation.text = ''
     /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${syncengineStateDir}
 
-    emacs_prefix="$(/opt/homebrew/bin/brew --prefix d12frosted/emacs-plus/emacs-plus@31 2>/dev/null || true)"
-    if [ -n "$emacs_prefix" ] && [ -d "$emacs_prefix/Emacs.app" ]; then
-      /usr/bin/rm -rf "/Applications/Emacs.app"
-      /usr/bin/ditto "$emacs_prefix/Emacs.app" "/Applications/Emacs.app"
-    fi
-    if [ -n "$emacs_prefix" ] && [ -d "$emacs_prefix/Emacs Client.app" ]; then
-      /usr/bin/rm -rf "/Applications/Emacs Client.app"
-      /usr/bin/ditto "$emacs_prefix/Emacs Client.app" "/Applications/Emacs Client.app"
-    fi
-
     /usr/bin/killall SystemUIServer >/dev/null 2>&1 || true
     /usr/bin/killall Finder >/dev/null 2>&1 || true
     /usr/bin/killall Dock >/dev/null 2>&1 || true
@@ -129,7 +123,6 @@ in {
     taps = [
       "nikitabobko/tap"          # aerospace
       "morantron/tmux-fingers"
-      "d12frosted/emacs-plus"
     ];
     brews = [
       "mas"           # required for masApps to function
@@ -140,7 +133,7 @@ in {
       "volta"
       "yazi"
       "rsync"
-      "d12frosted/emacs-plus/emacs-plus@31"
+	  "graphviz" # provides dot for diagraph
     ];
     casks = [
       "aerospace"
