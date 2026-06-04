@@ -5,6 +5,8 @@ alias als = scope aliases
 
 alias yy = yazi
 
+def cdy [] { echo $env.PWD | pbcopy }
+
 # linux clipboard equivalents for pbcopy/pbpaste (wayland)
 if ($env.IS_NIXOS) {
 	alias pbcopy = wl-copy
