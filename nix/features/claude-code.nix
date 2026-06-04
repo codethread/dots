@@ -50,10 +50,9 @@ let
     };
     pb-claude = {
       source = {
-        source = "git";
-        url = "ssh://git@git.perkbox.io/ai/tools/claude-plugins.git";
+        source = "directory";
+        path = "${config.home.homeDirectory}/work/ai/tools/claude-plugins--pb-adhoc-agents";
       };
-      autoUpdate = true;
     };
   };
 in {
