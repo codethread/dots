@@ -67,7 +67,7 @@ in {
       AppleShowAllFiles = true;
       FXDefaultSearchScope = "SCcf";
       FXEnableExtensionChangeWarning = false;
-      FXPreferredViewStyle = "Flwv";
+      FXPreferredViewStyle = "Nlsv";
       ShowExternalHardDrivesOnDesktop = true;
       ShowHardDrivesOnDesktop = false;
       ShowRecentTags = false;
@@ -119,6 +119,8 @@ in {
       autoUpdate = false;
       upgrade = false;
       cleanup = "uninstall"; # remove packages not listed here (use "zap" only when stable)
+      # brew bundle now requires --force when --cleanup is passed (since Homebrew 5.x)
+      extraFlags = [ "--force-cleanup" ];
     };
     taps = [
       "nikitabobko/tap"          # aerospace
