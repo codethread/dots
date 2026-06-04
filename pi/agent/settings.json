@@ -8,9 +8,9 @@
     "~/.pi/npm-global"
   ],
   "editorPaddingX": 1,
-  "defaultProvider": "openai-codex",
+  "defaultProvider": "openai",
   "defaultModel": "gpt-5.4",
-  "defaultThinkingLevel": "medium",
+  "defaultThinkingLevel": "low",
   "enabledModels": [
     "openai-codex/gpt-5.5"
   ],

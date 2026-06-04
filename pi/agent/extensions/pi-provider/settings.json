@@ -1,8 +1,25 @@
 {
-	"providers": ["openai", "openai-codex"],
-	"default": "openai-codex",
-	"paths": [
-		{ "path": "~/dev", "provider": "openai-codex" },
-		{ "path": "~/work", "provider": "openai" }
-	]
+  "providers": [
+    "openai",
+    "openai-codex"
+  ],
+  "default": "openai-codex",
+  "paths": [
+    {
+      "path": "~/dev",
+      "provider": "openai-codex"
+    },
+    {
+      "path": "~/work",
+      "provider": "openai"
+    },
+    {
+      "path": "~/pb",
+      "provider": "openai"
+    },
+    {
+      "path": "~/.pdx",
+      "provider": "openai"
+    }
+  ]
 }
