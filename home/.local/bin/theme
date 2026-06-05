@@ -11,18 +11,7 @@ DEFAULT_FAMILY="tokyonight"
 KITTY_THEMES="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/themes"
 ACTIVE_THEME_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/themes/active.conf"
 KITTY_SOCKET="unix:/tmp/mykitty"
-_ct_user="${CT_USER:-}"
-if [[ -z "$_ct_user" ]]; then
-  case "${USER:-}" in
-    adam.hall | adamhall) _ct_user="work" ;;
-    *) _ct_user="home" ;;
-  esac
-fi
-if [[ "$_ct_user" == "work" ]]; then
-  BG_DIR="${CT_BACKGROUNDS_DIR:-$HOME/Library/CloudStorage/OneDrive-Vivup/_img/bgs}"
-else
-  BG_DIR="${CT_BACKGROUNDS_DIR:-$HOME/Library/Mobile Documents/com~apple~CloudDocs/Images/backgrounds}"
-fi
+BG_DIR="${CT_BACKGROUNDS_DIR:-$HOME/sync/images/backgrounds}"
 
 usage() {
   echo "Usage: theme [--family tokyonight|rose-pine] [light|dark|toggle]"

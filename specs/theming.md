@@ -143,7 +143,7 @@ Implemented in `home/.local/bin/theme`.
 
 - Reads current system appearance through `osascript`.
 - Sets system dark mode through `System Events`.
-- Sets every desktop wallpaper to an image under `$CT_BACKGROUNDS_DIR` (defaults to iCloud `Images/backgrounds` on home machines, OneDrive `_img/bgs` on work machines).
+- Sets every desktop wallpaper to an image under `$CT_BACKGROUNDS_DIR` (defaults to `~/sync/images/backgrounds`, a git-synced images project watched by `syncengine` on macOS machines).
 - Wallpaper lookup first tries the exact theme name, then falls back to `default` image in the backgrounds directory.
 
 On non-macOS systems these steps are no-ops.
@@ -240,5 +240,5 @@ Known areas outside the current shared flow:
 - Should `theme` be the long-term cross-platform switcher, or should Linux/macOS implementations split behind a common interface?
 - Should Nushell prompt/table colors become family-specific, or is light/dark enough?
 - Should active Neovim instances get a command/autocmd for runtime theme reload?
-- Should wallpapers move into the repo, be provisioned by Nix, or remain external personal assets?
+- Should wallpapers eventually be provisioned by Nix from the synced images project?
 - Should `vivid generate` output be cached under `$XDG_STATE_HOME` to avoid shell-start cost?

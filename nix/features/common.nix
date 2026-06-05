@@ -128,6 +128,7 @@ in {
 
     ${lib.optionalString pkgs.stdenv.isDarwin ''
       clone_if_missing_ssh "git@github.com:codethread/alfred.git" "$HOME/sync/Alfred" "Alfred"
+      clone_if_missing_ssh "git@github.com:codethread/images.git" "$HOME/sync/images" "images"
     ''}
 
     DOTFILES="''${DOTFILES:-$HOME/dev/dots}"
