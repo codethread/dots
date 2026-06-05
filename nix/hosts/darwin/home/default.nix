@@ -3,10 +3,10 @@
 {
   imports = [ ../common.nix ];
 
-  system.primaryUser = "codethread";
+  system.primaryUser = "ct";
 
-  users.users.codethread = {
-    home = "/Users/codethread";
+  users.users.ct = {
+    home = "/Users/ct";
     shell = pkgs.nushell;
   };
 

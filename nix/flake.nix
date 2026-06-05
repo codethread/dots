@@ -148,7 +148,7 @@
     # Hostname must match: scutil --get LocalHostName
     darwinConfigurations.home = darwinFor
       ./hosts/darwin/home
-      "codethread"
+      "ct"
       ./profiles/personal.nix;
 
     # macOS (work, dotted username) — darwin-rebuild switch --flake .#work

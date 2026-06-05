@@ -225,9 +225,9 @@ if [ "$IS_MACOS" -eq 1 ]; then
   # run darwin-rebuild
   printf "${_cyan}( ◕ ◡ ◕ )${_reset} macOS: running darwin-rebuild (profile: %s)\n" "$NIX_PROFILE"
   if command -v darwin-rebuild >/dev/null 2>&1; then
-    sudo HOME="$HOME" darwin-rebuild switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v
+    sudo -H darwin-rebuild switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v
   else
-    sudo HOME="$HOME" nix run nix-darwin/master#darwin-rebuild -- switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v
+    sudo -H nix run nix-darwin/master#darwin-rebuild -- switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v
   fi
 fi
 

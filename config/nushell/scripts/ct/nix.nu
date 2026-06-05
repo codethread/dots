@@ -118,8 +118,8 @@ export def nrs [profile?: string, --update(-u)] {
 	let p = (_resolve_profile ($profile | default (_default_profile)))
 	let flake = (_flake_ref $p)
 	if (sys host).name == "Darwin" {
-		print $"darwin-rebuild switch --flake '($flake)'"
-		sudo darwin-rebuild switch --flake $flake
+		print $"sudo -H darwin-rebuild switch --flake '($flake)'"
+		sudo -H darwin-rebuild switch --flake $flake
 	} else {
 		print $"sudo nixos-rebuild switch --flake '($flake)'"
 		sudo nixos-rebuild switch --flake $flake
