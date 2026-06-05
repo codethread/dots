@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 {
-  imports = [ ./common.nix ];
+  imports = [ ./common-dev.nix ];
 
   users.users.${config.system.primaryUser} = {
     home = "/Users/${config.system.primaryUser}";

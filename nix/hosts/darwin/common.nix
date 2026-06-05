@@ -149,39 +149,6 @@ in {
     #   "DaisyDisk" = 411643860;  # Disk space analyzer
     #   "Spokenly" = 6740315592;  # Speech-to-text dictation
     # };
-    # shared extensions (work-specific ones live in hosts/darwin/work/)
-    vscode = [
-      # vim
-      "cunbidun.flash-vscode"
-      "haphazarddev.oil-code"
-      "vscodevim.vim"
-
-      # linting
-      "dbaeumer.vscode-eslint"
-      "esbenp.prettier-vscode"
-      "biomejs.biome"
-
-      # quality of life
-      "davidsanders.search-under-cursor"
-      "usernamehw.commands"
-      "wraith13.unsaved-files-vscode"
-      "formulahendry.auto-close-tag"
-      "formulahendry.auto-rename-tag"
-
-      # theme and ui
-      "mvllow.rose-pine"
-      "jgclark.vscode-todo-highlight"
-      "kamikillerto.vscode-colorize"
-
-      # lang
-      "rust-lang.rust-analyzer"
-      "bradlc.vscode-tailwindcss"
-
-      # tools
-      "wakatime.vscode-wakatime"
-      "ms-playwright.playwright"
-      "github.copilot-chat"
-    ];
   };
 
   # Touch ID for sudo; requires pam-reattach brew for tmux compatibility.

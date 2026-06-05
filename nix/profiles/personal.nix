@@ -1,17 +1,32 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 
-# Home profile: common packages + personal extras not needed at work.
-# Used by: darwinConfigurations.home
-
+# Lightweight personal laptop profile: terminal, shell, ssh/git, and small CLI basics.
 {
   imports = [
-    ../features/common.nix
     ../features/darwin-common.nix
   ];
 
+  home.stateVersion = "24.11";
+
+  home.sessionVariables = {
+    NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.local";
+  };
+  home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
+
   home.packages = with pkgs; [
-    qmk
-    luarocks
-    entr
+    nushell
+    openssh
+    git
+    gh
+    neovim
+    tmux
+    atuin
+    starship
+    fzf
+    fd
+    ripgrep
+    jq
+    tree
+    lazygit
   ];
 }

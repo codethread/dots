@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 {
-  imports = [ ./common.nix ];
+  imports = [ ./common-dev.nix ];
 
   system.primaryUser = "ct";
 

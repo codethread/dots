@@ -5,11 +5,13 @@ def _darwin_default_profile [] {
 	match ($env.CT_USER? | default (match ($env.USER? | default "") {
 		"adam.hall" => "work",
 		"adamhall" => "work-adamhall",
-		_ => "home",
+		"codethread" => "personal",
+		_ => "dev",
 	})) {
 		"work-adamhall" => "work-adamhall",
 		"work" => "work",
-		_ => "home",
+		"personal" => "personal",
+		_ => "dev",
 	}
 }
 
@@ -50,6 +52,7 @@ def _flake_ref [profile: string] {
 
 def _hm_user_for_profile [profile: string] {
 	match $profile {
+		"dev" => "ct",
 		"work" => "adam.hall",
 		"work-adamhall" => "adamhall",
 		_ => "codethread",
@@ -155,7 +158,7 @@ export def nix-clean-older [days: int = 14] {
 export def nix-packages [profile?: string] {
 	let p = (_resolve_profile ($profile | default (_default_profile)))
 	let flake = $"path:((_flake_path))"
-	let config_type = if ($p in ["home" "work" "work-adamhall"]) { "darwinConfigurations" } else { "nixosConfigurations" }
+	let config_type = if ($p in ["dev" "personal" "work" "work-adamhall"]) { "darwinConfigurations" } else { "nixosConfigurations" }
 	let attr = $"($flake)#($config_type).($p).config.home-manager.users.($env.USER).home.packages"
 	^nix eval $attr --apply "map (p: p.name)" --json | from json | sort | uniq
 }
@@ -164,7 +167,7 @@ export def nix-packages [profile?: string] {
 export def nix-sys-packages [profile?: string] {
 	let p = (_resolve_profile ($profile | default (_default_profile)))
 	let flake = $"path:((_flake_path))"
-	let config_type = if ($p in ["home" "work" "work-adamhall"]) { "darwinConfigurations" } else { "nixosConfigurations" }
+	let config_type = if ($p in ["dev" "personal" "work" "work-adamhall"]) { "darwinConfigurations" } else { "nixosConfigurations" }
 	let attr = $"($flake)#($config_type).($p).config.environment.systemPackages"
 	^nix eval $attr --apply "map (p: p.name)" --json | from json | sort | uniq
 }
@@ -235,7 +238,7 @@ export def nix-smoke [
 ] {
 	let p = (_resolve_profile ($profile | default (_default_profile)))
 	let flake = $"path:((_flake_path))"
-	let config_type = if ($p in ["home" "work" "work-adamhall"]) { "darwinConfigurations" } else { "nixosConfigurations" }
+	let config_type = if ($p in ["dev" "personal" "work" "work-adamhall"]) { "darwinConfigurations" } else { "nixosConfigurations" }
 	let hm_user = (_hm_user_for_profile $p)
 	let dotfiles = ($env.DOTFILES? | default ($env.HOME | path join "dev" "dots"))
 	let xdg_config = ($env.XDG_CONFIG_HOME? | default ($env.HOME | path join ".config"))

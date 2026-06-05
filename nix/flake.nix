@@ -144,18 +144,18 @@
       config.allowUnsupportedSystem = true;
     };
   in {
-    # macOS (personal dev machine) — darwin-rebuild switch --flake .#home
+    # macOS (personal dev machine) — darwin-rebuild switch --flake .#dev
     # Hostname must match: scutil --get LocalHostName
-    darwinConfigurations.home = darwinFor
-      ./hosts/darwin/home.nix
+    darwinConfigurations.dev = darwinFor
+      ./hosts/darwin/dev.nix
       "ct"
-      ./profiles/personal.nix;
+      ./profiles/dev.nix;
 
-    # macOS (personal laptop) — darwin-rebuild switch --flake .#laptop
-    darwinConfigurations.laptop = darwinFor
-      ./hosts/darwin/laptop.nix
+    # macOS (personal laptop) — darwin-rebuild switch --flake .#personal
+    darwinConfigurations.personal = darwinFor
+      ./hosts/darwin/personal.nix
       "codethread"
-      ./profiles/laptop.nix;
+      ./profiles/personal.nix;
 
     # macOS (work, dotted username) — darwin-rebuild switch --flake .#work
     darwinConfigurations.work = darwinFor

@@ -33,10 +33,10 @@ default_macos_profile() {
       echo "work-adamhall"
       ;;
     codethread)
-      echo "laptop"
+      echo "personal"
       ;;
     *)
-      echo "home"
+      echo "dev"
       ;;
   esac
 }
