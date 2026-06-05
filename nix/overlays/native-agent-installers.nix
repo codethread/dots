@@ -38,7 +38,7 @@ in {
 
   nativeAgentInstallClaude = final.writeShellApplication {
     name = "native-agent-install-claude";
-    runtimeInputs = [ final.coreutils final.curl final.bash ];
+    runtimeInputs = [ final.coreutils final.curl final.bash final.perl ];
     text = ''
       set -euo pipefail
 

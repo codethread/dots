@@ -67,6 +67,14 @@ in {
   };
 
   home.activation.userBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    export PATH="${lib.makeBinPath [
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.git
+      pkgs.gnugrep
+      pkgs.openssh
+    ]}:$PATH"
+
     install_dir() {
       ${pkgs.coreutils}/bin/mkdir -p "$1"
     }
@@ -108,7 +116,7 @@ in {
 
       install_dir "$(${pkgs.coreutils}/bin/dirname "$dest")"
       echo ">>> Cloning $label into $dest"
-      if ! ${pkgs.git}/bin/git clone --depth 1 "$url" "$dest"; then
+      if ! GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -o IgnoreUnknown=UseKeychain" ${pkgs.git}/bin/git clone --depth 1 "$url" "$dest"; then
         echo ">>> WARN: failed to clone $label; continuing"
       fi
     }
@@ -121,6 +129,7 @@ in {
 
     clone_if_missing "https://github.com/nushell/nu_scripts.git" "$HOME/dev/vendor/nu_scripts" "nu_scripts"
     clone_if_missing "https://github.com/gitwatch/gitwatch.git" "$HOME/dev/vendor/gitwatch" "gitwatch"
+    clone_if_missing_ssh "git@github.com:codethread/agents.git" "$HOME/dev/projects/agents" "agents"
 
     if [ -f "$HOME/dev/vendor/gitwatch/gitwatch.sh" ]; then
       ${pkgs.coreutils}/bin/ln -sfn "$HOME/dev/vendor/gitwatch/gitwatch.sh" "$HOME/.local/bin/gitwatch"

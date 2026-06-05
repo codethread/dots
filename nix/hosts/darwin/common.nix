@@ -49,11 +49,10 @@ in {
   };
 
   # Keep macOS defaults declarative under darwin-rebuild even where nix-darwin
-  # has no dedicated option.
+  # has no dedicated option. Avoid com.apple.universalaccess here: recent macOS
+  # releases can reject writes to that domain during nix-darwin's defaults phase,
+  # causing the whole activation to fail.
   system.defaults.CustomUserPreferences = {
-    "com.apple.universalaccess" = {
-      reduceMotion = true;
-    };
     "com.apple.dock" = {
       autohide = true;
       "expose-animation-duration" = 0.0;
@@ -104,6 +103,15 @@ in {
 
   system.activationScripts.postActivation.text = ''
     /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${syncengineStateDir}
+
+    # Best-effort: this domain may be protected on some macOS versions. Keep it
+    # out of system.defaults.CustomUserPreferences so a rejected write does not
+    # abort the full system activation.
+    if ! /bin/launchctl asuser "$(/usr/bin/id -u ${config.system.primaryUser})" \
+      /usr/bin/sudo -u ${config.system.primaryUser} \
+      /usr/bin/defaults write com.apple.universalaccess reduceMotion -bool true; then
+      echo "warning: could not write com.apple.universalaccess reduceMotion; set it in System Settings > Accessibility > Display" >&2
+    fi
 
     /usr/bin/killall SystemUIServer >/dev/null 2>&1 || true
     /usr/bin/killall Finder >/dev/null 2>&1 || true
