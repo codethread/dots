@@ -124,42 +124,30 @@ in {
     };
     taps = [
       "nikitabobko/tap"          # aerospace
-      "morantron/tmux-fingers"
+      "morantron/tmux-fingers"   # tmux-fingers
     ];
     brews = [
-      "mas"           # required for masApps to function
-      "pam-reattach"  # PAM module so Touch ID works inside tmux sudo prompts
-      "morantron/tmux-fingers/tmux-fingers"
-      "ical-buddy"
-      "pngpaste"
-      "volta"
-      "yazi"
-      "rsync"
-	  "graphviz" # provides dot for diagraph
+      "mas"                                      # required for masApps to function
+      "pam-reattach"                            # PAM module so Touch ID works inside tmux sudo prompts
+      "morantron/tmux-fingers/tmux-fingers"     # mouseless terminal interaction
+      "ical-buddy"                              # Get events and tasks from the macOS calendar database
+      "pngpaste"                                # Paste PNG into files
+      "volta"                                   # JavaScript toolchain manager for reproducible environments
+      "yazi"                                    # Blazing fast terminal file manager written in Rust, based on async I/O
+      "rsync"                                   # Utility that provides fast incremental file transfer
+      "graphviz"                                # provides dot for diagraph
     ];
     casks = [
-      "aerospace"
-      "obsidian"
-      "1password"
-      "1password-cli"
-      "alfred"
-      "google-chrome"
-	  "ungoogled-chromium"
-      "kitty"
-      "visual-studio-code"
-      "ghostty"
-      "spotify"
-      "todoist-app"
-      "font-fira-code"
-      "font-victor-mono"
-      "font-symbols-only-nerd-font"
-	  "zed"
+      "kitty"                         # GPU-based terminal emulator
+      "font-fira-code"                # Fira Code font
+      "font-victor-mono"              # Victor Mono font
+      "font-symbols-only-nerd-font"   # Symbols Nerd Font (Symbols Only)
     ];
 	# enable on boot load machine
 	# bug requires login on every switch
     # masApps = {
-    #   "DaisyDisk" = 411643860;
-    #   "Spokenly" = 6740315592;
+    #   "DaisyDisk" = 411643860;  # Disk space analyzer
+    #   "Spokenly" = 6740315592;  # Speech-to-text dictation
     # };
     # shared extensions (work-specific ones live in hosts/darwin/work/)
     vscode = [

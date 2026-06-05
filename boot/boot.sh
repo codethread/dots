@@ -32,6 +32,9 @@ default_macos_profile() {
     adamhall)
       echo "work-adamhall"
       ;;
+    codethread)
+      echo "laptop"
+      ;;
     *)
       echo "home"
       ;;
