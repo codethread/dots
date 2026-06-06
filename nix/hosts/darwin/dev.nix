@@ -10,6 +10,17 @@
     shell = pkgs.nushell;
   };
 
+  services.openssh = {
+    enable = true;
+    extraConfig = ''
+      PubkeyAuthentication yes
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      AllowUsers ct
+    '';
+  };
+
   homebrew.casks = [
     "aerospace"             # AeroSpace is an i3-like tiling window manager for macOS
     "obsidian"              # Knowledge base that works on top of a local folder of plain text Markdown files
