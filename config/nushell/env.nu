@@ -11,9 +11,23 @@ def home [p: string] {
 #: envs {{{
 
 $env.DOTFILES = ($env.DOTFILES? | default (home "dev/dots"))
-# $env.EDITOR = ($env.EDITOR? | default "nvim")
-$env.EDITOR = ($env.EDITOR? | default "nvim")
-$env.VISUAL = "zed --wait"
+let is_ssh = (
+	(($env.SSH_CONNECTION? | default "") != "") or
+	(($env.SSH_CLIENT? | default "") != "") or
+	(($env.SSH_TTY? | default "") != "")
+)
+let is_vscode_remote = (($env.VSCODE_IPC_HOOK_CLI? | default "") != "")
+
+let default_editor = if $is_vscode_remote {
+	"code --wait"
+} else if $is_ssh {
+	"nvim"
+} else {
+	"zed --wait"
+}
+
+$env.EDITOR = $default_editor
+$env.VISUAL = $default_editor
 $env.SHELL = (which nu | get 0.path)
 $env.XDG_CONFIG_HOME = ($env.XDG_CONFIG_HOME? | default (home ".config"))
 $env.XDG_DATA_HOME = ($env.XDG_DATA_HOME? | default (home ".local/share"))

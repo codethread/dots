@@ -1,6 +1,6 @@
 {
   "lastChangelogVersion": "0.78.0",
-  "theme": "rose-pine",
+  "theme": "rose-pine-moon",
   "quietStartup": true,
   "npmCommand": [
     "npm",
@@ -10,7 +10,7 @@
   "editorPaddingX": 1,
   "defaultProvider": "openai",
   "defaultModel": "gpt-5.4",
-  "defaultThinkingLevel": "low",
+  "defaultThinkingLevel": "medium",
   "enabledModels": [
     "openai-codex/gpt-5.5"
   ],
