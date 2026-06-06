@@ -55,14 +55,6 @@
     mimeType = [ "text/html" "text/xml" "application/xhtml+xml" "x-scheme-handler/http" "x-scheme-handler/https" ];
   };
 
-  xdg.desktopEntries.obsidian = {
-    name = "Obsidian";
-    exec = "${pkgs.obsidian}/bin/obsidian \"obsidian://open?path=/home/codethread/dev/projects/notes/vault\" %u";
-    icon = "obsidian";
-    categories = [ "Office" ];
-    mimeType = [ "x-scheme-handler/obsidian" ];
-  };
-
   ct.claude-code.enableNotify = true;
 
   # Repo-local managed services (see nix/CLAUDE.md "Adding a Service")
@@ -87,7 +79,6 @@
     google-chrome
     python3
     spotify
-    obsidian
     todoist-electron
   ];
 

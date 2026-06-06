@@ -1,6 +1,28 @@
-{ pkgs, ... }:
+{ pkgs, config, lib, ... }:
 
-{
+let
+  homeDir = "/Users/${config.system.primaryUser}";
+  backupNotesStateDir = "${homeDir}/.local/state/com.codethread.backup-notes";
+  backupNotesScript = pkgs.writeShellScript "backup-notes" ''
+    set -euo pipefail
+
+    cd "${homeDir}/dev/projects/notes/vault"
+
+    ${pkgs.git}/bin/git add -A
+    STASH_BEFORE=$(${pkgs.git}/bin/git rev-parse --verify refs/stash 2>/dev/null || echo "none")
+    ${pkgs.git}/bin/git stash push -m "backup-notes-auto"
+    STASH_AFTER=$(${pkgs.git}/bin/git rev-parse --verify refs/stash 2>/dev/null || echo "none")
+    ${pkgs.git}/bin/git pull --rebase
+    if [ "$STASH_BEFORE" != "$STASH_AFTER" ]; then
+      ${pkgs.git}/bin/git stash pop
+    fi
+    ${pkgs.git}/bin/git add -A
+    if ! ${pkgs.git}/bin/git diff --cached --quiet; then
+      ${pkgs.git}/bin/git commit -m "auto: $(${pkgs.coreutils}/bin/date -u +%Y-%m-%dT%H:%M:%SZ)"
+    fi
+    ${pkgs.git}/bin/git push
+  '';
+in {
   imports = [ ./common-dev.nix ];
 
   system.primaryUser = "ct";
@@ -20,6 +42,21 @@
       AllowUsers ct
     '';
   };
+
+  launchd.user.agents.backup-notes = {
+    serviceConfig = {
+      Label = "com.codethread.backup-notes";
+      ProgramArguments = [ "${backupNotesScript}" ];
+      RunAtLoad = true;
+      StartInterval = 900;
+      StandardOutPath = "${backupNotesStateDir}/std.log";
+      StandardErrorPath = "${backupNotesStateDir}/std.log";
+    };
+  };
+
+  system.activationScripts.postActivation.text = lib.mkAfter ''
+    /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${backupNotesStateDir}
+  '';
 
   homebrew.casks = [
     "aerospace"             # AeroSpace is an i3-like tiling window manager for macOS
