@@ -14,3 +14,4 @@ bun.lockb
 .py_venv/
 
 .pi/bench-matrix.json
+pdx/PANDORA.md
