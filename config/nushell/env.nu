@@ -113,11 +113,9 @@ $env.PI_OFFLINE = 1
 #: }}}
 #: pandora {{{
 
-$env.PDX_DATA_DIR = ($env.PDX_DATA_DIR? | default (home ".pdx"))
-$env.PITHOS_DB = ([$env.PDX_DATA_DIR pithos.sqlite] | path join)
 $env.PDX_USER_DATA_DIR = (match $env.CT_USER {
   "work" => (home work/me/workfiles/pdx)
-  _ => ([$env.XDG_CONFIG_HOME pdx] | path join)
+  _ => ([$env.DOTFILES pdx] | path join)
 })
 
 #: }}}
@@ -251,5 +249,4 @@ path add "~/.linkerd2/bin"
 # keep this at the end
 path add -a "/usr/local/bin"
 path add "~/.local/bin"
-path add ($env.PDX_DATA_DIR | path join "bin")
 $env.path = ($env.path | uniq)

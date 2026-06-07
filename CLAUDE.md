@@ -13,6 +13,7 @@ New machine → `boot/boot.sh`. Existing clone → `make system`. Optional local
 - **oven/** - TypeScript/Bun workspace for CLI tools. Go here for active development.
 - **specs/** - Feature specifications. Go here to write or review specs before implementation.
 - **nix/** - nix configs for NixOS and nix-darwin. When scripting for NixOS or not, env `$IS_NIXOS='true'` if running NixOS.
+- **pdx/** - pandoras-box configs (pithos) for personal machines
 
 ### Makefile (Root)
 
