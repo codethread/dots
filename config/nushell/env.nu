@@ -213,6 +213,9 @@ $env.PIP_REQUIRE_VIRTUALENV = "false"  # Allow pip outside virtualenv (set to "t
 $env.CT_PLUGINS_DIR = echo "~/dev/learn/claude-plugins/plugins" | path expand
 $env.PI_CODING_AGENT_DIR = ($env.PI_CODING_AGENT_DIR? | default (home ".pi/agent"))
 $env.ENABLE_CLAUDEAI_MCP_SERVERS = "0"
+$env.PI_CACHE_RETENTION = "long"
+$env.PI_OFFLINE = "1"
+$env.PI_SKIP_VERSION_CHECK = "1"
 
 #: }}}
 #: kitty {{{

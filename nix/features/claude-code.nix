@@ -32,6 +32,7 @@ let
     "pb-go@pb-claude" = true;
     "pb-aws@pb-claude" = true;
     "pb-prose@pb-claude" = true;
+    "pb-news@pb-claude" = true;
     "pb-claude-harness-engineering@pb-claude" = true;
 
   } else {
@@ -52,7 +53,7 @@ let
     pb-claude = {
       source = {
         source = "directory";
-        path = "${config.home.homeDirectory}/work/ai/tools/claude-plugins--pb-adhoc-agents";
+        path = "${config.home.homeDirectory}/work/ai/tools/claude-plugins__pb-news";
       };
     };
   };
