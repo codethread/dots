@@ -35,4 +35,21 @@ in {
       exec ${npm} install -g @fission-ai/openspec@latest
     '';
   };
+
+  nativeNpmOpenspec = final.writeShellApplication {
+    name = "openspec";
+    runtimeInputs = [ final.coreutils final.nodejs_24 ];
+    text = ''
+      set -euo pipefail
+
+      export HOME="''${HOME:?HOME is required}"
+      export NPM_CONFIG_PREFIX="''${NPM_CONFIG_PREFIX:-$HOME/.local}"
+
+      if [ ! -x "$HOME/.local/bin/openspec" ]; then
+        ${final.nativeNpmInstallOpenspec}/bin/native-npm-install-openspec
+      fi
+
+      exec "$HOME/.local/bin/openspec" "$@"
+    '';
+  };
 }

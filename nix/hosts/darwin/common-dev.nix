@@ -3,6 +3,8 @@
 {
   imports = [ ./common.nix ];
 
+  environment.systemPackages = [ pkgs.nativeNpmOpenspec ];
+
   system.activationScripts.nativeOpenspecCli.text = ''
     home="/Users/${config.system.primaryUser}"
 
@@ -44,8 +46,6 @@
     "bradlc.vscode-tailwindcss"
 
     # tools
-    "wakatime.vscode-wakatime"
     "ms-playwright.playwright"
-    "github.copilot-chat"
   ];
 }
