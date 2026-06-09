@@ -36,6 +36,7 @@
   let
     llmAgentsOverlay = llm-agents.overlays.default;
     nativeAgentOverlay = import ./overlays/native-agent-installers.nix;
+    nativeNpmAgentOverlay = import ./overlays/native-npm-installers.nix;
 
     todoistOverlay = final: prev: {
       todoist-cli = final.buildGoModule {
@@ -127,7 +128,7 @@
       system = "aarch64-darwin"; # Intel Mac: x86_64-darwin
       specialArgs = { pkgsMaster = pkgsMasterFor "aarch64-darwin"; };
       modules = [
-        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay todoistOverlay playwrightCliOverlay nvimTreesitterJsoncOverlay ]; }
+        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay nativeNpmAgentOverlay todoistOverlay playwrightCliOverlay nvimTreesitterJsoncOverlay ]; }
         hostModule
         home-manager.darwinModules.home-manager
         (hmFor
@@ -139,7 +140,7 @@
 
     pkgsMasterFor = system: import nixpkgs-master {
       inherit system;
-      overlays = [ llmAgentsOverlay nativeAgentOverlay nvimTreesitterJsoncOverlay ];
+      overlays = [ llmAgentsOverlay nativeAgentOverlay nativeNpmAgentOverlay nvimTreesitterJsoncOverlay ];
       config.allowUnfree = true;
       config.allowUnsupportedSystem = true;
     };
@@ -174,7 +175,7 @@
       system = "x86_64-linux";
       specialArgs = { pkgsMaster = pkgsMasterFor "x86_64-linux"; };
       modules = [
-        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay todoistOverlay playwrightCliOverlay nvimTreesitterJsoncOverlay ]; }
+        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay nativeNpmAgentOverlay todoistOverlay playwrightCliOverlay nvimTreesitterJsoncOverlay ]; }
         ./hosts/nixos/homelab
         home-manager.nixosModules.home-manager
         (hmFor
@@ -189,7 +190,7 @@
       system = "aarch64-linux";
       specialArgs = { pkgsMaster = pkgsMasterFor "aarch64-linux"; };
       modules = [
-        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay todoistOverlay playwrightCliOverlay nvimTreesitterJsoncOverlay ]; }
+        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay nativeNpmAgentOverlay todoistOverlay playwrightCliOverlay nvimTreesitterJsoncOverlay ]; }
         ./hosts/nixos/vm-aarch
         home-manager.nixosModules.home-manager
         (hmFor

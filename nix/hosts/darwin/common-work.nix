@@ -38,6 +38,5 @@
     "golang.go"
     "styled-components.vscode-styled-components"
     "stylelint.vscode-stylelint"
-    "anthropic.claude-code"
   ];
 }

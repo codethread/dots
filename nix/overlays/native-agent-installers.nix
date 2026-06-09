@@ -19,23 +19,6 @@ in {
     '';
   };
 
-  nativeAgentInstallBitwarden = final.writeShellApplication {
-    name = "native-agent-install-bitwarden";
-    runtimeInputs = [ final.coreutils final.nodejs_24 ];
-    text = ''
-      set -euo pipefail
-
-      export HOME="''${HOME:?HOME is required}"
-      export NPM_CONFIG_PREFIX="''${NPM_CONFIG_PREFIX:-$HOME/.local}"
-
-      if [ "''${1:-}" = "--if-missing" ] && ${npm} ls -g --depth=0 @bitwarden/cli >/dev/null 2>&1; then
-        exit 0
-      fi
-
-      exec ${npm} install -g @bitwarden/cli@latest
-    '';
-  };
-
   nativeAgentInstallClaude = final.writeShellApplication {
     name = "native-agent-install-claude";
     runtimeInputs = [ final.coreutils final.curl final.bash final.perl ];

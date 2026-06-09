@@ -1,7 +1,19 @@
-{ ... }:
+{ config, pkgs, ... }:
 
 {
   imports = [ ./common.nix ];
+
+  system.activationScripts.nativeOpenspecCli.text = ''
+    home="/Users/${config.system.primaryUser}"
+
+    echo ">>> Syncing OpenSpec CLI"
+    if ! /usr/bin/sudo -u ${config.system.primaryUser} /usr/bin/env \
+      HOME="$home" \
+      NPM_CONFIG_PREFIX="$home/.local" \
+      ${pkgs.nativeNpmInstallOpenspec}/bin/native-npm-install-openspec --if-missing; then
+      echo ">>> WARN: failed to sync OpenSpec CLI; continuing"
+    fi
+  '';
 
   # shared extensions (work-specific ones live in common-work.nix)
   homebrew.vscode = [
