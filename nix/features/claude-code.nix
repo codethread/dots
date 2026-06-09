@@ -53,7 +53,7 @@ let
     pb-claude = {
       source = {
         source = "directory";
-        path = "${config.home.homeDirectory}/work/ai/tools/claude-plugins__pb-news";
+        path = "${config.home.homeDirectory}/work/ai/tools/claude-plugins";
       };
     };
   };

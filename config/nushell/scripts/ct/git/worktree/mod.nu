@@ -70,12 +70,34 @@ export def "wk path" [
 	^wktree path --cwd $env.PWD --branch $branch | str trim
 }
 
+def pull-latest-default-branch [root: string] {
+	let default_branch = (
+		^git -C $root remote show origin
+		| lines
+		| where {|line| ($line | str trim | str starts-with "HEAD branch:") }
+		| first
+		| str replace --regex '^\s*HEAD branch:\s*' ''
+		| str trim
+	)
+	if $default_branch == "" {
+		error make { msg: "couldn't determine origin default branch" }
+	}
+
+	let current_branch = (^git -C $root branch --show-current | str trim)
+	if $current_branch != $default_branch {
+		error make { msg: $"--latest requires root worktree ($root) to be on ($default_branch), found ($current_branch)" }
+	}
+
+	^git -C $root pull --ff-only origin $default_branch
+}
+
 # Add or allocate a worktree for a branch, then open it in the current tmux workflow.
 # New branches default to origin's default branch/trunk, even when run from another worktree.
 export def --env "wk add" [
 	branch: string   # branch to create or checkout
 	base?: string    # branch to create from for new branches; defaults to origin's default branch/trunk
 	--self           # use the current worktree branch as --base
+	--latest         # pull latest origin default branch/trunk before creating the worktree
 	--force          # skip recycle confirmation when the pool is full
 ] {
 	let current_branch = if $self {
@@ -90,8 +112,17 @@ export def --env "wk add" [
 	if $self and $base != null {
 		error make { msg: "provide either --self or an explicit base, not both" }
 	}
+	if $latest and $self {
+		error make { msg: "provide either --latest or --self, not both" }
+	}
+	if $latest and $base != null {
+		error make { msg: "provide either --latest or an explicit base, not both" }
+	}
 
 	let selected_base = if $self { $current_branch } else { $base }
+	if $latest {
+		pull-latest-default-branch (wk root)
+	}
 	let outcome = (wktree-outcome {||
 		let args = [add --cwd $env.PWD --branch $branch --json]
 		let args = if $selected_base == null { $args } else { $args | append [--base $selected_base] | flatten }

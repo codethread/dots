@@ -20,6 +20,8 @@
     fi
   '';
 
+  environment.systemPackages = [ pkgs.pandoc ];
+
   homebrew.brews = [
     "cocoapods"    # Dependency manager for Cocoa projects
     "jira-cli"     # Feature-rich interactive Jira CLI
