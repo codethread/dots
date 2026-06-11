@@ -327,3 +327,18 @@ export def cll --wrapped [...rest] {
 		}
 	}
 }
+
+export def cl-doc [doc: path]: nothing -> string {
+	pandoc $doc -t markdown --wrap none
+	| (claude
+		--model haiku
+		--no-session-persistence
+		--tools ""
+		--print (dedent `this document was a docx converted with pandoc to markdown.
+		Please reformat it to proper markdown wherever possible.
+		Avoid changes if intent is ambiguous, but try to convert to callouts, tables and headings where intent is clear.
+		Don't make any other changes or consider any other details.
+		Return the reponse as markdown in your final message, say nothing else, the result will be bash piped into a file`)
+	)
+}
+
