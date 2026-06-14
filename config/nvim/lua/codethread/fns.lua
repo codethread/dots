@@ -77,13 +77,7 @@ function M.test_current_file()
 end
 
 function M.store_to_clipboard(str)
-	if type(str) ~= 'string' then
-		vim.notify 'should be string!'
-		return
-	end
-	local register = vim.fn.has 'mac' == 1 and '*' or '+'
-	vim.fn.setreg(register, str)
-	vim.notify 'saved to clipboard'
+	return require('codethread.clipper').copy(str)
 end
 
 function M.debounce(ms, fn)
@@ -274,12 +268,7 @@ function M.yank_home_relative_path()
 end
 
 function M.save_register_to_clipboard()
-	-- Get it as a list of lines
-	-- local lines = vim.fn.getreg('"', 1, 1)
-	-- Get the register type as well (characterwise, linewise, blockwise)
-	local type, content = vim.fn.getregtype '"', vim.fn.getreg '"'
-	if type ~= 'v' then vim.notify 'hmm' end
-	M.store_to_clipboard(content)
+	require('codethread.clipper').copy_register('"')
 end
 
 function M.yank_gitlab_url()

@@ -12,12 +12,6 @@ vim.cmd [[
 	nnoremap x "_d
 	nnoremap X "_D
 
-	" Copy to clipboard
-	vnoremap  <leader>y "+y
-	" nnoremap  <leader>Y "+yg_
-	" nnoremap  <leader>y "+y
-	" nnoremap  <leader>yy "+yy
-
 	" Paste from clipboard
 	" nnoremap <leader>v "+p
 	" nnoremap <leader>v "+P
@@ -75,6 +69,7 @@ end
 
 --[[stylua: ignore]] --format
 Keys.list({ mode = 'v' }, {
+	{ '<leader>y', 'copy to clipboard', function() require('codethread.clipper').copy_visual_selection() end },
 	{ 'ss', 'live'        , function() require('telescope-live-grep-args.shortcuts').grep_visual_selection() end },
 	 { 'sr', 'find-replace', function() require('spectre').open_visual { select_word = true } end                 },
 	{ 'sr', 'find-replace', function () require('grug-far').open({ visualSelectionUsage = 'operate-within-range' }) end },
