@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   imports = [ ./common.nix ];
@@ -12,7 +12,7 @@
     if ! /usr/bin/sudo -u ${config.system.primaryUser} /usr/bin/env \
       HOME="$home" \
       NPM_CONFIG_PREFIX="$home/.local" \
-      ${pkgs.nativeNpmInstallOpenspec}/bin/native-npm-install-openspec --if-missing; then
+      ${lib.getExe' pkgs.nativeNpmInstallOpenspec "native-npm-install-openspec"} --if-missing; then
       echo ">>> WARN: failed to sync OpenSpec CLI; continuing"
     fi
   '';

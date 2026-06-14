@@ -2,19 +2,21 @@
 
 let
   homeDir = "/Users/${config.system.primaryUser}";
+  git = lib.getExe pkgs.git;
+  date = lib.getExe' pkgs.coreutils "date";
   backupNotesStateDir = "${homeDir}/.local/state/com.codethread.backup-notes";
   backupNotesScript = pkgs.writeShellScript "backup-notes" ''
     set -euo pipefail
 
     cd "${homeDir}/dev/projects/notes/vault"
 
-    ${pkgs.git}/bin/git add -A
-    if ! ${pkgs.git}/bin/git diff --cached --quiet; then
-      ${pkgs.git}/bin/git commit -m "auto: $(${pkgs.coreutils}/bin/date -u +%Y-%m-%dT%H:%M:%SZ)"
+    ${git} add -A
+    if ! ${git} diff --cached --quiet; then
+      ${git} commit -m "auto: $(${date} -u +%Y-%m-%dT%H:%M:%SZ)"
     fi
 
-    ${pkgs.git}/bin/git pull --rebase
-    ${pkgs.git}/bin/git push
+    ${git} pull --rebase
+    ${git} push
   '';
 in {
   imports = [ ./common-dev.nix ];

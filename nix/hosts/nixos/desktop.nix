@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 {
   # --- Hyprland (Wayland compositor) ---
@@ -11,7 +11,7 @@
   services.greetd = {
     enable = true;
     settings.default_session = {
-      command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd 'uwsm start hyprland-uwsm.desktop'";
+      command = "${lib.getExe pkgs.tuigreet} --time --cmd 'uwsm start hyprland-uwsm.desktop'";
       user = "greeter";
     };
   };

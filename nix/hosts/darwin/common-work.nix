@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   imports = [ ./common-dev.nix ];
@@ -15,7 +15,7 @@
     if ! /usr/bin/sudo -u ${config.system.primaryUser} /usr/bin/env \
       HOME="$home" \
       NPM_CONFIG_PREFIX="$home/.local" \
-      ${pkgs.nativeAgentInstallBitwarden}/bin/native-agent-install-bitwarden --if-missing; then
+      ${lib.getExe pkgs.nativeAgentInstallBitwarden} --if-missing; then
       echo ">>> WARN: failed to sync Bitwarden CLI; continuing"
     fi
   '';

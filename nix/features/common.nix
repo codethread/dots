@@ -11,17 +11,50 @@ let
     paths = (pkgs.vimPlugins.nvim-treesitter.withAllGrammars).passthru.dependencies;
   };
 
+  # Package executable bindings
+  atuinCmd = lib.getExe pkgs.atuin;
+  carapaceCmd = lib.getExe pkgs.carapace;
+  dirnameCmd = lib.getExe' pkgs.coreutils "dirname";
+  findCmd = lib.getExe' pkgs.findutils "find";
+  gitCmd = lib.getExe pkgs.git;
+  lnCmd = lib.getExe' pkgs.coreutils "ln";
+  mkdirCmd = lib.getExe' pkgs.coreutils "mkdir";
+  sshCmd = lib.getExe' pkgs.openssh "ssh";
+  sshKeygenCmd = lib.getExe' pkgs.openssh "ssh-keygen";
+  sshKeyscanCmd = lib.getExe' pkgs.openssh "ssh-keyscan";
+  grepCmd = lib.getExe' pkgs.gnugrep "grep";
+  sedCmd = lib.getExe' pkgs.gnused "sed";
+  nuCmd = lib.getExe pkgs.nushell;
+  nativeAgentInstallClaudeCmd = lib.getExe' pkgs.nativeAgentInstallClaude "native-agent-install-claude";
+  nativeAgentInstallCodexCmd = lib.getExe' pkgs.nativeAgentInstallCodex "native-agent-install-codex";
+  bootstrapPath = lib.makeBinPath [
+    pkgs.git
+    pkgs.coreutils
+    pkgs.findutils
+    pkgs.gnugrep
+    pkgs.openssh
+  ];
+  dottyPath = lib.makeBinPath [
+    pkgs.git
+    pkgs.coreutils
+    pkgs.findutils
+    pkgs.gnugrep
+    pkgs.gnused
+    pkgs.nushell
+    pkgs.bash
+  ];
+
   atuinNushellInit = pkgs.runCommand "atuin-init.nu"
     {
       nativeBuildInputs = [ pkgs.atuin pkgs.writableTmpDirAsHomeHook ];
     }
     ''
-      ${pkgs.atuin}/bin/atuin init nu > "$out"
+      ${atuinCmd} init nu > "$out"
     '';
 
   carapaceNushellInit = pkgs.runCommand "carapace-init.nu" { } ''
-    ${pkgs.carapace}/bin/carapace _carapace nushell \
-      | ${pkgs.gnused}/bin/sed 's|"/homeless-shelter|$"($env.HOME)|g' > "$out"
+    ${carapaceCmd} _carapace nushell \
+      | ${sedCmd} 's|"/homeless-shelter|$"($env.HOME)|g' > "$out"
   '';
 
   direnvNushellInit = pkgs.writeText "direnv-init.nu" ''
@@ -67,16 +100,10 @@ in {
   };
 
   home.activation.userBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    export PATH="${lib.makeBinPath [
-      pkgs.coreutils
-      pkgs.findutils
-      pkgs.git
-      pkgs.gnugrep
-      pkgs.openssh
-    ]}:$PATH"
+    export PATH="${bootstrapPath}:$PATH"
 
     install_dir() {
-      ${pkgs.coreutils}/bin/mkdir -p "$1"
+      ${mkdirCmd} -p "$1"
     }
 
     clone_if_missing() {
@@ -88,9 +115,9 @@ in {
         return 0
       fi
 
-      install_dir "$(${pkgs.coreutils}/bin/dirname "$dest")"
+      install_dir "$(${dirnameCmd} "$dest")"
       echo ">>> Cloning $label into $dest"
-      if ! ${pkgs.git}/bin/git clone --depth 1 "$url" "$dest"; then
+      if ! ${gitCmd} clone --depth 1 "$url" "$dest"; then
         echo ">>> WARN: failed to clone $label; continuing"
       fi
     }
@@ -104,19 +131,19 @@ in {
         return 0
       fi
 
-      if [ ! -d "$HOME/.ssh" ] || ! ${pkgs.findutils}/bin/find "$HOME/.ssh" -maxdepth 1 \( -name 'id_*' -o -name '*.pub' \) 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q .; then
+      if [ ! -d "$HOME/.ssh" ] || ! ${findCmd} "$HOME/.ssh" -maxdepth 1 \( -name 'id_*' -o -name '*.pub' \) 2>/dev/null | ${grepCmd} -q .; then
         echo ">>> WARN: skipping $label clone; no SSH key found"
         return 0
       fi
 
       install_dir "$HOME/.ssh"
-      if ! ${pkgs.openssh}/bin/ssh-keygen -F github.com >/dev/null 2>&1; then
-        ${pkgs.openssh}/bin/ssh-keyscan github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
+      if ! ${sshKeygenCmd} -F github.com >/dev/null 2>&1; then
+        ${sshKeyscanCmd} github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
       fi
 
-      install_dir "$(${pkgs.coreutils}/bin/dirname "$dest")"
+      install_dir "$(${dirnameCmd} "$dest")"
       echo ">>> Cloning $label into $dest"
-      if ! GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -o IgnoreUnknown=UseKeychain" ${pkgs.git}/bin/git clone --depth 1 "$url" "$dest"; then
+      if ! GIT_SSH_COMMAND="${sshCmd} -o IgnoreUnknown=UseKeychain" ${gitCmd} clone --depth 1 "$url" "$dest"; then
         echo ">>> WARN: failed to clone $label; continuing"
       fi
     }
@@ -132,7 +159,7 @@ in {
     clone_if_missing_ssh "git@github.com:codethread/agents.git" "$HOME/dev/projects/agents" "agents"
 
     if [ -f "$HOME/dev/vendor/gitwatch/gitwatch.sh" ]; then
-      ${pkgs.coreutils}/bin/ln -sfn "$HOME/dev/vendor/gitwatch/gitwatch.sh" "$HOME/.local/bin/gitwatch"
+      ${lnCmd} -sfn "$HOME/dev/vendor/gitwatch/gitwatch.sh" "$HOME/.local/bin/gitwatch"
     fi
 
     ${lib.optionalString pkgs.stdenv.isDarwin ''
@@ -142,7 +169,7 @@ in {
 
     DOTFILES="''${DOTFILES:-$HOME/dev/dots}"
     if [ -d "$DOTFILES/.git" ]; then
-      ${pkgs.git}/bin/git -C "$DOTFILES" config core.hooksPath .githooks
+      ${gitCmd} -C "$DOTFILES" config core.hooksPath .githooks
     fi
   '';
 
@@ -158,8 +185,8 @@ in {
         fi
       }
 
-      sync_native_agent "Claude Code" ${pkgs.nativeAgentInstallClaude}/bin/native-agent-install-claude
-      sync_native_agent "Codex" ${pkgs.nativeAgentInstallCodex}/bin/native-agent-install-codex
+      sync_native_agent "Claude Code" ${nativeAgentInstallClaudeCmd}
+      sync_native_agent "Codex" ${nativeAgentInstallCodexCmd}
     ''}
   '';
 
@@ -173,17 +200,9 @@ in {
       export XDG_DATA_HOME="$HOME/.local/share"
       export XDG_STATE_HOME="$HOME/.local/state"
       export XDG_CACHE_HOME="$HOME/.local/cache"
-      export PATH="${lib.makeBinPath [
-        pkgs.git
-        pkgs.coreutils
-        pkgs.findutils
-        pkgs.gnugrep
-        pkgs.gnused
-        pkgs.nushell
-        pkgs.bash
-      ]}:$PATH"
+      export PATH="${dottyPath}:$PATH"
 
-      ${pkgs.nushell}/bin/nu -n -I "$DOTFILES/config/nushell/scripts" -c \
+      ${nuCmd} -n -I "$DOTFILES/config/nushell/scripts" -c \
         'use ct/dotty; dotty link --no-cache | ignore'
     fi
   '';

@@ -1,12 +1,16 @@
 { pkgs, lib, config, ... }:
 
-{
+let
+  dirname = lib.getExe' pkgs.coreutils "dirname";
+  git = lib.getExe pkgs.git;
+  tmux = lib.getExe pkgs.tmux;
+in {
   home.activation.bootDotfiles = lib.hm.dag.entryAfter [ "installPackages" ] ''
     DOTFILES="''${DOTFILES:-$HOME/dev/dots}"
     if [ ! -d "$DOTFILES" ]; then
       echo ">>> Cloning dots..."
-      mkdir -p "$(${pkgs.coreutils}/bin/dirname "$DOTFILES")"
-      ${pkgs.git}/bin/git clone --branch main \
+      mkdir -p "$(${dirname} "$DOTFILES")"
+      ${git} clone --branch main \
         https://github.com/codethread/dots.git "$DOTFILES"
     fi
   '';
@@ -53,8 +57,8 @@
 
   systemd.user.services.tmux-main = let
     script = pkgs.writeShellScript "tmux-ensure-main" ''
-      if ! ${pkgs.tmux}/bin/tmux has-session -t main 2>/dev/null; then
-        ${pkgs.tmux}/bin/tmux new-session -d -s main
+      if ! ${tmux} has-session -t main 2>/dev/null; then
+        ${tmux} new-session -d -s main
       fi
     '';
   in {

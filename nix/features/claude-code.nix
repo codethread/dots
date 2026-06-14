@@ -2,6 +2,7 @@
 
 let
   cfg = config.ct.claude-code;
+  zsh = lib.getExe pkgs.zsh;
 
   commonEnabledPlugins = {
     "frontend-design@claude-plugins-official" = true;
@@ -234,7 +235,7 @@ in {
         # so we can see files
         MANPAGER = "cat";
         # avoids old shell stuff
-        SHELL = "${pkgs.zsh}/bin/zsh";
+        SHELL = "${zsh}";
         ZDOTDIR = "${config.xdg.configHome}/zsh";
       };
 

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 # x86_64-linux homelab machine profile.
 # Uses shared common + nixos-common features and adds Google Chrome.
@@ -42,14 +42,14 @@
   # Chrome ships two .desktop files; both need --disable-gpu to prevent VM GPU crashes.
   xdg.desktopEntries.google-chrome = {
     name = "Google Chrome";
-    exec = "${pkgs.google-chrome}/bin/google-chrome-stable --disable-gpu %U";
+    exec = "${lib.getExe pkgs.google-chrome} --disable-gpu %U";
     icon = "google-chrome";
     categories = [ "Network" "WebBrowser" ];
     mimeType = [ "text/html" "text/xml" "application/xhtml+xml" "x-scheme-handler/http" "x-scheme-handler/https" ];
   };
   xdg.desktopEntries."com.google.Chrome" = {
     name = "Google Chrome";
-    exec = "${pkgs.google-chrome}/bin/google-chrome-stable --disable-gpu %U";
+    exec = "${lib.getExe pkgs.google-chrome} --disable-gpu %U";
     icon = "google-chrome";
     categories = [ "Network" "WebBrowser" ];
     mimeType = [ "text/html" "text/xml" "application/xhtml+xml" "x-scheme-handler/http" "x-scheme-handler/https" ];

@@ -1,6 +1,7 @@
 final: prev:
 let
-  npm = "${final.nodejs_24}/bin/npm";
+  lib = final.lib;
+  npm = lib.getExe' final.nodejs_24 "npm";
 in {
   nativeAgentInstallBitwarden = final.writeShellApplication {
     name = "native-agent-install-bitwarden";
@@ -46,7 +47,7 @@ in {
       export NPM_CONFIG_PREFIX="''${NPM_CONFIG_PREFIX:-$HOME/.local}"
 
       if [ ! -x "$HOME/.local/bin/openspec" ]; then
-        ${final.nativeNpmInstallOpenspec}/bin/native-npm-install-openspec
+        ${lib.getExe' final.nativeNpmInstallOpenspec "native-npm-install-openspec"}
       fi
 
       exec "$HOME/.local/bin/openspec" "$@"

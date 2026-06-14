@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 # aarch64-linux VM profile (Apple Silicon host).
 # Uses shared common + nixos-common features and adds Chromium.
@@ -12,7 +12,7 @@
   # chromium-browser is the .desktop filename installed by pkgs.chromium.
   xdg.desktopEntries.chromium-browser = {
     name = "Chromium";
-    exec = "${pkgs.chromium}/bin/chromium --disable-gpu %U";
+    exec = "${lib.getExe pkgs.chromium} --disable-gpu %U";
     icon = "chromium";
     categories = [ "Network" "WebBrowser" ];
     mimeType = [ "text/html" "text/xml" "application/xhtml+xml" "x-scheme-handler/http" "x-scheme-handler/https" ];

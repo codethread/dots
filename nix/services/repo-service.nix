@@ -10,8 +10,19 @@
 { config, lib, pkgs, ... }:
 let
   cfg = config.services.${name};
+  bun = lib.getExe pkgs.bun;
+  dirname = lib.getExe' pkgs.coreutils "dirname";
+  mkdir = lib.getExe' pkgs.coreutils "mkdir";
+  git = lib.getExe pkgs.git;
+  grep = lib.getExe' pkgs.gnugrep "grep";
+  openssh = lib.getExe' pkgs.openssh "ssh";
+  sshKeygen = lib.getExe' pkgs.openssh "ssh-keygen";
+  sshKeyscan = lib.getExe' pkgs.openssh "ssh-keyscan";
+  systemctl = lib.getExe' pkgs.systemd "systemctl";
+  nixCmd = lib.getExe pkgs.nix;
+
   cmd = builtins.replaceStrings [ "{bun}" "{dir}" ] [
-    "${pkgs.bun}/bin/bun"
+    bun
     cfg.workingDirectory
   ] command;
   runtimePath = lib.concatStringsSep ":" ([
@@ -51,7 +62,7 @@ let
       set -euo pipefail
       export PATH='${runtimePath}':"$PATH"
       cd '${cfg.workingDirectory}'
-      exec ${pkgs.nix}/bin/nix --extra-experimental-features 'nix-command flakes' \
+      exec ${nixCmd} --extra-experimental-features 'nix-command flakes' \
         develop '${cfg.workingDirectory}#${devShell}' \
         --command '${commandRunner}'
     '';
@@ -68,13 +79,13 @@ in {
     home.activation."clone-${name}" = lib.hm.dag.entryAfter [ "installPackages" ] ''
       if [ -d "${cfg.workingDirectory}/.git" ]; then
         $VERBOSE_ECHO ">>> ${name}: repo already present"
-      elif ${pkgs.openssh}/bin/ssh -o BatchMode=yes -o ConnectTimeout=5 -T git@github.com 2>&1 | ${pkgs.gnugrep}/bin/grep -q "successfully authenticated"; then
-        ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "${cfg.workingDirectory}")"
-        if ! ${pkgs.openssh}/bin/ssh-keygen -F github.com >/dev/null 2>&1; then
-          ${pkgs.openssh}/bin/ssh-keyscan github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
+      elif ${openssh} -o BatchMode=yes -o ConnectTimeout=5 -T git@github.com 2>&1 | ${grep} -q "successfully authenticated"; then
+        ${mkdir} -p "$(${dirname} "${cfg.workingDirectory}")"
+        if ! ${sshKeygen} -F github.com >/dev/null 2>&1; then
+          ${sshKeyscan} github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
         fi
         echo ">>> Cloning ${name}..."
-        if ! ${pkgs.git}/bin/git clone "${gitUrl}" "${cfg.workingDirectory}"; then
+        if ! ${git} clone "${gitUrl}" "${cfg.workingDirectory}"; then
           echo ">>> WARN: failed to clone ${name}; continuing"
         fi
       else
@@ -85,9 +96,9 @@ in {
     home.activation."restart-${name}" = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [ -n "''${DRY_RUN:-}" ]; then
         echo "Would restart ${name}.service"
-      elif ${pkgs.systemd}/bin/systemctl --user --quiet is-enabled "${name}.service" 2>/dev/null; then
+      elif ${systemctl} --user --quiet is-enabled "${name}.service" 2>/dev/null; then
         echo ">>> Restarting ${name}.service"
-        ${pkgs.systemd}/bin/systemctl --user restart "${name}.service" || true
+        ${systemctl} --user restart "${name}.service" || true
       fi
     '';
 

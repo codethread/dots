@@ -1,6 +1,7 @@
 final: prev:
 let
-  npm = "${final.nodejs_24}/bin/npm";
+  lib = final.lib;
+  npm = lib.getExe' final.nodejs_24 "npm";
 in {
   nativeAgentInstallCodex = final.writeShellApplication {
     name = "native-agent-install-codex";
