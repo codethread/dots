@@ -6,7 +6,29 @@ let
   date = lib.getExe' pkgs.coreutils "date";
   backupNotesStateDir = "${homeDir}/.local/state/com.codethread.backup-notes";
   backupNotesScript = pkgs.writeShellScript "backup-notes" ''
-    set -euo pipefail
+    set -Eeuo pipefail
+
+    sentinel="${backupNotesStateDir}/failure-notified"
+
+    notify_failure() {
+      local exit_code="$?"
+      trap - ERR
+
+      if [ ! -e "$sentinel" ]; then
+        {
+          echo "backup-notes failed with exit code $exit_code."
+          echo
+          echo "Repository: ${homeDir}/dev/projects/notes/vault"
+          echo
+          ${git} -C "${homeDir}/dev/projects/notes/vault" status --short --branch || true
+        } | "${homeDir}/.local/bin/cc-notify" "Notes git backup failed" || true
+        : > "$sentinel"
+      fi
+
+      exit "$exit_code"
+    }
+
+    trap notify_failure ERR
 
     cd "${homeDir}/dev/projects/notes/vault"
 
@@ -17,6 +39,8 @@ let
 
     ${git} pull --rebase
     ${git} push
+
+    rm -f "$sentinel"
   '';
 in {
   imports = [ ./common-dev.nix ];
