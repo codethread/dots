@@ -9,17 +9,11 @@ let
     cd "${homeDir}/dev/projects/notes/vault"
 
     ${pkgs.git}/bin/git add -A
-    STASH_BEFORE=$(${pkgs.git}/bin/git rev-parse --verify refs/stash 2>/dev/null || echo "none")
-    ${pkgs.git}/bin/git stash push -m "backup-notes-auto"
-    STASH_AFTER=$(${pkgs.git}/bin/git rev-parse --verify refs/stash 2>/dev/null || echo "none")
-    ${pkgs.git}/bin/git pull --rebase
-    if [ "$STASH_BEFORE" != "$STASH_AFTER" ]; then
-      ${pkgs.git}/bin/git stash pop
-    fi
-    ${pkgs.git}/bin/git add -A
     if ! ${pkgs.git}/bin/git diff --cached --quiet; then
       ${pkgs.git}/bin/git commit -m "auto: $(${pkgs.coreutils}/bin/date -u +%Y-%m-%dT%H:%M:%SZ)"
     fi
+
+    ${pkgs.git}/bin/git pull --rebase
     ${pkgs.git}/bin/git push
   '';
 in {
