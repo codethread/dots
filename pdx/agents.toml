@@ -80,5 +80,6 @@ model = "openai-codex/gpt-5.4:medium"
 system_prompt_mode = "append"
 argv.add = [
   "--name", "Envy",
-  "--agent", "main"
+  "--agent", "main",
+  "--skill", "$PDX_USER_DATA_DIR/envy-skills"
 ]

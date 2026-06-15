@@ -1,0 +1,11 @@
+{
+	"name": "clarify-panel",
+	"description": "Independent reader panel for requirements clarification. Use when an agent needs isolated interpretations of a user brief before producing clarify artifacts such as open_questions, assertions, and assumptions. Members read the same brief from different stances; the caller judges divergence and writes artifacts.",
+	"members": [
+		"clarify-literalist-reader",
+		"clarify-minimalist-reader",
+		"clarify-maximalist-reader",
+		"clarify-hostile-reader",
+		"clarify-precedent-reader"
+	]
+}

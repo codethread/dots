@@ -1,0 +1,63 @@
+# User-owned Artifact Contracts.
+# Pithos enforces only active artifact presence for `required = true` rules.
+# `title` and `body` are prompt guidance; artifact body shape is not parsed.
+
+[[artifacts]]
+capability = "clarify"
+kind = "open_questions"
+required = true
+title = "Open questions"
+body = """
+Material divergences requiring user intent.
+
+Write a numbered Markdown list of closed questions where possible. Include the
+recommended default only when it is truly non-material or strongly supported by
+precedent.
+
+If there are no material questions, write exactly:
+
+No open questions.
+"""
+
+[[artifacts]]
+capability = "clarify"
+kind = "assertions"
+required = true
+title = "Divergence-derived assertions"
+body = """
+Contested or divergence-derived assertions selected from the reader panel.
+
+Do not summarize the whole brief. Each assertion must be one atomic claim and
+must include at least one binary acceptance criterion, preferably Given/When/Then
+or an executable check.
+"""
+
+[[artifacts]]
+capability = "clarify"
+kind = "assumptions"
+required = true
+title = "Defaulted assumptions"
+body = """
+Non-material defaults chosen during clarification.
+
+Record only decisions that do not require user intent. Include the reason for
+each default, such as panel convergence or repository precedent. Do not hide
+material ambiguity here.
+"""
+
+[[artifacts]]
+capability = "clarify"
+kind = "panel_metrics"
+required = true
+title = "Reader panel metrics"
+body = """
+Terse metrics from the reader panel and judge step.
+
+Include:
+- reader_count
+- divergence: low | medium | high
+- material_question_count
+- assertion_count
+- precedent_signal: none | weak | mixed | strong
+- recommended_route: triage | escalate_for_questions | design_session
+"""
