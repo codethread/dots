@@ -128,7 +128,7 @@ in {
       upgrade = false;
       cleanup = "uninstall"; # remove packages not listed here (use "zap" only when stable)
       # brew bundle now requires --force when --cleanup is passed (since Homebrew 5.x)
-      extraFlags = [ "--force-cleanup" ];
+      extraFlags = [ "--force" ];
     };
     taps = [
       "nikitabobko/tap"          # aerospace
@@ -150,6 +150,12 @@ in {
       "font-fira-code"                # Fira Code font
       "font-victor-mono"              # Victor Mono font
       "font-symbols-only-nerd-font"   # Symbols Nerd Font (Symbols Only)
+	  "aerospace"             # AeroSpace is an i3-like tiling window manager for macOS
+      "alfred"                # Application launcher and productivity software
+      "spotify"               # Music streaming service
+      "todoist-app"           # To-do list
+	  "obsidian"              # Knowledge base that works on top of a local folder of plain text Markdown files
+	  "1password"             # Password manager that keeps all passwords secure behind one password
     ];
 	# enable on boot load machine
 	# bug requires login on every switch

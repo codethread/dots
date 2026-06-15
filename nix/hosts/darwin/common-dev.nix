@@ -17,6 +17,14 @@
     fi
   '';
 
+  homebrew.casks = [
+    "1password-cli"         # Command-line interface for 1Password
+    "google-chrome"         # Web browser
+    "ungoogled-chromium"    # Google Chromium, sans integration with Google
+    "visual-studio-code"    # Open-source code editor
+    "zed"                   # Multiplayer code editor
+  ];
+
   # shared extensions (work-specific ones live in common-work.nix)
   homebrew.vscode = [
     # vim

@@ -1218,7 +1218,7 @@ function writeRunnerFiles(options: {
 	branch: string;
 	pooled: boolean;
 }): string {
-	const {project, root, created, branch, pooled} = options;
+	const {project, root, created, pooled} = options;
 	const session = sessionNameForWorktreePath(created);
 	const sessionDir = resolve(homedir(), ".config", "kitty", "sessions");
 	mkdirSync(sessionDir, {recursive: true});
