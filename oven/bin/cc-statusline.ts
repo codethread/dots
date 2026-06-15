@@ -167,6 +167,7 @@ function getShortModelName(displayName: string): string {
 	const lower = displayName.toLowerCase();
 	if (lower.includes("opus")) return "opus";
 	if (lower.includes("haiku")) return "haiku";
+	if (lower.includes("fable")) return "fable";
 	return "sonnet";
 }
 

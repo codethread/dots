@@ -63,6 +63,30 @@ def _cl-run [
 	^cl ...$args ...$rest
 }
 
+# cl with sonnet fable
+export def clf [
+	--continue(-c)                                           # Continue most recent conversation
+	--dangerously-skip-permissions(-d)                       # Bypass all permission checks
+	--print(-p)                                              # Print response and exit (non-interactive)
+	--verbose                                                # Override verbose mode
+	--resume(-r): string = ""                                # Resume a conversation by session ID
+	--effort: string@cl-effort-completions = "high"          # Effort level
+	--permission-mode: string@cl-permission-mode-completions = ""  # Permission mode
+	--output-format: string@cl-output-format-completions = ""      # Output format (--print only)
+	--allowed-tools: string@cl-tools-completions = ""        # Tools to allow
+	--disallowed-tools: string@cl-tools-completions = ""     # Tools to deny
+	--tools: string@cl-tools-completions = ""                # Available tools from built-in set
+	--agent: string = ""                                     # Agent for the session
+	--add-dir: string = ""                                   # Additional directory to allow tool access to
+	--append-system-prompt: string = ""                      # Append to default system prompt
+	--system-prompt: string = ""                             # System prompt for the session
+	--name(-n): string = ""                                  # Display name for this session
+	--worktree(-w): string = ""                              # Create a new git worktree for this session
+	...rest: string
+] {
+	_cl-run "fable" $continue $dangerously_skip_permissions $print $verbose $resume $effort $permission_mode $output_format $allowed_tools $disallowed_tools $tools $agent $add_dir $append_system_prompt $system_prompt $name $worktree $rest
+}
+
 # cl with opus model
 export def clo [
 	--continue(-c)                                           # Continue most recent conversation
