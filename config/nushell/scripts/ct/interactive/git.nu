@@ -41,6 +41,7 @@ export alias gcl = git clone --recurse-submodules
 export alias gcls = git clone --depth 1
 export alias gnuke = git clean -dfX
 export alias guntracked = git clean -dfX --dry-run
+
 # export alias gclean = git clean --interactive -d
 
 export alias gcmsg = git commit --message
@@ -160,23 +161,22 @@ export alias lg = lazygit
 
 # use kitty as pager
 export def "git diff" [...args] {
-	# disable while using tmux in kitty, might find a workaround
-	# if ("KITTY_WINDOW_ID" in $env) {
-	# 	^git -c pager.difftool=true difftool -t kitty --no-symlinks --dir-diff ...$args
-	# } else {
-		# ^git diff ...$args
-		git -c diff.external=difft diff ...$args
-	# }
+    # disable while using tmux in kitty, might find a workaround
+    # if ("KITTY_WINDOW_ID" in $env) {
+    # 	^git -c pager.difftool=true difftool -t kitty --no-symlinks --dir-diff ...$args
+    # } else {
+    # ^git diff ...$args
+    git -c diff.external=difft diff ...$args
 }
 
 export def "git lg" [] {
-	^git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all
+    ^git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all
 }
 
 export def "git lg2" [] {
-	^git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)' --all
+    ^git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)' --all
 }
 
 export def "git push-mr" [] {
-	gitlab-create-mr
+    gitlab-create-mr
 }

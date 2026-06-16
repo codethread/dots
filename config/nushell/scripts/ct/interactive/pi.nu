@@ -9,7 +9,6 @@ export alias pil = pi --agent main --provider openai-codex --model gpt-5.4-mini 
 # High reasoning
 export alias pih = pi --agent main --provider openai-codex --model gpt-5.5 --thinking high
 
-
 # Run a slow but cheaper model
 export alias pis = pi --agent main --provider openai-codex --model gpt-5.4 --thinking high
 

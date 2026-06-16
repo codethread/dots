@@ -12,10 +12,10 @@ export alias op-goog-auth = op read op://perkbox/4ajg7mmj6j23yvkq6kfai52pru/pass
 
 # get slack credentials
 export def slacky [] {
-	let target = "~/.local/share/slacky" | path expand
-	mkdir $target
-	let p = op-goog-auth
-	hide-all {
+    let target = "~/.local/share/slacky" | path expand
+    mkdir $target
+    let p = op-goog-auth
+    hide-all {
 		(deno run
 			--allow-env
 			--allow-read
@@ -26,6 +26,7 @@ export def slacky [] {
 			--email adam.hall@perkbox.com
 			--password $p
 			--domain https://perkbox.slack.com)
-	} | from json
-	| save ([$target slack.json] | path join)
+	}
+    | from json
+    | save ([$target slack.json] | path join)
 }

@@ -6,33 +6,33 @@
 # - add some flags for actually deleting
 # - show size in fuzzy if possible
 export def main [] {
-	let purged = dirs
-	| path expand
-	| where { path exists }
-	| each {|p| ls $p
+    let purged = dirs
+    | path expand
+    | where { path exists }
+    | each {|p| ls $p
 		| where type == "dir"
 		| get name
 	}
-	| flatten
-	| par-each {|d| $d | get-dir-size }
-	| flatten
-	| sort
-	| last 30
-	| get name
-	| to text
-	| fzf --multi
+    | flatten
+    | par-each {|d| $d | get-dir-size }
+    | flatten
+    | sort
+    | last 30
+    | get name
+    | to text
+    | fzf --multi
 
-	print "To purge"
-	print $purged
-	let choice = (input $"(ansi red)PURGE?(ansi reset) [Y/n]: ")
+    print "To purge"
+    print $purged
+    let choice = (input $"(ansi red)PURGE?(ansi reset) [Y/n]: ")
 
-	if (($choice | str trim) != "n") {
-		let logfile = "/tmp/purge.log"
-		$"Purge started at (date now)\n" | save -f $logfile
+    if ($choice | str trim) != "n" {
+        let logfile = "/tmp/purge.log"
+        $"Purge started at (date now)\n" | save -f $logfile
 
-		$purged
-		| lines
-		| each {|dir|
+        $purged
+        | lines
+        | each {|dir|
 			$"Processing: ($dir)\n" | save -a $logfile
 			print $"(ansi cyan)Cleaning ($dir)(ansi reset)"
 
@@ -53,28 +53,27 @@ export def main [] {
 			}
 			$"Done with ($dir)\n" | save -a $logfile
 		}
-		$"Purge completed\n" | save -a $logfile
-	}
-
+        $"Purge completed\n" | save -a $logfile
+    }
 }
 
 def get-dir-size [] {
-	^du -sh $in
-	| parse "{size}\t{name}"
-	| str trim
-	| upsert size {|r| $r.size | into filesize }
+    ^du -sh $in
+    | parse "{size}\t{name}"
+    | str trim
+    | upsert size {|r| $r.size | into filesize }
 }
 
 def dirs [] {
-	[
-		~/dev/vendor
-		~/dev/learn
-		~/dev/projects
-		~/work/services
-		~/work/lambdas
-		~/work/utilities
-		~/work/infrastructure
-		~/work/libraries
-		~/work/docs
-	]
+    [
+        ~/dev/vendor
+        ~/dev/learn
+        ~/dev/projects
+        ~/work/services
+        ~/work/lambdas
+        ~/work/utilities
+        ~/work/infrastructure
+        ~/work/libraries
+        ~/work/docs
+    ]
 }

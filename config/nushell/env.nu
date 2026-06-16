@@ -4,7 +4,7 @@ use std/util "path add"
 #: fns {{{
 
 def home [p: string] {
-	$nu.home-dir | path join $p
+    $nu.home-dir | path join $p
 }
 
 #: }}}
@@ -16,14 +16,15 @@ let is_ssh = (
 	(($env.SSH_CLIENT? | default "") != "") or
 	(($env.SSH_TTY? | default "") != "")
 )
-let is_vscode_remote = (($env.VSCODE_IPC_HOOK_CLI? | default "") != "")
+
+let is_vscode_remote = ($env.VSCODE_IPC_HOOK_CLI? | default "") != ""
 
 let default_editor = if $is_vscode_remote {
-	"code --wait"
+    "code --wait"
 } else if $is_ssh {
-	"nvim"
+    "nvim"
 } else {
-	"zed --wait"
+    "zed --wait"
 }
 
 $env.EDITOR = $default_editor
@@ -45,10 +46,14 @@ $env.LESSHISTFILE = ($env.LESSHISTFILE? | default "-") # no .lesshst
 $env.RIPGREP_CONFIG_PATH = ([$env.XDG_CONFIG_HOME ripgrep/config] | path join)
 $env.CT_VENDOR_DIR = (home "dev/vendor")
 
-
 # $env.CT_LOG = '1'
 $env.ENV_CONVERSIONS = {
-	CT_LOG: { from_string: { |s| $s | into bool } to_string: { |v| $"($v)"} }
+    CT_LOG: {
+        from_string: {|s|
+            $s | into bool
+        }
+        to_string: {|v| $"($v)" }
+    }
 }
 $env.CT_USER = ($env.CT_USER? | default (match ($env.USER? | default "") {
 	"adam.hall" => "work",
@@ -58,7 +63,6 @@ $env.CT_USER = ($env.CT_USER? | default (match ($env.USER? | default "") {
 
 $env.KSM_WORK = $env.CT_USER == 'work'
 $env.IS_WORK = $env.CT_USER == 'work'
-
 
 $env.CT_NOTES = (match $env.CT_USER {
 	"work" => (home 'gdrive/perks'),
@@ -74,9 +78,9 @@ $env.WAKATIME_HOME = ($env.WAKATIME_HOME? | default (home ".config/wakatime"))
 $env.STARSHIP_CACHE = ($env.STARSHIP_CACHE? | default ($env.XDG_CACHE_HOME | path join "starship"))
 
 if (sys host).name == "Darwin" {
-	path add -a "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
-	path add -a "/Applications/Cursor.app/Contents/Resources/app/bin"
-	$env.CT_BACKGROUNDS_DIR = ($env.CT_BACKGROUNDS_DIR? | default (home "sync/images/backgrounds"))
+    path add -a "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+    path add -a "/Applications/Cursor.app/Contents/Resources/app/bin"
+    $env.CT_BACKGROUNDS_DIR = ($env.CT_BACKGROUNDS_DIR? | default (home "sync/images/backgrounds"))
 }
 
 path add "/opt/podman/bin"
@@ -88,23 +92,22 @@ path add -a "~/.local/share/nvim/mason/bin"
 let _nix_per_user = $"/etc/profiles/per-user/($env.USER)/bin"
 
 if ("/etc/NIXOS" | path exists) or ("/run/current-system/sw/bin" | path exists) {
-	path add (home ".nix-profile/bin")
-	path add "/nix/var/nix/profiles/default/bin"
-	path add "/run/current-system/sw/bin"
-	path add $_nix_per_user
+    path add (home ".nix-profile/bin")
+    path add "/nix/var/nix/profiles/default/bin"
+    path add "/run/current-system/sw/bin"
+    path add $_nix_per_user
 }
 
 if ("/etc/NIXOS" | path exists) {
-	$env.IS_NIXOS = true
-	# setuid wrappers (sudo, etc.) — must come before /run/current-system/sw/bin
-	path add "/run/wrappers/bin"
-	path add ($env.XDG_STATE_HOME | path join "nix/profile/bin")
-	$env.DOCKER_HOST = $"unix:///run/user/(id -u)/podman/podman.sock"
-	$env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = $"($_nix_per_user)/chromium"
+    $env.IS_NIXOS = true
+    # setuid wrappers (sudo, etc.) — must come before /run/current-system/sw/bin
+    path add "/run/wrappers/bin"
+    path add ($env.XDG_STATE_HOME | path join "nix/profile/bin")
+    $env.DOCKER_HOST = $"unix:///run/user/(id -u)/podman/podman.sock"
+    $env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = $"($_nix_per_user)/chromium"
 } else {
-	$env.IS_NIXOS = false
-	$env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-	# $env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = "/Applications/Chromium.app/Contents/MacOS/Chromium"
+    $env.IS_NIXOS = false
+    $env.PLAYWRIGHT_MCP_EXECUTABLE_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 }
 
 # stable symlink to nix store path; avoids hash-heavy store path in pi system prompts (~130 tokens/session)
@@ -118,8 +121,8 @@ $env.PI_OFFLINE = 1
 $env.PDX_DATA_DIR = ($env.PDX_DATA_DIR? | default (home ".pdx"))
 $env.PITHOS_DB = ([$env.PDX_DATA_DIR pithos.sqlite] | path join)
 
-
 $env.PDX_USER_DATA_DIR = (home dev/projects/pdx)
+
 # $env.PDX_USER_DATA_DIR = (match $env.CT_USER {
 #   "work" => (home work/me/workfiles/pdx)
 #   _ => ([$env.DOTFILES pdx] | path join)
@@ -129,17 +132,14 @@ $env.PDX_USER_DATA_DIR = (home dev/projects/pdx)
 #: homebrew {{{
 
 if (sys host).name == "Darwin" {
-	path add -a "/opt/homebrew/sbin"
-	path add -a "/opt/homebrew/bin"
+    path add -a "/opt/homebrew/sbin"
+    path add -a "/opt/homebrew/bin"
 
-	$env.HOMEBREW_BUNDLE_FILE = ("~/.local/data/Brewfile.conf" | path expand)
+    $env.HOMEBREW_BUNDLE_FILE = ("~/.local/data/Brewfile.conf" | path expand)
 
-	$env.HOMEBREW_CELLAR = "/opt/homebrew/Cellar"
-	$env.HOMEBREW_PREFIX = "/opt/homebrew"
-	$env.HOMEBREW_REPOSITORY = "/opt/homebrew"
-	# not sure if these matter?
-	# $env.INFOPATH = "/opt/homebrew/share/info:"
-	# $env.MANPATH = ([$env.MANPATH "/opt/homebrew/share/man:"] | str join)
+    $env.HOMEBREW_CELLAR = "/opt/homebrew/Cellar"
+    $env.HOMEBREW_PREFIX = "/opt/homebrew"
+    $env.HOMEBREW_REPOSITORY = "/opt/homebrew"
 }
 
 #: }}}
@@ -168,18 +168,19 @@ $env.GOPATH = (home "go")
 #: javascript / node / react-native {{{
 
 if (sys host).name == "Darwin" {
-	# android simulator
-	$env.ANDROID_HOME = ("~/Library/Android/sdk" | path expand)
-	path add ($env.ANDROID_HOME | path join "emulator")
-	path add ($env.ANDROID_HOME | path join "platform-tools")
+    # android simulator
+    $env.ANDROID_HOME = ("~/Library/Android/sdk" | path expand)
+    path add ($env.ANDROID_HOME | path join "emulator")
+    path add ($env.ANDROID_HOME | path join "platform-tools")
 
-	# ruby for gem install on m1 mac ios pods
-	path add "/opt/homebrew/opt/ruby@3.1/bin"
-	path add "/opt/homebrew/lib/ruby/gems/3.1.0/bin"
+    # ruby for gem install on m1 mac ios pods
+    path add "/opt/homebrew/opt/ruby@3.1/bin"
+    path add "/opt/homebrew/lib/ruby/gems/3.1.0/bin"
 }
 
 path add ($env.VOLTA_HOME | path join "bin")
 $env.VOLTA_FEATURE_PNPM = "1"
+
 # $env.HUSKY = "0" # don"t hold my hand
 
 path add "~/.bun/bin"
@@ -204,15 +205,15 @@ path add "~/.luarocks/bin"
 #: java {{{
 
 if (sys host).name == "Darwin" {
-	$env.JAVA_HOME = "/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home"
+    $env.JAVA_HOME = "/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home"
 }
 
 #: }}}
 #: python {{{
 
 # Python environment variables
-$env.PYTHONDONTWRITEBYTECODE = "1"  # Don't create .pyc files
-$env.PIP_REQUIRE_VIRTUALENV = "false"  # Allow pip outside virtualenv (set to "true" to be stricter)
+$env.PYTHONDONTWRITEBYTECODE = "1" # Don't create .pyc files
+$env.PIP_REQUIRE_VIRTUALENV = "false" # Allow pip outside virtualenv (set to "true" to be stricter)
 
 #: }}}
 #: claude {{{
@@ -233,12 +234,15 @@ $env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"
 
 # macOS kitty.app bundle ships its own binary; on Linux, kitty is installed system-wide
 if (sys host).name == "Darwin" {
-	let kitty = "/Applications/kitty.app"
-	if ($kitty | path exists) {
-		path add ([$kitty, "Contents/MacOS"] | path join)
-		let kitty_man = "/Applications/kitty.app/Contents/Resources/man:"
-		$env.MANPATH = ([($env | get --optional MANPATH) $kitty_man] | str join)
-	}
+    let kitty = "/Applications/kitty.app"
+    if ($kitty | path exists) {
+        path add ([$kitty, "Contents/MacOS"] | path join)
+        let kitty_man = "/Applications/kitty.app/Contents/Resources/man:"
+        $env.MANPATH = ([
+            ($env | get --optional MANPATH)
+            $kitty_man
+        ] | str join)
+    }
 }
 
 #: }}}

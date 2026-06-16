@@ -5,5 +5,5 @@
 # source (if ($privates | path exists) { $privates } else { $empty })
 
 def foo [] {
-	print hey
+    print hey
 }
