@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# :module: verify nix flake builds when nix/ files are staged
+# :module: format staged Nushell/Nix files and verify nix flake builds when nix/ files are staged
 
-if ! git diff --cached --name-only | grep -q '^nix/'; then
-	exit 0
-fi
+set -euo pipefail
 
+ROOT="$(git rev-parse --show-toplevel)"
 GIT_DIR="$(git rev-parse --git-dir)"
+
 # skip during rebase — intermediate commits may be intentionally broken
 if [ -d "${GIT_DIR}/rebase-merge" ] || [ -d "${GIT_DIR}/rebase-apply" ]; then
 	exit 0
@@ -15,8 +15,64 @@ if [ -f "${GIT_DIR}/CHERRY_PICK_HEAD" ]; then
 	exit 0
 fi
 
-FLAKE="path:$(git rev-parse --show-toplevel)/nix"
-SCRIPTS="$(git rev-parse --show-toplevel)/config/nushell/scripts"
+collect_staged_files() {
+	local pattern="$1"
+	local -n out="$2"
+
+	while IFS= read -r -d '' file; do
+		out+=("$file")
+	done < <(git diff --cached --name-only --diff-filter=ACMR -z -- "$pattern")
+}
+
+ensure_no_unstaged_changes() {
+	local label="$1"
+	shift
+	local files=("$@")
+	local conflicted=()
+
+	for file in "${files[@]}"; do
+		if ! git diff --quiet -- "$file"; then
+			conflicted+=("$file")
+		fi
+	done
+
+	if [ ${#conflicted[@]} -gt 0 ]; then
+		echo "$label skipped: these staged files also have unstaged changes."
+		echo "Stage or stash the unstaged changes before committing:"
+		printf '  %s\n' "${conflicted[@]}"
+		exit 1
+	fi
+}
+
+nu_files=()
+collect_staged_files '*.nu' nu_files
+
+if [ ${#nu_files[@]} -gt 0 ]; then
+	ensure_no_unstaged_changes nufmt "${nu_files[@]}"
+
+	if command -v nufmt >/dev/null 2>&1; then
+		nufmt "${nu_files[@]}"
+	else
+		nix run github:nushell/nufmt -- "${nu_files[@]}"
+	fi
+	git add -- "${nu_files[@]}"
+fi
+
+nix_files=()
+collect_staged_files '*.nix' nix_files
+
+if [ ${#nix_files[@]} -gt 0 ]; then
+	ensure_no_unstaged_changes nixfmt "${nix_files[@]}"
+	nixfmt "${nix_files[@]}"
+	git add -- "${nix_files[@]}"
+fi
+
+if ! git diff --cached --name-only | grep -q '^nix/'; then
+	exit 0
+fi
+
+FLAKE="path:${ROOT}/nix"
+SCRIPTS="${ROOT}/config/nushell/scripts"
 
 host=$(nu -I "$SCRIPTS" -c 'use ct/nix.nu [nrs-flake-host]; nrs-flake-host')
 
@@ -28,7 +84,7 @@ esac
 
 output=$("$rebuild_cmd" build --flake "${FLAKE}#${host}" 2>&1)
 rc=$?
-rm -f "$(git rev-parse --show-toplevel)/result"
+rm -f "${ROOT}/result"
 
 if [ $rc -ne 0 ]; then
 	echo "nix build failed:"

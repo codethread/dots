@@ -264,6 +264,7 @@ in
       wakatime-cli
       prettierd
       nixfmt
+      nufmt
       just
       uv
       fx

@@ -5,6 +5,7 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-master.url = "github:nixos/nixpkgs";
     llm-agents.url = "github:numtide/llm-agents.nix";
+    nufmt.url = "github:nushell/nufmt";
 
     tree-sitter-jsonc-src = {
       url = "github:lymansix/tree-sitter-jsonc";
@@ -38,6 +39,7 @@
       nixpkgs,
       nixpkgs-master,
       llm-agents,
+      nufmt,
       tree-sitter-jsonc-src,
       todoist-src,
       playwright-cli-src,
@@ -49,6 +51,9 @@
       llmAgentsOverlay = llm-agents.overlays.default;
       nativeAgentOverlay = import ./overlays/native-agent-installers.nix;
       nativeNpmAgentOverlay = import ./overlays/native-npm-installers.nix;
+      nufmtOverlay = final: prev: {
+        nufmt = nufmt.packages.${final.system}.default;
+      };
 
       todoistOverlay = final: prev: {
         todoist-cli = final.buildGoModule {
@@ -157,6 +162,7 @@
                 llmAgentsOverlay
                 nativeAgentOverlay
                 nativeNpmAgentOverlay
+                nufmtOverlay
                 todoistOverlay
                 playwrightCliOverlay
                 nvimTreesitterJsoncOverlay
@@ -176,6 +182,7 @@
             llmAgentsOverlay
             nativeAgentOverlay
             nativeNpmAgentOverlay
+            nufmtOverlay
             nvimTreesitterJsoncOverlay
           ];
           config.allowUnfree = true;
@@ -212,6 +219,7 @@
               llmAgentsOverlay
               nativeAgentOverlay
               nativeNpmAgentOverlay
+              nufmtOverlay
               todoistOverlay
               playwrightCliOverlay
               nvimTreesitterJsoncOverlay
@@ -235,6 +243,7 @@
               llmAgentsOverlay
               nativeAgentOverlay
               nativeNpmAgentOverlay
+              nufmtOverlay
               todoistOverlay
               playwrightCliOverlay
               nvimTreesitterJsoncOverlay
