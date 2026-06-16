@@ -27,6 +27,17 @@ let
     "/usr/sbin"
     "/sbin"
   ];
+  homebrewTapName = tap: if builtins.isString tap then tap else tap.name;
+  trustedHomebrewTaps = lib.filter (tap: !(lib.hasPrefix "homebrew/" tap)) (
+    map homebrewTapName config.homebrew.taps
+  );
+  trustHomebrewTapCommands = lib.concatMapStringsSep "\n" (tap: ''
+    echo >&2 "Trusting Homebrew tap ${tap}..."
+    if ! brew tap | /usr/bin/grep -qx ${lib.escapeShellArg tap}; then
+      brew tap ${lib.escapeShellArg tap}
+    fi
+    brew trust ${lib.escapeShellArg tap}
+  '') trustedHomebrewTaps;
 in
 {
   nix.settings = {
@@ -106,6 +117,19 @@ in
       };
     };
   };
+
+  system.activationScripts.preActivation.text = lib.mkIf (trustedHomebrewTaps != [ ]) ''
+    if [ -x ${config.homebrew.prefix}/bin/brew ]; then
+      echo >&2 "Homebrew tap trust..."
+      PATH=${config.homebrew.prefix}/bin:$PATH \
+      /usr/bin/sudo \
+        --preserve-env=PATH \
+        --user=${lib.escapeShellArg config.homebrew.user} \
+        --set-home \
+        env HOMEBREW_NO_AUTO_UPDATE=1 \
+        /bin/sh -c ${lib.escapeShellArg trustHomebrewTapCommands}
+    fi
+  '';
 
   system.activationScripts.postActivation.text = ''
     /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${syncengineStateDir}
