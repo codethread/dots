@@ -53,6 +53,7 @@ $env.config.color_config = if (($_theme_file | path exists) and ((open $_theme_f
 	$themes.dark
 }
 $env.config.edit_mode = 'emacs' # emacs, vi
+$env.config.buffer_editor = "nvim"
 $env.config.render_right_prompt_on_last_line = false # true or false to enable or disable right prompt to be rendered on last line of the prompt.
 $env.config.highlight_resolved_externals = true
 

@@ -11,7 +11,7 @@ dirs = [
   "~/.local/share/nvim/lazy/*",
   "~/.local/share/nvim/mason/packages/*",
 ]
-vsc = ["~/dev", "~/work"]
+vsc = ["~/dev", "~/work", "~/pb"]
 cmd = []
 
 [projects]

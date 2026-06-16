@@ -256,6 +256,7 @@ in
         # additional envs in env.nu
       };
 
+      teammateMode = "in-process"; # could make it tmux but it clobbers ui and doesn't work with nushell
       autoScrollEnabled = true; # i assume its a bug that this jumps when viewing content, but turning it to false requires constant scrolling
       disableAutoMode = "disable";
       disableWorkflows = true;
