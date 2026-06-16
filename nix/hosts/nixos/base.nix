@@ -10,7 +10,10 @@
 
   # --- Nix ---
   nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
     accept-flake-config = true;
     max-substitution-jobs = lib.mkDefault 32;
     http-connections = lib.mkDefault 50;
@@ -53,7 +56,11 @@
   # --- User ---
   users.users.codethread = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" "podman" ];
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+      "podman"
+    ];
     shell = pkgs.nushell;
     initialPassword = "changeme"; # change after first login with: passwd
   };
@@ -66,7 +73,7 @@
 
   # Minimal system packages — everything else is via home-manager
   environment.systemPackages = with pkgs; [
-    git   # needed to clone dotfiles on fresh install
+    git # needed to clone dotfiles on fresh install
     curl
     wget
     gnumake

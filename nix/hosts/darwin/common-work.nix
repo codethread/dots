@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   imports = [ ./common-dev.nix ];
@@ -23,16 +28,16 @@
   environment.systemPackages = [ pkgs.pandoc ];
 
   homebrew.brews = [
-    "cocoapods"    # Dependency manager for Cocoa projects
-    "jira-cli"     # Feature-rich interactive Jira CLI
+    "cocoapods" # Dependency manager for Cocoa projects
+    "jira-cli" # Feature-rich interactive Jira CLI
   ];
 
   homebrew.casks = [
-    "figma"      # Collaborative team software
-    "licecap"    # Animated screen capture application
-    "logseq"     # Privacy-first, open-source platform for knowledge sharing and management
-    "obs"        # Open-source software for live streaming and screen recording
-    "proxyman"   # HTTP debugging proxy
+    "figma" # Collaborative team software
+    "licecap" # Animated screen capture application
+    "logseq" # Privacy-first, open-source platform for knowledge sharing and management
+    "obs" # Open-source software for live streaming and screen recording
+    "proxyman" # HTTP debugging proxy
   ];
 
   homebrew.vscode = [

@@ -1,4 +1,10 @@
-{ pkgs, pkgsMaster ? null, config, lib, ... }:
+{
+  pkgs,
+  pkgsMaster ? null,
+  config,
+  lib,
+  ...
+}:
 
 let
   agentPkgSet = if pkgsMaster == null then pkgs else pkgsMaster;
@@ -44,13 +50,17 @@ let
     pkgs.bash
   ];
 
-  atuinNushellInit = pkgs.runCommand "atuin-init.nu"
-    {
-      nativeBuildInputs = [ pkgs.atuin pkgs.writableTmpDirAsHomeHook ];
-    }
-    ''
-      ${atuinCmd} init nu > "$out"
-    '';
+  atuinNushellInit =
+    pkgs.runCommand "atuin-init.nu"
+      {
+        nativeBuildInputs = [
+          pkgs.atuin
+          pkgs.writableTmpDirAsHomeHook
+        ];
+      }
+      ''
+        ${atuinCmd} init nu > "$out"
+      '';
 
   carapaceNushellInit = pkgs.runCommand "carapace-init.nu" { } ''
     ${carapaceCmd} _carapace nushell \
@@ -67,7 +77,8 @@ let
       }
     }]
   '';
-in {
+in
+{
   imports = [ ./claude-code.nix ];
 
   home.stateVersion = "24.11";
@@ -207,62 +218,67 @@ in {
     fi
   '';
 
-  home.packages = with pkgs; [
-    # --- Agent tools ---
-    agentPkgSet.nodejs_24
-    playwright-cli
-    agentPkgSet.typescript
-    agentPkgSet.typescript-language-server
-    llmAgents.pi
-  ] ++ lib.optionals (!pkgs.stdenv.isDarwin) [
-    codex
-    llmAgents.claude-code
-  ] ++ [
-    # --- Languages ---
-    go
-    zig
-    bun
-    deno
-    pnpm
+  home.packages =
+    with pkgs;
+    [
+      # --- Agent tools ---
+      agentPkgSet.nodejs_24
+      playwright-cli
+      agentPkgSet.typescript
+      agentPkgSet.typescript-language-server
+      llmAgents.pi
+    ]
+    ++ lib.optionals (!pkgs.stdenv.isDarwin) [
+      codex
+      llmAgents.claude-code
+    ]
+    ++ [
+      # --- Languages ---
+      go
+      zig
+      bun
+      deno
+      pnpm
 
-    # --- Shell ---
-    neovim
-    tmux
-    smug
-    atuin
-    starship
-    carapace
-    fzf
+      # --- Shell ---
+      neovim
+      tmux
+      smug
+      atuin
+      starship
+      carapace
+      fzf
 
-    # --- Utils ---
-    poppler-utils
-    fd
-    ripgrep
-    jq
-    yq
-    dasel
-    sd
-    tree
-    dust
-    stylua
-    tree-sitter
-    wakatime-cli
-    prettierd
-    just
-    uv
-    fx
-    tokei
-    grc
-    todoist-cli
-    gh
-    git-lfs
-    lazygit
-    lazydocker
-    difftastic
-    yt-dlp
-    ast-grep
-    vivid
-  ];
+      # --- Utils ---
+      poppler-utils
+      fd
+      ripgrep
+      jq
+      yq
+      dasel
+      sd
+      tree
+      dust
+      stylua
+      tree-sitter
+      wakatime-cli
+      prettierd
+      nixfmt
+      just
+      uv
+      fx
+      tokei
+      grc
+      todoist-cli
+      gh
+      git-lfs
+      lazygit
+      lazydocker
+      difftastic
+      yt-dlp
+      ast-grep
+      vivid
+    ];
 
   programs.direnv = {
     enable = true;

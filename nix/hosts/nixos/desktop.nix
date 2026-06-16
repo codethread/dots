@@ -25,7 +25,7 @@
 
   # --- Desktop packages ---
   environment.systemPackages = with pkgs; [
-    kitty           # terminal
+    kitty # terminal
 
     # Launcher (spotlight-like)
     rofi
@@ -45,8 +45,8 @@
 
     # Wayland utils
     wl-clipboard
-    grim            # screenshot
-    slurp           # screen area selector
+    grim # screenshot
+    slurp # screen area selector
   ];
 
   # Propagate GTK theme into sessions

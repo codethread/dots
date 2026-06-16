@@ -32,172 +32,218 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-master, llm-agents, tree-sitter-jsonc-src, todoist-src, playwright-cli-src, nix-darwin, home-manager, ... }:
-  let
-    llmAgentsOverlay = llm-agents.overlays.default;
-    nativeAgentOverlay = import ./overlays/native-agent-installers.nix;
-    nativeNpmAgentOverlay = import ./overlays/native-npm-installers.nix;
+  outputs =
+    {
+      self,
+      nixpkgs,
+      nixpkgs-master,
+      llm-agents,
+      tree-sitter-jsonc-src,
+      todoist-src,
+      playwright-cli-src,
+      nix-darwin,
+      home-manager,
+      ...
+    }:
+    let
+      llmAgentsOverlay = llm-agents.overlays.default;
+      nativeAgentOverlay = import ./overlays/native-agent-installers.nix;
+      nativeNpmAgentOverlay = import ./overlays/native-npm-installers.nix;
 
-    todoistOverlay = final: prev: {
-      todoist-cli = final.buildGoModule {
-        pname = "todoist";
-        version = "0-unstable";
-        src = todoist-src;
-        vendorHash = "sha256-eVB5k/Z5Z6SsPqySPm4xZIh07c9xbijImRk8zdvY6tA=";
-        nativeBuildInputs = [ final.gotools ];
-        preBuild = ''
-          goyacc -o filter_parser.go filter_parser.y
-        '';
+      todoistOverlay = final: prev: {
+        todoist-cli = final.buildGoModule {
+          pname = "todoist";
+          version = "0-unstable";
+          src = todoist-src;
+          vendorHash = "sha256-eVB5k/Z5Z6SsPqySPm4xZIh07c9xbijImRk8zdvY6tA=";
+          nativeBuildInputs = [ final.gotools ];
+          preBuild = ''
+            goyacc -o filter_parser.go filter_parser.y
+          '';
+        };
       };
-    };
 
-    playwrightCliOverlay = final: prev: {
-      playwright-cli = final.buildNpmPackage {
-        pname = "playwright-cli";
-        version = "0-unstable";
-        src = playwright-cli-src;
-        npmDepsHash = "sha256-0bvwryiyPskay+h8+0RiOmnamHkmcRRK00q7ZEPdj1g=";
-        dontNpmBuild = true;
-        env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
+      playwrightCliOverlay = final: prev: {
+        playwright-cli = final.buildNpmPackage {
+          pname = "playwright-cli";
+          version = "0-unstable";
+          src = playwright-cli-src;
+          npmDepsHash = "sha256-0bvwryiyPskay+h8+0RiOmnamHkmcRRK00q7ZEPdj1g=";
+          dontNpmBuild = true;
+          env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
+        };
       };
-    };
 
-    nvimTreesitterJsoncOverlay = final: prev: {
-      vimPlugins = prev.vimPlugins.extend (self: super:
-        if (super.nvim-treesitter.parsers or { }) ? jsonc then
-          { }
-        else
-          let
-            jsoncParser = final.tree-sitter.buildGrammar {
-              language = "jsonc";
-              version = "0-unstable";
-              src = tree-sitter-jsonc-src;
-              meta.homepage = "https://github.com/lymansix/tree-sitter-jsonc";
-            };
-
-            jsoncPlugin = final.neovimUtils.grammarToPlugin jsoncParser;
-
-            builtGrammars = super.nvim-treesitter.builtGrammars // {
-              jsonc = jsoncParser;
-              "tree-sitter-jsonc" = jsoncParser;
-            };
-
-            grammarPlugins = super.nvim-treesitter.grammarPlugins // {
-              jsonc = jsoncPlugin;
-            };
-
-            allGrammars = super.nvim-treesitter.allGrammars ++ [ jsoncParser ];
-
-            withPlugins = f:
-              let
-                selectedGrammars = f (final.tree-sitter.builtGrammars // builtGrammars);
-                grammarPlugins' = map final.neovimUtils.grammarToPlugin selectedGrammars;
-                queryPlugins = final.lib.pipe selectedGrammars [
-                  (map (grammar: grammar.associatedQuery or null))
-                  (final.lib.filter (query: query != null))
-                ];
-              in
-              self.nvim-treesitter.overrideAttrs {
-                passthru.dependencies = grammarPlugins' ++ queryPlugins;
+      nvimTreesitterJsoncOverlay = final: prev: {
+        vimPlugins = prev.vimPlugins.extend (
+          self: super:
+          if (super.nvim-treesitter.parsers or { }) ? jsonc then
+            { }
+          else
+            let
+              jsoncParser = final.tree-sitter.buildGrammar {
+                language = "jsonc";
+                version = "0-unstable";
+                src = tree-sitter-jsonc-src;
+                meta.homepage = "https://github.com/lymansix/tree-sitter-jsonc";
               };
-          in
-          {
-            nvim-treesitter = super.nvim-treesitter.overrideAttrs (old: {
-              passthru = (old.passthru or { }) // {
-                parsers = (super.nvim-treesitter.parsers or { }) // {
-                  jsonc = jsoncPlugin;
+
+              jsoncPlugin = final.neovimUtils.grammarToPlugin jsoncParser;
+
+              builtGrammars = super.nvim-treesitter.builtGrammars // {
+                jsonc = jsoncParser;
+                "tree-sitter-jsonc" = jsoncParser;
+              };
+
+              grammarPlugins = super.nvim-treesitter.grammarPlugins // {
+                jsonc = jsoncPlugin;
+              };
+
+              allGrammars = super.nvim-treesitter.allGrammars ++ [ jsoncParser ];
+
+              withPlugins =
+                f:
+                let
+                  selectedGrammars = f (final.tree-sitter.builtGrammars // builtGrammars);
+                  grammarPlugins' = map final.neovimUtils.grammarToPlugin selectedGrammars;
+                  queryPlugins = final.lib.pipe selectedGrammars [
+                    (map (grammar: grammar.associatedQuery or null))
+                    (final.lib.filter (query: query != null))
+                  ];
+                in
+                self.nvim-treesitter.overrideAttrs {
+                  passthru.dependencies = grammarPlugins' ++ queryPlugins;
                 };
-                inherit builtGrammars grammarPlugins allGrammars withPlugins;
-                withAllGrammars = withPlugins (_: allGrammars);
-              };
-            });
-          });
-    };
+            in
+            {
+              nvim-treesitter = super.nvim-treesitter.overrideAttrs (old: {
+                passthru = (old.passthru or { }) // {
+                  parsers = (super.nvim-treesitter.parsers or { }) // {
+                    jsonc = jsoncPlugin;
+                  };
+                  inherit
+                    builtGrammars
+                    grammarPlugins
+                    allGrammars
+                    withPlugins
+                    ;
+                  withAllGrammars = withPlugins (_: allGrammars);
+                };
+              });
+            }
+        );
+      };
 
-    # Each host picks a profile from nix/profiles/ and binds it to one user.
-    hmFor = username: profile: pkgsMaster: {
-      home-manager.useGlobalPkgs = true;
-      home-manager.useUserPackages = true;
-      home-manager.extraSpecialArgs = { inherit pkgsMaster; };
-      home-manager.users = {
-        "${username}" = import profile;
+      # Each host picks a profile from nix/profiles/ and binds it to one user.
+      hmFor = username: profile: pkgsMaster: {
+        home-manager.useGlobalPkgs = true;
+        home-manager.useUserPackages = true;
+        home-manager.extraSpecialArgs = { inherit pkgsMaster; };
+        home-manager.users = {
+          "${username}" = import profile;
+        };
+      };
+
+      darwinFor =
+        hostModule: username: profile:
+        nix-darwin.lib.darwinSystem {
+          system = "aarch64-darwin"; # Intel Mac: x86_64-darwin
+          specialArgs = {
+            pkgsMaster = pkgsMasterFor "aarch64-darwin";
+          };
+          modules = [
+            {
+              nixpkgs.overlays = [
+                llmAgentsOverlay
+                nativeAgentOverlay
+                nativeNpmAgentOverlay
+                todoistOverlay
+                playwrightCliOverlay
+                nvimTreesitterJsoncOverlay
+              ];
+            }
+            hostModule
+            home-manager.darwinModules.home-manager
+            (hmFor username profile (pkgsMasterFor "aarch64-darwin"))
+          ];
+        };
+
+      pkgsMasterFor =
+        system:
+        import nixpkgs-master {
+          inherit system;
+          overlays = [
+            llmAgentsOverlay
+            nativeAgentOverlay
+            nativeNpmAgentOverlay
+            nvimTreesitterJsoncOverlay
+          ];
+          config.allowUnfree = true;
+          config.allowUnsupportedSystem = true;
+        };
+    in
+    {
+      # macOS (personal dev machine) — darwin-rebuild switch --flake .#dev
+      # Hostname must match: scutil --get LocalHostName
+      darwinConfigurations.dev = darwinFor ./hosts/darwin/dev.nix "ct" ./profiles/dev.nix;
+
+      # macOS (personal laptop) — darwin-rebuild switch --flake .#personal
+      darwinConfigurations.personal =
+        darwinFor ./hosts/darwin/personal.nix "codethread"
+          ./profiles/personal.nix;
+
+      # macOS (work, dotted username) — darwin-rebuild switch --flake .#work
+      darwinConfigurations.work = darwinFor ./hosts/darwin/work.nix "adam.hall" ./profiles/work.nix;
+
+      # macOS (work, short username) — darwin-rebuild switch --flake .#work-adamhall
+      darwinConfigurations.work-adamhall =
+        darwinFor ./hosts/darwin/work-adamhall.nix "adamhall"
+          ./profiles/work.nix;
+
+      # NixOS (homelab profile, Intel) — sudo nixos-rebuild switch --flake .#homelab
+      nixosConfigurations.homelab = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = {
+          pkgsMaster = pkgsMasterFor "x86_64-linux";
+        };
+        modules = [
+          {
+            nixpkgs.overlays = [
+              llmAgentsOverlay
+              nativeAgentOverlay
+              nativeNpmAgentOverlay
+              todoistOverlay
+              playwrightCliOverlay
+              nvimTreesitterJsoncOverlay
+            ];
+          }
+          ./hosts/nixos/homelab
+          home-manager.nixosModules.home-manager
+          (hmFor "codethread" ./profiles/homelab.nix (pkgsMasterFor "x86_64-linux"))
+        ];
+      };
+
+      # NixOS (VM on Apple Silicon) — sudo nixos-rebuild switch --flake .#vm
+      nixosConfigurations.vm = nixpkgs.lib.nixosSystem {
+        system = "aarch64-linux";
+        specialArgs = {
+          pkgsMaster = pkgsMasterFor "aarch64-linux";
+        };
+        modules = [
+          {
+            nixpkgs.overlays = [
+              llmAgentsOverlay
+              nativeAgentOverlay
+              nativeNpmAgentOverlay
+              todoistOverlay
+              playwrightCliOverlay
+              nvimTreesitterJsoncOverlay
+            ];
+          }
+          ./hosts/nixos/vm-aarch
+          home-manager.nixosModules.home-manager
+          (hmFor "codethread" ./profiles/vm.nix (pkgsMasterFor "aarch64-linux"))
+        ];
       };
     };
-
-    darwinFor = hostModule: username: profile: nix-darwin.lib.darwinSystem {
-      system = "aarch64-darwin"; # Intel Mac: x86_64-darwin
-      specialArgs = { pkgsMaster = pkgsMasterFor "aarch64-darwin"; };
-      modules = [
-        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay nativeNpmAgentOverlay todoistOverlay playwrightCliOverlay nvimTreesitterJsoncOverlay ]; }
-        hostModule
-        home-manager.darwinModules.home-manager
-        (hmFor
-          username
-          profile
-          (pkgsMasterFor "aarch64-darwin"))
-      ];
-    };
-
-    pkgsMasterFor = system: import nixpkgs-master {
-      inherit system;
-      overlays = [ llmAgentsOverlay nativeAgentOverlay nativeNpmAgentOverlay nvimTreesitterJsoncOverlay ];
-      config.allowUnfree = true;
-      config.allowUnsupportedSystem = true;
-    };
-  in {
-    # macOS (personal dev machine) — darwin-rebuild switch --flake .#dev
-    # Hostname must match: scutil --get LocalHostName
-    darwinConfigurations.dev = darwinFor
-      ./hosts/darwin/dev.nix
-      "ct"
-      ./profiles/dev.nix;
-
-    # macOS (personal laptop) — darwin-rebuild switch --flake .#personal
-    darwinConfigurations.personal = darwinFor
-      ./hosts/darwin/personal.nix
-      "codethread"
-      ./profiles/personal.nix;
-
-    # macOS (work, dotted username) — darwin-rebuild switch --flake .#work
-    darwinConfigurations.work = darwinFor
-      ./hosts/darwin/work.nix
-      "adam.hall"
-      ./profiles/work.nix;
-
-    # macOS (work, short username) — darwin-rebuild switch --flake .#work-adamhall
-    darwinConfigurations.work-adamhall = darwinFor
-      ./hosts/darwin/work-adamhall.nix
-      "adamhall"
-      ./profiles/work.nix;
-
-    # NixOS (homelab profile, Intel) — sudo nixos-rebuild switch --flake .#homelab
-    nixosConfigurations.homelab = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      specialArgs = { pkgsMaster = pkgsMasterFor "x86_64-linux"; };
-      modules = [
-        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay nativeNpmAgentOverlay todoistOverlay playwrightCliOverlay nvimTreesitterJsoncOverlay ]; }
-        ./hosts/nixos/homelab
-        home-manager.nixosModules.home-manager
-        (hmFor
-          "codethread"
-          ./profiles/homelab.nix
-          (pkgsMasterFor "x86_64-linux"))
-      ];
-    };
-
-    # NixOS (VM on Apple Silicon) — sudo nixos-rebuild switch --flake .#vm
-    nixosConfigurations.vm = nixpkgs.lib.nixosSystem {
-      system = "aarch64-linux";
-      specialArgs = { pkgsMaster = pkgsMasterFor "aarch64-linux"; };
-      modules = [
-        { nixpkgs.overlays = [ llmAgentsOverlay nativeAgentOverlay nativeNpmAgentOverlay todoistOverlay playwrightCliOverlay nvimTreesitterJsoncOverlay ]; }
-        ./hosts/nixos/vm-aarch
-        home-manager.nixosModules.home-manager
-        (hmFor
-          "codethread"
-          ./profiles/vm.nix
-          (pkgsMasterFor "aarch64-linux"))
-      ];
-    };
-  };
 }

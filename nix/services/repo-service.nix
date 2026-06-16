@@ -5,9 +5,20 @@
 #
 # Logs: journalctl --user -u <name>
 # Control: systemctl --user status/start/stop/restart <name>
-{ name, gitUrl, command, extraPackages ? (_pkgs: []), devShell ? null }:
+{
+  name,
+  gitUrl,
+  command,
+  extraPackages ? (_pkgs: [ ]),
+  devShell ? null,
+}:
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.services.${name};
   bun = lib.getExe pkgs.bun;
@@ -21,22 +32,29 @@ let
   systemctl = lib.getExe' pkgs.systemd "systemctl";
   nixCmd = lib.getExe pkgs.nix;
 
-  cmd = builtins.replaceStrings [ "{bun}" "{dir}" ] [
-    bun
-    cfg.workingDirectory
-  ] command;
+  cmd =
+    builtins.replaceStrings
+      [ "{bun}" "{dir}" ]
+      [
+        bun
+        cfg.workingDirectory
+      ]
+      command;
   runtimePath = lib.concatStringsSep ":" ([
-    (lib.makeBinPath ([
-      pkgs.bash
-      pkgs.bun
-      pkgs.coreutils
-      pkgs.findutils
-      pkgs.git
-      pkgs.gnumake
-      pkgs.gnugrep
-      pkgs.gnused
-      pkgs.nix
-    ] ++ (extraPackages pkgs)))
+    (lib.makeBinPath (
+      [
+        pkgs.bash
+        pkgs.bun
+        pkgs.coreutils
+        pkgs.findutils
+        pkgs.git
+        pkgs.gnumake
+        pkgs.gnugrep
+        pkgs.gnused
+        pkgs.nix
+      ]
+      ++ (extraPackages pkgs)
+    ))
     "${config.home.homeDirectory}/.local/bin"
     "${config.home.homeDirectory}/.bun/bin"
     "${config.home.homeDirectory}/.local/state/nix/profile/bin"
@@ -49,24 +67,29 @@ let
   ]);
   commandRunner = pkgs.writeShellScript "${name}-command" ''
     set -euo pipefail
-    ${if devShell == null
-      then "export PATH='${runtimePath}':\"$PATH\""
-      else "export PATH=\"$PATH:${runtimePath}\""}
+    ${
+      if devShell == null then
+        "export PATH='${runtimePath}':\"$PATH\""
+      else
+        "export PATH=\"$PATH:${runtimePath}\""
+    }
     cd '${cfg.workingDirectory}'
     exec ${cmd}
   '';
   serviceRunner =
-    if devShell == null
-    then commandRunner
-    else pkgs.writeShellScript "${name}-run" ''
-      set -euo pipefail
-      export PATH='${runtimePath}':"$PATH"
-      cd '${cfg.workingDirectory}'
-      exec ${nixCmd} --extra-experimental-features 'nix-command flakes' \
-        develop '${cfg.workingDirectory}#${devShell}' \
-        --command '${commandRunner}'
-    '';
-in {
+    if devShell == null then
+      commandRunner
+    else
+      pkgs.writeShellScript "${name}-run" ''
+        set -euo pipefail
+        export PATH='${runtimePath}':"$PATH"
+        cd '${cfg.workingDirectory}'
+        exec ${nixCmd} --extra-experimental-features 'nix-command flakes' \
+          develop '${cfg.workingDirectory}#${devShell}' \
+          --command '${commandRunner}'
+      '';
+in
+{
   options.services.${name} = {
     enable = lib.mkEnableOption "managed service: ${name}";
     workingDirectory = lib.mkOption {

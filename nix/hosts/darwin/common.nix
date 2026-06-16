@@ -1,4 +1,9 @@
-{ pkgs, config, lib, ... }:
+{
+  pkgs,
+  config,
+  lib,
+  ...
+}:
 
 let
   homeDir = "/Users/${config.system.primaryUser}";
@@ -22,7 +27,8 @@ let
     "/usr/sbin"
     "/sbin"
   ];
-in {
+in
+{
   nix.settings = {
     experimental-features = "nix-command flakes";
     accept-flake-config = true;
@@ -33,8 +39,8 @@ in {
   # and sudo contexts while keeping kitty's native TERM=xterm-kitty.
   # enableAllTerminfo pulls in termite which fails to build on current Apple SDK.
   environment.systemPackages = with pkgs; [
-    kitty.terminfo  # xterm-kitty
-    ncurses         # tmux-256color
+    kitty.terminfo # xterm-kitty
+    ncurses # tmux-256color
   ];
 
   # Keyboard repeat: lower values are faster on macOS.
@@ -131,34 +137,34 @@ in {
       extraFlags = [ "--force" ];
     };
     taps = [
-      "nikitabobko/tap"          # aerospace
-      "morantron/tmux-fingers"   # tmux-fingers
+      "nikitabobko/tap" # aerospace
+      "morantron/tmux-fingers" # tmux-fingers
     ];
     brews = [
-      "mas"                                      # required for masApps to function
-      "pam-reattach"                            # PAM module so Touch ID works inside tmux sudo prompts
-      "morantron/tmux-fingers/tmux-fingers"     # mouseless terminal interaction
-      "ical-buddy"                              # Get events and tasks from the macOS calendar database
-      "pngpaste"                                # Paste PNG into files
-      "volta"                                   # JavaScript toolchain manager for reproducible environments
-      "yazi"                                    # Blazing fast terminal file manager written in Rust, based on async I/O
-      "rsync"                                   # Utility that provides fast incremental file transfer
-      "graphviz"                                # provides dot for diagraph
+      "mas" # required for masApps to function
+      "pam-reattach" # PAM module so Touch ID works inside tmux sudo prompts
+      "morantron/tmux-fingers/tmux-fingers" # mouseless terminal interaction
+      "ical-buddy" # Get events and tasks from the macOS calendar database
+      "pngpaste" # Paste PNG into files
+      "volta" # JavaScript toolchain manager for reproducible environments
+      "yazi" # Blazing fast terminal file manager written in Rust, based on async I/O
+      "rsync" # Utility that provides fast incremental file transfer
+      "graphviz" # provides dot for diagraph
     ];
     casks = [
-      "kitty"                         # GPU-based terminal emulator
-      "font-fira-code"                # Fira Code font
-      "font-victor-mono"              # Victor Mono font
-      "font-symbols-only-nerd-font"   # Symbols Nerd Font (Symbols Only)
-	  "aerospace"             # AeroSpace is an i3-like tiling window manager for macOS
-      "alfred"                # Application launcher and productivity software
-      "spotify"               # Music streaming service
-      "todoist-app"           # To-do list
-	  "obsidian"              # Knowledge base that works on top of a local folder of plain text Markdown files
-	  "1password"             # Password manager that keeps all passwords secure behind one password
+      "kitty" # GPU-based terminal emulator
+      "font-fira-code" # Fira Code font
+      "font-victor-mono" # Victor Mono font
+      "font-symbols-only-nerd-font" # Symbols Nerd Font (Symbols Only)
+      "aerospace" # AeroSpace is an i3-like tiling window manager for macOS
+      "alfred" # Application launcher and productivity software
+      "spotify" # Music streaming service
+      "todoist-app" # To-do list
+      "obsidian" # Knowledge base that works on top of a local folder of plain text Markdown files
+      "1password" # Password manager that keeps all passwords secure behind one password
     ];
-	# enable on boot load machine
-	# bug requires login on every switch
+    # enable on boot load machine
+    # bug requires login on every switch
     # masApps = {
     #   "DaisyDisk" = 411643860;  # Disk space analyzer
     #   "Spokenly" = 6740315592;  # Speech-to-text dictation

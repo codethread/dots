@@ -1,4 +1,9 @@
-{ pkgs, config, lib, ... }:
+{
+  pkgs,
+  config,
+  lib,
+  ...
+}:
 
 let
   homeDir = "/Users/${config.system.primaryUser}";
@@ -42,7 +47,8 @@ let
 
     rm -f "$sentinel"
   '';
-in {
+in
+{
   imports = [ ./common-dev.nix ];
 
   system.primaryUser = "ct";
@@ -79,6 +85,6 @@ in {
   '';
 
   homebrew.casks = [
-    "discord"               # Voice and text chat software
+    "discord" # Voice and text chat software
   ];
 }

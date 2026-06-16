@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.ct.claude-code;
@@ -8,9 +13,9 @@ let
     "frontend-design@claude-plugins-official" = true;
     "claude-md-management@claude-plugins-official" = true;
 
-	"harness@agents" = true;
-	"devflow@agents" = true;
-	"coding@agents" = true;
+    "harness@agents" = true;
+    "devflow@agents" = true;
+    "coding@agents" = true;
   };
 
   claudeCodePluginsMarketplace = {
@@ -28,36 +33,43 @@ let
     };
   };
 
-  machineEnabledPlugins = if cfg.workMachine then {
-    "pb-go@pb-claude" = true;
-    "pb-aws@pb-claude" = true;
-    "pb-prose@pb-claude" = true;
-    "pb-news@pb-claude" = true;
-    "pb-claude-harness-engineering@pb-claude" = true;
+  machineEnabledPlugins =
+    if cfg.workMachine then
+      {
+        "pb-go@pb-claude" = true;
+        "pb-aws@pb-claude" = true;
+        "pb-prose@pb-claude" = true;
+        "pb-news@pb-claude" = true;
+        "pb-claude-harness-engineering@pb-claude" = true;
 
-  } else {
-    "claude-code-knowledge@claude-code-plugins" = true;
-    # "bdfl@claude-code-plugins" = true;
-    "dev@claude-code-plugins" = true;
-	"writing@agents" = true;
-  };
+      }
+    else
+      {
+        "claude-code-knowledge@claude-code-plugins" = true;
+        # "bdfl@claude-code-plugins" = true;
+        "dev@claude-code-plugins" = true;
+        "writing@agents" = true;
+      };
 
-  machineMarketplaces = claudeCodePluginsMarketplace // lib.optionalAttrs cfg.workMachine {
-    ai-tools-marketplace = {
-      source = {
-        source = "git";
-        url = "ssh://git@git.perkbox.io/adam.hall/ai-tools.git";
+  machineMarketplaces =
+    claudeCodePluginsMarketplace
+    // lib.optionalAttrs cfg.workMachine {
+      ai-tools-marketplace = {
+        source = {
+          source = "git";
+          url = "ssh://git@git.perkbox.io/adam.hall/ai-tools.git";
+        };
+        autoUpdate = true;
       };
-      autoUpdate = true;
-    };
-    pb-claude = {
-      source = {
-        source = "directory";
-        path = "${config.home.homeDirectory}/work/ai/tools/claude-plugins";
+      pb-claude = {
+        source = {
+          source = "directory";
+          path = "${config.home.homeDirectory}/work/ai/tools/claude-plugins";
+        };
       };
     };
-  };
-in {
+in
+{
   options.ct.claude-code = {
     enableNotify = lib.mkOption {
       type = lib.types.bool;
@@ -96,33 +108,35 @@ in {
           "WebSearch"
           "Skill"
           "mcp__context7__*"
-		  "mcp__claude_ai_Microsoft_365__*"
-		  "mcp__atlassian__*"
+          "mcp__claude_ai_Microsoft_365__*"
+          "mcp__atlassian__*"
         ];
         deny = [
           "Agent(Plan)" # garbage
           "Agent(statusline-setup)" # not needed
 
           "NotebookEdit" # not needed
-		  "WaitForMcpServers"
+          "WaitForMcpServers"
 
-		  "AskUserQuestion" # cheaper to just chat
+          "AskUserQuestion" # cheaper to just chat
 
-		  "EnterPlanMode" # moving away from plan
-		  "ExitPlanMode" # moving away from plan
+          "EnterPlanMode" # moving away from plan
+          "ExitPlanMode" # moving away from plan
 
-		  "CronCreate"
-		  "CronDelete"
-		  "CronList"
+          "CronCreate"
+          "CronDelete"
+          "CronList"
 
-		  "EnterWorktree"
-		  "ExitWorktree"
+          "EnterWorktree"
+          "ExitWorktree"
 
-		  "LSP"
-		  "ScheduleWakeup"
-		  "Workflow"
+          "LSP"
+          "ScheduleWakeup"
+          "Workflow"
+          "ShareOnboardingGuide"
+          "DesignSync"
 
-		  # TODO: block at hook level
+          # TODO: block at hook level
           "Read(**/*.key)"
           "Read(~/*.key)"
           "Read(**/*.pem)"
@@ -137,7 +151,7 @@ in {
           "Read(**/.netrc)"
           "Read(~/.netrc)"
 
-		  # TODO: can probably be brave here
+          # TODO: can probably be brave here
           "Bash(git reset --hard*)"
           "Bash(git clean -f*)"
           "Bash(git branch -D*)"
@@ -152,11 +166,11 @@ in {
           "~/.claude"
           "~/dev"
           "~/work"
-          "~/work/me/workfiles"
+          "~/pb"
         ];
       };
 
-	  enabledMcpjsonServers = [ "microsoft365" ];
+      enabledMcpjsonServers = [ "microsoft365" ];
 
       hooks = {
         PostToolUse = [
@@ -207,30 +221,31 @@ in {
         command = "cc-statusline";
         padding = 0;
       };
-      enabledPlugins = commonEnabledPlugins // machineEnabledPlugins // lib.optionalAttrs cfg.enableNotify {
-        "cc-notify@cc-notify-marketplace" = true;
-      };
-      extraKnownMarketplaces = machineMarketplaces // lib.optionalAttrs cfg.enableNotify {
-        cc-notify-marketplace = {
-          source = {
-            source = "github";
-            repo = "codethread/cc-notify";
+      enabledPlugins =
+        commonEnabledPlugins
+        // machineEnabledPlugins
+        // lib.optionalAttrs cfg.enableNotify {
+          "cc-notify@cc-notify-marketplace" = true;
+        };
+      extraKnownMarketplaces =
+        machineMarketplaces
+        // lib.optionalAttrs cfg.enableNotify {
+          cc-notify-marketplace = {
+            source = {
+              source = "github";
+              repo = "codethread/cc-notify";
+            };
           };
         };
-      };
 
+      # only store things we'd never override
       env = {
         TMPDIR = "/tmp/claude";
         CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "true";
         CLAUDE_CODE_DISABLE_TERMINAL_TITLE = "1";
         CLAUDE_CODE_DISABLE_AUTO_MEMORY = "1";
-        CLAUDE_CODE_DISABLE_CRON = "1";
-        CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING = "1";
-        CLAUDE_CODE_DISABLE_1M_CONTEXT = "1";
         DISABLE_FEEDBACK_COMMAND = "1";
         DISABLE_ERROR_REPORTING = "1";
-        ENABLE_TOOL_SEARCH = "0";
-        DISABLE_TELEMETRY = "0";
         DISABLE_AUTOUPDATER = "0";
         CLAUDE_CODE_NO_FLICKER = "1";
         # so we can see files
@@ -238,13 +253,14 @@ in {
         # avoids old shell stuff
         SHELL = "${zsh}";
         ZDOTDIR = "${config.xdg.configHome}/zsh";
+        # additional envs in env.nu
       };
 
-	  autoScrollEnabled = true; # i assume its a bug that this jumps when viewing content, but turning it to false requires constant scrolling
-	  disableAutoMode = "disable";
-	  disableWorkflows = true;
-	  ultracode = false;
-	  useAutoModeDuringPlan = false;
+      autoScrollEnabled = true; # i assume its a bug that this jumps when viewing content, but turning it to false requires constant scrolling
+      disableAutoMode = "disable";
+      disableWorkflows = true;
+      ultracode = false;
+      useAutoModeDuringPlan = false;
       autoCompactEnabled = false;
       autoMemoryEnabled = false;
       autoUpdatesChannel = "latest";
@@ -264,16 +280,16 @@ in {
       verbose = false;
 
       skillOverrides = {
-	    init = "off"; # doesn't work
-		claude-api = "off";
-		plan = "off";
-		autofix-pr =  "off";
-		batch = "off";
-		code-review = "off";
-		# debug = "off";
-		deep-research = "off";
-		fewer-permission-prompts = "off";
-		loop = "off";
+        init = "off"; # doesn't work
+        claude-api = "off";
+        plan = "off";
+        autofix-pr = "off";
+        batch = "off";
+        code-review = "off";
+        # debug = "off";
+        deep-research = "off";
+        fewer-permission-prompts = "off";
+        loop = "off";
       };
     };
   };

@@ -44,15 +44,33 @@
     name = "Google Chrome";
     exec = "${lib.getExe pkgs.google-chrome} --disable-gpu %U";
     icon = "google-chrome";
-    categories = [ "Network" "WebBrowser" ];
-    mimeType = [ "text/html" "text/xml" "application/xhtml+xml" "x-scheme-handler/http" "x-scheme-handler/https" ];
+    categories = [
+      "Network"
+      "WebBrowser"
+    ];
+    mimeType = [
+      "text/html"
+      "text/xml"
+      "application/xhtml+xml"
+      "x-scheme-handler/http"
+      "x-scheme-handler/https"
+    ];
   };
   xdg.desktopEntries."com.google.Chrome" = {
     name = "Google Chrome";
     exec = "${lib.getExe pkgs.google-chrome} --disable-gpu %U";
     icon = "google-chrome";
-    categories = [ "Network" "WebBrowser" ];
-    mimeType = [ "text/html" "text/xml" "application/xhtml+xml" "x-scheme-handler/http" "x-scheme-handler/https" ];
+    categories = [
+      "Network"
+      "WebBrowser"
+    ];
+    mimeType = [
+      "text/html"
+      "text/xml"
+      "application/xhtml+xml"
+      "x-scheme-handler/http"
+      "x-scheme-handler/https"
+    ];
   };
 
   ct.claude-code.enableNotify = true;

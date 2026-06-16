@@ -1,10 +1,16 @@
-{ pkgs, lib, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 
 let
   dirname = lib.getExe' pkgs.coreutils "dirname";
   git = lib.getExe pkgs.git;
   tmux = lib.getExe pkgs.tmux;
-in {
+in
+{
   home.activation.bootDotfiles = lib.hm.dag.entryAfter [ "installPackages" ] ''
     DOTFILES="''${DOTFILES:-$HOME/dev/dots}"
     if [ ! -d "$DOTFILES" ]; then
@@ -55,24 +61,26 @@ in {
     color-scheme = "prefer-dark";
   };
 
-  systemd.user.services.tmux-main = let
-    script = pkgs.writeShellScript "tmux-ensure-main" ''
-      if ! ${tmux} has-session -t main 2>/dev/null; then
-        ${tmux} new-session -d -s main
-      fi
-    '';
-  in {
-    Unit = {
-      Description = "Ensure tmux session main exists";
-      After = [ "graphical-session.target" ];
+  systemd.user.services.tmux-main =
+    let
+      script = pkgs.writeShellScript "tmux-ensure-main" ''
+        if ! ${tmux} has-session -t main 2>/dev/null; then
+          ${tmux} new-session -d -s main
+        fi
+      '';
+    in
+    {
+      Unit = {
+        Description = "Ensure tmux session main exists";
+        After = [ "graphical-session.target" ];
+      };
+      Service = {
+        Type = "oneshot";
+        ExecStart = "${script}";
+        RemainAfterExit = true;
+        KillMode = "none";
+      };
+      Install.WantedBy = [ "graphical-session.target" ];
     };
-    Service = {
-      Type = "oneshot";
-      ExecStart = "${script}";
-      RemainAfterExit = true;
-      KillMode = "none";
-    };
-    Install.WantedBy = [ "graphical-session.target" ];
-  };
 
 }

@@ -2,10 +2,14 @@ final: prev:
 let
   lib = final.lib;
   npm = lib.getExe' final.nodejs_24 "npm";
-in {
+in
+{
   nativeAgentInstallCodex = final.writeShellApplication {
     name = "native-agent-install-codex";
-    runtimeInputs = [ final.coreutils final.nodejs_24 ];
+    runtimeInputs = [
+      final.coreutils
+      final.nodejs_24
+    ];
     text = ''
       set -euo pipefail
 
@@ -22,7 +26,12 @@ in {
 
   nativeAgentInstallClaude = final.writeShellApplication {
     name = "native-agent-install-claude";
-    runtimeInputs = [ final.coreutils final.curl final.bash final.perl ];
+    runtimeInputs = [
+      final.coreutils
+      final.curl
+      final.bash
+      final.perl
+    ];
     text = ''
       set -euo pipefail
 

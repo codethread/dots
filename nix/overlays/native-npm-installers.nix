@@ -2,10 +2,14 @@ final: prev:
 let
   lib = final.lib;
   npm = lib.getExe' final.nodejs_24 "npm";
-in {
+in
+{
   nativeAgentInstallBitwarden = final.writeShellApplication {
     name = "native-agent-install-bitwarden";
-    runtimeInputs = [ final.coreutils final.nodejs_24 ];
+    runtimeInputs = [
+      final.coreutils
+      final.nodejs_24
+    ];
     text = ''
       set -euo pipefail
 
@@ -22,7 +26,10 @@ in {
 
   nativeNpmInstallOpenspec = final.writeShellApplication {
     name = "native-npm-install-openspec";
-    runtimeInputs = [ final.coreutils final.nodejs_24 ];
+    runtimeInputs = [
+      final.coreutils
+      final.nodejs_24
+    ];
     text = ''
       set -euo pipefail
 
@@ -39,7 +46,10 @@ in {
 
   nativeNpmOpenspec = final.writeShellApplication {
     name = "openspec";
-    runtimeInputs = [ final.coreutils final.nodejs_24 ];
+    runtimeInputs = [
+      final.coreutils
+      final.nodejs_24
+    ];
     text = ''
       set -euo pipefail
 

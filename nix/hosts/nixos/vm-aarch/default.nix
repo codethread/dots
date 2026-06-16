@@ -15,6 +15,6 @@
   # Software rendering required in a VM — no GPU passthrough
   environment.sessionVariables = {
     WLR_RENDERER_ALLOW_SOFTWARE = "1"; # wlroots: allow llvmpipe renderer
-    LIBGL_ALWAYS_SOFTWARE = "1";       # Electron/GL apps: skip GPU process entirely
+    LIBGL_ALWAYS_SOFTWARE = "1"; # Electron/GL apps: skip GPU process entirely
   };
 }

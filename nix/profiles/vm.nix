@@ -14,8 +14,17 @@
     name = "Chromium";
     exec = "${lib.getExe pkgs.chromium} --disable-gpu %U";
     icon = "chromium";
-    categories = [ "Network" "WebBrowser" ];
-    mimeType = [ "text/html" "text/xml" "application/xhtml+xml" "x-scheme-handler/http" "x-scheme-handler/https" ];
+    categories = [
+      "Network"
+      "WebBrowser"
+    ];
+    mimeType = [
+      "text/html"
+      "text/xml"
+      "application/xhtml+xml"
+      "x-scheme-handler/http"
+      "x-scheme-handler/https"
+    ];
   };
 
   home.packages = [ pkgs.chromium ];
