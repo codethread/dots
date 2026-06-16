@@ -14,7 +14,6 @@ PROMPT_PERSONAL="this repo uses github (via gh)"
 PROMPT_SANDBOX="You are running inside a container. If a required tool or binary is missing, stop immediately and tell the user rather than searching for alternatives."
 PROMPT_CONCURRENCY="Sub-agent concurrency: spawn multiple read-only agents freely (explore, research, etc), but only ever one mutating agent at a time. Don't run read-only agents alongside a mutating agent — they may read stale data."
 PROMPT_CONCISE="When reporting information, be extremely concise and sacrifice grammar for sake of concision."
-PROMPT_TOOLS="You only have access to the tools explicitly defined in your tool schema. If a tool is not in your schema, it does not exist — do not attempt to call it."
 
 # --- Parse flags ---
 DANGEROUSLY_SKIP=false
@@ -61,7 +60,6 @@ fi
 
 PROMPTS+=("$PROMPT_CONCURRENCY")
 PROMPTS+=("$PROMPT_CONCISE")
-PROMPTS+=("$PROMPT_TOOLS")
 
 if [[ -n "${CC_SANDBOX:-}" ]]; then
     PROMPTS+=("$PROMPT_SANDBOX")

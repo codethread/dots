@@ -113,10 +113,16 @@ $env.PI_OFFLINE = 1
 #: }}}
 #: pandora {{{
 
-$env.PDX_USER_DATA_DIR = (match $env.CT_USER {
-  "work" => (home work/me/workfiles/pdx)
-  _ => ([$env.DOTFILES pdx] | path join)
-})
+# only need so pithos/pdx cli works. TODO: fix in repo
+$env.PDX_DATA_DIR = ($env.PDX_DATA_DIR? | default (home ".pdx"))
+$env.PITHOS_DB = ([$env.PDX_DATA_DIR pithos.sqlite] | path join)
+
+
+$env.PDX_USER_DATA_DIR = (home dev/projects/pdx)
+# $env.PDX_USER_DATA_DIR = (match $env.CT_USER {
+#   "work" => (home work/me/workfiles/pdx)
+#   _ => ([$env.DOTFILES pdx] | path join)
+# })
 
 #: }}}
 #: homebrew {{{
@@ -216,6 +222,9 @@ $env.ENABLE_CLAUDEAI_MCP_SERVERS = "0"
 $env.PI_CACHE_RETENTION = "long"
 $env.PI_OFFLINE = "1"
 $env.PI_SKIP_VERSION_CHECK = "1"
+
+$env.CLAUDE_CODE_DISABLE_CRON = "1"
+$env.CLAUDE_CODE_DISABLE_1M_CONTEXT = "1"
 
 #: }}}
 #: kitty {{{
