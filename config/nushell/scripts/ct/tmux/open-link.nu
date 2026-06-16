@@ -5,7 +5,8 @@ use utils.nu get-panes
 # Open a file path in nvim if nvim is open in the main pane
 export def main [...path] {
 	let home = $env.HOME
-	let chosen = $path | str trim | str replace "│" "" # don't grab the tmux border char please
+	# Don't grab the tmux border char.
+	let chosen = $path | str trim | str replace "│" ""
 
 	let panes = get-panes
 

@@ -140,12 +140,12 @@ def load-config-from-toml [config_file: path]: nothing -> table<name: string, or
 			[]
 		}
 
-		# Combine project-specific excludes with global excludes and apply lazy filtering
+		# Combine project-specific excludes with global excludes, then filter once at the end.
 		$projects
 		| each { |project|
 			$project | upsert excludes { $project.excludes ++ $global_excludes }
 		}
-		| where {|proj| $proj.origin | path exists }  # Filter only once at the end
+		| where {|proj| $proj.origin | path exists }
 
 	} catch { |err|
 		# Provide specific error messages based on the error type

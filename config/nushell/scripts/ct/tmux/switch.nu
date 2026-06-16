@@ -21,8 +21,12 @@ export def main [] {
 
 	# see fzf exit status
 	match [$target.exit_code, ($target.stdout | str trim)] {
-		[130, _] => {} # C-c / Esc
-		[1, _] => {} # no selection
+		[130, _] => {
+			# C-c / Esc
+		}
+		[1, _] => {
+			# no selection
+		}
 		[0, $chosen] => { tmux switch-client -t $chosen }
 		_ => {
 			print $"(ansi red)tmux switch failed(ansi reset)"
