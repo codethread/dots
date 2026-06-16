@@ -4,6 +4,8 @@ set -euo pipefail
 
 SESSION="pdx--pandora"
 PDX=(volta run --node 24 pdx)
+NUSHELL_ENV="$HOME/.config/nushell/env.nu"
+PANDORA_ENV_VARS=(PDX_DATA_DIR PITHOS_DB PDX_USER_DATA_DIR)
 
 usage() {
   cat <<'USAGE'
@@ -26,6 +28,24 @@ case "${1:-}" in
     exit 2
     ;;
 esac
+
+load_pandora_env() {
+  local env_json
+
+  env_json="$(nu --no-config-file --commands "source '$NUSHELL_ENV'; { PDX_DATA_DIR: \$env.PDX_DATA_DIR, PITHOS_DB: \$env.PITHOS_DB, PDX_USER_DATA_DIR: \$env.PDX_USER_DATA_DIR } | to json --raw")"
+
+  for name in "${PANDORA_ENV_VARS[@]}"; do
+    local value
+    value="$(jq -r --arg name "$name" '.[$name]' <<<"$env_json")"
+    export "$name=$value"
+
+    if tmux has-session 2>/dev/null; then
+      tmux set-environment -g "$name" "$value"
+    fi
+  done
+}
+
+load_pandora_env
 
 status_json="$(${PDX[@]} daemon status 2>/dev/null || true)"
 running="$(jq -r '.daemon.running // false' <<<"$status_json" 2>/dev/null || printf 'false')"
