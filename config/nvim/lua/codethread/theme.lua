@@ -5,7 +5,7 @@
 
 local M = {}
 
-local DEFAULT_FAMILY = 'tokyonight'
+local DEFAULT_FAMILY = 'rose-pine'
 local families = {
 	['rose-pine'] = true,
 	tokyonight = true,

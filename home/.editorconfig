@@ -16,6 +16,11 @@ indent_size = 4
 indent_style = space
 indent_size = 2
 
+# nix (nixfmt/RFC style)
+[*.nix]
+indent_style = space
+indent_size = 2
+
 # web
 [*.{json,js,jsx,ts,tsx,html,css,yml}]
 indent_style = space
