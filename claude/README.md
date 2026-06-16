@@ -54,6 +54,7 @@ iOS push notifications via Pushover, triggered by Claude Code hooks.
 |-------|---------|
 | commit (ct:commit) | Conventional commits with auto status/diff injection |
 | playwright-cli | Browser automation with 7 reference docs |
+| wktree | Local git worktree workflow via `wk`/`wktree` |
 
 ## Slash Commands
 

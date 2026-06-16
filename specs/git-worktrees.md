@@ -7,7 +7,7 @@
 
 This dotfiles workflow uses the external `wktree` project to make git worktree creation, reuse, switching, and removal fast and predictable across personal shell, tmux, and agent workflows.
 
-The implementation contract lives in `/Users/adamhall/dev/projects/wktree/specs/git-worktrees.md`. This spec owns only the local workflow: how dotfiles wire `wktree` into Nushell, PATH, project bootstrap config, and tmux navigation.
+The implementation contract lives in `~/dev/projects/wktree/specs/git-worktrees.md`. This spec owns only the local workflow: how dotfiles wire `wktree` into Nushell, PATH, project bootstrap config, and tmux navigation.
 
 ## 2. Goals
 
@@ -98,7 +98,7 @@ When a configured pool is full, the human wrapper may present candidates and ask
 
 ## 6. Boundaries with the external repo
 
-Owned by `/Users/adamhall/dev/projects/wktree`:
+Owned by `~/dev/projects/wktree`:
 
 - CLI command behavior and JSON payload details
 - path, branch, and pool semantics
@@ -116,14 +116,14 @@ Owned by this dotfiles repo:
 
 ## 7. Code locations
 
-| Location | Purpose |
-| --- | --- |
-| `/Users/adamhall/dev/projects/wktree` | External implementation, wrapper, and tests |
-| `config/nushell/config.nu` | Imports the external `wk` wrapper |
-| `config/nushell/env.nu` | Ensures `~/.local/bin` is on PATH |
-| `config/ct-worktrees/trees.toml` | Local project bootstrap/pool config |
-| `config/tmux/tmux.conf` | Tmux keybindings that may expose worktree/session workflows |
-| `home/.local/bin/tmux-session` | General session switching and path-derived naming |
+| Location                         | Purpose                                                     |
+| -------------------------------- | ----------------------------------------------------------- |
+| `~/dev/projects/wktree`          | External implementation, wrapper, and tests                 |
+| `config/nushell/config.nu`       | Imports the external `wk` wrapper                           |
+| `config/nushell/env.nu`          | Ensures `~/.local/bin` is on PATH                           |
+| `config/ct-worktrees/trees.toml` | Local project bootstrap/pool config                         |
+| `config/tmux/tmux.conf`          | Tmux keybindings that may expose worktree/session workflows |
+| `home/.local/bin/tmux-session`   | General session switching and path-derived naming           |
 
 ## 8. Validation
 
@@ -133,7 +133,7 @@ For workflow changes in dotfiles:
 nu --config config/nushell/config.nu --env-config config/nushell/env.nu -c 'print ok'
 ```
 
-For engine/wrapper behavior, run validation in `/Users/adamhall/dev/projects/wktree`:
+For engine/wrapper behavior, run validation in `~/dev/projects/wktree`:
 
 ```bash
 bun test
