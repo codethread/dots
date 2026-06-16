@@ -8,7 +8,7 @@ use ct/dotty
 use ct/cursor.nu *
 use ct/macos.nu *
 use ct/git *
-use ct/git/worktree *
+use ~/dev/projects/wktree/nu/wktree *
 use ct/homebrew.nu *
 use ct/editor.nu *
 use ct/terminal.nu *
@@ -26,8 +26,8 @@ $env.config.table.index_mode = "auto"
 $env.config.table.show_empty = false # show 'empty list' and 'empty record' placeholders for command output
 $env.config.cursor_shape = $env.config.cursor_shape | merge {
 	# block, underscore, line, blink_block, blink_underscore, blink_line (line is the default)
-	emacs: "blink_block"
-	vi_insert: "blink_line"
+	emacs: "blink_block", 
+	vi_insert: "blink_line", 
 	vi_normal: "blink_block"
 }
 # NOTE: may need to check how this behaves for scripts and nush
@@ -46,11 +46,11 @@ $env.config.shell_integration = $env.config.shell_integration | merge {
 }
 $env.config.completions.algorithm = "fuzzy"
 $env.config.show_banner = false
-let _theme_file = ($env.XDG_STATE_HOME | path join "color-theme")
-$env.config.color_config = if (($_theme_file | path exists) and ((open $_theme_file | str trim) == "light")) {
-	$themes.light
+let _theme_file = $env.XDG_STATE_HOME | path join "color-theme"
+$env.config.color_config = if ($_theme_file | path exists) and ((open $_theme_file | str trim) == "light") {
+    $themes.light
 } else {
-	$themes.dark
+    $themes.dark
 }
 $env.config.edit_mode = 'emacs' # emacs, vi
 $env.config.buffer_editor = "nvim"
@@ -62,24 +62,20 @@ $env.config.menus ++= $menus
 $env.config.hooks = (hooks)
 
 $env.STARSHIP_SHELL = "nu"
-$env.PROMPT_COMMAND = {||
-	starship prompt --cmd-duration $env.CMD_DURATION_MS $'--status=($env.LAST_EXIT_CODE)'
-}
-$env.PROMPT_COMMAND_RIGHT = {||
-	starship prompt --right
-}
+$env.PROMPT_COMMAND = {|| starship prompt --cmd-duration $env.CMD_DURATION_MS $'--status=($env.LAST_EXIT_CODE)' }
+$env.PROMPT_COMMAND_RIGHT = {|| starship prompt --right }
 $env.PROMPT_INDICATOR = ""
 $env.PROMPT_INDICATOR_VI_INSERT = ": "
 $env.PROMPT_INDICATOR_VI_NORMAL = "〉"
 $env.PROMPT_MULTILINE_INDICATOR = "::: "
 
-const workp = ("~/.work.nu" | path expand)
+const workp = "~/.work.nu" | path expand
 source (if ($workp | path exists) { $workp } else { null })
 
-const privates = ("~/.privates.nu" | path expand)
+const privates = "~/.privates.nu" | path expand
 source (if ($privates | path exists) { $privates } else { null })
 
-const pi_scripts = ("~/dev/projects/agents/scripts/pi.nu" | path expand)
+const pi_scripts = "~/dev/projects/agents/scripts/pi.nu" | path expand
 source (if ($pi_scripts | path exists) { $pi_scripts } else { null })
 
 use ~/dev/projects/agents/plugins/devflow/scripts/afk-loop.nu
