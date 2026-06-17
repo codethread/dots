@@ -60,5 +60,5 @@
 
 [includeIf "gitdir:~/work/"] # job needs, like workspace/* so all included projects
 	path = ~/work/.gitconfig
-[includeIf "gitdir:~/work/me/workfiles/"] # job needs, like workspace/* so all included projects
+[includeIf "gitdir:~/pb/"] # job needs, like workspace/* so all included projects
 	path = ~/work/.gitconfig

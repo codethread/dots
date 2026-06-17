@@ -54,12 +54,11 @@ let
   machineMarketplaces =
     claudeCodePluginsMarketplace
     // lib.optionalAttrs cfg.workMachine {
-      ai-tools-marketplace = {
+      local-work-claude = {
         source = {
-          source = "git";
-          url = "ssh://git@git.perkbox.io/adam.hall/ai-tools.git";
+          source = "directory";
+          path = "${config.home.homeDirectory}/pb/adam.hall/local-work-claude";
         };
-        autoUpdate = true;
       };
       pb-claude = {
         source = {
