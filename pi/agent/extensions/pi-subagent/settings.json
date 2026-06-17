@@ -1,0 +1,35 @@
+{
+  "compat": {
+    "tools": {
+      "Read": "read",
+      "Edit": "edit",
+      "Write": "write",
+      "Bash": "bash",
+      "Glob": "find",
+      "Grep": "grep",
+      "LS": "ls",
+      "Agent": "subagent",
+      "MultiEdit": "edit",
+      "NotebookEdit": "edit",
+      "PowerShell": null,
+      "WebFetch": "fetch_content",
+      "WebSearch": "web_search",
+      "Monitor": null,
+      "LSP": null,
+      "Skill": "read"
+    },
+    "models": {
+      "haiku": "anthropic/claude-haiku-4-5",
+      "sonnet": "anthropic/claude-sonnet-4-6",
+      "opus": "anthropic/claude-opus-4-8",
+      "fable": "anthropic/claude-fable-5"
+    },
+    "effort": {
+      "low": "low",
+      "medium": "medium",
+      "high": "high",
+      "xhigh": "xhigh",
+      "max": "xhigh"
+    }
+  }
+}
