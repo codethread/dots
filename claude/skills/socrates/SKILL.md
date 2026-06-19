@@ -1,4 +1,5 @@
 ---
+name: socrates
 description: Know thyself
 disable-model-invocation: true
 ---

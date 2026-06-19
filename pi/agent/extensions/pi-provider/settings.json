@@ -10,15 +10,11 @@
       "provider": "openai-codex"
     },
     {
-      "path": "~/work",
-      "provider": "openai"
+      "path": "~/.pdx",
+      "provider": "openai-codex"
     },
     {
       "path": "~/pb",
-      "provider": "openai"
-    },
-    {
-      "path": "~/.pdx",
       "provider": "openai"
     }
   ]

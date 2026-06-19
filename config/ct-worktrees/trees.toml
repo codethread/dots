@@ -9,17 +9,16 @@
 
 [[project]]
 name = "deals ui bootstrap"
-root = "~/work/app/deals-light-ui"
-pool_size = 8
-command = '''
-~/.local/bin/deals-light-boot
-notif worktree wk "$WK_CREATED" ready
-'''
-
-[[project]]
-name = "deals ui bootstrap"
 root = "~/pb/app/deals-light-ui"
 pool_size = 8
+copy_mode_default = "symlink"
+copy = [
+	".env",
+	".rgignore",
+	".pi",
+	".claude/settings.local.json",
+	"CLAUDE.local.md",
+]
 command = '''
 ~/.local/bin/deals-light-boot
 notif worktree wk "$WK_CREATED" ready

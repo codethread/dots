@@ -19,7 +19,7 @@ let is_ssh = (
 
 let is_vscode_remote = ($env.VSCODE_IPC_HOOK_CLI? | default "") != ""
 
-let default_editor = if $is_vscode_remote {
+let visual_editor = if $is_vscode_remote {
     "code --wait"
 } else if $is_ssh {
     "nvim"
@@ -27,8 +27,8 @@ let default_editor = if $is_vscode_remote {
     "zed --wait"
 }
 
-$env.EDITOR = $default_editor
-$env.VISUAL = $default_editor
+$env.EDITOR = "nvim"
+$env.VISUAL = $visual_editor
 $env.SHELL = (which nu | get 0.path)
 $env.XDG_CONFIG_HOME = ($env.XDG_CONFIG_HOME? | default (home ".config"))
 $env.XDG_DATA_HOME = ($env.XDG_DATA_HOME? | default (home ".local/share"))
@@ -228,6 +228,7 @@ $env.ENABLE_CLAUDEAI_MCP_SERVERS = "0"
 $env.CLAUDE_CODE_DISABLE_CRON = "1"
 $env.CLAUDE_CODE_DISABLE_1M_CONTEXT = "1"
 $env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"
+$env.CLAUDE_CODE_DISABLE_BUNDLED_SKILLS = "1"
 
 #: }}}
 #: kitty {{{

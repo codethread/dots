@@ -191,7 +191,6 @@ in
     # bug requires login on every switch
     # masApps = {
     #   "DaisyDisk" = 411643860;  # Disk space analyzer
-    #   "Spokenly" = 6740315592;  # Speech-to-text dictation
     # };
   };
 

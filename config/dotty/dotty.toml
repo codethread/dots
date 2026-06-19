@@ -36,11 +36,11 @@ origin = "${DOTFILES}/pi"
 target = "~/.pi"
 
 [[project]]
-name = "work"
-origin = "~/work/me/workfiles/home"
+name = "work_home"
+origin = "~/pb/adam.hall/workfiles/home"
 target = "~"
 
 [[project]]
 name = "deals"
-origin = "~/work/me/workfiles/work/app/deals-light-ui/_git"
-target = "~/work/app/deals-light-ui/.git"
+origin = "~/pb/adam.hall/workfiles/home/pb/app/deals-light-ui/_git"
+target = "~/pb/app/deals-light-ui/.git"

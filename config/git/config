@@ -58,7 +58,5 @@
 [mergetool "nvim"]
 	cmd = nvim -c "DiffviewOpen"
 
-[includeIf "gitdir:~/work/"] # job needs, like workspace/* so all included projects
-	path = ~/work/.gitconfig
 [includeIf "gitdir:~/pb/"] # job needs, like workspace/* so all included projects
-	path = ~/work/.gitconfig
+	path = ~/pb/.gitconfig

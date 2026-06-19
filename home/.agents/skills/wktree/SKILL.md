@@ -5,7 +5,7 @@ description: Use when creating, switching, listing, or removing git worktrees in
 
 # wktree
 
-- Use `wktree` directly; prefer `--json` whenever available.
+- see `wktree -h` for commands
 - Always pass `--cwd <path>` so the engine resolves the intended repository/worktree.
 - Add/create: `wktree add --cwd <path> --branch <branch> --json`.
 - If an add result includes `post_create_script_path`, run that script with `bash` before treating the worktree as ready.
@@ -14,11 +14,16 @@ description: Use when creating, switching, listing, or removing git worktrees in
 - Remove by branch: `wktree remove --cwd <path> --branch <branch> --json`.
 - Remove current worktree: `wktree remove --cwd <path> --self <path> --json`.
 - Use `--force` only when explicitly discarding local work is intended.
+
+## Pools
+
+Some repos use a 'pool' of worktrees to reuse due to setup overhead
+
+- infer pool status: `wktree status --cwd . | jq '.size'` == 0 means non-pooled (create worktrees freely). > 0 means recycle as needed.
 - Inspect pool status: `wktree status --cwd <path>`.
 - Recycle a pool slot: `wktree recycle --cwd <path> --slot <path> [--force]`.
 
 ## Constraints
 
-- Do not invent tmux session names; use the `session` fields emitted by `wktree` JSON.
 - Do not bypass `wktree` for pooled repos unless explicitly repairing git state.
 - Treat non-zero exits as meaningful: inspect JSON `kind` when present rather than parsing stderr.

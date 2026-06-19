@@ -10,13 +10,28 @@ let
   zsh = lib.getExe pkgs.zsh;
 
   commonEnabledPlugins = {
-    "frontend-design@claude-plugins-official" = true;
     "claude-md-management@claude-plugins-official" = true;
-
     "harness@agents" = true;
     "devflow@agents" = true;
     "coding@agents" = true;
   };
+
+  machineEnabledPlugins =
+    if cfg.workMachine then
+      {
+        "admin@local-work" = true;
+        "pb-prose@pb-claude" = true;
+        "pb-news@pb-claude" = true;
+        "pb-claude-harness-engineering@pb-claude" = true;
+
+      }
+    else
+      {
+        "claude-code-knowledge@claude-code-plugins" = true;
+        # "bdfl@claude-code-plugins" = true;
+        "dev@claude-code-plugins" = true;
+        "writing@agents" = true;
+      };
 
   claudeCodePluginsMarketplace = {
     claude-code-plugins = {
@@ -33,28 +48,10 @@ let
     };
   };
 
-  machineEnabledPlugins =
-    if cfg.workMachine then
-      {
-        "pb-go@pb-claude" = true;
-        "pb-aws@pb-claude" = true;
-        "pb-prose@pb-claude" = true;
-        "pb-news@pb-claude" = true;
-        "pb-claude-harness-engineering@pb-claude" = true;
-
-      }
-    else
-      {
-        "claude-code-knowledge@claude-code-plugins" = true;
-        # "bdfl@claude-code-plugins" = true;
-        "dev@claude-code-plugins" = true;
-        "writing@agents" = true;
-      };
-
   machineMarketplaces =
     claudeCodePluginsMarketplace
     // lib.optionalAttrs cfg.workMachine {
-      local-work-claude = {
+      local-work = {
         source = {
           source = "directory";
           path = "${config.home.homeDirectory}/pb/adam.hall/local-work-claude";
@@ -63,7 +60,7 @@ let
       pb-claude = {
         source = {
           source = "directory";
-          path = "${config.home.homeDirectory}/work/ai/tools/claude-plugins";
+          path = "${config.home.homeDirectory}/pb/ai/tools/claude-plugins";
         };
       };
     };
@@ -99,7 +96,6 @@ in
         allow = [
           "Bash"
           "Edit(.claude)"
-          "Read(//tmp/claude/**)"
           "Read(//tmp/claude/**)"
           "Write(//tmp/claude/**)"
           "Edit(//tmp/claude/**)"
@@ -164,7 +160,6 @@ in
           "~/.local"
           "~/.claude"
           "~/dev"
-          "~/work"
           "~/pb"
         ];
       };
