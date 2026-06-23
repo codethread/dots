@@ -1,15 +1,17 @@
 # Agentic Configuration Specification
 
+Document ID: SPEC-001
+Configuration identification: SPEC-001; migrated from `specs/agentic-config.md`; canonical path `devflow/specs/agentic-config.md`.
 **Status:** Implemented
 **Last Updated:** 2026-04-09
 
-## 1. Overview
+## [SPEC-001-S1] 1. Overview
 
-### Purpose
+### [SPEC-001-S1.1] Purpose
 
 Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related agent CLIs. Manages package provisioning, settings generation, hook compilation, asset symlinks, plugin wiring, and shell wrappers — so that a single `make system && make link && make build` produces a fully-configured agentic environment from source.
 
-### Goals
+### [SPEC-001-S1.2] Goals
 
 - Single source of truth for global settings in Nix (`nix/features/claude-code.nix`)
 - Agent CLI binaries provisioned declaratively via `llm-agents.nix`
@@ -19,7 +21,7 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 - Plugin extensibility via local and remote marketplaces
 - Codex configuration colocated and linked alongside Claude Code
 
-### Non-Goals
+### [SPEC-001-S1.3] Non-Goals
 
 - Container orchestration and sandboxing — covered by [cc-sandbox spec](./cc-sandbox.md)
 - Plugin implementation details — plugins live in `~/dev/projects/claude-code-plugins` (separate repo)
@@ -27,7 +29,7 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 - Dotty implementation — dotty is a general-purpose symlink manager, not agentic-specific
 - Project-local `.claude/` config authoring beyond the shared Pi compatibility shim
 
-## 2. Architecture
+## [SPEC-001-S2] 2. Architecture
 
 Four configuration layers compose at runtime:
 
@@ -65,7 +67,7 @@ Four configuration layers compose at runtime:
 
 Settings merge order: Nix globals → project settings → local overrides. Agent CLI packages are supplied separately by the flake package layer. This spec covers the package layer plus layers 1 and 2 only.
 
-### Build Pipeline
+### [SPEC-001-S2.1] Build Pipeline
 
 ```
 make system  →  nix rebuild  →  ~/.claude/settings.json regenerated
@@ -75,7 +77,7 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 
 `make` (default target `all`) runs `link`, `build`, then `system` (nix rebuild).
 
-### Package Provisioning
+### [SPEC-001-S2.2] Package Provisioning
 
 - `nix/flake.nix` imports `github:numtide/llm-agents.nix`
 - Its overlay is applied to both the system package set and `pkgsMaster`
@@ -83,9 +85,9 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 - `config/dotty/dotty.toml` links the tracked `pi/` directory into `~/.pi/agent`
 - Most mutable Pi config now lives in `https://github.com/codethread/agents`; this repo keeps the `pi/agent.njk` template plus minimal bootstrap files and symlinks that make Pi consume the shared prompt/config layout
 
-## 3. Data Model
+## [SPEC-001-S3] 3. Data Model
 
-### Hook Type System (`oven/shared/claude-hooks.ts`)
+### [SPEC-001-S3.1] Hook Type System (`oven/shared/claude-hooks.ts`)
 
 All hooks share a base input contract:
 
@@ -121,7 +123,7 @@ Legacy compat fields (`decision`, `reason`) also exist at the top level for olde
 
 I/O protocol: JSON on stdin (HookInput), JSON on stdout (HookOutput), exit code 2 to block. Some hooks (e.g., `cc-hook--context-injector`) output plain text to stdout instead of JSON — Claude Code accepts both.
 
-### Dotty Config (`config/dotty/dotty.toml`)
+### [SPEC-001-S3.2] Dotty Config (`config/dotty/dotty.toml`)
 
 The `claude` project definition:
 
@@ -132,9 +134,9 @@ The `claude` project definition:
 
 The `config` project covers `config/codex/` → `~/.config/codex/` as part of the broader `config/ → ~/.config/` mapping.
 
-## 4. Interfaces
+## [SPEC-001-S4] 4. Interfaces
 
-### Settings Generation (`nix/features/claude-code.nix`)
+### [SPEC-001-S4.1] Settings Generation (`nix/features/claude-code.nix`)
 
 **Permissions:**
 
@@ -173,7 +175,7 @@ Note: `PermissionRequest` is a Claude Code hook event not represented in the Typ
 - `codethread-plugins` (local dir `~/dev/projects/claude-code-plugins`): `claude-code-knowledge`, `bdfl`, `dev`
 - `cc-notify-marketplace` (GitHub `codethread/cc-notify`, conditional): `cc-notify`
 
-### Agents
+### [SPEC-001-S4.2] Agents
 
 **Global (`claude/agents/` → `~/.claude/agents/`):**
 
@@ -184,7 +186,7 @@ Note: `PermissionRequest` is a Claude Code hook event not represented in the Typ
 
 **Disabled (`claude/x-agents/`):** `browser-devtools` (sonnet, chrome-devtools MCP) — DevTools diagnostics. Prefix convention keeps files out of Claude's agent discovery.
 
-### Skills
+### [SPEC-001-S4.3] Skills
 
 **Global (`claude/skills/` → `~/.claude/skills/`):**
 
@@ -193,7 +195,7 @@ Note: `PermissionRequest` is a Claude Code hook event not represented in the Typ
 | commit         | Bash(git:\*)            | Conventional commits with auto status/diff injection   |
 | playwright-cli | Bash(playwright-cli:\*) | Full browser automation (279 lines + 7 reference docs) |
 
-### Commands (`claude/commands/` → `~/.claude/commands/`)
+### [SPEC-001-S4.4] Commands (`claude/commands/` → `~/.claude/commands/`)
 
 | Command     | Key Feature                                                        |
 | ----------- | ------------------------------------------------------------------ |
@@ -202,7 +204,7 @@ Note: `PermissionRequest` is a Claude Code hook event not represented in the Typ
 | ct/socrates | Self-introspection on knowledge sources                            |
 | ct/speak    | Audio communication via cc-speak TTS                               |
 
-### Rules (`claude/rules/` → `~/.claude/rules/`)
+### [SPEC-001-S4.5] Rules (`claude/rules/` → `~/.claude/rules/`)
 
 | Rule           | Enforces                                                          |
 | -------------- | ----------------------------------------------------------------- |
@@ -210,7 +212,7 @@ Note: `PermissionRequest` is a Claude Code hook event not represented in the Typ
 | review         | Mandatory `code-review` CLI before reporting done                 |
 | fixes/comments | Comments explain ambiguity, not changes                           |
 
-### Claude Wrapper (`home/.local/bin/cl`)
+### [SPEC-001-S4.6] Claude Wrapper (`home/.local/bin/cl`)
 
 Bash wrapper prepending context-aware system prompts to `claude` CLI:
 
@@ -221,7 +223,7 @@ Bash wrapper prepending context-aware system prompts to `claude` CLI:
 - Flags: `-d` (skip permissions), `--dry-run`, `-m/--model`, `--effort`
 - Respects `CC_HOST_PWD` for container path translation
 
-### Pi Configuration (`pi/`)
+### [SPEC-001-S4.7] Pi Configuration (`pi/`)
 
 Direct `pi` invocation with shared repo-aware configuration:
 
@@ -234,24 +236,24 @@ Direct `pi` invocation with shared repo-aware configuration:
 - `extensions/subagent/index.ts`: adds `/debug-agents` to show discovered agents with resolved model and normalized tools
 - Machine-local state stays outside the repo: `auth.json`, `models.json`, `sessions/`
 
-### Codex Configuration (`config/codex/`)
+### [SPEC-001-S4.8] Codex Configuration (`config/codex/`)
 
 - `config.toml`: model gpt-5.4, personality pragmatic, effort high. Profiles: fast-review (gpt-5.3-codex, medium), deep-review (gpt-5.4, high). 15 trusted project paths. Falls back to CLAUDE.md for project docs.
 - `AGENTS.md`: global instruction for conciseness
 
-### Agent CLI Packages (`nix/flake.nix`, `nix/features/common.nix`)
+### [SPEC-001-S4.9] Agent CLI Packages (`nix/flake.nix`, `nix/features/common.nix`)
 
 - Source: `llm-agents.nix` overlay
 - Installed CLIs: `claude-code`, `codex`, `pi`
 - `pkgsMaster` remains the preferred source for fast-moving supporting packages like Node.js and TypeScript
 
-### Nushell Wrappers (`config/nushell/scripts/ct/interactive/claude.nu`)
+### [SPEC-001-S4.10] Nushell Wrappers (`config/nushell/scripts/ct/interactive/claude.nu`)
 
 - `clo`/`cls`/`clh` — model-specific Claude wrappers (opus/sonnet/haiku)
 - `cll` — ephemeral haiku session with auto-cleanup of session files
 - `_claude-session`, `_claude-prompts`, `_claude-session-stats` — session log analysis
 
-### Hook Implementations
+### [SPEC-001-S4.11] Hook Implementations
 
 **TypeScript (oven/bin/, compiled to ~/.local/bin/):**
 
@@ -267,7 +269,7 @@ Direct `pi` invocation with shared repo-aware configuration:
 | cc-hook--notify   | POST to cc-notify daemon. Stop: "Done · $PROJECT" + 120-char snippet. PermissionRequest: tool-specific detail. |
 | cc-hook--activity | POST session_id to /activity to cancel pending notification. Fail silent.                                      |
 
-### Supporting Tools
+### [SPEC-001-S4.12] Supporting Tools
 
 | Tool                    | Source                    | Purpose                                                      |
 | ----------------------- | ------------------------- | ------------------------------------------------------------ |
@@ -276,11 +278,11 @@ Direct `pi` invocation with shared repo-aware configuration:
 | cindex                  | oven/bin/cindex.ts        | Project file index generator for context injection           |
 | cc-logs--extract-agents | home/.local/bin/ (bash)   | Extract agent IDs with prompts/models for session resumption |
 
-### Keybindings (`claude/keybindings.json`)
+### [SPEC-001-S4.13] Keybindings (`claude/keybindings.json`)
 
 Disables Ctrl+A in Global context.
 
-## 5. Design Decisions
+## [SPEC-001-S5] 5. Design Decisions
 
 - **Nix as settings source of truth.** `~/.claude/settings.json` is Nix-store-linked and read-only. Prevents drift from manual edits. Trade-off: requires `make system` (nix rebuild) to change global settings.
 
@@ -298,7 +300,7 @@ Disables Ctrl+A in Global context.
 
 - **Package manager detection by lock file.** `cc-hook--npm-redirect` walks the directory tree looking for lock files in priority order (bun > pnpm > yarn > npm). This is more reliable than checking tool presence and handles monorepos.
 
-## 6. Testing
+## [SPEC-001-S6] 6. Testing
 
 **TypeScript hooks:** Unit tests in `oven/tests/`:
 
@@ -309,7 +311,7 @@ Disables Ctrl+A in Global context.
 
 **No direct tests for:** bash hooks (cc-hook--notify, cc-hook--activity), `cl` wrapper, direct `pi` usage, nushell wrappers. These are verified indirectly through the smoke test and manual usage.
 
-## 7. Open Questions
+## [SPEC-001-S7] 7. Open Questions
 
 - The `x-agents/` convention works but is undocumented outside `claude/README.md` — should disabled agents use a more formal mechanism?
 - Codex config shares the dotty `config` project with all other XDG configs. If Codex needs more files, a dedicated dotty project may be cleaner.

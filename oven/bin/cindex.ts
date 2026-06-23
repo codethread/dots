@@ -77,8 +77,8 @@ Config file format (.cindex.toml):
 
   # Summarise many files into one line
   [[summarise]]
-  dir = "specs"
-  pattern = "^specs/\\\\d{3}-.*\\\\.md$"  # Optional regex filter
+  dir = "devflow/specs"
+  pattern = "^devflow/specs/.*\\\\.md$"  # Optional regex filter
   desc = "[summary] spec files"
 
 Examples:

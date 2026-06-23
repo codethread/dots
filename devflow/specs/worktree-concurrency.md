@@ -1,15 +1,17 @@
 # Worktree Concurrency Specification
 
+Document ID: SPEC-008
+Configuration identification: SPEC-008; migrated from `specs/worktree-concurrency.md`; canonical path `devflow/specs/worktree-concurrency.md`.
 **Status:** Planned
 **Last Updated:** 2026-04-27
 
-## 1. Overview
+## [SPEC-008-S1] 1. Overview
 
-### Purpose
+### [SPEC-008-S1.1] Purpose
 
 This system defines how this dotfiles repo can be tested and developed from multiple git worktrees concurrently without changing the host user's active configuration or another agent's workspace. It establishes an isolation contract around `$DOTFILES`, XDG directories, tool state directories, and application-specific entry points so a worktree can validate Neovim, Nushell, tmux, dotty, Nix helpers, and agent tooling in a disposable environment.
 
-### Goals
+### [SPEC-008-S1.2] Goals
 
 - Make every repo-local test entry point honor the current checkout/worktree as `$DOTFILES`.
 - Provide a reusable sandbox harness that creates temporary `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME`, and `XDG_STATE_HOME` roots.
@@ -19,7 +21,7 @@ This system defines how this dotfiles repo can be tested and developed from mult
 - Fail loudly when a test would touch the real home directory or canonical dotfiles clone unexpectedly.
 - Keep full system rebuild/switch operations explicitly outside normal concurrent test runs.
 
-### Non-Goals
+### [SPEC-008-S1.3] Non-Goals
 
 - Running multiple real `nix-darwin switch` or `nixos-rebuild switch` operations concurrently against the host.
 - Proving visual correctness of terminal/editor UI beyond smoke-testable startup and command execution.
@@ -28,7 +30,7 @@ This system defines how this dotfiles repo can be tested and developed from mult
 - Making all third-party tools perfectly hermetic if they ignore XDG or explicit state flags.
 - Supporting legacy fallback paths once an isolated path contract exists.
 
-## 2. Design Decisions
+## [SPEC-008-S2] 2. Design Decisions
 
 - **Decision:** `$DOTFILES` is the authoritative source checkout for all worktree tests.
   - **Rationale:** The repo already uses `$DOTFILES` in dotty config, Nushell module paths, tmux sessions, Nix helpers, and Makefile commands. Enforcing it as the first-class root lets a worktree be tested without rewriting config files.
@@ -54,9 +56,9 @@ This system defines how this dotfiles repo can be tested and developed from mult
 - **Decision:** Test commands should be grouped by risk level.
   - **Rationale:** Unit/import checks can run constantly. Integration tests that launch tmux, Neovim, or agent CLIs are heavier. Host-mutating checks require explicit manual confirmation.
 
-## 3. Architecture
+## [SPEC-008-S3] 3. Architecture
 
-### Component structure
+### [SPEC-008-S3.1] Component structure
 
 Planned additions and modifications:
 
@@ -78,10 +80,10 @@ config/tmux/
   sessions.toml            Audit session paths, socket handling, and DOTFILES expansion
 
 Makefile                   Add safe test targets that export DOTFILES=$(ROOT)
-specs/worktree-concurrency.md
+devflow/specs/worktree-concurrency.md
 ```
 
-### Data flow
+### [SPEC-008-S3.2] Data flow
 
 ```text
 agent shell in worktree
@@ -108,7 +110,7 @@ collect logs + exit code
 fail loudly on host-path writes or command failure
 ```
 
-### Isolation layers
+### [SPEC-008-S3.3] Isolation layers
 
 1. **Checkout isolation** — every command receives `DOTFILES=<worktree root>` and module/config paths under that root.
 2. **Home isolation** — `HOME` points at a fresh temp dir.
@@ -122,9 +124,9 @@ fail loudly on host-path writes or command failure
    - Claude/Codex/Pi: isolated config homes unless intentionally testing linked configs.
 5. **Link isolation** — dotty links only into the temp `HOME`/XDG targets during tests.
 
-## 4. Data Model
+## [SPEC-008-S4] 4. Data Model
 
-### Sandbox environment contract
+### [SPEC-008-S4.1] Sandbox environment contract
 
 | Variable | Value in sandbox | Purpose |
 | --- | --- | --- |
@@ -142,7 +144,7 @@ fail loudly on host-path writes or command failure
 | `TMUX_TMPDIR` / socket flag | `<sandbox>/tmux` | Prevent tmux socket collision |
 | `DOTS_TEST_SANDBOX` | `<sandbox>` | Debug/cleanup anchor |
 
-### Test mode model
+### [SPEC-008-S4.2] Test mode model
 
 | Mode | Description | Host mutation risk |
 | --- | --- | --- |
@@ -152,7 +154,7 @@ fail loudly on host-path writes or command failure
 | `container` | Delegate to `cc-sandbox` or equivalent container smoke tests | Low to medium |
 | `host` | Real system activation or app preference changes | High; manual opt-in only |
 
-### Result artifacts
+### [SPEC-008-S4.3] Result artifacts
 
 Each integration run should optionally persist, when `--keep` is set:
 
@@ -165,9 +167,9 @@ Each integration run should optionally persist, when `--keep` is set:
   tmux/                      Socket/log artifacts
 ```
 
-## 5. Interfaces
+## [SPEC-008-S5] 5. Interfaces
 
-### Bash harness
+### [SPEC-008-S5.1] Bash harness
 
 ```bash
 dots-test-sandbox [--keep] [--mode source|linked|copied] [--name NAME] -- COMMAND [ARG...]
@@ -182,7 +184,7 @@ Behavior:
 - Prints the sandbox path on failure and when `--keep` is used.
 - Cleans up on success unless `--keep` is set.
 
-### Nushell command surface
+### [SPEC-008-S5.2] Nushell command surface
 
 | Command | Description |
 | --- | --- |
@@ -195,7 +197,7 @@ Behavior:
 | `ct test agents` | Smoke agent config loading without using live host config dirs |
 | `ct test worktree` | Run the default safe suite: env, nu, dotty, nvim, tmux, oven |
 
-### Make targets
+### [SPEC-008-S5.3] Make targets
 
 | Target | Description |
 | --- | --- |
@@ -205,7 +207,7 @@ Behavior:
 | `make test-dotty` | Isolated dotty link checks only |
 | `make test-tmux` | Isolated tmux smoke only |
 
-### Tool-specific smoke contracts
+### [SPEC-008-S5.4] Tool-specific smoke contracts
 
 | Tool | Minimum safe smoke |
 | --- | --- |
@@ -216,16 +218,16 @@ Behavior:
 | oven | `cd $DOTFILES/oven && bun test` with cache/temp vars redirected |
 | Nix | `nix flake check path:$DOTFILES/nix` or focused `nix eval`; no switch by default |
 
-## 6. Implementation Phases
+## [SPEC-008-S6] 6. Implementation Phases
 
-### Phase 1: Isolation audit and harness (1 day)
+### [SPEC-008-S6.1] Phase 1: Isolation audit and harness (1 day)
 
 - [ ] Audit repo scripts/configs for writes to `~`, canonical `$HOME/dev/dots`, global XDG paths, fixed tmux sockets, fixed plugin directories, or unguarded `dotty link`.
 - [ ] Add `home/.local/bin/dots-test-sandbox` with the environment contract above.
 - [ ] Add `--keep` support and clear failure output.
 - [ ] Add host-path leak checks for common real-home paths in generated symlinks/logs where practical.
 
-### Phase 2: Safe per-tool smoke commands (1-2 days)
+### [SPEC-008-S6.2] Phase 2: Safe per-tool smoke commands (1-2 days)
 
 - [ ] Add `ct test nu` and `make test-nu`.
 - [ ] Add `ct test dotty` and make `config/dotty/test-dotty.toml` target the sandbox, not real home.
@@ -233,21 +235,21 @@ Behavior:
 - [ ] Add `ct test tmux` with unique socket and cleanup.
 - [ ] Add `ct test oven` with isolated cache/temp variables.
 
-### Phase 3: Default concurrent suite (1 day)
+### [SPEC-008-S6.3] Phase 3: Default concurrent suite (1 day)
 
 - [ ] Add `ct test worktree` orchestration.
 - [ ] Add `make test-worktree` that exports `DOTFILES=$(ROOT)`.
 - [ ] Ensure each suite command can run in parallel from two sibling git worktrees.
 - [ ] Document expected runtime and failure artifact locations.
 
-### Phase 4: Integration hardening (ongoing)
+### [SPEC-008-S6.4] Phase 4: Integration hardening (ongoing)
 
 - [ ] Add optional agent config smoke tests for Claude/Codex/Pi without live config mutation.
 - [ ] Add focused Nix evaluation checks that prefer the current worktree and do not switch the host.
 - [ ] Add CI-compatible or pre-commit-compatible subsets if useful.
 - [ ] Add regression tests whenever a tool gains new writable state.
 
-## 7. Code Locations
+## [SPEC-008-S7] 7. Code Locations
 
 | File | Change |
 | --- | --- |
@@ -259,9 +261,9 @@ Behavior:
 | `config/nvim/` | Modify as audit finds hard-coded state paths or non-XDG writes |
 | `config/tmux/` | Modify as audit finds socket/session/path assumptions |
 | `oven/package.json` / `oven/tests/` | Modify only if cache isolation or test wrappers are needed |
-| `specs/README.md` | Modify: register this spec |
+| `devflow/README.md` | Modify: register this spec |
 
-## 8. Open Questions
+## [SPEC-008-S8] 8. Open Questions
 
 - Should the harness default to `source` mode for speed, or `linked` mode for closer-to-installed behavior?
 - Should `ct test worktree` run Neovim plugin installation/update steps, or only validate startup with existing dependencies?

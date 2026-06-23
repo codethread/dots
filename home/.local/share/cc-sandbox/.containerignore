@@ -9,8 +9,8 @@
 !oven/**
 !pi/
 !pi/**
-!specs/
-!specs/**
+!devflow/
+!devflow/**
 !nix/
 !nix/**
 !.gitignore

@@ -1,15 +1,17 @@
 # Dotty Specification
 
+Document ID: SPEC-003
+Configuration identification: SPEC-003; migrated from `specs/dotty.md`; canonical path `devflow/specs/dotty.md`.
 **Status:** Implemented
 **Last Updated:** 2026-04-04
 
-## 1. Overview
+## [SPEC-003-S1] 1. Overview
 
-### Purpose
+### [SPEC-003-S1.1] Purpose
 
 General-purpose dotfile symlink manager written in Nushell. Takes a TOML configuration declaring source-to-target directory mappings and creates symlinks for every file within each mapping. Supports incremental caching for fast re-runs, git-ignore-aware file enumeration, and force-gated conflict resolution.
 
-### Goals
+### [SPEC-003-S1.2] Goals
 
 - Declarative symlink management via a single TOML config
 - Incremental linking via per-project caches (only process changes)
@@ -18,16 +20,16 @@ General-purpose dotfile symlink manager written in Nushell. Takes a TOML configu
 - Editor integration: auto-link on save, project detection, formatted output for UI
 - Zero external dependencies beyond Nushell, git, and coreutils
 
-### Non-Goals
+### [SPEC-003-S1.3] Non-Goals
 
 - Managing application-specific config generation (that's each tool's concern; e.g. `claude-code.nix` generates `settings.json`)
 - Package installation or system configuration (that's Nix)
 - Template rendering or variable substitution in linked files (files are symlinked as-is)
 - Cross-machine config variation (handled at the Nix profile layer, not dotty)
 
-## 2. Architecture
+## [SPEC-003-S2] 2. Architecture
 
-### Component Layout
+### [SPEC-003-S2.1] Component Layout
 
 ```
 config/dotty/
@@ -42,7 +44,7 @@ config/nushell/scripts/ct/dotty/
     list-files.nu           File enumeration with git-ignore filtering
 ```
 
-### Linking Algorithm (`dotty link`)
+### [SPEC-003-S2.2] Linking Algorithm (`dotty link`)
 
 ```
 1. Load config    ──→ config.nu: parse TOML, validate, expand paths, filter to existing origins
@@ -64,7 +66,7 @@ config/nushell/scripts/ct/dotty/
 5. Return change report (new links created, files removed)
 ```
 
-### File Enumeration Strategies
+### [SPEC-003-S2.3] File Enumeration Strategies
 
 Two strategies in `list-files.nu`, selected by cache state:
 
@@ -75,7 +77,7 @@ Two strategies in `list-files.nu`, selected by cache state:
 
 Both strategies apply project + global exclude patterns after enumeration.
 
-### Conflict Detection
+### [SPEC-003-S2.4] Conflict Detection
 
 Two conflict classes are actively enforced by `helpers.nu`:
 
@@ -84,9 +86,9 @@ Two conflict classes are actively enforced by `helpers.nu`:
 
 Existing symlinks at target paths are not conflicts — they're silently overwritten.
 
-## 3. Data Model
+## [SPEC-003-S3] 3. Data Model
 
-### Configuration Schema (`dotty.toml`)
+### [SPEC-003-S3.1] Configuration Schema (`dotty.toml`)
 
 ```toml
 [global]
@@ -99,7 +101,7 @@ target = "~/path/to/destination"          # Required. Supports `~` and `${ENV}` 
 excludes = ["glob_pattern", ...]          # Optional. Combined with global excludes.
 ```
 
-### Current Projects
+### [SPEC-003-S3.2] Current Projects
 
 | Name | Origin | Target | Project-Specific Excludes |
 |---|---|---|---|
@@ -112,19 +114,19 @@ excludes = ["glob_pattern", ...]          # Optional. Combined with global exclu
 
 Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.md`
 
-### Cache Format
+### [SPEC-003-S3.3] Cache Format
 
 - **Location:** `~/.local/data/dotty-cache-<project-name>.nuon`
 - **Format:** NUON (Nushell Object Notation) — a sorted list of relative file paths
 - **Special entry:** `"."` indicates a directory-mode project
 
-### Config Resolution
+### [SPEC-003-S3.4] Config Resolution
 
 `config.nu` resolves the config path via: `$env.XDG_CONFIG_HOME` (if set) or `~/.config`, then appends `dotty/dotty.toml`. An explicit path argument overrides this (used by Makefile for worktree support).
 
-## 4. Interfaces
+## [SPEC-003-S4] 4. Interfaces
 
-### CLI Commands
+### [SPEC-003-S4.1] CLI Commands
 
 | Command | Purpose |
 |---|---|
@@ -134,7 +136,7 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 | `dotty prune [target]` | Remove broken symlinks under target (default: `~/.config/**/*`) |
 | `dotty teardown` | Remove all dotty-managed symlinks and caches |
 
-### Integration Points
+### [SPEC-003-S4.2] Integration Points
 
 | System | Command | When | Notes |
 |---|---|---|---|
@@ -143,7 +145,7 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 | **Neovim** | `dotty link`, `dotty format`, `dotty is-cwd` | Editor events | Auto-links on `BufWritePost`/`BufFilePost`/`VimLeavePre`. Detects dotfiles project via `is-cwd` on git root. |
 | **cc-sandbox** | `dotty link --no-cache` | Container image build | Step 3 of dots integration: after `git init`, before `bun run build` |
 
-### Worktree / Feature-Branch Support
+### [SPEC-003-S4.3] Worktree / Feature-Branch Support
 
 The Makefile `link` target enables testing dotty from any checkout:
 
@@ -153,7 +155,7 @@ The Makefile `link` target enables testing dotty from any checkout:
 
 The Nix activation hook exports `DOTFILES` as `$HOME/dev/dots` (the canonical clone path).
 
-## 5. Design Decisions
+## [SPEC-003-S5] 5. Design Decisions
 
 - **Nushell, not a compiled binary** — dotty is a Nushell module, not a standalone tool. This eliminates build steps, enables REPL debugging, and leverages Nushell's structured data (tables, records) for the linking pipeline. Tradeoff: requires Nushell runtime on PATH.
 
@@ -167,18 +169,18 @@ The Nix activation hook exports `DOTFILES` as `$HOME/dev/dots` (the canonical cl
 
 - **Force-gated conflict resolution** — when a real file exists at a target path, dotty fails loudly unless `--force` is passed.
 
-## 6. Testing
+## [SPEC-003-S6] 6. Testing
 
-### Automated
+### [SPEC-003-S6.1] Automated
 
 - **Test config** — `config/dotty/test-dotty.toml` provides a sandboxed project (`${DOTFILES}/config/dotty` → `~/dotty-test`) for validation without touching real dotfiles.
 
-### Manual
+### [SPEC-003-S6.2] Manual
 
 - **`nix-smoke`** — verifies config symlinks are valid (checks that expected symlinks in `~/.config` point to real files).
 - **`dotty prune`** — finds and removes broken symlinks (useful after file deletions).
 
-## 7. Open Questions
+## [SPEC-003-S7] 7. Open Questions
 
 - The `deals` project links a `_git` directory as individual files to `.git` — fragile if git internals change structure
 - `work` and `home` projects both target `~` — relies on non-overlapping file trees with no enforcement beyond duplicate-target detection

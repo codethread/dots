@@ -1,11 +1,13 @@
 # Theming Specification
 
+Document ID: SPEC-007
+Configuration identification: SPEC-007; migrated from `specs/theming.md`; canonical path `devflow/specs/theming.md`.
 **Status:** Partially Implemented
 **Last Updated:** 2026-04-18
 
-## 1. Overview
+## [SPEC-007-S1] 1. Overview
 
-### Purpose
+### [SPEC-007-S1.1] Purpose
 
 Shared light/dark and theme-family control for the interactive desktop and terminal stack. The current implementation coordinates macOS appearance, desktop wallpaper, Kitty colors, Nushell syntax/table colors, `LS_COLORS`, and Neovim colors from one small state contract.
 
@@ -13,7 +15,7 @@ Most terminal applications are expected to follow the active theme through the c
 
 The system is intentionally narrow for now. Nix and NixOS desktop theming are not yet controlled by this flow.
 
-### Goals
+### [SPEC-007-S1.2] Goals
 
 - One command to switch between light and dark mode.
 - Preserve the chosen theme family while toggling light/dark.
@@ -22,7 +24,7 @@ The system is intentionally narrow for now. Nix and NixOS desktop theming are no
 - Reload live Kitty windows without restarting them.
 - Avoid scattering plugin-specific theme choices throughout the Neovim config.
 
-### Non-Goals
+### [SPEC-007-S1.3] Non-Goals
 
 - Full Nix/Home Manager generation of themes. This is intended, but not implemented yet.
 - Linux desktop theme switching. NixOS currently has separate static dark GTK/Qt config.
@@ -30,9 +32,9 @@ The system is intentionally narrow for now. Nix and NixOS desktop theming are no
 - Dynamic reload inside already-running Neovim instances.
 - Theme package installation or wallpaper provisioning.
 
-## 2. Architecture
+## [SPEC-007-S2] 2. Architecture
 
-### Control Flow
+### [SPEC-007-S2.1] Control Flow
 
 ```
 theme light|dark|toggle [--family tokyonight|rose-pine]
@@ -60,7 +62,7 @@ theme light|dark|toggle [--family tokyonight|rose-pine]
        +- reload live windows through kitty remote control
 ```
 
-### Component Layout
+### [SPEC-007-S2.2] Component Layout
 
 ```
 home/.local/bin/theme
@@ -94,9 +96,9 @@ config/nvim/lua/plugins/ui.lua
     Enables the active Neovim theme plugin and applies its colorscheme.
 ```
 
-## 3. State Model
+## [SPEC-007-S3] 3. State Model
 
-### Shared State Files
+### [SPEC-007-S3.1] Shared State Files
 
 | File | Values | Writer | Readers |
 |---|---|---|---|
@@ -106,7 +108,7 @@ config/nvim/lua/plugins/ui.lua
 
 `$XDG_STATE_HOME` defaults to `~/.local/state` when unset.
 
-### Theme Mapping
+### [SPEC-007-S3.2] Theme Mapping
 
 | Family | Mode | Kitty theme | Neovim style/variant | vivid theme |
 |---|---|---|---|---|
@@ -117,15 +119,15 @@ config/nvim/lua/plugins/ui.lua
 
 Note: the Kitty dark Rose Pine file is `rose-pine.conf`, while vivid and Neovim refer to the dark variant as `rose-pine-moon`.
 
-### Defaults
+### [SPEC-007-S3.3] Defaults
 
 - Default family: `tokyonight`
 - Default mode: current macOS appearance when readable, then state file, then `dark`
 - Neovim family override: `CT_THEME_FAMILY`
 
-## 4. Interfaces
+## [SPEC-007-S4] 4. Interfaces
 
-### CLI
+### [SPEC-007-S4.1] CLI
 
 | Command | Action |
 |---|---|
@@ -137,7 +139,7 @@ Note: the Kitty dark Rose Pine file is `rose-pine.conf`, while vivid and Neovim 
 | `theme --family tokyonight light` | Switch family and mode together |
 | `mac-dark-toggle` | Nushell alias for `theme toggle` |
 
-### macOS
+### [SPEC-007-S4.2] macOS
 
 Implemented in `home/.local/bin/theme`.
 
@@ -148,7 +150,7 @@ Implemented in `home/.local/bin/theme`.
 
 On non-macOS systems these steps are no-ops.
 
-### Kitty
+### [SPEC-007-S4.3] Kitty
 
 Implemented by `home/.local/bin/theme` and `config/kitty/kitty.conf`.
 
@@ -158,7 +160,7 @@ Implemented by `home/.local/bin/theme` and `config/kitty/kitty.conf`.
 - Primary remote socket is `unix:/tmp/mykitty`; fallback is Kitty's default remote target.
 - `allow_remote_control yes` and `listen_on unix:/tmp/mykitty` must remain enabled.
 
-### Nushell
+### [SPEC-007-S4.4] Nushell
 
 Implemented by `config/nushell/config.nu`, `ct/themes.nu`, and `ct/ls-colors.nu`.
 
@@ -166,7 +168,7 @@ Implemented by `config/nushell/config.nu`, `ct/themes.nu`, and `ct/ls-colors.nu`
 - `LS_COLORS` is selected by mode and family using `vivid generate`.
 - This is evaluated when Nushell starts; existing shells do not live-reload.
 
-### Neovim
+### [SPEC-007-S4.5] Neovim
 
 Implemented by `config/nvim/lua/codethread/theme.lua` and consumers.
 
@@ -178,7 +180,7 @@ Implemented by `config/nvim/lua/codethread/theme.lua` and consumers.
 
 Neovim reads state at startup. A running instance needs restart or manual reload to fully change family/style.
 
-## 5. Implemented Coverage
+## [SPEC-007-S5] 5. Implemented Coverage
 
 | Area | Status | Notes |
 |---|---|---|
@@ -191,9 +193,9 @@ Neovim reads state at startup. A running instance needs restart or manual reload
 | Neovim shared palette | Implemented | Central Lua module consumed by plugin config |
 | LazyGit | Partially aligned | Small config adjustment to prefer terminal defaults |
 
-## 6. Not Yet Implemented
+## [SPEC-007-S6] 6. Not Yet Implemented
 
-### Nix / Home Manager
+### [SPEC-007-S6.1] Nix / Home Manager
 
 Nix currently provisions packages and has separate static desktop theme settings, but it does not own or generate this theme state.
 
@@ -205,7 +207,7 @@ Planned direction:
 - Keep imperative `theme` switching for day-to-day toggles.
 - Make NixOS GTK/Qt settings read from the same intended theme model instead of hardcoding Rose Pine dark.
 
-### NixOS Desktop
+### [SPEC-007-S6.2] NixOS Desktop
 
 Current NixOS config hardcodes dark GTK/Qt/freedesktop preferences in `nix/features/nixos-common.nix`. It is not connected to `theme`.
 
@@ -214,7 +216,7 @@ Planned direction:
 - Add Linux desktop switching for GTK, Qt, dconf color-scheme, wallpaper, and notification styling.
 - Decide whether runtime Linux switching belongs in `theme`, a Nushell function, or a Nix-generated helper.
 
-### Other Applications
+### [SPEC-007-S6.3] Other Applications
 
 Most CLI/TUI applications should be covered by terminal colors, shell colors, and `LS_COLORS` without direct integration. Extra per-app config should be added as problems appear, not pre-emptively.
 
@@ -226,7 +228,7 @@ Known areas outside the current shared flow:
 - Desktop/session styling such as Hyprland.
 - minimal Neovim.
 
-## 7. Design Decisions
+## [SPEC-007-S7] 7. Design Decisions
 
 - **Tiny state contract** - plain files under `$XDG_STATE_HOME` are easy for Bash, Nushell, Lua, and future Nix activation scripts to share.
 - **Imperative runtime switcher** - day/night switching should not require a Nix rebuild.
@@ -235,7 +237,7 @@ Known areas outside the current shared flow:
 - **Neovim owns plugin-specific details** - external state picks family/mode; `codethread.theme` translates that into plugin options and custom highlight palettes.
 - **Terminal apps inherit first** - the default approach is terminal palette plus shell color config plus `LS_COLORS`; add app-specific theme config only when inheritance fails.
 
-## 8. Open Questions
+## [SPEC-007-S8] 8. Open Questions
 
 - Should `theme` be the long-term cross-platform switcher, or should Linux/macOS implementations split behind a common interface?
 - Should Nushell prompt/table colors become family-specific, or is light/dark enough?

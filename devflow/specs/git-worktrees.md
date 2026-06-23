@@ -1,15 +1,17 @@
 # Git Worktrees Workflow
 
+Document ID: SPEC-004
+Configuration identification: SPEC-004; migrated from `specs/git-worktrees.md`; canonical path `devflow/specs/git-worktrees.md`.
 **Status:** Implemented  
 **Last Updated:** 2026-06-16
 
-## 1. Overview
+## [SPEC-004-S1] 1. Overview
 
 This dotfiles workflow uses the external `wktree` project to make git worktree creation, reuse, switching, and removal fast and predictable across personal shell, tmux, and agent workflows.
 
 The implementation contract lives in `~/dev/projects/wktree/specs/git-worktrees.md`. This spec owns only the local workflow: how dotfiles wire `wktree` into Nushell, PATH, project bootstrap config, and tmux navigation.
 
-## 2. Goals
+## [SPEC-004-S2] 2. Goals
 
 - Use `wktree` as the single engine for git/worktree lifecycle operations.
 - Keep local project bootstrap policy in dotfiles config, not in the engine repo.
@@ -17,20 +19,20 @@ The implementation contract lives in `~/dev/projects/wktree/specs/git-worktrees.
 - Keep tmux session names aligned with worktree paths so sessions are easy to inspect and reconstruct.
 - Make `wk add` mean "create/allocate, run bootstrap, then navigate" for human workflows.
 
-## 3. Non-goals
+## [SPEC-004-S3] 3. Non-goals
 
 - Dotfiles do not implement worktree lifecycle logic.
 - Dotfiles do not own `wktree` tests or edge-case behavior.
 - Dotfiles do not maintain a worktree database or tmux session registry.
 - Dotfiles do not define a generalized bootstrap language beyond the local `trees.toml` commands consumed by `wktree`.
 
-## 4. Local integration points
+## [SPEC-004-S4] 4. Local integration points
 
-### PATH
+### [SPEC-004-S4.1] PATH
 
 `config/nushell/env.nu` adds `~/.local/bin` to PATH. The external `wktree` repo build writes `~/.local/bin/wktree`, so no dotfiles-specific binary wrapper is needed.
 
-### Nushell wrapper import
+### [SPEC-004-S4.2] Nushell wrapper import
 
 `config/nushell/config.nu` imports the human-facing `wk` wrapper directly from the external repo:
 
@@ -40,7 +42,7 @@ use ~/dev/projects/wktree/nu/wktree *
 
 `wk` is for interactive shell/tmux workflows. Agents and scripts should use the core `wktree` CLI, preferably with `--json` where available.
 
-### Project config
+### [SPEC-004-S4.3] Project config
 
 `config/ct-worktrees/trees.toml` is local machine/user configuration read by `wktree` from `$XDG_CONFIG_HOME/ct-worktrees/trees.toml`.
 
@@ -58,7 +60,7 @@ The command runs under bash with:
 
 This dotfiles repo currently uses that file for local bootstrap policy such as expensive app setup commands and notifications.
 
-### Observable worktree identity
+### [SPEC-004-S4.4] Observable worktree identity
 
 The canonical root is Git-derived. Use `wktree root --cwd <path>` or `wktree list --json` (`canonical: true`) to identify it; do not infer root identity from path names.
 
@@ -70,13 +72,13 @@ Observable path conventions introduced by this workflow:
 
 In pooled projects, branch names do not determine paths. Use `wktree add`, `wktree list --json`, or `wktree status` to discover the allocated slot.
 
-### Tmux navigation
+### [SPEC-004-S4.5] Tmux navigation
 
 The imported `wk` wrapper opens or switches tmux sessions after post-create work succeeds. Tmux is a navigation/runtime surface only; missing sessions are normal and can be recreated from git worktree state.
 
-## 5. Human workflow contract
+## [SPEC-004-S5] 5. Human workflow contract
 
-### Add/switch
+### [SPEC-004-S5.1] Add/switch
 
 For humans, `wk add <branch>` should:
 
@@ -87,15 +89,15 @@ For humans, `wk add <branch>` should:
 
 This avoids hidden background bootstrap work: if the command returns and navigation happens, the worktree is genuinely ready for use.
 
-### Pool-full handling
+### [SPEC-004-S5.2] Pool-full handling
 
 When a configured pool is full, the human wrapper may present candidates and ask which slot to recycle. The destructive choice remains explicit. Machine/agent behavior should use the structured `wktree add --json` outcome instead of scraping prompts.
 
-### Remove/recycle
+### [SPEC-004-S5.3] Remove/recycle
 
 `wk remove` delegates safety checks to `wktree`. Non-pooled worktrees are removed. Pooled slots are recycled back to placeholder branches.
 
-## 6. Boundaries with the external repo
+## [SPEC-004-S6] 6. Boundaries with the external repo
 
 Owned by `~/dev/projects/wktree`:
 
@@ -113,7 +115,7 @@ Owned by this dotfiles repo:
 - tmux/keybinding integration around the workflow
 - personal conventions for which repos use pools and what bootstrap commands run
 
-## 7. Code locations
+## [SPEC-004-S7] 7. Code locations
 
 | Location                         | Purpose                                                     |
 | -------------------------------- | ----------------------------------------------------------- |
@@ -124,7 +126,7 @@ Owned by this dotfiles repo:
 | `config/tmux/tmux.conf`          | Tmux keybindings that may expose worktree/session workflows |
 | `home/.local/bin/tmux-session`   | General session switching and path-derived naming           |
 
-## 8. Validation
+## [SPEC-004-S8] 8. Validation
 
 For workflow changes in dotfiles:
 

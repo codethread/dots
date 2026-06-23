@@ -1,15 +1,17 @@
 # cc-sandbox Specification
 
+Document ID: SPEC-002
+Configuration identification: SPEC-002; migrated from `specs/cc-sandbox.md`; canonical path `devflow/specs/cc-sandbox.md`.
 **Status:** Implemented
 **Last Updated:** 2026-04-04
 
-## 1. Overview
+## [SPEC-002-S1] 1. Overview
 
-### Purpose
+### [SPEC-002-S1.1] Purpose
 
 Podman-based container isolation for running Claude Code, Codex, and Pi headless sessions. Provides a reproducible, auditable environment with full config forwarding (SSH, git, credentials, dotfiles) while preventing uncontrolled host access.
 
-### Goals
+### [SPEC-002-S1.2] Goals
 
 - Deterministic container image with pinned tool versions (Claude, Codex, Pi, Bun, Nushell, Playwright, Chromium, GitHub CLI, Neovim)
 - Mount current project + credentials without leaking host filesystem
@@ -19,13 +21,13 @@ Podman-based container isolation for running Claude Code, Codex, and Pi headless
 - Push notification integration via cc-notify port forwarding
 - Smoke-testable: `cc-sandbox-smoke` validates binary presence, PATH, mounts, and optional API pings
 
-### Non-Goals
+### [SPEC-002-S1.3] Non-Goals
 
 - Agent configuration (settings, hooks, agents, skills) — covered by [agentic-config spec](./agentic-config.md)
 - cc-notify daemon internals — external project at `~/dev/projects/cc-notify`
 - General Podman/container orchestration — this is a single-purpose launcher
 
-## 2. Architecture
+## [SPEC-002-S2] 2. Architecture
 
 ```
 Host                                    Container (Podman)
@@ -68,7 +70,7 @@ cc-notify daemon (:$PORT)  ◄── POST /notify, /activity
   (separate process)            from hooks inside container
 ```
 
-### Component Boundaries
+### [SPEC-002-S2.1] Component Boundaries
 
 | Component | Location | Role |
 |-----------|----------|------|
@@ -78,13 +80,13 @@ cc-notify daemon (:$PORT)  ◄── POST /notify, /activity
 | Bridge | `oven/bin/cc-bridge.ts` | Host↔container command proxy via Unix socket |
 | Smoke test | `config/nushell/scripts/ct/interactive/claude.nu` | `cc-sandbox-smoke` function |
 
-## 3. Data Model
+## [SPEC-002-S3] 3. Data Model
 
-### Session Key Mapping
+### [SPEC-002-S3.1] Session Key Mapping
 
 Host and container use different project keys for the same session directory because the container cwd is `/vm/$PROJECT_DIR`.
 
-#### Claude keys
+#### [SPEC-002-S3.1.1] Claude keys
 
 | Side | Key Format | Example |
 |------|-----------|---------|
@@ -93,7 +95,7 @@ Host and container use different project keys for the same session directory bec
 
 Mount: `~/.claude/projects/${HOST_KEY}/` → `~/.claude/projects/${CONTAINER_KEY}/`
 
-#### Pi keys
+#### [SPEC-002-S3.1.2] Pi keys
 
 Pi session dirs are wrapped in `--...--`:
 
@@ -106,7 +108,7 @@ Mount: `~/.pi/agent/sessions/${HOST_PI_KEY}/` → `~/.pi/agent/sessions/${CONTAI
 
 This enables both Claude and Pi session persistence across container restarts while translating host/container paths.
 
-### cc-bridge Protocol
+### [SPEC-002-S3.2] cc-bridge Protocol
 
 Request (JSON over Unix socket):
 ```typescript
@@ -127,7 +129,7 @@ interface CommandResult {
 
 Stateless, fire-and-forget — no stdin forwarding, no interactive commands.
 
-### Build Args
+### [SPEC-002-S3.3] Build Args
 
 | Arg | Default | Detection |
 |-----|---------|-----------|
@@ -140,9 +142,9 @@ Stateless, fire-and-forget — no stdin forwarding, no interactive commands.
 | YT_DLP_VERSION | (empty) | `yt-dlp --version` on host, skipped if absent |
 | ARCH_GNU/ARCH_NODE/ARCH_GO | — | detected from `uname -m` |
 
-## 4. Interfaces
+## [SPEC-002-S4] 4. Interfaces
 
-### cc-sandbox CLI (`home/.local/bin/cc-sandbox`)
+### [SPEC-002-S4.1] cc-sandbox CLI (`home/.local/bin/cc-sandbox`)
 
 ```
 cc-sandbox [OPTIONS] [-- CLAUDE_ARGS...]
@@ -161,7 +163,7 @@ Default command (assembled by launcher, overriding Containerfile's `CMD ["bash"]
 
 Pi is still available in the same sandbox image via explicit run commands, e.g. `cc-sandbox -r 'pim --help'`.
 
-### Mounts
+### [SPEC-002-S4.2] Mounts
 
 | Host Path | Container Path | Mode | Condition |
 |-----------|---------------|------|-----------|
@@ -180,7 +182,7 @@ Pi is still available in the same sandbox image via explicit run commands, e.g. 
 | cc-bridge socket | `/tmp/cc-bridge.sock` | rw | if `--bridge` |
 | Claude session dir | `~/.claude/projects/$CONTAINER_KEY/` | rw | always |
 | Pi session dir | `~/.pi/agent/sessions/$CONTAINER_PI_KEY/` | rw | always |
-### Environment Variables Forwarded
+### [SPEC-002-S4.3] Environment Variables Forwarded
 
 | Variable | Value/Source | Purpose |
 |----------|-------------|---------|
@@ -194,7 +196,7 @@ Pi is still available in the same sandbox image via explicit run commands, e.g. 
 | SSH_AUTH_SOCK | `/tmp/ssh-agent.sock` | Forwarded agent |
 | TERM, COLORTERM | from host | Terminal config |
 
-### cc-bridge CLI (`oven/bin/cc-bridge.ts`)
+### [SPEC-002-S4.4] cc-bridge CLI (`oven/bin/cc-bridge.ts`)
 
 Three subcommands:
 
@@ -215,7 +217,7 @@ cc-bridge install --commands cmd1,cmd2 [--bin-dir PATH]
 
 Each shim: `#!/usr/bin/env bash\nexec cc-bridge exec CMD "$@"`
 
-### Containerfile (`home/.local/share/cc-sandbox/Containerfile`)
+### [SPEC-002-S4.5] Containerfile (`home/.local/share/cc-sandbox/Containerfile`)
 
 Multi-stage build:
 1. **todoist-build** — Go build of custom todoist fork (`codethread/todoist`, branch `codethread`)
@@ -232,7 +234,7 @@ dots integration:
 
 Container environment: `PLAYWRIGHT_MCP_EXECUTABLE_PATH=/usr/bin/chromium` (prevents .playwright/cli.config.json leaking to host bind mount), `CC_SANDBOX=1`, `EDITOR=nvim`, `NVIM_APPNAME=minimal-nvim`.
 
-### Podman Execution Flags
+### [SPEC-002-S4.6] Podman Execution Flags
 
 - `--userns=keep-id` — UID remapping (non-root)
 - `--shm-size=2g` — shared memory for Chromium
@@ -241,7 +243,7 @@ Container environment: `PLAYWRIGHT_MCP_EXECUTABLE_PATH=/usr/bin/chromium` (preve
 - Container name: `cc-sandbox-<4-byte-random-hex>`
 - Signal handlers clean up temp files, SSH tunnels, bridge daemons on exit
 
-### SSH Agent Forwarding
+### [SPEC-002-S4.7] SSH Agent Forwarding
 
 **Linux:** Direct bind-mount of `$SSH_AUTH_SOCK` into container.
 
@@ -252,11 +254,11 @@ Container environment: `PLAYWRIGHT_MCP_EXECUTABLE_PATH=/usr/bin/chromium` (preve
 
 Filtered SSH config: macOS-only directives (`usekeychain`) stripped before mounting.
 
-## 5. Design Decisions
+## [SPEC-002-S5] 5. Design Decisions
 
 - **Podman over Docker.** Rootless by default, UID remapping via `--userns=keep-id`, no daemon required. Aligns with NixOS packaging.
 
-- **Whitelist-based .containerignore.** Starts with `**` (ignore all), then whitelists `claude/`, `pi/`, `config/`, `home/`, `oven/`, `specs/`, and `nix/` (plus root metadata files like `README.md`, `CLAUDE.md`, `Makefile`, `.gitignore`). This keeps the build context explicit while ensuring in-container access to Pi workflow/spec docs (`specs/README.md`) and Nix configuration files.
+- **Whitelist-based .containerignore.** Starts with `**` (ignore all), then whitelists `claude/`, `pi/`, `config/`, `home/`, `oven/`, `devflow/`, and `nix/` (plus root metadata files like `README.md`, `CLAUDE.md`, `Makefile`, `.gitignore`). This keeps the build context explicit while ensuring in-container access to Pi workflow/spec docs (`specs/README.md`) and Nix configuration files.
 
 - **Fresh git init in container.** `git init && git add .` instead of mounting the real `.git/`. Dotty requires a git repo (for .gitignore awareness), but full history is unnecessary and adds image size.
 
@@ -268,7 +270,7 @@ Filtered SSH config: macOS-only directives (`usekeychain`) stripped before mount
 
 - **Session key translation (Claude + Pi).** Host paths contain absolute paths (e.g., `/home/codethread/dev/myproject`), but the container sees `/vm/myproject`. Mapping between keys lets session history persist across container restarts while paths remain valid in each context for both CLIs.
 
-## 6. Testing
+## [SPEC-002-S6] 6. Testing
 
 **Smoke test (`cc-sandbox-smoke`):**
 - Runs inside container via `cc-sandbox -r "nu -c 'cc-sandbox-smoke [flags]'"`
@@ -281,7 +283,7 @@ Filtered SSH config: macOS-only directives (`usekeychain`) stripped before mount
 
 **cc-bridge:** Unit tests in `oven/tests/cc-bridge.test.ts`.
 
-## 7. Open Questions
+## [SPEC-002-S7] 7. Open Questions
 
 - Chromium version is pinned to whatever Debian ships in `node:22-slim`. May need explicit version pinning if playwright-cli requires a specific Chromium version.
 - yt-dlp and todoist are niche tools bundled into the image. Could be moved to a separate "extras" layer or made optional build args.

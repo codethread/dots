@@ -1,15 +1,17 @@
 # Nix Infrastructure Specification
 
+Document ID: SPEC-006
+Configuration identification: SPEC-006; migrated from `specs/nix-infra.md`; canonical path `devflow/specs/nix-infra.md`.
 **Status:** Implemented
 **Last Updated:** 2026-04-04
 
-## 1. Overview
+## [SPEC-006-S1] 1. Overview
 
-### Purpose
+### [SPEC-006-S1.1] Purpose
 
 Declarative system configuration and bootstrap infrastructure for all personal machines. A single Nix flake defines 5 system configurations spanning macOS (Darwin) and NixOS across multiple hardware architectures and user identities. The bootstrap script takes a bare machine from zero to fully configured in one invocation; the rebuild command (`nrs`) keeps existing machines in sync with the repo.
 
-### Goals
+### [SPEC-006-S1.2] Goals
 
 - One-command bootstrap for new machines (macOS and NixOS)
 - Declarative, reproducible system state via Nix flakes
@@ -18,7 +20,7 @@ Declarative system configuration and bootstrap infrastructure for all personal m
 - Automated validation via pre-commit hooks and smoke tests
 - Long-running services on NixOS via systemd user units
 
-### Non-Goals
+### [SPEC-006-S1.3] Non-Goals
 
 - CI/CD pipeline — validation is local (pre-commit hooks, manual smoke tests)
 - Multi-user support — all configs target a single user per machine
@@ -26,9 +28,9 @@ Declarative system configuration and bootstrap infrastructure for all personal m
 - Containerised services — services run directly as systemd user units, not Docker/Podman
 - Secrets management beyond WiFi PSK — no vault, no sops, no agenix
 
-## 2. Architecture
+## [SPEC-006-S2] 2. Architecture
 
-### Layer Hierarchy
+### [SPEC-006-S2.1] Layer Hierarchy
 
 ```
 flake.nix (inputs, overlays, system configurations)
@@ -49,7 +51,7 @@ flake.nix (inputs, overlays, system configurations)
         └─ repo-service.nix           Generic builder for repo-local systemd services
 ```
 
-### System Configurations
+### [SPEC-006-S2.2] System Configurations
 
 | Name | Flake Output | Arch | User | Host Module | Profile |
 |---|---|---|---|---|---|
@@ -59,7 +61,7 @@ flake.nix (inputs, overlays, system configurations)
 | homelab | `nixosConfigurations.homelab` | x86_64-linux | `codethread` | `hosts/nixos/homelab` | `profiles/homelab.nix` |
 | vm | `nixosConfigurations.vm` | aarch64-linux | `codethread` | `hosts/nixos/vm-aarch` | `profiles/vm.nix` |
 
-### Dual Channel Pattern
+### [SPEC-006-S2.3] Dual Channel Pattern
 
 Two nixpkgs inputs provide version flexibility:
 
@@ -68,14 +70,14 @@ Two nixpkgs inputs provide version flexibility:
 
 In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available, falling back to `pkgs`. Packages like `claude-code`, `nodejs_24`, `typescript`, `typescript-language-server` use `agentPkgSet.*` to track master. `codexCliPackage` is a special case — injected via `specialArgs` from the flake, falling back to `agentPkgSet.codex` if null.
 
-### Custom Overlays
+### [SPEC-006-S2.4] Custom Overlays
 
 Defined in `flake.nix`, applied to all system configs:
 
 - **todoistOverlay** — `buildGoModule` for `todoist-cli` from `codethread/todoist` fork
 - **playwrightCliOverlay** — `buildNpmPackage` for `playwright-cli` from Microsoft source
 
-### Bootstrap Flow
+### [SPEC-006-S2.5] Bootstrap Flow
 
 ```
 boot/boot.sh
@@ -96,7 +98,7 @@ boot/boot.sh
 
 `boot/boot.sh` is also responsible for the NixOS hardware file handoff. Keep its path logic in sync with the real host layout under `nix/hosts/nixos/`.
 
-### Rebuild Flow (Existing Machine)
+### [SPEC-006-S2.6] Rebuild Flow (Existing Machine)
 
 ```
 make system [PROFILE=<name>]
@@ -109,7 +111,7 @@ make system [PROFILE=<name>]
    └─ [NixOS] Kernel reboot check
 ```
 
-### Home-Manager Activation DAG
+### [SPEC-006-S2.7] Home-Manager Activation DAG
 
 Three ordered activation scripts run during every rebuild:
 
@@ -118,7 +120,7 @@ Three ordered activation scripts run during every rebuild:
 3. **clone-\<name\>** (per service, after `installPackages`) — each `repo-service.nix` instance generates its own activation hook that clones its repo via SSH with a 5s BatchMode auth test; skips gracefully if SSH auth unavailable
 4. **dottyLink** (after `userBootstrap`) — symlinks dotfiles into place via dotty (see [dotty spec](./dotty.md))
 
-### Service Module
+### [SPEC-006-S2.8] Service Module
 
 `services/repo-service.nix` is a parametrised home-manager module for long-running processes:
 
@@ -135,16 +137,16 @@ Three ordered activation scripts run during every rebuild:
 
 Active services (homelab only): `ai-task-cron`, `ai-note-watcher`, `yt-playlist-watcher` (all from `codethread/notes`, `devShell = "automation"`), `cc-inspect`, `cc-notify` (`devShell = "default"`)
 
-### NixOS Built-In Services
+### [SPEC-006-S2.9] NixOS Built-In Services
 
 Defined directly in `features/nixos-common.nix` (not via `repo-service.nix`):
 
 - **tmux-main** — systemd oneshot that creates the main tmux session on graphical login
 - **backup-notes** — systemd oneshot + timer that auto-commits and pushes the notes vault (`~/dev/projects/notes/vault`) every 15 minutes via git (add → stash → pull --rebase → stash pop → commit → push). Sends `notify-send` on failure when Wayland display is available.
 
-## 3. Data Model
+## [SPEC-006-S3] 3. Data Model
 
-### Profile Resolution
+### [SPEC-006-S3.1] Profile Resolution
 
 macOS profiles are resolved from username:
 
@@ -165,7 +167,7 @@ For bootstrap-only hardware file management, `boot/boot.sh` may need an addition
 
 When adding or renaming NixOS hosts, update both `nix/flake.nix` and `boot/boot.sh` together.
 
-### Environment Variables (Set by All Configs)
+### [SPEC-006-S3.2] Environment Variables (Set by All Configs)
 
 | Variable | Value |
 |---|---|
@@ -179,13 +181,13 @@ When adding or renaming NixOS hosts, update both `nix/flake.nix` and `boot/boot.
 
 For interactive shells and Nix-managed environments, `DOTFILES` remains the canonical clone path. Rebuild helpers (`nrs`, `nfu`, `nrb`, related flake queries) additionally detect the current git worktree root and use it when invoked from a valid dotfiles checkout. The root `Makefile` also overrides `DOTFILES` to the current checkout so `make link` / `make system` operate on the active worktree.
 
-### Network Secrets
+### [SPEC-006-S3.3] Network Secrets
 
 WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via `envsubst` in NetworkManager profile. Not managed by nix — created manually or via `nix-wifi-setup`.
 
-## 4. Interfaces
+## [SPEC-006-S4] 4. Interfaces
 
-### CLI Commands (Nushell — `ct/nix.nu`)
+### [SPEC-006-S4.1] CLI Commands (Nushell — `ct/nix.nu`)
 
 | Command | Purpose |
 |---|---|
@@ -200,7 +202,7 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 | `nix-smoke [profile] [--skip-flake]` | Health check: PATH, binaries (including `pi`), config symlinks (including `~/.pi/agent/settings.json`), flake eval against the current flake path |
 | `nix-outputs` | Show all flake outputs from the current flake path |
 
-### CLI Commands (Nushell — `ct/nixos.nu`, NixOS only)
+### [SPEC-006-S4.2] CLI Commands (Nushell — `ct/nixos.nu`, NixOS only)
 
 | Command | Purpose |
 |---|---|
@@ -210,7 +212,7 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 | `nix-wifi-restart` | Restart NetworkManager profiles service |
 | `nix-wifi-setup-debug [--env-file]` | Debug NetworkManager startup |
 
-### Makefile Targets
+### [SPEC-006-S4.3] Makefile Targets
 
 | Target | Action |
 |---|---|
@@ -219,7 +221,7 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 | `make build` | Build `oven/` tools from the current checkout via `nix develop` + `bun run verify` |
 | `make all` | `link` → `build` → `system` |
 
-### Git Pre-Commit Hook
+### [SPEC-006-S4.4] Git Pre-Commit Hook
 
 `.githooks/pre-commit` validates the flake when `nix/` files are staged:
 
@@ -229,7 +231,7 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 4. Run `<rebuild-cmd> build --flake` (build, not switch)
 5. Block commit on failure
 
-## 5. Design Decisions
+## [SPEC-006-S5] 5. Design Decisions
 
 - **Lix over official Nix on macOS** — Lix is a community fork installed via `install.lix.systems/lix`. Used as the Nix implementation on Darwin.
 
@@ -251,19 +253,19 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 - **Current worktree preferred for rebuild commands** — The canonical clone path remains `~/dev/dots`, but flake-backed Nushell commands and the root `Makefile` prefer the current git worktree when it contains the expected repo structure. This allows testing changes from feature branches and linked worktrees without rewriting the base shell environment.
 
-## 6. Testing
+## [SPEC-006-S6] 6. Testing
 
-### Automated
+### [SPEC-006-S6.1] Automated
 
 - **Pre-commit hook** — Builds the flake on every commit touching `nix/`. Catches syntax errors, missing inputs, and evaluation failures before they reach remote.
 
-### Manual
+### [SPEC-006-S6.2] Manual
 
 - **`nix-smoke [profile]`** — Comprehensive health check verifying: PATH entries present, required binaries on PATH (including `pi`), config symlinks valid (including `~/.pi/agent/settings.json`), flake evaluates without error. Returns structured table of pass/fail results.
 - **`nrs-check [profile]`** — Darwin-only. Validates all homebrew taps, brews, and casks resolve without error before running a rebuild.
 - **`cc-sandbox-smoke`** — End-to-end container rebuild and headless Claude/Codex execution test (expensive, not routine).
 
-## 7. Open Questions
+## [SPEC-006-S7] 7. Open Questions
 
 - WiFi secrets (`/etc/codethread/nm.env`) are manually managed — consider `agenix` or `sops-nix` if more secrets are needed
 - VM profile (`nixosConfigurations.vm`) appears minimal — unclear if actively used or a testing artifact

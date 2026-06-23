@@ -4,7 +4,7 @@ This directory is symlinked to `~/.claude` and shares global Claude Code setting
 
 Custom directories (those not carrying Claude Code significance like `agents/` or `commands/`) are prefixed with `x-` for clarity and to avoid accidental name collision.
 
-> **Architecture details**: See [specs/agentic-config.md](../specs/agentic-config.md) for the full configuration architecture (settings generation, hook contracts, type system, design decisions). See [specs/cc-sandbox.md](../specs/cc-sandbox.md) for container isolation internals.
+> **Architecture details**: See [SPEC-001 agentic-config](../devflow/specs/agentic-config.md) for the full configuration architecture (settings generation, hook contracts, type system, design decisions). See [SPEC-002 cc-sandbox](../devflow/specs/cc-sandbox.md) for container isolation internals.
 
 ## Settings Source of Truth
 

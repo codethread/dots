@@ -11,7 +11,7 @@ New machine → `boot/boot.sh`. Existing clone → `make system`. Optional local
 - **config/** - Application dotfiles (vim, kitty, nushell, etc). Go here to modify tool configurations.
 - **home/** - Files that belong in home directory. Go here for home-specific scripts and configs.
 - **oven/** - TypeScript/Bun workspace for CLI tools. Go here for active development.
-- **specs/** - Feature specifications. Go here to write or review specs before implementation.
+- **devflow/** - Planning workspace. Root specs live in `devflow/specs/`; RFCs in `devflow/rfcs/`; active feature work in `devflow/feat/`.
 - **nix/** - nix configs for NixOS and nix-darwin. When scripting for NixOS or not, env `$IS_NIXOS='true'` if running NixOS.
 - **pdx/** - pandoras-box configs (pithos) for personal machines
 

@@ -10,7 +10,7 @@ iglobs = [
 [descriptions]
 config = "All application configuration files and dotfiles"
 oven = "Custom TypeScript/Bun utilities and scripts"
-specs = "Feature specifications and technical documentation"
+devflow = "Planning workspace: specs, RFCs, active features, and archive"
 claude = "Claude AI agents, commands, and integration tools"
 home = "User home directory configurations and local binaries"
 boot = "System bootstrap and initialization scripts"
@@ -44,9 +44,9 @@ git = "Git version control configuration with aliases and ignore patterns"
 
 # Summarize patterns to reduce noise
 [[summarise]]
-dir = "specs"
-pattern = "^specs/\\d{3}-.*\\.md$"
-desc = "[summary] `[000-999]-feature-name.md`: Numbered specification documents for features and implementations"
+dir = "devflow/specs"
+pattern = "^devflow/specs/.*\\.md$"
+desc = "[summary] Canonical devflow specification documents"
 
 [[summarise]]
 dir = "home/Library"

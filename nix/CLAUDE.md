@@ -1,6 +1,6 @@
 # Nix Configuration (Agent instructions via CLAUDE.md)
 
-Architecture and design rationale are in `specs/nix-infra.md`. This file covers operational how-tos.
+Architecture and design rationale are in [SPEC-006 nix-infra](../devflow/specs/nix-infra.md). This file covers operational how-tos.
 
 ## Dual Channel Pattern
 
