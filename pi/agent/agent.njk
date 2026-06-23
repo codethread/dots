@@ -47,6 +47,10 @@ If you are about to offer a next step, but it's obviously good for the project a
   - `fd` instead of `find`
   - `tree --charset=ascii --gitignore` for structure instead of recursive `ls`
 - read relevant README.md files when working in nested directories (list via `fd README.md`)
+{%- if has_tools("bash") %}
+- clone external repos with `nu -l -c "clone --help"`;
+{%- endif %}
+- vendored repos go to `~/dev/vendor` for discovery/study, personal repos go to `~/dev/projects`
 {%- if has_tools("subagent") %}
 - Use subagents for complex, specialist, parallelizable, or broad exploration work.
 - Explore unfamiliar external codebases with subagents first.

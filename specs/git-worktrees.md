@@ -32,20 +32,13 @@ The implementation contract lives in `~/dev/projects/wktree/specs/git-worktrees.
 
 ### Nushell wrapper import
 
-`config/nushell/config.nu` imports the human-facing wrapper directly from the external repo:
+`config/nushell/config.nu` imports the human-facing `wk` wrapper directly from the external repo:
 
 ```nu
 use ~/dev/projects/wktree/nu/wktree *
 ```
 
-That import provides commands such as:
-
-- `wk root`
-- `wk path <branch>`
-- `wk add <branch> [base] [--self] [--latest] [--force]`
-- `wk remove <branch> | --self [--force]`
-- `wk list [--json]`
-- `wk switch`
+`wk` is for interactive shell/tmux workflows. Agents and scripts should use the core `wktree` CLI, preferably with `--json` where available.
 
 ### Project config
 
@@ -65,15 +58,21 @@ The command runs under bash with:
 
 This dotfiles repo currently uses that file for local bootstrap policy such as expensive app setup commands and notifications.
 
+### Observable worktree identity
+
+The canonical root is Git-derived. Use `wktree root --cwd <path>` or `wktree list --json` (`canonical: true`) to identify it; do not infer root identity from path names.
+
+Observable path conventions introduced by this workflow:
+
+- Non-pooled worktrees: `<canonicalRoot>__<branch with / encoded as -->`
+- Pooled worktrees: fixed slots `<canonicalRoot>__featN`
+- Pooled placeholder branches: `wk-pool/featN`
+
+In pooled projects, branch names do not determine paths. Use `wktree add`, `wktree list --json`, or `wktree status` to discover the allocated slot.
+
 ### Tmux navigation
 
-The imported `wk` wrapper opens or switches tmux sessions after post-create work succeeds. Session identity follows the engine contract:
-
-- session path = worktree path
-- session name = basename of worktree path with `.` replaced by `_`
-- default window title = branch name
-
-Tmux is a navigation/runtime surface only. Missing sessions are normal; they can be recreated from git worktree state.
+The imported `wk` wrapper opens or switches tmux sessions after post-create work succeeds. Tmux is a navigation/runtime surface only; missing sessions are normal and can be recreated from git worktree state.
 
 ## 5. Human workflow contract
 

@@ -6,7 +6,7 @@
 }:
 
 let
-  homeDir = "/Users/${config.system.primaryUser}";
+  homeDir = config.users.users.${config.system.primaryUser}.home;
   nixUserBin = "/etc/profiles/per-user/${config.system.primaryUser}/bin";
   syncengineStateDir = "${homeDir}/.local/state/com.codethread.syncengine";
   guiPath = lib.concatStringsSep ":" [
@@ -40,6 +40,8 @@ let
   '') trustedHomebrewTaps;
 in
 {
+  imports = [ ../../services/darwin-git-maintenance.nix ];
+
   nix.settings = {
     experimental-features = "nix-command flakes";
     accept-flake-config = true;

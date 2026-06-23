@@ -6,7 +6,7 @@
 }:
 
 let
-  homeDir = "/Users/${config.system.primaryUser}";
+  homeDir = config.users.users.${config.system.primaryUser}.home;
   git = lib.getExe pkgs.git;
   date = lib.getExe' pkgs.coreutils "date";
   backupNotesStateDir = "${homeDir}/.local/state/com.codethread.backup-notes";
@@ -68,6 +68,10 @@ in
       AllowUsers ct
     '';
   };
+
+  codethread.gitMaintenance.repositories = [
+    "${homeDir}/dev/projects/notes/vault"
+  ];
 
   launchd.user.agents.backup-notes = {
     serviceConfig = {

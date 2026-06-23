@@ -1,0 +1,2 @@
+- clone external repos with `nu -l -c "clone --help"`
+- vendor repos go to `~/dev/vendor` for discovery/study, codethread repos go to `~/dev/projects`

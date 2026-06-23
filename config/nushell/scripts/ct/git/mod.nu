@@ -196,3 +196,58 @@ export def loc [--git] {
     | collect
     | math sum
 }
+
+def clone-repo-name [repo: string]: nothing -> string {
+    $repo
+    | str replace --regex '/$' ''
+    | str replace --regex '^.*[:/]' ''
+    | str replace --regex '\.git$' ''
+}
+
+def clone-short-sha [sha: string]: nothing -> string {
+    $sha | split chars | first 7 | str join
+}
+
+export def clone [
+    --tag: string # checkout this tag after cloning; target dir is suffixed with @tag
+    --sha: string # checkout this commit after cloning; target dir is suffixed with the short @sha
+    repo: string
+] {
+    if ($tag != null) and ($sha != null) {
+        error make {msg: "use either --tag or --sha, not both"}
+    }
+
+    let base = if ($repo | str contains "codethread") {
+        "~/dev/projects"
+    } else {
+        "~/dev/vendor"
+    }
+
+    let repo_name = clone-repo-name $repo
+    let ref = if $tag != null { $tag } else { $sha }
+    let ref_name = if $tag != null { $tag } else if $sha != null { clone-short-sha $sha } else { null }
+    let target_name = if $ref_name != null { $"($repo_name)@($ref_name)" } else { $repo_name }
+    let target = $base | path expand | path join $target_name
+
+    mkdir ($base | path expand)
+
+    if ($target | path exists) {
+        if $ref == null {
+            error make {msg: $"target already exists: ($target)"}
+        }
+
+        if not (($target | path join ".git") | path exists) {
+            error make {msg: $"target exists but is not a git checkout: ($target)"}
+        }
+
+        ^git -C $target fetch --tags origin
+    } else {
+        ^git clone $repo $target
+    }
+
+    if $ref != null {
+        ^git -C $target checkout $ref
+    }
+
+    print $target
+}

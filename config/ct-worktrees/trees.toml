@@ -7,6 +7,84 @@
 #   WK_ROOT     canonical/root worktree path
 #   WK_CREATED  created worktree path or allocated pool slot path
 
+# Defaults are conservative: start new work from a fresh canonical root, but do
+# not push or clean up automatically unless a repo group opts in below.
+[defaults.add]
+policy = "fresh_canonical"
+
+[defaults.finish]
+enabled = true
+strategy = "squash"
+push = false
+remove_worktree = false
+delete_branch = false
+
+# Personal projects: install dependencies based on the repo lockfile, then
+# squash into the clean canonical root, push, and remove the finished worktree
+# and branch.
+[[rule]]
+root_glob = "~/dev/projects/**"
+command = '''
+if [[ -f bun.lock ]]; then
+  printf '%s\n' 'worktree: running bun install'
+  bun install
+elif [[ -f yarn.lock ]]; then
+  printf '%s\n' 'worktree: running yarn install'
+  yarn install
+elif [[ -f pnpm-lock.yaml ]]; then
+  printf '%s\n' 'worktree: running pnpm install'
+  pnpm install
+else
+  printf '%s\n' 'worktree: no known JS lockfile found; skipping install'
+fi
+printf '%s\n' 'worktree: notifying ready'
+notif worktree wk "$WK_CREATED" ready
+'''
+
+[rule.add]
+policy = "fresh_canonical"
+
+[rule.finish]
+strategy = "squash"
+push = true
+remove_worktree = true
+delete_branch = true
+
+# Pandora's Box repos: finish is disabled because integration should happen via
+# PRs, not by local merges to main.
+[[rule]]
+root_glob = "~/pb/**"
+
+[rule.finish]
+enabled = false
+
+# Personal repos inside the Pandora's Box tree are the exception: treat them like
+# normal personal projects.
+[[rule]]
+root_glob = "~/pb/adam.hall/**"
+
+[rule.add]
+policy = "fresh_canonical"
+
+[rule.finish]
+enabled = true
+strategy = "squash"
+push = true
+remove_worktree = true
+delete_branch = true
+
+# Dotfiles are special: work can happen directly on main, so add does not
+# require mutating the canonical root first. Finish uses the conservative
+# defaults above.
+[[project]]
+root = "~/dev/dots"
+name = "dots"
+
+[project.add]
+policy = "origin_default"
+
+# Expensive PB app: keep a fixed pool of prepared worktrees and run local
+# bootstrap when a slot is created or allocated.
 [[project]]
 name = "deals ui bootstrap"
 root = "~/pb/app/deals-light-ui"
@@ -21,15 +99,5 @@ copy = [
 ]
 command = '''
 ~/.local/bin/deals-light-boot
-notif worktree wk "$WK_CREATED" ready
-'''
-
-[[project]]
-name = "agents"
-root = "~/dev/projects/agents"
-command = '''
-printf '%s\n' 'worktree: running pnpm install'
-pnpm install
-printf '%s\n' 'worktree: notifying ready'
 notif worktree wk "$WK_CREATED" ready
 '''
