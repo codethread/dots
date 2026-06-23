@@ -12,9 +12,9 @@ def home [p: string] {
 
 $env.DOTFILES = ($env.DOTFILES? | default (home "dev/dots"))
 let is_ssh = (
-	(($env.SSH_CONNECTION? | default "") != "") or
-	(($env.SSH_CLIENT? | default "") != "") or
-	(($env.SSH_TTY? | default "") != "")
+    (($env.SSH_CONNECTION? | default "") != "") or
+    (($env.SSH_CLIENT? | default "") != "") or
+    (($env.SSH_TTY? | default "") != "")
 )
 
 let is_vscode_remote = ($env.VSCODE_IPC_HOOK_CLI? | default "") != ""
@@ -56,22 +56,22 @@ $env.ENV_CONVERSIONS = {
     }
 }
 $env.CT_USER = ($env.CT_USER? | default (match ($env.USER? | default "") {
-	"adam.hall" => "work",
-	"adamhall" => "work",
-	_ => "home",
+    "adam.hall" => "work",
+    "adamhall" => "work",
+    _ => "home",
 }))
 
 $env.KSM_WORK = $env.CT_USER == 'work'
 $env.IS_WORK = $env.CT_USER == 'work'
 
 $env.CT_NOTES = (match $env.CT_USER {
-	"work" => (home 'gdrive/perks'),
-	# macOS iCloud path; Linux fallback to ~/notes
-	_ => (if (sys host).name == "Darwin" {
-		home 'Library/Mobile Documents/com~apple~CloudDocs/Documents/Notes'
-	} else {
-		home 'notes'
-	}),
+    "work" => (home 'gdrive/perks'),
+    # macOS iCloud path; Linux fallback to ~/notes
+    _ => (if (sys host).name == "Darwin" {
+        home 'Library/Mobile Documents/com~apple~CloudDocs/Documents/Notes'
+    } else {
+            home 'notes'
+        }),
 })
 
 $env.WAKATIME_HOME = ($env.WAKATIME_HOME? | default (home ".config/wakatime"))
@@ -127,6 +127,16 @@ $env.PDX_USER_DATA_DIR = (home dev/projects/pdx)
 #   "work" => (home work/me/workfiles/pdx)
 #   _ => ([$env.DOTFILES pdx] | path join)
 # })
+
+#: }}}
+#: beads {{{
+
+$env.BEADS_DIR = $"($env.HOME)/dev/beads-db/.beads"
+$env.BEADS_DOLT_SERVER_MODE = "1"
+$env.BEADS_DOLT_SERVER_HOST = "127.0.0.1"
+$env.BEADS_DOLT_SERVER_PORT = "3307"
+# $env.BEADS_DOLT_SERVER_SOCKET = $"($env.HOME)/dev/beads-db/dolt.sock"
+$env.BEADS_DOLT_SERVER_USER = "root"
 
 #: }}}
 #: homebrew {{{
