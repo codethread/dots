@@ -4,6 +4,9 @@
     "openai-codex"
   ],
   "default": "openai-codex",
+  "ignore": [
+    "openai-codex/gpt-5.3-codex-spark"
+  ],
   "paths": [
     {
       "path": "~/dev",

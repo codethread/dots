@@ -1,2 +1,3 @@
 - clone external repos with `nu -l -c "clone --help"`
 - vendor repos go to `~/dev/vendor` for discovery/study, codethread repos go to `~/dev/projects`
+- use `wktree -h` instead of raw git worktree commands when operating on git branches or worktrees.

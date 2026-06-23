@@ -30,6 +30,7 @@
   homebrew.brews = [
     "cocoapods" # Dependency manager for Cocoa projects
     "jira-cli" # Feature-rich interactive Jira CLI
+    "beads"
   ];
 
   homebrew.casks = [

@@ -9,6 +9,6 @@ in
   system.primaryUser = "adam.hall";
 
   codethread.gitMaintenance.repositories = [
-    "${homeDir}/pb/apps/deals-light-ui"
+    "${homeDir}/pb/app/deals-light-ui"
   ];
 }
