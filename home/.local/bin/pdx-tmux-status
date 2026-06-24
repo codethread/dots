@@ -2,6 +2,33 @@
 # :module: Compact tmux status segment for local PDX/Pithos activity.
 set -euo pipefail
 
+NUSHELL_ENV="$HOME/.config/nushell/env.nu"
+PANDORA_ENV_VARS=(PDX_DATA_DIR PITHOS_DB PDX_USER_DATA_DIR)
+CACHE_DIR="${TMPDIR:-/tmp}"
+CACHE_FILE="$CACHE_DIR/pdx-tmux-status.cache"
+ERROR_LOG="$CACHE_DIR/pdx-tmux-status.log"
+TTL="${PDX_TMUX_STATUS_TTL:-5}"
+USER_NAME="${USER:-$(id -un)}"
+PATH_PREFIXES=(
+  "$HOME/.local/bin"
+  "/etc/profiles/per-user/$USER_NAME/bin"
+  "/run/current-system/sw/bin"
+  "/nix/var/nix/profiles/default/bin"
+  "$HOME/.nix-profile/bin"
+  "/opt/homebrew/bin"
+  "/opt/homebrew/sbin"
+  "/usr/local/bin"
+  "/usr/bin"
+  "/bin"
+)
+PATH_PREFIX="$(IFS=:; printf '%s' "${PATH_PREFIXES[*]}")"
+if [[ -n "${PATH:-}" ]]; then
+  export PATH="$PATH_PREFIX:$PATH"
+else
+  export PATH="$PATH_PREFIX"
+fi
+NOW="$(date +%s)"
+
 usage() {
   cat <<'EOF'
 Usage: pdx-tmux-status [-h|--help]
@@ -29,17 +56,34 @@ case "${1:-}" in
     ;;
 esac
 
-cache="${TMPDIR:-/tmp}/pdx-tmux-status.cache"
-ttl="${PDX_TMUX_STATUS_TTL:-5}"
-now="$(date +%s)"
+load_pandora_env() {
+  local name env_json value
 
-if [[ -r "$cache" ]]; then
-  mtime="$(python3 -c 'import os, sys; print(int(os.path.getmtime(sys.argv[1])))' "$cache" 2>/dev/null || echo 0)"
-  if (( now - mtime < ttl )); then
-    cat "$cache"
-    exit 0
-  fi
-fi
+  env_json="$(nu --no-config-file --commands "hide-env -i PDX_DATA_DIR PITHOS_DB PDX_USER_DATA_DIR; source '$NUSHELL_ENV'; { PDX_DATA_DIR: \$env.PDX_DATA_DIR, PITHOS_DB: \$env.PITHOS_DB, PDX_USER_DATA_DIR: \$env.PDX_USER_DATA_DIR } | to json --raw")"
+
+  for name in "${PANDORA_ENV_VARS[@]}"; do
+    value="$(jq -r --arg name "$name" '.[$name]' <<<"$env_json")"
+    export "$name=$value"
+  done
+}
+
+set_cache_file() {
+  local cache_key
+
+  cache_key="$(printf '%s\n' "$PDX_DATA_DIR" "$PITHOS_DB" "$PDX_USER_DATA_DIR" | cksum | awk '{print $1}')"
+  CACHE_FILE="$CACHE_DIR/pdx-tmux-status.$cache_key.cache"
+}
+
+print_cached_output() {
+  local mtime
+
+  [[ -r "$CACHE_FILE" ]] || return 1
+
+  mtime="$(python3 -c 'import os, sys; print(int(os.path.getmtime(sys.argv[1])))' "$CACHE_FILE" 2>/dev/null || echo 0)"
+  (( NOW - mtime < TTL )) || return 1
+
+  cat "$CACHE_FILE"
+}
 
 render() {
   pithos graph inspect --all \
@@ -86,8 +130,77 @@ print("  ".join(parts))
 '
 }
 
-if output="$(render 2>/dev/null)"; then
-  printf '%s\n' "$output" | tee "$cache"
+write_error_log() {
+  local log_file="$1"
+
+  [[ -d "$CACHE_DIR" && -w "$CACHE_DIR" ]] || return 0
+
+  {
+    printf '[%s] pdx-tmux-status render failed\n' "$(date -Iseconds)"
+    cat "$log_file"
+  } >"$ERROR_LOG" || true
+}
+
+write_cache() {
+  local output="$1"
+
+  [[ -d "$CACHE_DIR" && -w "$CACHE_DIR" ]] || return 0
+  printf '%s\n' "$output" >"$CACHE_FILE" || true
+}
+
+tmp_log=""
+if [[ -d "$CACHE_DIR" && -w "$CACHE_DIR" ]]; then
+  tmp_log="$CACHE_DIR/pdx-tmux-status.$$.log"
+fi
+
+if [[ -n "$tmp_log" ]]; then
+  if load_pandora_env 2>"$tmp_log"; then
+    set_cache_file
+
+    if print_cached_output; then
+      rm -f "$tmp_log"
+      exit 0
+    fi
+
+    if output="$(render 2>>"$tmp_log")"; then
+      rm -f "$tmp_log"
+      write_cache "$output"
+      printf '%s\n' "$output"
+    else
+      write_error_log "$tmp_log"
+      rm -f "$tmp_log"
+
+      if [[ -r "$CACHE_FILE" ]]; then
+        cat "$CACHE_FILE"
+      else
+        printf '?\n'
+      fi
+    fi
+  else
+    write_error_log "$tmp_log"
+    rm -f "$tmp_log"
+
+    if [[ -r "$CACHE_FILE" ]]; then
+      cat "$CACHE_FILE"
+    else
+      printf '?\n'
+    fi
+  fi
 else
-  printf '?\n'
+  if load_pandora_env 2>/dev/null; then
+    set_cache_file
+
+    if print_cached_output; then
+      exit 0
+    fi
+
+    if output="$(render 2>/dev/null)"; then
+      write_cache "$output"
+      printf '%s\n' "$output"
+    else
+      printf '?\n'
+    fi
+  else
+    printf '?\n'
+  fi
 fi
