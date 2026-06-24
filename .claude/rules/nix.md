@@ -1,6 +1,11 @@
+---
+paths:
+  - "nix/**/*"
+---
+
 # Nix Configuration (Agent instructions via CLAUDE.md)
 
-Architecture and design rationale are in [SPEC-006 nix-infra](../devflow/specs/nix-infra.md). This file covers operational how-tos.
+Architecture and design rationale are in [SPEC-006 nix-infra](devflow/specs/nix-infra.md). This file covers operational how-tos.
 
 ## Dual Channel Pattern
 
@@ -77,3 +82,7 @@ A pre-commit hook in `.githooks/` enforces this automatically.
 - macOS (work, `adamhall`): `darwin-rebuild switch --flake .#work-adamhall`
 - NixOS: `sudo nixos-rebuild switch --flake .#homelab`
 - Dry-run eval: `nix build .#nixosConfigurations.vm.config.system.build.toplevel --dry-run`
+
+## Debugging
+
+When inspecting nix config, always check `launchd` and system logs where appropriate to see if services are running as expected
