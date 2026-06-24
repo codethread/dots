@@ -27,10 +27,10 @@ usage() {
 default_macos_profile() {
   case "$(id -un)" in
     adam.hall)
-      echo "work"
+      echo "work-boot"
       ;;
     adamhall)
-      echo "work-adamhall"
+      echo "work-adamhall-boot"
       ;;
     codethread)
       echo "personal"
@@ -43,8 +43,8 @@ default_macos_profile() {
 
 resolve_profile() {
   case "$1:$(id -un)" in
-    work:adamhall)
-      echo "work-adamhall"
+    work-boot:adamhall)
+      echo "work-adamhall-boot"
       ;;
     *)
       echo "$1"

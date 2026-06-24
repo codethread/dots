@@ -9,7 +9,7 @@ Configuration identification: SPEC-006; migrated from `specs/nix-infra.md`; cano
 
 ### [SPEC-006-S1.1] Purpose
 
-Declarative system configuration and bootstrap infrastructure for all personal machines. A single Nix flake defines 5 system configurations spanning macOS (Darwin) and NixOS across multiple hardware architectures and user identities. The bootstrap script takes a bare machine from zero to fully configured in one invocation; the rebuild command (`nrs`) keeps existing machines in sync with the repo.
+Declarative system configuration and bootstrap infrastructure for all personal machines. A single Nix flake defines system configurations spanning macOS (Darwin) and NixOS across multiple hardware architectures and user identities, including a minimal work bootstrap profile for machines that do not have private workfiles installed yet. The bootstrap script takes a bare machine from zero to fully configured in one invocation; the rebuild command (`nrs`) keeps existing machines in sync with the repo.
 
 ### [SPEC-006-S1.2] Goals
 
@@ -55,9 +55,11 @@ flake.nix (inputs, overlays, system configurations)
 
 | Name | Flake Output | Arch | User | Host Module | Profile |
 |---|---|---|---|---|---|
-| home | `darwinConfigurations.home` | aarch64-darwin | `codethread` | `hosts/darwin/home` | `profiles/personal.nix` |
-| work | `darwinConfigurations.work` | aarch64-darwin | `adam.hall` | `hosts/darwin/work` | `profiles/work.nix` |
-| work-adamhall | `darwinConfigurations.work-adamhall` | aarch64-darwin | `adamhall` | `hosts/darwin/work-adamhall` | `profiles/work.nix` |
+| dev | `darwinConfigurations.dev` | aarch64-darwin | `ct` | `hosts/darwin/dev.nix` | `profiles/dev.nix` |
+| personal | `darwinConfigurations.personal` | aarch64-darwin | `codethread` | `hosts/darwin/personal.nix` | `profiles/personal.nix` |
+| work-boot | `darwinConfigurations.work-boot` | aarch64-darwin | `adam.hall` | `hosts/darwin/work-boot.nix` | `profiles/work-boot.nix` |
+| work-adamhall-boot | `darwinConfigurations.work-adamhall-boot` | aarch64-darwin | `adamhall` | `hosts/darwin/work-adamhall-boot.nix` | `profiles/work-boot.nix` |
+| work | `darwinConfigurations.work` | aarch64-darwin | `adamhall` | `hosts/darwin/work-adamhall.nix` | `profiles/work.nix` |
 | homelab | `nixosConfigurations.homelab` | x86_64-linux | `codethread` | `hosts/nixos/homelab` | `profiles/homelab.nix` |
 | vm | `nixosConfigurations.vm` | aarch64-linux | `codethread` | `hosts/nixos/vm-aarch` | `profiles/vm.nix` |
 
@@ -101,7 +103,7 @@ boot/boot.sh
 ### [SPEC-006-S2.6] Rebuild Flow (Existing Machine)
 
 ```
-make system [PROFILE=<name>]
+make system [<profile>]
 └─ nrs [profile] [--update]
    ├─ [--update] nfu → nix flake update
    ├─ Resolve profile → flake reference
@@ -148,15 +150,18 @@ Defined directly in `features/nixos-common.nix` (not via `repo-service.nix`):
 
 ### [SPEC-006-S3.1] Profile Resolution
 
-macOS profiles are resolved from username:
+macOS profiles are resolved from username and, for work users, whether the private workfiles checkout exists at `$HOME/pb/adam.hall/workfiles`. Only the current full-work username auto-promotes to `work`; the other work username remains on its boot profile until `nix/flake.nix` and the wrapper's full-work username are updated and committed.
 
-| Username | Default Profile |
-|---|---|
-| `adam.hall` | `work` |
-| `adamhall` | `work-adamhall` |
-| (other) | `home` |
+| Username | Workfiles present | Current full-work username | Default Profile |
+|---|---:|---:|---|
+| `adam.hall` | yes | no | `work-boot` |
+| `adam.hall` | no | no | `work-boot` |
+| `adamhall` | yes | yes | `work` |
+| `adamhall` | no | yes | `work-adamhall-boot` |
+| `codethread` | n/a | n/a | `personal` |
+| (other) | n/a | n/a | `dev` |
 
-NixOS defaults to `homelab`. The `_resolve_profile` function handles the special case where profile `work` + username `adamhall` maps to `work-adamhall`.
+NixOS defaults to `homelab`. The `_resolve_profile` function handles the special case where explicit profile `work-boot` + username `adamhall` maps to `work-adamhall-boot`.
 
 For bootstrap-only hardware file management, `boot/boot.sh` may need an additional profile → host-directory mapping when the flake output name differs from the on-disk host directory. Current example:
 
@@ -237,7 +242,7 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 - **Homebrew alongside Nix on macOS** — Homebrew manages GUI casks and Mac App Store apps (via `mas`). Nix handles CLI tools. `nix-darwin` orchestrates both declaratively via `homebrew.casks` and `homebrew.masApps`.
 
-- **Two work profiles for username variants** — Some macOS machines use `adam.hall` (dotted), others use `adamhall`. Both share `work-common.nix` and `profiles/work.nix`; only the host module and `primaryUser` differ.
+- **Work boot profiles for username variants** — New work macOS machines may use `adam.hall` (dotted) or `adamhall`. Bootstrap supports both with minimal `work-boot` outputs. The full `work` output is intentionally single-user and only the current full-work username auto-promotes to it when workfiles exist; update `nix/flake.nix` and the rebuild wrapper's full-work username when the provisioned username changes.
 
 - **Direct process execution for managed services** — `services/repo-service.nix` runs processes with `Type = simple` directly under systemd. This gives proper PID tracking, `journalctl` log access, and working restart semantics (`Restart = on-failure`). `tmux-main` (the interactive session) remains tmux-backed since it exists for human interaction, not daemon management.
 

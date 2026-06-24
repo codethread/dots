@@ -199,11 +199,18 @@
         darwinFor ./hosts/darwin/personal.nix "codethread"
           ./profiles/personal.nix;
 
-      # macOS (work, dotted username) — darwin-rebuild switch --flake .#work
-      darwinConfigurations.work = darwinFor ./hosts/darwin/work.nix "adam.hall" ./profiles/work.nix;
+      # macOS (work boot, dotted username) — darwin-rebuild switch --flake .#work-boot
+      darwinConfigurations.work-boot =
+        darwinFor ./hosts/darwin/work-boot.nix "adam.hall"
+          ./profiles/work-boot.nix;
 
-      # macOS (work, short username) — darwin-rebuild switch --flake .#work-adamhall
-      darwinConfigurations.work-adamhall =
+      # macOS (work boot, short username) — darwin-rebuild switch --flake .#work-adamhall-boot
+      darwinConfigurations.work-adamhall-boot =
+        darwinFor ./hosts/darwin/work-adamhall-boot.nix "adamhall"
+          ./profiles/work-boot.nix;
+
+      # macOS (full work, current username) — darwin-rebuild switch --flake .#work
+      darwinConfigurations.work =
         darwinFor ./hosts/darwin/work-adamhall.nix "adamhall"
           ./profiles/work.nix;
 

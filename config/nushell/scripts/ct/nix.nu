@@ -1,14 +1,33 @@
 # Cross-platform Nix utilities — rebuild, GC, package queries
 # NixOS-only commands (boot target, Wi-Fi, store info) are in nixos.nu
 
+def _workfiles_path [] {
+    $env.HOME | path join "pb" "adam.hall" "workfiles"
+}
+
+def _full_work_user [] { "adamhall" }
+
+def _work_default_profile_for_user [user: string] {
+    if ((_workfiles_path) | path exists) and ($user == (_full_work_user)) {
+        "work"
+    } else if $user == "adamhall" {
+        "work-adamhall-boot"
+    } else {
+        "work-boot"
+    }
+}
+
 def _darwin_default_profile [] {
-    match ($env.CT_USER? | default (match ($env.USER? | default "") {
-		"adam.hall" => "work",
-		"adamhall" => "work-adamhall",
-		"codethread" => "personal",
-		_ => "dev",
-	})) {
-        "work-adamhall" => "work-adamhall"
+    let default = match ($env.USER? | default "") {
+        "adam.hall" => (_work_default_profile_for_user "adam.hall")
+        "adamhall" => (_work_default_profile_for_user "adamhall")
+        codethread => "personal"
+        _ => "dev"
+    }
+
+    match ($env.CT_USER? | default $default) {
+        "work-adamhall-boot" => "work-adamhall-boot"
+        "work-boot" => "work-boot"
         work => "work"
         personal => "personal"
         _ => "dev"
@@ -26,7 +45,7 @@ def _resolve_profile [profile: string] {
         $profile
         ($env.USER? | default "")
     ] {
-        ["work", "adamhall"] => "work-adamhall"
+        ["work-boot", "adamhall"] => "work-adamhall-boot"
         _ => $profile
     }
 }
@@ -56,8 +75,9 @@ def _flake_ref [profile: string] {
 def _hm_user_for_profile [profile: string] {
     match $profile {
         dev => "ct"
-        work => "adam.hall"
-        "work-adamhall" => "adamhall"
+        work => "adamhall"
+        "work-boot" => "adam.hall"
+        "work-adamhall-boot" => "adamhall"
         _ => "codethread"
     }
 }
@@ -166,7 +186,7 @@ export def nix-clean-older [days: int = 14] {
 export def nix-packages [profile?: string] {
     let p = _resolve_profile ($profile | default (_default_profile))
     let flake = $"path:((_flake_path))"
-    let config_type = if $p in ["dev" "personal" "work" "work-adamhall"] { "darwinConfigurations" } else { "nixosConfigurations" }
+    let config_type = if $p in ["dev" "personal" "work" "work-boot" "work-adamhall-boot"] { "darwinConfigurations" } else { "nixosConfigurations" }
     let attr = $"($flake)#($config_type).($p).config.home-manager.users.($env.USER).home.packages"
     ^nix eval $attr --apply "map (p: p.name)" --json | from json | sort | uniq
 }
@@ -175,7 +195,7 @@ export def nix-packages [profile?: string] {
 export def nix-sys-packages [profile?: string] {
     let p = _resolve_profile ($profile | default (_default_profile))
     let flake = $"path:((_flake_path))"
-    let config_type = if $p in ["dev" "personal" "work" "work-adamhall"] { "darwinConfigurations" } else { "nixosConfigurations" }
+    let config_type = if $p in ["dev" "personal" "work" "work-boot" "work-adamhall-boot"] { "darwinConfigurations" } else { "nixosConfigurations" }
     let attr = $"($flake)#($config_type).($p).config.environment.systemPackages"
     ^nix eval $attr --apply "map (p: p.name)" --json | from json | sort | uniq
 }
@@ -246,7 +266,7 @@ export def nix-smoke [
 ] {
     let p = _resolve_profile ($profile | default (_default_profile))
     let flake = $"path:((_flake_path))"
-    let config_type = if $p in ["dev" "personal" "work" "work-adamhall"] { "darwinConfigurations" } else { "nixosConfigurations" }
+    let config_type = if $p in ["dev" "personal" "work" "work-boot" "work-adamhall-boot"] { "darwinConfigurations" } else { "nixosConfigurations" }
     let hm_user = (_hm_user_for_profile $p)
     let dotfiles = $env.DOTFILES? | default ($env.HOME | path join "dev" "dots")
     let xdg_config = $env.XDG_CONFIG_HOME? | default ($env.HOME | path join ".config")
