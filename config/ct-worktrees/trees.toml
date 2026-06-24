@@ -54,6 +54,8 @@ delete_branch = true
 # PRs, not by local merges to main.
 [[rule]]
 root_glob = "~/pb/**"
+pre_remote_check = "scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware wktree operations' >&2; exit 1; }"
+
 
 [rule.finish]
 enabled = false
