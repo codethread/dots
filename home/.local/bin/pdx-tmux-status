@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# :module: Compact tmux status segment for local PDX/Pithos activity.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: pdx-tmux-status [-h|--help]
+
+Print a compact PDX status segment for tmux status-right.
+
+Data source:
+  pithos graph inspect --all --status queued --status claimed --status running --json
+
+Semantics:
+  󰴭 N    active Greed design/review tasks
+  󰔟 N    active Toil triage tasks
+  󰓥 N    active War execute tasks
+  󰇥 N    active Envy intake/clarify tasks
+  ⚠ Pn   open escalation tasks needing Pandora/user attention
+
+Active means task status claimed/running. Escalations include queued too.
+EOF
+}
+
+case "${1:-}" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+esac
+
+cache="${TMPDIR:-/tmp}/pdx-tmux-status.cache"
+ttl="${PDX_TMUX_STATUS_TTL:-5}"
+now="$(date +%s)"
+
+if [[ -r "$cache" ]]; then
+  mtime="$(python3 -c 'import os, sys; print(int(os.path.getmtime(sys.argv[1])))' "$cache" 2>/dev/null || echo 0)"
+  if (( now - mtime < ttl )); then
+    cat "$cache"
+    exit 0
+  fi
+fi
+
+render() {
+  pithos graph inspect --all \
+    --status queued \
+    --status claimed \
+    --status running \
+    --json |
+    python3 -c '
+import json, sys
+
+data = json.load(sys.stdin)
+nodes = data.get("graph", {}).get("nodes", [])
+
+def active(*caps):
+    return sum(
+        1 for node in nodes
+        if node.get("capability") in caps
+        and node.get("status") in ("claimed", "running")
+    )
+
+greed = active("design", "review")
+toil = active("triage")
+war = active("execute")
+envy = active("intake", "clarify")
+escalations = sum(
+    1 for node in nodes
+    if node.get("capability") == "escalate"
+    and node.get("status") in ("queued", "claimed", "running")
+)
+
+parts = []
+if greed:
+    parts.append(f"󰴭 {greed}")
+if toil:
+    parts.append(f"󰔟 {toil}")
+if war:
+    parts.append(f"󰓥 {war}")
+if envy:
+    parts.append(f"󰇥 {envy}")
+if escalations:
+    parts.append(f"⚠ P{escalations}")
+
+print("  ".join(parts))
+'
+}
+
+if output="$(render 2>/dev/null)"; then
+  printf '%s\n' "$output" | tee "$cache"
+else
+  printf '?\n'
+fi
