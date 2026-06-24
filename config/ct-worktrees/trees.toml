@@ -56,6 +56,10 @@ delete_branch = true
 root_glob = "~/pb/**"
 pre_remote_check = "scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware wktree operations' >&2; exit 1; }"
 
+[[rule]]
+root_glob = "~/pb/app/deals-light-ui*/**"
+pre_remote_check = "git remote prune origin && scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware wktree operations' >&2; exit 1; }"
+
 
 [rule.finish]
 enabled = false
