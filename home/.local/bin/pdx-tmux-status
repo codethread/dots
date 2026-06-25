@@ -1,206 +1,161 @@
-#!/usr/bin/env bash
+#!/usr/bin/env nu
 # :module: Compact tmux status segment for local PDX/Pithos activity.
-set -euo pipefail
 
-NUSHELL_ENV="$HOME/.config/nushell/env.nu"
-PANDORA_ENV_VARS=(PDX_DATA_DIR PITHOS_DB PDX_USER_DATA_DIR)
-CACHE_DIR="${TMPDIR:-/tmp}"
-CACHE_FILE="$CACHE_DIR/pdx-tmux-status.cache"
-ERROR_LOG="$CACHE_DIR/pdx-tmux-status.log"
-TTL="${PDX_TMUX_STATUS_TTL:-5}"
-USER_NAME="${USER:-$(id -un)}"
-PATH_PREFIXES=(
-  "$HOME/.local/bin"
-  "/etc/profiles/per-user/$USER_NAME/bin"
-  "/run/current-system/sw/bin"
-  "/nix/var/nix/profiles/default/bin"
-  "$HOME/.nix-profile/bin"
-  "/opt/homebrew/bin"
-  "/opt/homebrew/sbin"
-  "/usr/local/bin"
-  "/usr/bin"
-  "/bin"
-)
-PATH_PREFIX="$(IFS=:; printf '%s' "${PATH_PREFIXES[*]}")"
-if [[ -n "${PATH:-}" ]]; then
-  export PATH="$PATH_PREFIX:$PATH"
-else
-  export PATH="$PATH_PREFIX"
-fi
-NOW="$(date +%s)"
+const ACTIVE_STATUSES = ["claimed" "running"]
+const GRAPH_STATUSES = ["queued" "claimed" "running"]
 
-usage() {
-  cat <<'EOF'
-Usage: pdx-tmux-status [-h|--help]
-
-Print a compact PDX status segment for tmux status-right.
-
-Data source:
-  pithos graph inspect --all --status queued --status claimed --status running --json
-
-Semantics:
-  󰴭 N    active Greed design/review tasks
-  󰔟 N    active Toil triage tasks
-  󰓥 N    active War execute tasks
-  󰇥 N    active Envy intake/clarify tasks
-  ⚠ Pn   open escalation tasks needing Pandora/user attention
-
-Active means task status claimed/running. Escalations include queued too.
-EOF
+def usage [] {
+    print "Usage: pdx-tmux-status [-h|--help]"
+    print ""
+    print "Print a compact PDX status segment for tmux status-right."
+    print ""
+    print "Data source:"
+    print "  pithos graph inspect --all --status queued --status claimed --status running --json"
+    print ""
+    print "Semantics:"
+    print "  󰴭 N    active Greed design/review tasks"
+    print "  󰔟 N    active Toil triage tasks"
+    print "  󰓥 N    active War execute tasks"
+    print "  󰇥 N    active Envy intake/clarify tasks"
+    print "  ⚠ Pn   open escalation tasks needing Pandora/user attention"
 }
 
-case "${1:-}" in
-  -h|--help)
-    usage
-    exit 0
-    ;;
-esac
 
-load_pandora_env() {
-  local name env_json value
+def cache-path [cache_dir: string] {
+    let key = ([
+        ($env.PDX_DATA_DIR? | default "")
+        ($env.PITHOS_DB? | default "")
+        ($env.PDX_USER_DATA_DIR? | default "")
+    ] | str join "\n" | hash md5)
 
-  env_json="$(nu --no-config-file --commands "hide-env -i PDX_DATA_DIR PITHOS_DB PDX_USER_DATA_DIR; source '$NUSHELL_ENV'; { PDX_DATA_DIR: \$env.PDX_DATA_DIR, PITHOS_DB: \$env.PITHOS_DB, PDX_USER_DATA_DIR: \$env.PDX_USER_DATA_DIR } | to json --raw")"
-
-  for name in "${PANDORA_ENV_VARS[@]}"; do
-    value="$(jq -r --arg name "$name" '.[$name]' <<<"$env_json")"
-    export "$name=$value"
-  done
+    [$cache_dir $"pdx-tmux-status.($key).cache"] | path join
 }
 
-set_cache_file() {
-  local cache_key
 
-  cache_key="$(printf '%s\n' "$PDX_DATA_DIR" "$PITHOS_DB" "$PDX_USER_DATA_DIR" | cksum | awk '{print $1}')"
-  CACHE_FILE="$CACHE_DIR/pdx-tmux-status.$cache_key.cache"
+def read-cache [path: string, ttl_seconds: int] {
+    if not ($path | path exists) {
+        return null
+    }
+
+    let age = (date now) - (ls $path | get 0.modified)
+    if $age >= ($ttl_seconds | into duration --unit sec) {
+        return null
+    }
+
+    open --raw $path
 }
 
-print_cached_output() {
-  local mtime
 
-  [[ -r "$CACHE_FILE" ]] || return 1
-
-  mtime="$(python3 -c 'import os, sys; print(int(os.path.getmtime(sys.argv[1])))' "$CACHE_FILE" 2>/dev/null || echo 0)"
-  (( NOW - mtime < TTL )) || return 1
-
-  cat "$CACHE_FILE"
+def save-if-possible [path: string, content: string] {
+    try {
+        $content | save --force $path
+    } catch {
+        null
+    }
 }
 
-render() {
-  pithos graph inspect --all \
-    --status queued \
-    --status claimed \
-    --status running \
-    --json |
-    python3 -c '
-import json, sys
 
-data = json.load(sys.stdin)
-nodes = data.get("graph", {}).get("nodes", [])
+def write-error-log [path: string, stderr: string] {
+    let trimmed = $stderr | str trim
+    let header = $"[(date now | format date '%+')] pdx-tmux-status render failed"
+    let body = if ($trimmed | is-empty) {
+        $header
+    } else {
+        $"($header)\n($trimmed)"
+    }
 
-def active(*caps):
-    return sum(
-        1 for node in nodes
-        if node.get("capability") in caps
-        and node.get("status") in ("claimed", "running")
+    save-if-possible $path $body
+}
+
+
+def count-by [nodes: list<any>, capabilities: list<string>, statuses: list<string>] {
+    $nodes
+    | where {|node|
+        let capability = ($node | get -o capability | default "")
+        let status = ($node | get -o status | default "")
+        ($capability in $capabilities) and ($status in $statuses)
+    }
+    | length
+}
+
+
+def render-status [] {
+    let result = (
+        ^pithos graph inspect --all --status queued --status claimed --status running --json
+        | complete
     )
 
-greed = active("design", "review")
-toil = active("triage")
-war = active("execute")
-envy = active("intake", "clarify")
-escalations = sum(
-    1 for node in nodes
-    if node.get("capability") == "escalate"
-    and node.get("status") in ("queued", "claimed", "running")
-)
+    if $result.exit_code != 0 {
+        return {
+            ok: false
+            output: ""
+            stderr: ($result.stderr | str trim)
+        }
+    }
 
-parts = []
-if greed:
-    parts.append(f"󰴭 {greed}")
-if toil:
-    parts.append(f"󰔟 {toil}")
-if war:
-    parts.append(f"󰓥 {war}")
-if envy:
-    parts.append(f"󰇥 {envy}")
-if escalations:
-    parts.append(f"⚠ P{escalations}")
+    try {
+        let nodes = ($result.stdout | from json | get -o graph.nodes | default [])
 
-print("  ".join(parts))
-'
+        let greed = (count-by $nodes ["design" "review"] $ACTIVE_STATUSES)
+        let toil = (count-by $nodes ["triage"] $ACTIVE_STATUSES)
+        let war = (count-by $nodes ["execute"] $ACTIVE_STATUSES)
+        let envy = (count-by $nodes ["intake" "clarify"] $ACTIVE_STATUSES)
+        let escalations = (count-by $nodes ["escalate"] $GRAPH_STATUSES)
+
+        let parts = [
+            (if $greed > 0 { $"󰴭 ($greed)" } else { null })
+            (if $toil > 0 { $"󰔟 ($toil)" } else { null })
+            (if $war > 0 { $"󰓥 ($war)" } else { null })
+            (if $envy > 0 { $"󰇥 ($envy)" } else { null })
+            (if $escalations > 0 { $"⚠ P($escalations)" } else { null })
+        ] | compact | str join "  "
+
+        {
+            ok: true
+            output: $parts
+            stderr: ""
+        }
+    } catch {|err|
+        {
+            ok: false
+            output: ""
+            stderr: ($err.msg? | default ($err | to json --raw))
+        }
+    }
 }
 
-write_error_log() {
-  local log_file="$1"
 
-  [[ -d "$CACHE_DIR" && -w "$CACHE_DIR" ]] || return 0
+def main [--help(-h)] {
+    if $help {
+        usage
+        return
+    }
 
-  {
-    printf '[%s] pdx-tmux-status render failed\n' "$(date -Iseconds)"
-    cat "$log_file"
-  } >"$ERROR_LOG" || true
+    let cache_dir = ($env.TMPDIR? | default "/tmp")
+    let log_path = [$cache_dir "pdx-tmux-status.log"] | path join
+    let path = (cache-path $cache_dir)
+    let ttl_seconds = (($env.PDX_TMUX_STATUS_TTL? | default "5") | into int)
+
+    let cached = (read-cache $path $ttl_seconds)
+    if $cached != null {
+        print $cached
+        return
+    }
+
+    let render = (render-status)
+    if $render.ok {
+        save-if-possible $path $render.output
+        print $render.output
+        return
+    }
+
+    write-error-log $log_path $render.stderr
+
+    let fallback = if ($path | path exists) {
+        open --raw $path
+    } else {
+        "?"
+    }
+
+    print $fallback
 }
-
-write_cache() {
-  local output="$1"
-
-  [[ -d "$CACHE_DIR" && -w "$CACHE_DIR" ]] || return 0
-  printf '%s\n' "$output" >"$CACHE_FILE" || true
-}
-
-tmp_log=""
-if [[ -d "$CACHE_DIR" && -w "$CACHE_DIR" ]]; then
-  tmp_log="$CACHE_DIR/pdx-tmux-status.$$.log"
-fi
-
-if [[ -n "$tmp_log" ]]; then
-  if load_pandora_env 2>"$tmp_log"; then
-    set_cache_file
-
-    if print_cached_output; then
-      rm -f "$tmp_log"
-      exit 0
-    fi
-
-    if output="$(render 2>>"$tmp_log")"; then
-      rm -f "$tmp_log"
-      write_cache "$output"
-      printf '%s\n' "$output"
-    else
-      write_error_log "$tmp_log"
-      rm -f "$tmp_log"
-
-      if [[ -r "$CACHE_FILE" ]]; then
-        cat "$CACHE_FILE"
-      else
-        printf '?\n'
-      fi
-    fi
-  else
-    write_error_log "$tmp_log"
-    rm -f "$tmp_log"
-
-    if [[ -r "$CACHE_FILE" ]]; then
-      cat "$CACHE_FILE"
-    else
-      printf '?\n'
-    fi
-  fi
-else
-  if load_pandora_env 2>/dev/null; then
-    set_cache_file
-
-    if print_cached_output; then
-      exit 0
-    fi
-
-    if output="$(render 2>/dev/null)"; then
-      write_cache "$output"
-      printf '%s\n' "$output"
-    else
-      printf '?\n'
-    fi
-  else
-    printf '?\n'
-  fi
-fi
