@@ -77,6 +77,8 @@ $env.CT_NOTES = (match $env.CT_USER {
 $env.WAKATIME_HOME = ($env.WAKATIME_HOME? | default (home ".config/wakatime"))
 $env.STARSHIP_CACHE = ($env.STARSHIP_CACHE? | default ($env.XDG_CACHE_HOME | path join "starship"))
 
+path add ($env.XDG_CONFIG_HOME | path join "skein/bin")
+
 if (sys host).name == "Darwin" {
     path add -a "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
     path add -a "/Applications/Cursor.app/Contents/Resources/app/bin"
@@ -215,7 +217,16 @@ path add "~/.luarocks/bin"
 #: java {{{
 
 if (sys host).name == "Darwin" {
-    $env.JAVA_HOME = "/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home"
+    let homebrew_openjdk = "/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home"
+    let zulu_17 = "/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home"
+
+    $env.JAVA_HOME = if ($homebrew_openjdk | path exists) {
+        $homebrew_openjdk
+    } else {
+        $zulu_17
+    }
+
+    path add ($env.JAVA_HOME | path join "bin")
 }
 
 #: }}}
