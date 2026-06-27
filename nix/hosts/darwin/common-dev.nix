@@ -8,7 +8,13 @@
 {
   imports = [ ./common.nix ];
 
-  environment.systemPackages = [ pkgs.nativeNpmOpenspec ];
+  environment.systemPackages = with pkgs; [
+    clojure
+    jdk
+    nativeNpmOpenspec
+  ];
+
+  environment.variables.JAVA_HOME = "${pkgs.jdk.home}";
 
   system.activationScripts.nativeOpenspecCli.text = ''
     home="/Users/${config.system.primaryUser}"
