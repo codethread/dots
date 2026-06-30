@@ -15,6 +15,7 @@ return U.F {
 		branch = 'mermaids',
 		build = 'deno task --quiet build:fast',
 		opts = {
+			ssh_port = 2323,
 			app = is_ssh and 'ssh' or 'webview',
 			theme = require('codethread.theme').mode(),
 		},
@@ -44,5 +45,11 @@ return U.F {
 		opts = {
 			completions = { lsp = { enabled = true } },
 		},
+	},
+	{
+		'OXY2DEV/markview.nvim',
+		lazy = false,
+		-- Completion for `blink.cmp`
+		-- dependencies = { "saghen/blink.cmp" },
 	},
 }

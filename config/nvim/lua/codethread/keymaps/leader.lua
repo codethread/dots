@@ -154,6 +154,7 @@ Keys.tbl('<leader>', {
 		l = { 'open log file', function() require('codethread.logger').select() end },
 		n = { 'Notifcation History', Cmd 'LogOpen notifications' },
 		N = { 'Hide Notifications', function() Snacks.notifier.hide() end },
+		m = { 'markdown', Cmd 'PeekOpen' },
 		o = {
 			'Notes',
 			function()
