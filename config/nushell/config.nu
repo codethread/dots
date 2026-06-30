@@ -26,8 +26,8 @@ $env.config.table.index_mode = "auto"
 $env.config.table.show_empty = false # show 'empty list' and 'empty record' placeholders for command output
 $env.config.cursor_shape = $env.config.cursor_shape | merge {
 	# block, underscore, line, blink_block, blink_underscore, blink_line (line is the default)
-	emacs: "blink_block", 
-	vi_insert: "blink_line", 
+	emacs: "blink_block",
+	vi_insert: "blink_line",
 	vi_normal: "blink_block"
 }
 # NOTE: may need to check how this behaves for scripts and nush
@@ -78,4 +78,5 @@ source (if ($privates | path exists) { $privates } else { null })
 const pi_scripts = "~/dev/projects/agents/scripts/pi.nu" | path expand
 source (if ($pi_scripts | path exists) { $pi_scripts } else { null })
 
-use ~/dev/projects/agents/plugins/devflow/scripts/afk-loop.nu
+const devflow = "~/dev/projects/agents/plugins/devflow/scripts/devflow.nu" | path expand
+source (if ($devflow | path exists) { $devflow } else { null })
