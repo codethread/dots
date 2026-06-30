@@ -73,7 +73,7 @@
           pname = "playwright-cli";
           version = "0-unstable";
           src = playwright-cli-src;
-          npmDepsHash = "sha256-0bvwryiyPskay+h8+0RiOmnamHkmcRRK00q7ZEPdj1g=";
+          npmDepsHash = "sha256-ZrO8yIqMYMQUlsQraejVgKRZ7klC5/8UsV3/H1EqYtA=";
           dontNpmBuild = true;
           env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
         };

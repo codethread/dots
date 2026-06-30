@@ -13,7 +13,5 @@
     qmk
     luarocks
     entr
-    podman
-    podman-compose
   ];
 }

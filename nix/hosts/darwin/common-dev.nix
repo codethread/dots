@@ -5,11 +5,26 @@
   ...
 }:
 
+let
+  graphEasy = pkgs.perlPackages.buildPerlPackage {
+    pname = "Graph-Easy";
+    version = "0.76";
+    src = pkgs.fetchurl {
+      url = "mirror://cpan/authors/id/S/SH/SHLOMIF/Graph-Easy-0.76.tar.gz";
+      hash = "sha256-1KLBCuvvZjtZjqN/OqPjt1Ks8fu7lhIyw9vhFVAI0fo=";
+    };
+    propagatedBuildInputs = with pkgs.perlPackages; [
+      Graph
+    ];
+    meta.mainProgram = "graph-easy";
+  };
+in
 {
   imports = [ ./common.nix ];
 
   environment.systemPackages = with pkgs; [
     clojure
+    graphEasy
     jdk
     nativeNpmOpenspec
   ];

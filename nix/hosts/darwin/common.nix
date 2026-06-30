@@ -172,6 +172,8 @@ in
       "morantron/tmux-fingers/tmux-fingers" # mouseless terminal interaction
       "ical-buddy" # Get events and tasks from the macOS calendar database
       "pngpaste" # Paste PNG into files
+      "podman" # Container CLI on macOS; nixpkgs podman is Linux-only
+      "podman-compose" # Compose wrapper for podman on macOS
       "volta" # JavaScript toolchain manager for reproducible environments
       "yazi" # Blazing fast terminal file manager written in Rust, based on async I/O
       "rsync" # Utility that provides fast incremental file transfer

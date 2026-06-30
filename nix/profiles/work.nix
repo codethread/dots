@@ -16,8 +16,6 @@
     awscli2
     buf
     vault
-    podman
-    podman-compose
     miller
 
     # --- APIs / gRPC ---
