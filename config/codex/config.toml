@@ -1,7 +1,8 @@
 #:schema https://developers.openai.com/codex/config-schema.json
 project_doc_fallback_filenames = ["CLAUDE.md"]
 cli_auth_credentials_store = "file"
-
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
 personality = "pragmatic"
 model_reasoning_effort = "low"
 model = "gpt-5.5"
@@ -77,9 +78,12 @@ trust_level = "trusted"
 [projects."/Users/adamhall/work/me/questions"]
 trust_level = "trusted"
 
+[projects."/Users/ct/dev/projects/skein-src"]
+trust_level = "trusted"
+
 [tui.model_availability_nux]
 "gpt-5.3-codex-spark" = 4
-"gpt-5.5" = 1
+"gpt-5.5" = 4
 
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
