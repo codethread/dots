@@ -71,6 +71,14 @@ return U.flatten {
 		},
 
 		{
+			dir = '~/dev/projects/skein-src/integrations/neovim',
+			name = 'skein.nvim',
+			dependencies = { 'Olical/conjure' },
+			ft = { 'clojure' },
+			cmd = { 'SkeinConnect' },
+		},
+
+		{
 			'gpanders/nvim-parinfer',
 			cmd = 'ParinferOn',
 			init = function()

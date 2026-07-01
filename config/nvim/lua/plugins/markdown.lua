@@ -15,7 +15,7 @@ return U.F {
 		branch = 'mermaids',
 		build = 'deno task --quiet build:fast',
 		opts = {
-			ssh_port = 2323,
+			ssh_port = 8080,
 			app = is_ssh and 'ssh' or 'webview',
 			theme = require('codethread.theme').mode(),
 		},
