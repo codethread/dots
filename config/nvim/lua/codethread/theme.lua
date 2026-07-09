@@ -74,6 +74,9 @@ local rose_pine_highlight_groups = {
 	mkdCode = { italic = true },
 }
 
+-- Custom per-language highlight themes (see the required module for the spec).
+local rose_pine_clojure_groups = require 'codethread.clojure'
+
 local function read_state(name)
 	local state_home = vim.env.XDG_STATE_HOME or (vim.fn.expand '~' .. '/.local/state')
 	local path = state_home .. '/' .. name
@@ -317,7 +320,9 @@ function M.tokyonight_opts()
 	}
 end
 
-function M.rose_pine_highlights() return vim.deepcopy(rose_pine_highlight_groups) end
+function M.rose_pine_highlights()
+	return vim.tbl_extend('force', vim.deepcopy(rose_pine_highlight_groups), rose_pine_clojure_groups)
+end
 
 function M.rose_pine_opts()
 	return {
