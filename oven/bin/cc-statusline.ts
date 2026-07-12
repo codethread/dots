@@ -75,7 +75,10 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 		: isGitRoot
 			? colorize.cyan(dirDisplay)
 			: colorize.red(dirDisplay);
-	const branchPart = branch ? colorize.magenta(`  ${branch}`) : "";
+	// Worktree dirs are named `<base>__<branch>`; the branch is already visible in the
+	// dir name, so suppress the redundant branch segment when they match.
+	const showBranch = branch && !branchMatchesWorktree(dirName, branch);
+	const branchPart = showBranch ? colorize.magenta(`  ${branch}`) : "";
 	const dirBranch = `${dirPart}${branchPart}`;
 
 	if (inContainer) {
@@ -110,6 +113,12 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 	parts.push(colorize.brightBlack(formatTime(new Date())));
 
 	return parts.join(" ");
+}
+
+function branchMatchesWorktree(dirName: string, branch: string): boolean {
+	const idx = dirName.indexOf("__");
+	if (idx === -1) return false;
+	return dirName.slice(idx + 2) === branch;
 }
 
 async function getGitBranch(): Promise<string | null> {
