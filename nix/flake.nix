@@ -48,7 +48,9 @@
       ...
     }:
     let
-      llmAgentsOverlay = llm-agents.overlays.default;
+      llmAgentsOverlay = final: prev: {
+        "llm-agents" = llm-agents.packages.${final.system};
+      };
       nativeAgentOverlay = import ./overlays/native-agent-installers.nix;
       nativeNpmAgentOverlay = import ./overlays/native-npm-installers.nix;
       nufmtOverlay = final: prev: {
@@ -73,7 +75,7 @@
           pname = "playwright-cli";
           version = "0-unstable";
           src = playwright-cli-src;
-          npmDepsHash = "sha256-ZrO8yIqMYMQUlsQraejVgKRZ7klC5/8UsV3/H1EqYtA=";
+          npmDepsHash = "sha256-u44jWprmr3RdzB3aDL3K0ShT5lLxr175z3C8pN43YFA=";
           dontNpmBuild = true;
           env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
         };
