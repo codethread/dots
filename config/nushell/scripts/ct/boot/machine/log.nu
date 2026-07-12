@@ -1,7 +1,7 @@
 const pad = '    '
 
 export def step [title: string, ...msg: string] {
-    print $"(ansi green)($title | str upcase)(ansi reset) ($msg | str join ' ')"
+    print $"(ansi green)($title | str uppercase)(ansi reset) ($msg | str join ' ')"
 }
 
 export def sub-step [...msg: string] {
@@ -13,11 +13,11 @@ export def bash [cmd: string] {
 }
 
 export def tool [title: string, ...msg: string] {
-    print $"($pad)(ansi blue)($title | str upcase)(ansi reset) ($msg| str join ' ')"
+    print $"($pad)(ansi blue)($title | str uppercase)(ansi reset) ($msg| str join ' ')"
 }
 
 export def skip [title: string, ...msg: string] {
-    print $"($pad)(ansi magenta)($title | str upcase)(ansi reset) ($msg| str join ' ')"
+    print $"($pad)(ansi magenta)($title | str uppercase)(ansi reset) ($msg| str join ' ')"
 }
 
 export def warn [--indent, ...msg: string] {

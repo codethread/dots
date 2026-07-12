@@ -12,6 +12,8 @@ node_modules
 bun.lockb
 .audio/
 .py_venv/
+.clj-kondo/
+.lsp/
 
 .pi/bench-matrix.json
 pdx/PANDORA.md
