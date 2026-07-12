@@ -321,7 +321,8 @@ function M.tokyonight_opts()
 end
 
 function M.rose_pine_highlights()
-	return vim.tbl_extend('force', vim.deepcopy(rose_pine_highlight_groups), rose_pine_clojure_groups)
+	local clojure = rose_pine_clojure_groups { light = M.mode() == 'light' }
+	return vim.tbl_extend('force', vim.deepcopy(rose_pine_highlight_groups), clojure)
 end
 
 function M.rose_pine_opts()

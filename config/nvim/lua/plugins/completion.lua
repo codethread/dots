@@ -72,6 +72,7 @@ return {
 			'hrsh7th/cmp-cmdline',
 			'hrsh7th/cmp-buffer',
 			'hrsh7th/cmp-path',
+			'hrsh7th/cmp-omni',
 			'hrsh7th/cmp-nvim-lsp-signature-help',
 			{
 				'saadparwaiz1/cmp_luasnip',
@@ -161,6 +162,23 @@ return {
 				},
 			}
 
+			-- cmp.setup.filetype({
+			-- 	'clojure',
+			-- 	'fennel',
+			-- 	'janet',
+			-- 	'hy',
+			-- 	'julia',
+			-- 	'racket',
+			-- 	'scheme',
+			-- 	'lisp',
+			-- }, {
+			-- 	sources = cmp.config.sources({
+			-- 		{ name = 'omni' },
+			-- 	}, {
+			-- 		{ name = 'buffer' },
+			-- 	}),
+			-- })
+
 			cmp.setup.cmdline(':', {
 				mapping = completion_mapping,
 				sources = cmp.config.sources({
@@ -197,7 +215,7 @@ return {
 
 			-- :help ins-completion
 			vim.keymap.set('i', '<C-Space><C-o>', '<C-x><C-o>')
-			vim.keymap.set('i', '<C-Space><C-Space>', complete { 'nvim_lsp' })
+			vim.keymap.set('i', '<C-Space><C-Space>', complete { 'nvim_lsp', 'conjure' })
 			vim.keymap.set('i', '<C-Space><C-p>', complete 'luasnip')
 			vim.keymap.set('i', '<C-Space><C-f>', complete 'path')
 			vim.keymap.set('i', '<C-Space><C-n>', function()
