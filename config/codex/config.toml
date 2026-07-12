@@ -4,8 +4,8 @@ cli_auth_credentials_store = "file"
 sandbox_mode = "danger-full-access"
 approval_policy = "never"
 personality = "pragmatic"
-model_reasoning_effort = "low"
-model = "gpt-5.5"
+model_reasoning_effort = "medium"
+model = "gpt-5.6-terra"
 
 [profiles.fast-review]
 model = "gpt-5.4-mini"
@@ -81,9 +81,65 @@ trust_level = "trusted"
 [projects."/Users/ct/dev/projects/skein-src"]
 trust_level = "trusted"
 
+[projects."/Users/ct/dev/projects/agents"]
+trust_level = "trusted"
+
+[projects."/Users/ct/dev/dots"]
+trust_level = "trusted"
+
+[projects."/Users/ct/dev/projects/notes"]
+trust_level = "trusted"
+
+[projects."/Users/ct/dev/projects/devflow.spool"]
+trust_level = "trusted"
+
+[projects."/private/tmp/claude"]
+trust_level = "trusted"
+
+[projects."/private/tmp/codex-e2e-real9095287417557925606"]
+trust_level = "trusted"
+
 [tui.model_availability_nux]
 "gpt-5.3-codex-spark" = 4
 "gpt-5.5" = 4
+"gpt-5.6-sol" = 4
 
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
+
+[marketplaces.agents]
+last_updated = "2026-07-02T10:15:00Z"
+source_type = "local"
+source = "/Users/ct/dev/projects/agents"
+
+[plugins."coding@agents"]
+enabled = true
+
+[plugins."devflow@agents"]
+enabled = false
+
+[plugins."writing@agents"]
+enabled = true
+
+[plugins."harness-skills@agents"]
+enabled = true
+
+[plugins."codex-harness@agents"]
+enabled = true
+
+[plugins."harness@agents"]
+enabled = true
+
+[hooks.state]
+
+[hooks.state."codex-harness@agents:hooks/hooks.json:post_tool_use:0:0"]
+trusted_hash = "sha256:1b210541434012feb02b36ba88d0495648e870dbd4a77964e4534a277672eace"
+
+[hooks.state."codex-harness@agents:hooks/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:1725828869a5d8683c6c302f2d28dc93adb40eec68ac08e3113026fd95d265d6"
+
+[hooks.state."codex-harness@agents:hooks/hooks.json:user_prompt_submit:0:0"]
+trusted_hash = "sha256:e38079e5ce2921fc1d5111c81ca8228579ca291a93352a14b579499d65bba75e"
+
+[hooks.state."codex-harness@agents:hooks/hooks.json:stop:0:0"]
+trusted_hash = "sha256:9649f75d18420998da6734c4d59d5230db4492c5f5991fc00d189b06252844a2"

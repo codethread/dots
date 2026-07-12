@@ -42,7 +42,7 @@ def cl-tools-completions [] {
 def _cl-run [
     model: string
     continue: bool
-    dangerously_skip_permissions: bool
+    safe: bool
     print: bool
     verbose: bool
     resume: string
@@ -62,7 +62,8 @@ def _cl-run [
 ] {
     mut args = [--model $model]
     if $continue { $args ++= [--continue] }
-    if $dangerously_skip_permissions { $args ++= [--dangerously-skip-permissions] }
+    # dangerous-skip is the default for tty usage; --safe opts back into permission prompts
+    if not $safe { $args ++= [--dangerously-skip-permissions] }
     if $print { $args ++= [--print] }
     if $verbose { $args ++= [--verbose] }
     if ($resume | is-not-empty) { $args ++= [--resume $resume] }
@@ -84,7 +85,7 @@ def _cl-run [
 # cl with sonnet fable
 export def clf [
 	--continue(-c)                                           # Continue most recent conversation
-	--dangerously-skip-permissions(-d)                       # Bypass all permission checks
+	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
 	--resume(-r): string = ""                                # Resume a conversation by session ID
@@ -105,7 +106,7 @@ export def clf [
     (_cl-run
         "fable"
         $continue
-        $dangerously_skip_permissions
+        $safe
         $print
         $verbose
         $resume
@@ -128,7 +129,7 @@ export def clf [
 # cl with opus model
 export def clo [
 	--continue(-c)                                           # Continue most recent conversation
-	--dangerously-skip-permissions(-d)                       # Bypass all permission checks
+	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
 	--resume(-r): string = ""                                # Resume a conversation by session ID
@@ -149,7 +150,7 @@ export def clo [
     (_cl-run
         "opus"
         $continue
-        $dangerously_skip_permissions
+        $safe
         $print
         $verbose
         $resume
@@ -172,7 +173,7 @@ export def clo [
 # cl with sonnet model
 export def cls [
 	--continue(-c)                                           # Continue most recent conversation
-	--dangerously-skip-permissions(-d)                       # Bypass all permission checks
+	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
 	--resume(-r): string = ""                                # Resume a conversation by session ID
@@ -193,7 +194,7 @@ export def cls [
     (_cl-run
         "sonnet"
         $continue
-        $dangerously_skip_permissions
+        $safe
         $print
         $verbose
         $resume
@@ -216,7 +217,7 @@ export def cls [
 # cl with haiku model
 export def clh [
 	--continue(-c)                                           # Continue most recent conversation
-	--dangerously-skip-permissions(-d)                       # Bypass all permission checks
+	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
 	--resume(-r): string = ""                                # Resume a conversation by session ID
@@ -237,7 +238,7 @@ export def clh [
     (_cl-run
         "haiku"
         $continue
-        $dangerously_skip_permissions
+        $safe
         $print
         $verbose
         $resume
@@ -410,7 +411,7 @@ export def cll --wrapped [...rest] {
     let project_dir = $"~/.claude/projects/($normalized_path)" | path expand
 
     print $"(ansi yellow)Simple details mode(ansi reset)"
-    claude --model haiku --session-id $session_id ...$rest
+    claude --model haiku --dangerously-skip-permissions --session-id $session_id ...$rest
 
     for name in [$"($session_id).jsonl" $session_id] {
         let p = $project_dir | path join $name

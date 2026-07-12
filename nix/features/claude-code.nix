@@ -7,12 +7,12 @@
 
 let
   cfg = config.ct.claude-code;
-  zsh = lib.getExe pkgs.zsh;
+  bash = lib.getExe pkgs.bash;
 
   commonEnabledPlugins = {
     "claude-md-management@claude-plugins-official" = true;
     "harness@agents" = true;
-    "devflow@agents" = true;
+    "devflow@agents" = false; # skein ftw
     "coding@agents" = true;
   };
 
@@ -245,8 +245,8 @@ in
         # so we can see files
         MANPAGER = "cat";
         # avoids old shell stuff
-        SHELL = "${zsh}";
-        ZDOTDIR = "${config.xdg.configHome}/zsh";
+        SHELL = "${bash}";
+        # ZDOTDIR = "${config.xdg.configHome}/zsh";
         # additional envs in env.nu
       };
 
