@@ -10,6 +10,5 @@
     ast-grep
     ffmpeg
     yt-dlp
-    terminal-notifier
   ];
 }

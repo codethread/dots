@@ -27,6 +27,7 @@ in
     graphEasy
     jdk
     nativeNpmOpenspec
+    flock
   ];
 
   environment.variables.JAVA_HOME = "${pkgs.jdk.home}";

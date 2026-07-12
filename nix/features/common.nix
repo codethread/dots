@@ -258,6 +258,7 @@ in
       dasel
       sd
       tree
+      btop
       dust
       stylua
       tree-sitter
