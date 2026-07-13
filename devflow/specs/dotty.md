@@ -143,7 +143,6 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 | **Makefile** (`make link`) | `DOTFILES=$(ROOT) dotty link --no-cache <repo>/config/dotty/dotty.toml` | Manual rebuild | Exports `DOTFILES` as the current checkout root for worktree support |
 | **Nix activation** (`dottyLink`) | `dotty link --no-cache` | Every `*-rebuild switch` | Runs after `userBootstrap` phase. Exports `DOTFILES`, `XDG_*` vars. Explicit `PATH` with git, coreutils, findutils, gnugrep, gnused, nushell, bash. Skips gracefully if `$DOTFILES` directory missing. |
 | **Neovim** | `dotty link`, `dotty format`, `dotty is-cwd` | Editor events | Auto-links on `BufWritePost`/`BufFilePost`/`VimLeavePre`. Detects dotfiles project via `is-cwd` on git root. |
-| **cc-sandbox** | `dotty link --no-cache` | Container image build | Step 3 of dots integration: after `git init`, before `bun run build` |
 
 ### [SPEC-003-S4.3] Worktree / Feature-Branch Support
 
@@ -163,7 +162,7 @@ The Nix activation hook exports `DOTFILES` as `$HOME/dev/dots` (the canonical cl
 
 - **Per-project caches** — each project gets its own cache file rather than a single global cache. This allows independent invalidation and makes directory-mode transitions clean (file entries are replaced by a single `"."` entry).
 
-- **`--no-cache` as default for automation** — all non-interactive invocations (Makefile, Nix activation, cc-sandbox) use `--no-cache`. Only the Neovim integration uses cached mode for speed. This ensures automation is always correct at the cost of re-scanning.
+- **`--no-cache` as default for automation** — all non-interactive invocations (Makefile and Nix activation) use `--no-cache`. Only the Neovim integration uses cached mode for speed. This ensures automation is always correct at the cost of re-scanning.
 
 - **git-ignore awareness** — dotty uses git's own ignore machinery (`git ls-files`, `git check-ignore`) rather than reimplementing glob exclusion. Files that git ignores are never linked, preventing accidental exposure of build artifacts or secrets.
 

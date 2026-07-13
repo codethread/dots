@@ -23,7 +23,6 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 
 ### [SPEC-001-S1.3] Non-Goals
 
-- Container orchestration and sandboxing — covered by [cc-sandbox spec](./cc-sandbox.md)
 - Plugin implementation details — plugins live in `~/dev/projects/claude-code-plugins` (separate repo)
 - cc-notify daemon internals — external project at `~/dev/projects/cc-notify`
 - Dotty implementation — dotty is a general-purpose symlink manager, not agentic-specific
@@ -217,11 +216,9 @@ Note: `PermissionRequest` is a Claude Code hook event not represented in the Typ
 Bash wrapper prepending context-aware system prompts to `claude` CLI:
 
 - Repository type detection: `/work/*` → GitLab hints; else → GitHub hints
-- Container awareness: `CC_SANDBOX=1` → "stop immediately if tool missing"
 - Always injected: sub-agent concurrency rules, conciseness directive, tool schema warning
 - Effort defaults: opus→high, others→medium
 - Flags: `-d` (skip permissions), `--dry-run`, `-m/--model`, `--effort`
-- Respects `CC_HOST_PWD` for container path translation
 
 ### [SPEC-001-S4.7] Pi Configuration (`pi/`)
 
@@ -307,9 +304,7 @@ Disables Ctrl+A in Global context.
 - `cc-hook--context-injector.test.ts` — session start/end lifecycle
 - `cc-hook--npm-redirect.test.ts` — PM detection, redirection, quote awareness, skill bypass
 
-**End-to-end smoke test:** `cc-sandbox-smoke` (nushell function in `config/nushell/scripts/ct/interactive/claude.nu`) verifies inside a container: binary presence (claude, codex, pi, playwright-cli, bun, nu), versions, PATH setup, settings mounted, codex config linked, pi template/config wired, project mount under /vm/. Optional `--with-models` flag pings Claude and Codex APIs headlessly.
-
-**No direct tests for:** bash hooks (cc-hook--notify, cc-hook--activity), `cl` wrapper, direct `pi` usage, nushell wrappers. These are verified indirectly through the smoke test and manual usage.
+**No direct tests for:** bash hooks (cc-hook--notify, cc-hook--activity), `cl` wrapper, direct `pi` usage, nushell wrappers. These require manual verification.
 
 ## [SPEC-001-S7] 7. Open Questions
 

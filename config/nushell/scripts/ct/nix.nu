@@ -317,7 +317,6 @@ export def nix-smoke [
         codex
         pi
         playwright-cli
-        cc-sandbox
     ] {
         let resolved = (_which-path $cmd)
         $checks = (

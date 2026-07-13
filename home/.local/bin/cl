@@ -4,14 +4,12 @@
 # Appends context-aware system prompts based on environment:
 #   - work repos (path contains /work/) get gitlab hint
 #   - all other repos get github hint
-#   - CC_SANDBOX env triggers container-awareness prompt
 #   - concurrency and conciseness prompts always included
 
 set -euo pipefail
 
 # --- Prompt snippets ---
 PROMPT_PERSONAL="this repo uses github (via gh)"
-PROMPT_SANDBOX="You are running inside a container. If a required tool or binary is missing, stop immediately and tell the user rather than searching for alternatives."
 PROMPT_CONCURRENCY="Sub-agent concurrency: spawn multiple read-only agents freely (explore, research, etc), but only ever one mutating agent at a time. Don't run read-only agents alongside a mutating agent — they may read stale data."
 PROMPT_CONCISE="When reporting information, be extremely concise and sacrifice grammar for sake of concision."
 
@@ -51,19 +49,14 @@ if [[ "$HAS_EFFORT" == false ]]; then
 fi
 
 # --- Build prompts ---
-CWD="${CC_HOST_PWD:-$PWD}"
 PROMPTS=()
 
-if [[ ! "$CWD" == */work/* ]]; then
+if [[ ! "$PWD" == */work/* ]]; then
     PROMPTS+=("$PROMPT_PERSONAL")
 fi
 
 PROMPTS+=("$PROMPT_CONCURRENCY")
 PROMPTS+=("$PROMPT_CONCISE")
-
-if [[ -n "${CC_SANDBOX:-}" ]]; then
-    PROMPTS+=("$PROMPT_SANDBOX")
-fi
 
 if [[ ${#PROMPTS[@]} -gt 0 ]]; then
     JOINED="$(printf '%s\n' "${PROMPTS[@]}")"

@@ -268,7 +268,6 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 - **`nix-smoke [profile]`** — Comprehensive health check verifying: PATH entries present, required binaries on PATH (including `pi`), config symlinks valid (including `~/.pi/agent/settings.json`), flake evaluates without error. Returns structured table of pass/fail results.
 - **`nrs-check [profile]`** — Darwin-only. Validates all homebrew taps, brews, and casks resolve without error before running a rebuild.
-- **`cc-sandbox-smoke`** — End-to-end container rebuild and headless Claude/Codex execution test (expensive, not routine).
 
 ## [SPEC-006-S7] 7. Open Questions
 

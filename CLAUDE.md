@@ -99,16 +99,6 @@ For config-level Nushell changes, also validate the real config load:
 nu --config config/nushell/config.nu --env-config config/nushell/env.nu -c 'print ok'
 ```
 
-### Cross-cutting smoke test
-
-For larger cross-cutting changes, especially ones touching `cc-sandbox`, container build inputs, Claude/Codex wiring, or major rebases, consider running:
-
-```bash
-nu -I ./config/nushell/scripts -c 'use ct/interactive/claude.nu *; cc-sandbox-smoke --stream --no-cache --with-models'
-```
-
-This is intentionally not a default check for every change. It is expensive, but it verifies the no-cache container rebuild, linked configs, binaries on `PATH`, and headless `claude`/`codex` execution end-to-end without requiring interactive TUI steps.
-
 ## Tool deprecation
 
 Given the monorepo nature of this repo, we want to exercise discretion, to that end, if we delete a tool from the repo, e.g lets say vim:

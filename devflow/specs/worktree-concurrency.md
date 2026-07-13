@@ -26,7 +26,6 @@ This system defines how this dotfiles repo can be tested and developed from mult
 - Running multiple real `nix-darwin switch` or `nixos-rebuild switch` operations concurrently against the host.
 - Proving visual correctness of terminal/editor UI beyond smoke-testable startup and command execution.
 - Virtualizing OS services, launch agents, global keybindings, GUI app preferences, or package-manager state.
-- Replacing `cc-sandbox`; containerized agent execution remains a separate system.
 - Making all third-party tools perfectly hermetic if they ignore XDG or explicit state flags.
 - Supporting legacy fallback paths once an isolated path contract exists.
 
@@ -151,7 +150,6 @@ fail loudly on host-path writes or command failure
 | `source` | Run tool directly against files in `$DOTFILES` using explicit config flags | Low |
 | `linked` | Run `dotty link` into isolated `HOME`/XDG, then run tool as installed | Low |
 | `copied` | Copy selected config subtree into temp XDG before running tool | Low |
-| `container` | Delegate to `cc-sandbox` or equivalent container smoke tests | Low to medium |
 | `host` | Real system activation or app preference changes | High; manual opt-in only |
 
 ### [SPEC-008-S4.3] Result artifacts

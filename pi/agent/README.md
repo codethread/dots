@@ -6,4 +6,4 @@ Most reusable Pi agents/skills now live in `https://github.com/codethread/agents
 
 `models.json` caps selected Anthropic 1M model metadata at 200k tokens so Pi auto-compacts before entering Anthropic long-context usage. Remove those `modelOverrides` when a session should use the full 1M window.
 
-Architecture: [SPEC-001 agentic-config](../../devflow/specs/agentic-config.md). Container support: [SPEC-002 cc-sandbox](../../devflow/specs/cc-sandbox.md).
+Architecture: [SPEC-001 agentic-config](../../devflow/specs/agentic-config.md).
