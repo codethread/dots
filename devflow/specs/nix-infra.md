@@ -3,7 +3,7 @@
 Document ID: SPEC-006
 Configuration identification: SPEC-006; migrated from `specs/nix-infra.md`; canonical path `devflow/specs/nix-infra.md`.
 **Status:** Implemented
-**Last Updated:** 2026-04-04
+**Last Updated:** 2026-07-13
 
 ## [SPEC-006-S1] 1. Overview
 
@@ -70,14 +70,20 @@ Two nixpkgs inputs provide version flexibility:
 - `pkgs` ← `nixpkgs` (unstable) — default for most packages
 - `pkgsMaster` ← `nixpkgs-master` (bleeding edge) — for packages needing latest versions
 
-In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available, falling back to `pkgs`. Packages like `claude-code`, `nodejs_24`, `typescript`, `typescript-language-server` use `agentPkgSet.*` to track master. `codexCliPackage` is a special case — injected via `specialArgs` from the flake, falling back to `agentPkgSet.codex` if null.
+In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available,
+falling back to `pkgs`. TypeScript tooling and NixOS agent packages available
+through Nix use this channel. macOS agent CLIs are intentionally outside Nix and
+use the shared npm prefix instead.
 
 ### [SPEC-006-S2.4] Custom Overlays
 
 Defined in `flake.nix`, applied to all system configs:
 
 - **todoistOverlay** — `buildGoModule` for `todoist-cli` from `codethread/todoist` fork
-- **playwrightCliOverlay** — `buildNpmPackage` for `playwright-cli` from Microsoft source
+
+Fast-moving agent CLIs intentionally have no custom Nix overlay. On macOS,
+Homebrew owns Node and npm owns Codex, Pi, and Playwright CLI under `~/.local`;
+Playwright is npm-managed on NixOS too.
 
 ### [SPEC-006-S2.5] Bootstrap Flow
 
@@ -174,6 +180,12 @@ When adding or renaming NixOS hosts, update both `nix/flake.nix` and `boot/boot.
 
 ### [SPEC-006-S3.2] Environment Variables (Set by All Configs)
 
+Portable shell environment ownership lives in `config/env/base.sh`; see
+[SPEC-009](./shell-environment.md). Nix/Home Manager supplies packages, login
+shell registration, and pre-shell session seeds. Bash, zsh, Nushell, tmux,
+bootstrap, and containers consume the shared contract rather than maintaining
+independent PATH/environment lists.
+
 | Variable | Value |
 |---|---|
 | `DOTFILES` | `~/dev/dots` by default |
@@ -183,6 +195,9 @@ When adding or renaming NixOS hosts, update both `nix/flake.nix` and `boot/boot.
 | `XDG_DATA_HOME` | `~/.local/share` |
 | `XDG_STATE_HOME` | `~/.local/state` |
 | `XDG_CACHE_HOME` | `~/.local/cache` |
+| `CODEX_HOME` | `~/.config/codex` |
+| `VOLTA_HOME` | `~/.volta` |
+| `NPM_CONFIG_PREFIX` | `~/.local` |
 
 For interactive shells and Nix-managed environments, `DOTFILES` remains the canonical clone path. Rebuild helpers (`nrs`, `nfu`, `nrb`, related flake queries) additionally detect the current git worktree root and use it when invoked from a valid dotfiles checkout. The root `Makefile` also overrides `DOTFILES` to the current checkout so `make link` / `make system` operate on the active worktree.
 
@@ -253,6 +268,8 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 - **Generated shell init scripts** — `atuin`, `carapace`, and `direnv` init scripts are generated at Nix eval time and written to `~/.local/cache/`. This avoids runtime generation costs in shell startup.
 
 - **Single bootstrap entrypoint** — `boot/boot.sh` is the current entry point and handles both macOS and NixOS. Older shell-specific bootstrap scripts were removed to keep machine setup paths unambiguous.
+
+- **One shell environment authority** — `config/env/base.sh` owns portable variables and baseline PATH. Nushell is the interactive layer and imports that contract; it no longer duplicates portable toolchain configuration.
 
 - **XDG_CONFIG_HOME points to repo during bootstrap** — `boot.sh` sets `XDG_CONFIG_HOME="${DOTFILES}/config"` so tools find configs before dotty has run. After `dottyLink` activation, configs are symlinked to `~/.config/`.
 

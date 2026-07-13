@@ -1,2 +1,2 @@
-# zsh is not configured as an interactive shell here.
-# This file exists only to keep accidental zsh launches from creating files in $HOME.
+# zsh remains minimal, but accidental interactive launches get human-facing env.
+source "$DOTFILES/config/env/interactive.sh"

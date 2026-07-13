@@ -14,7 +14,7 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 ### [SPEC-001-S1.2] Goals
 
 - Single source of truth for global settings in Nix (`nix/features/claude-code.nix`)
-- Agent CLI binaries provisioned declaratively via `llm-agents.nix`
+- On macOS, Codex, Pi, and Playwright CLI share one user-writable npm prefix
 - All agent assets (agents, skills, commands, rules) version-controlled and symlinked into place via dotty
 - Type-safe hook contracts shared across TypeScript and Bash implementations
 - Context-aware shell wrappers that inject environment-specific prompts
@@ -34,9 +34,10 @@ Four configuration layers compose at runtime:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Package layer: Nix flake inputs + overlays          │
-│   nix/flake.nix, nix/features/common.nix            │
-│   Owns: claude-code, codex, pi binaries   │
+│ Package layer                                        │
+│   macOS: Homebrew Node + ~/.local npm globals       │
+│   NixOS: Nix packages where available               │
+│   Owns: agent CLI binaries                          │
 ├─────────────────────────────────────────────────────┤
 │                                                     │
 │ Layer 1: Nix-generated globals                      │
@@ -78,9 +79,16 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 
 ### [SPEC-001-S2.2] Package Provisioning
 
-- `nix/flake.nix` imports `github:numtide/llm-agents.nix`
-- Its overlay is applied to both the system package set and `pkgsMaster`
-- `nix/features/common.nix` installs `llm-agents` packages for `claude-code`, `codex`, and `pi`
+- Homebrew supplies Node on macOS; Codex, Pi, and Playwright CLI use their native
+  or npm-managed installation and update paths under `~/.local`
+- NixOS Codex, Pi, and Claude are Nix-packaged and updated with `nrs --update`;
+  Playwright CLI remains npm-managed
+- Claude Code continues to use its native installer on macOS
+
+The npm-managed tools install and update through their own upstream commands.
+Boot and system activation do not orchestrate them. `nix-smoke` still requires
+their binaries, so a missing user-managed install remains visible.
+
 - `config/dotty/dotty.toml` links the tracked `pi/` directory into `~/.pi/agent`
 - Most mutable Pi config now lives in `https://github.com/codethread/agents`; this repo keeps the `pi/agent.njk` template plus minimal bootstrap files and symlinks that make Pi consume the shared prompt/config layout
 
@@ -283,7 +291,10 @@ Disables Ctrl+A in Global context.
 
 - **Nix as settings source of truth.** `~/.claude/settings.json` is Nix-store-linked and read-only. Prevents drift from manual edits. Trade-off: requires `make system` (nix rebuild) to change global settings.
 
-- **`llm-agents.nix` for agent CLI packaging.** Agent binaries come from a dedicated upstream flake rather than ad hoc package sources. This reduces custom packaging maintenance and makes adding new CLIs like `pi` trivial.
+- **Native package ownership on macOS.** Homebrew supplies Node and npm owns the
+  fast-moving Codex, Pi, and Playwright CLIs in `~/.local`. This keeps updates
+  independent of Nix rebuilds without a shared update wrapper. NixOS retains
+  `llm-agents.nix` packaging for Codex, Pi, and Claude; Playwright remains npm-managed.
 
 - **Dotty for asset linking, not Nix.** Agents, skills, commands, and rules are symlinked by dotty rather than Nix home-manager. This allows editing assets in dots and seeing changes immediately without a nix rebuild. Settings.json (which is JSON and auto-generated) stays in Nix.
 

@@ -21,8 +21,3 @@ export def alert [msg: string = "Task Finished"] {
 export def symlink [original: path, symbolic: path] {
     ln -s $original $symbolic
 }
-
-# export most common envs for POSIX-shell compatibility
-export def dump-env [] {
-    hide-all {|| bash -lc 'export' | save -f ~/.config/bash/env.local }
-}

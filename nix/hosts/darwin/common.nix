@@ -178,6 +178,7 @@ in
       "yazi" # Blazing fast terminal file manager written in Rust, based on async I/O
       "rsync" # Utility that provides fast incremental file transfer
       "graphviz" # provides dot for diagraph
+      "node" # Runtime for user-owned global npm tools
     ];
     casks = [
       "kitty" # GPU-based terminal emulator

@@ -61,13 +61,15 @@ $env.config.keybindings ++= $keybindings
 $env.config.menus ++= $menus
 $env.config.hooks = (hooks)
 
-$env.STARSHIP_SHELL = "nu"
-$env.PROMPT_COMMAND = {|| starship prompt --cmd-duration $env.CMD_DURATION_MS $'--status=($env.LAST_EXIT_CODE)' }
-$env.PROMPT_COMMAND_RIGHT = {|| starship prompt --right }
-$env.PROMPT_INDICATOR = ""
-$env.PROMPT_INDICATOR_VI_INSERT = ": "
-$env.PROMPT_INDICATOR_VI_NORMAL = "〉"
-$env.PROMPT_MULTILINE_INDICATOR = "::: "
+if $nu.is-interactive {
+    $env.STARSHIP_SHELL = "nu"
+    $env.PROMPT_COMMAND = {|| starship prompt --cmd-duration $env.CMD_DURATION_MS $'--status=($env.LAST_EXIT_CODE)' }
+    $env.PROMPT_COMMAND_RIGHT = {|| starship prompt --right }
+    $env.PROMPT_INDICATOR = ""
+    $env.PROMPT_INDICATOR_VI_INSERT = ": "
+    $env.PROMPT_INDICATOR_VI_NORMAL = "〉"
+    $env.PROMPT_MULTILINE_INDICATOR = "::: "
+}
 
 const workp = "~/.work.nu" | path expand
 source (if ($workp | path exists) { $workp } else { null })

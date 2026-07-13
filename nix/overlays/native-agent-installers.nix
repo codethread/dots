@@ -1,29 +1,4 @@
-final: prev:
-let
-  lib = final.lib;
-  npm = lib.getExe' final.nodejs_24 "npm";
-in
-{
-  nativeAgentInstallCodex = final.writeShellApplication {
-    name = "native-agent-install-codex";
-    runtimeInputs = [
-      final.coreutils
-      final.nodejs_24
-    ];
-    text = ''
-      set -euo pipefail
-
-      export HOME="''${HOME:?HOME is required}"
-      export NPM_CONFIG_PREFIX="''${NPM_CONFIG_PREFIX:-$HOME/.local}"
-
-      if [ "''${1:-}" = "--if-missing" ] && ${npm} ls -g --depth=0 @openai/codex >/dev/null 2>&1; then
-        exit 0
-      fi
-
-      exec ${npm} install -g @openai/codex@latest
-    '';
-  };
-
+final: prev: {
   nativeAgentInstallClaude = final.writeShellApplication {
     name = "native-agent-install-claude";
     runtimeInputs = [

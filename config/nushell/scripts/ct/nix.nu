@@ -348,7 +348,12 @@ export def nix-smoke [
         {
             check: "config: pi settings"
             actual: ($env.HOME | path join ".pi/agent/settings.json")
-            expected: ($dotfiles | path join "pi/settings.json")
+            expected: ($dotfiles | path join "pi/agent/settings.json")
+        }
+        {
+            check: "config: shared env"
+            actual: ($xdg_config | path join "env/base.sh")
+            expected: ($dotfiles | path join "config/env/base.sh")
         }
         {
             check: "config: nushell env"

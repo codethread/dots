@@ -32,7 +32,6 @@ let
   sedCmd = lib.getExe' pkgs.gnused "sed";
   nuCmd = lib.getExe pkgs.nushell;
   nativeAgentInstallClaudeCmd = lib.getExe' pkgs.nativeAgentInstallClaude "native-agent-install-claude";
-  nativeAgentInstallCodexCmd = lib.getExe' pkgs.nativeAgentInstallCodex "native-agent-install-codex";
   bootstrapPath = lib.makeBinPath [
     pkgs.git
     pkgs.coreutils
@@ -83,10 +82,6 @@ in
 
   home.stateVersion = "24.11";
 
-  home.sessionVariables = {
-    # Keep npm globals user-writable for native Darwin installs and ad-hoc npm tools.
-    NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.local";
-  };
   home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
   home.file = {
@@ -103,6 +98,8 @@ in
       source = direnvNushellInit;
       force = true;
     };
+  }
+  // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
     # Stable short path so PI_PACKAGE_DIR avoids the hash-heavy nix store path in system prompts.
     ".pi/pi-source" = {
       source = "${llmAgents.pi}/lib/node_modules/@earendil-works/pi-coding-agent";
@@ -197,7 +194,6 @@ in
       }
 
       sync_native_agent "Claude Code" ${nativeAgentInstallClaudeCmd}
-      sync_native_agent "Codex" ${nativeAgentInstallCodexCmd}
     ''}
   '';
 
@@ -222,14 +218,14 @@ in
     with pkgs;
     [
       # --- Agent tools ---
-      agentPkgSet.nodejs_24
-      playwright-cli
       agentPkgSet.typescript
       agentPkgSet.typescript-language-server
-      llmAgents.pi
     ]
     ++ lib.optionals (!pkgs.stdenv.isDarwin) [
+      # macOS gets Node from Homebrew; these CLIs manage their own updates.
+      agentPkgSet.nodejs_24
       codex
+      llmAgents.pi
       llmAgents.claude-code
     ]
     ++ [

@@ -247,7 +247,7 @@ in
         # avoids old shell stuff
         SHELL = "${bash}";
         # ZDOTDIR = "${config.xdg.configHome}/zsh";
-        # additional envs in env.nu
+        # portable user env lives in config/env/base.sh
       };
 
       respondToBashCommands = false;

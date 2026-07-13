@@ -8,9 +8,6 @@
 
   home.stateVersion = "24.11";
 
-  home.sessionVariables = {
-    NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.local";
-  };
   home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
   home.packages = with pkgs; [

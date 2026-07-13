@@ -30,7 +30,7 @@ The implementation contract lives in `~/dev/projects/wktree/specs/git-worktrees.
 
 ### [SPEC-004-S4.1] PATH
 
-`config/nushell/env.nu` adds `~/.local/bin` to PATH. The external `wktree` repo build writes `~/.local/bin/wktree`, so no dotfiles-specific binary wrapper is needed.
+The shared environment contract (`config/env/base.sh`) places `~/.local/bin` first. Nushell imports that PATH. The external `wktree` repo build writes `~/.local/bin/wktree`, so no dotfiles-specific binary wrapper is needed.
 
 ### [SPEC-004-S4.2] Nushell wrapper import
 
@@ -121,7 +121,7 @@ Owned by this dotfiles repo:
 | -------------------------------- | ----------------------------------------------------------- |
 | `~/dev/projects/wktree`          | External implementation, wrapper, and tests                 |
 | `config/nushell/config.nu`       | Imports the external `wk` wrapper                           |
-| `config/nushell/env.nu`          | Ensures `~/.local/bin` is on PATH                           |
+| `config/env/base.sh`             | Ensures `~/.local/bin` is first on shared PATH              |
 | `config/ct-worktrees/trees.toml` | Local project bootstrap/pool config                         |
 | `config/tmux/tmux.conf`          | Tmux keybindings that may expose worktree/session workflows |
 | `home/.local/bin/tmux-session`   | General session switching and path-derived naming           |

@@ -114,6 +114,8 @@ fail loudly on host-path writes or command failure
 1. **Checkout isolation** — every command receives `DOTFILES=<worktree root>` and module/config paths under that root.
 2. **Home isolation** — `HOME` points at a fresh temp dir.
 3. **XDG isolation** — config/data/cache/state roots point under the temp dir.
+   The harness imports `config/env/base.sh` after setting these roots so
+   every shell tests the same base contract without resolving real-home paths.
 4. **Application isolation** — tools get app-specific state overrides where needed:
    - Neovim: isolated `XDG_*`, optional `NVIM_APPNAME`, no real `stdpath` writes.
    - Nushell: explicit `--config`, `--env-config`, `-I $DOTFILES/config/nushell/scripts`.
@@ -142,6 +144,7 @@ fail loudly on host-path writes or command failure
 | `NU_LIB_DIRS` | Includes `$DOTFILES/config/nushell/scripts` | Nushell module discovery |
 | `TMUX_TMPDIR` / socket flag | `<sandbox>/tmux` | Prevent tmux socket collision |
 | `DOTS_TEST_SANDBOX` | `<sandbox>` | Debug/cleanup anchor |
+| `CT_PATH_EXTRA` | Harness-only tool directories, colon-separated | Explicit PATH extension without inheriting host PATH |
 
 ### [SPEC-008-S4.2] Test mode model
 
@@ -210,6 +213,7 @@ Behavior:
 | Tool | Minimum safe smoke |
 | --- | --- |
 | Nushell | `nu --config $DOTFILES/config/nushell/config.nu --env-config $DOTFILES/config/nushell/env.nu -I $DOTFILES/config/nushell/scripts -c 'print ok'` |
+| Shared env | `HOME=<sandbox>/home XDG_*=<sandbox>/xdg/* sh $DOTFILES/config/env/emit.sh --print0` and assert no real-home paths |
 | Neovim | `nvim --headless -u $DOTFILES/config/nvim/init.lua '+checkhealth' '+qa'` with isolated XDG roots; lighter mode may use `'+lua print("ok")' '+qa'` |
 | tmux | `tmux -S <sandbox>/tmux.sock -f $DOTFILES/config/tmux/tmux.conf new-session -d -s dots-test -c $DOTFILES` then list/kill session |
 | dotty | `dotty link --no-cache $DOTFILES/config/dotty/test-dotty.toml` under sandbox HOME/XDG, then verify symlink targets stay under `$DOTFILES` |

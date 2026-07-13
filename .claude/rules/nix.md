@@ -9,7 +9,7 @@ Architecture and design rationale are in [SPEC-006 nix-infra](devflow/specs/nix-
 
 ## Dual Channel Pattern
 
-Two nixpkgs channels: `pkgs` (unstable) and `pkgsMaster` (bleeding edge). In `common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available. Use `agentPkgSet.*` for fast-moving supporting packages from nixpkgs-master. Pi comes from `llm-agents.nix` via `agentPkgSet."llm-agents".pi` on all platforms. On NixOS, Claude Code also comes from `llm-agents.nix`; on Darwin, Claude/Codex are synced by Home Manager activation via helper scripts from the local `nativeAgentOverlay`, while shared supporting packages still come from Nix.
+Two nixpkgs channels: `pkgs` (unstable) and `pkgsMaster` (bleeding edge). In `common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available. Use `agentPkgSet.*` for fast-moving supporting packages from nixpkgs-master. On NixOS, Codex, Pi, and Claude Code come from Nix. Playwright is npm-managed on both platforms. On Darwin, Homebrew supplies Node, Codex/Pi/Playwright are user-managed npm tools under `~/.local`, and only Claude is synced by Home Manager activation through the local `nativeAgentOverlay`.
 
 ## Adding a New Package
 

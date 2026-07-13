@@ -14,7 +14,7 @@ _reset='\033[0m'
 
 NIX_PROFILE=""
 GIT_BRANCH="main"
-IS_NIXOS=0
+BOOT_IS_NIXOS=0
 IS_MACOS=0
 
 usage() {
@@ -99,7 +99,7 @@ done
 #: profile {{{
 
 if [ -f "/etc/NIXOS" ]; then
-  IS_NIXOS=1
+  BOOT_IS_NIXOS=1
 elif [ "$(uname)" = "Darwin" ]; then
   IS_MACOS=1
 else
@@ -108,7 +108,7 @@ else
 fi
 
 if [ -z "$NIX_PROFILE" ]; then
-  if [ "$IS_NIXOS" -eq 1 ]; then
+  if [ "$BOOT_IS_NIXOS" -eq 1 ]; then
     NIX_PROFILE="homelab"
   else
     NIX_PROFILE="$(default_macos_profile)"
@@ -162,7 +162,7 @@ fi
 #: }}}
 #: hardware {{{
 
-if [ "$IS_NIXOS" -eq 1 ]; then
+if [ "$BOOT_IS_NIXOS" -eq 1 ]; then
   _hw_src="/etc/nixos/hardware-configuration.nix"
   _nixos_host_dir="$(resolve_nixos_host_dir "$NIX_PROFILE")"
   _hw_dest="${DOTFILES}/nix/hosts/nixos/${_nixos_host_dir}/hardware-configuration.nix"
@@ -179,7 +179,8 @@ export XDG_CONFIG_HOME="${DOTFILES}/config"
 export XDG_DATA_HOME="${HOME}/.local/share"
 export XDG_STATE_HOME="${HOME}/.local/state"
 export XDG_CACHE_HOME="${HOME}/.local/cache"
-export PATH="${HOME}/.local/bin:/opt/homebrew/bin:${PATH}"
+# Preserve the repo-backed config root until dotty links ~/.config.
+. "${DOTFILES}/config/env/base.sh"
 
 mkdir -p "$XDG_DATA_HOME"
 mkdir -p "$XDG_CONFIG_HOME"
@@ -189,7 +190,7 @@ mkdir -p "$XDG_CACHE_HOME"
 #: }}}
 #: nixos {{{
 
-if [ "$IS_NIXOS" -eq 1 ]; then
+if [ "$BOOT_IS_NIXOS" -eq 1 ]; then
   if [ ! -f "/etc/codethread/nm.env" ]; then
     printf "${_red}( •_• )${_reset} Missing /etc/codethread/nm.env for NetworkManager profiles\n"
     echo "      Create with:"
@@ -253,7 +254,7 @@ nu \
 #: }}}
 #: commit {{{
 
-if [ "$IS_NIXOS" -eq 1 ]; then
+if [ "$BOOT_IS_NIXOS" -eq 1 ]; then
   _nixos_host_dir="$(resolve_nixos_host_dir "$NIX_PROFILE")"
   _hw_file="nix/hosts/nixos/${_nixos_host_dir}/hardware-configuration.nix"
   if git -C "${DOTFILES}" status --porcelain -- "${_hw_file}" | grep -q .; then

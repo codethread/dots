@@ -1,5 +1,10 @@
-# Keep bash state out of $HOME. Interactive shell is Nushell.
-mkdir -p "$XDG_STATE_HOME/bash" 2>/dev/null
+source "${HOME}/.config/env/base.sh"
+
+# Bash adds only interactive/local state over the shared environment.
+if [[ $- == *i* ]]; then
+  source "$DOTFILES/config/env/interactive.sh"
+  mkdir -p "$XDG_STATE_HOME/bash" 2>/dev/null
+fi
 
 if [[ -f "$XDG_CONFIG_HOME/bash/env.local" ]]; then
   source "$XDG_CONFIG_HOME/bash/env.local"

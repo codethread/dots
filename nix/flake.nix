@@ -17,11 +17,6 @@
       flake = false;
     };
 
-    playwright-cli-src = {
-      url = "github:microsoft/playwright-cli";
-      flake = false;
-    };
-
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -42,7 +37,6 @@
       nufmt,
       tree-sitter-jsonc-src,
       todoist-src,
-      playwright-cli-src,
       nix-darwin,
       home-manager,
       ...
@@ -67,17 +61,6 @@
           preBuild = ''
             goyacc -o filter_parser.go filter_parser.y
           '';
-        };
-      };
-
-      playwrightCliOverlay = final: prev: {
-        playwright-cli = final.buildNpmPackage {
-          pname = "playwright-cli";
-          version = "0-unstable";
-          src = playwright-cli-src;
-          npmDepsHash = "sha256-u44jWprmr3RdzB3aDL3K0ShT5lLxr175z3C8pN43YFA=";
-          dontNpmBuild = true;
-          env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
         };
       };
 
@@ -166,7 +149,6 @@
                 nativeNpmAgentOverlay
                 nufmtOverlay
                 todoistOverlay
-                playwrightCliOverlay
                 nvimTreesitterJsoncOverlay
               ];
             }
@@ -230,7 +212,6 @@
               nativeNpmAgentOverlay
               nufmtOverlay
               todoistOverlay
-              playwrightCliOverlay
               nvimTreesitterJsoncOverlay
             ];
           }
@@ -254,7 +235,6 @@
               nativeNpmAgentOverlay
               nufmtOverlay
               todoistOverlay
-              playwrightCliOverlay
               nvimTreesitterJsoncOverlay
             ];
           }
