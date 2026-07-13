@@ -6,6 +6,16 @@
 }:
 
 let
+  homeDir = config.users.users.${config.system.primaryUser}.home;
+  ccNotifyDir = "${homeDir}/dev/projects/cc-notify";
+  ccNotifyStateDir = "${homeDir}/.local/state/com.codethread.cc-notify";
+  ccNotifyRunner = pkgs.writeShellScript "cc-notify-run" ''
+    set -euo pipefail
+
+    export HOME=${lib.escapeShellArg homeDir}
+    cd ${lib.escapeShellArg ccNotifyDir}
+    exec ${lib.getExe pkgs.bun} run src/main.ts
+  '';
   graphEasy = pkgs.perlPackages.buildPerlPackage {
     pname = "Graph-Easy";
     version = "0.76";
@@ -32,6 +42,17 @@ in
 
   environment.variables.JAVA_HOME = "${pkgs.jdk.home}";
 
+  launchd.user.agents.cc-notify = {
+    serviceConfig = {
+      Label = "com.codethread.cc-notify";
+      ProgramArguments = [ "${ccNotifyRunner}" ];
+      RunAtLoad = true;
+      KeepAlive = true;
+      StandardOutPath = "${ccNotifyStateDir}/std.log";
+      StandardErrorPath = "${ccNotifyStateDir}/std.log";
+    };
+  };
+
   system.activationScripts.nativeOpenspecCli.text = ''
     home="/Users/${config.system.primaryUser}"
 
@@ -41,6 +62,36 @@ in
       NPM_CONFIG_PREFIX="$home/.local" \
       ${lib.getExe' pkgs.nativeNpmInstallOpenspec "native-npm-install-openspec"} --if-missing; then
       echo ">>> WARN: failed to sync OpenSpec CLI; continuing"
+    fi
+  '';
+
+  system.activationScripts.ccNotify.text = ''
+    home=${lib.escapeShellArg homeDir}
+    repo=${lib.escapeShellArg ccNotifyDir}
+
+    /usr/bin/install -d -o ${lib.escapeShellArg config.system.primaryUser} -g staff \
+      ${lib.escapeShellArg ccNotifyStateDir}
+
+    if [ -d "$repo/.git" ]; then
+      echo ">>> cc-notify: repo already present"
+    elif /usr/bin/sudo -u ${lib.escapeShellArg config.system.primaryUser} -H /usr/bin/env \
+      HOME="$home" \
+      ${lib.getExe' pkgs.openssh "ssh"} -o BatchMode=yes -o ConnectTimeout=5 -T git@github.com 2>&1 \
+      | ${lib.getExe' pkgs.gnugrep "grep"} -q "successfully authenticated"; then
+      /usr/bin/sudo -u ${lib.escapeShellArg config.system.primaryUser} -H /usr/bin/env \
+        HOME="$home" \
+        ${lib.getExe pkgs.git} clone git@github.com:codethread/cc-notify.git "$repo" \
+        || echo ">>> WARN: failed to clone cc-notify; continuing"
+    else
+      echo ">>> Skipping cc-notify clone (no SSH auth to GitHub)"
+    fi
+
+    if [ -d "$repo/.git" ]; then
+      if ! /usr/bin/sudo -u ${lib.escapeShellArg config.system.primaryUser} -H /usr/bin/env \
+        HOME="$home" \
+        ${lib.getExe pkgs.bun} install --frozen-lockfile --cwd "$repo"; then
+        echo ">>> WARN: failed to install cc-notify dependencies; continuing"
+      fi
     fi
   '';
 
