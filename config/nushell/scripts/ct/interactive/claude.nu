@@ -41,6 +41,7 @@ def cl-tools-completions [] {
 # Build forwarded args list from common cl flags, then invoke cl with a fixed model
 def _cl-run [
     model: string
+    mine: bool
     continue: bool
     safe: bool
     print: bool
@@ -79,12 +80,22 @@ def _cl-run [
     if ($system_prompt | is-not-empty) { $args ++= [--system-prompt $system_prompt] }
     if ($name | is-not-empty) { $args ++= [--name $name] }
     if ($worktree | is-not-empty) { $args ++= [--worktree $worktree] }
-    ^cl ...$args ...$rest
+    # closures can't capture a mutable var, so freeze args before the with-env block
+    let final_args = $args
+    # --mine points claude at the personal config dir, enabling a separate login from the work default
+    if $mine {
+        with-env { CLAUDE_CONFIG_DIR: ("~/.config/claude" | path expand) } {
+            ^cl ...$final_args ...$rest
+        }
+    } else {
+        ^cl ...$final_args ...$rest
+    }
 }
 
 # cl with sonnet fable
 export def clf [
 	--continue(-c)                                           # Continue most recent conversation
+	--mine(-m)                                               # Use personal config dir (~/.config/claude) for a separate login
 	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
@@ -105,6 +116,7 @@ export def clf [
 ] {
     (_cl-run
         "fable"
+        $mine
         $continue
         $safe
         $print
@@ -129,6 +141,7 @@ export def clf [
 # cl with opus model
 export def clo [
 	--continue(-c)                                           # Continue most recent conversation
+	--mine(-m)                                               # Use personal config dir (~/.config/claude) for a separate login
 	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
@@ -149,6 +162,7 @@ export def clo [
 ] {
     (_cl-run
         "opus"
+        $mine
         $continue
         $safe
         $print
@@ -173,6 +187,7 @@ export def clo [
 # cl with sonnet model
 export def cls [
 	--continue(-c)                                           # Continue most recent conversation
+	--mine(-m)                                               # Use personal config dir (~/.config/claude) for a separate login
 	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
@@ -193,6 +208,7 @@ export def cls [
 ] {
     (_cl-run
         "sonnet"
+        $mine
         $continue
         $safe
         $print
@@ -217,6 +233,7 @@ export def cls [
 # cl with haiku model
 export def clh [
 	--continue(-c)                                           # Continue most recent conversation
+	--mine(-m)                                               # Use personal config dir (~/.config/claude) for a separate login
 	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
@@ -237,6 +254,7 @@ export def clh [
 ] {
     (_cl-run
         "haiku"
+        $mine
         $continue
         $safe
         $print
