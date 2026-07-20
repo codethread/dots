@@ -97,7 +97,6 @@ in
           "Bash"
           "Edit(.claude)"
           "Read(//tmp/claude/**)"
-          "Write(//tmp/claude/**)"
           "Edit(//tmp/claude/**)"
           "WebFetch"
           "WebSearch"
@@ -126,7 +125,6 @@ in
           "ExitWorktree"
 
           "LSP"
-          "ScheduleWakeup"
           "Workflow"
           "ShareOnboardingGuide"
           "DesignSync"
@@ -145,14 +143,6 @@ in
           "Read(**/secrets/**)"
           "Read(**/.netrc)"
           "Read(~/.netrc)"
-
-          # TODO: can probably be brave here
-          "Bash(git reset --hard*)"
-          "Bash(git clean -f*)"
-          "Bash(git branch -D*)"
-          "Bash(git config*)"
-          # "Bash(git commit --amend*)"
-          "Bash(git rebase -i*)"
         ];
         defaultMode = "acceptEdits";
         additionalDirectories = [
@@ -178,37 +168,6 @@ in
             ];
           }
         ];
-        PreToolUse = [
-          {
-            matcher = "Bash";
-            hooks = [
-              {
-                type = "command";
-                command = "cc-hook--npm-redirect";
-              }
-            ];
-          }
-        ];
-        # SessionEnd = [
-        #   {
-        #     hooks = [
-        #       {
-        #         type = "command";
-        #         command = "cc-hook--context-injector session-end";
-        #       }
-        #     ];
-        #   }
-        # ];
-        # SessionStart = [
-        #   {
-        #     hooks = [
-        #       {
-        #         type = "command";
-        #         command = "cc-hook--context-injector session-start";
-        #       }
-        #     ];
-        #   }
-        # ];
       };
       statusLine = {
         type = "command";
