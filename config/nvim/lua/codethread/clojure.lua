@@ -7,8 +7,10 @@
 --
 -- The palette:
 --   plain   (text)  symbols, strings, numbers, keyword names
---   fn      (rose)  clojure.core builtins/macros, namespace aliases, fn usages
---   defname (iris)  a def-form's own name (bold in the dawn/light variant)
+--   fn      (rose)  clojure.core builtins/macros, namespace aliases, fn usages,
+--                   and public `def`/`defn` names
+--   defname (iris)  a private or non-`def`/`defn` def-form's own name (bold in the
+--                   dawn/light variant)
 --   paren   (muted) ( ) [ ] { }
 --   special (iris)  reader macros: # ~ ^
 --   marker  (foam)  the `:`/`::` of a keyword literal
@@ -45,6 +47,9 @@ return function(opts)
 		['@clojure.qualified.name'] = link(anchor.fn),
 		-- A qualified keyword's namespace is data, not a type: keep it plain.
 		['@clojure.keyword.namespace'] = link(anchor.plain),
+		-- A public `def`/`defn` name: part of the namespace's API, so it reads as a
+		-- function. Private/other def-forms fall through to def_name (iris).
+		['@clojure.def.public'] = link(anchor.fn),
 
 		-- Strings yellow; docstrings (a treesitter-only distinction) off-white grey.
 		['@string.clojure'] = { fg = 'gold' },
