@@ -1,18 +1,18 @@
 # :module: pi wrappers and helpers for tty usage
 
-# Pi main agent
-export alias pim = pi --agent main --provider openai-codex --model gpt-5.5 --thinking low
+# Pi daily default
+export alias pim = pi --agent main --provider openai-codex --model gpt-5.6-terra --thinking medium
 
-# Low reasoning cheap
-export alias pil = pi --agent main --provider openai-codex --model gpt-5.4-mini --thinking low
+# Cheap lightweight work
+export alias pil = pi --agent main --provider openai-codex --model gpt-5.6-luna --thinking low
 
-# High reasoning
-export alias pih = pi --agent main --provider openai-codex --model gpt-5.5 --thinking high
+# Hard quality-first work
+export alias pih = pi --agent main --provider openai-codex --model gpt-5.6-sol --thinking high
 
-# Run a slow but cheaper model
-export alias pis = pi --agent main --provider openai-codex --model gpt-5.4 --thinking high
+# Cheaper deep reasoning
+export alias pit = pi --agent main --provider openai-codex --model gpt-5.6-terra --thinking high
 
-# Run a fast but cheaper model
+# Fastest; separate Spark quota
 export alias pif = pi --agent main --provider openai-codex --model gpt-5.3-codex-spark --thinking low
 
 # Opus big OG

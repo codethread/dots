@@ -10,9 +10,11 @@
   "showHardwareCursor": true,
   "editorPaddingX": 1,
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4",
-  "defaultThinkingLevel": "low",
+  "defaultModel": "gpt-5.6-sol",
+  "defaultThinkingLevel": "medium",
   "enabledModels": [
+    "openai-codex/gpt-5.6-sol",
+    "openai-codex/gpt-5.6-terra",
     "openai-codex/gpt-5.5",
     "openai-codex/gpt-5.4-mini",
     "openai-codex/gpt-5.3-codex-spark",
