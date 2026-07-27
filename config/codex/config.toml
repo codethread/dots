@@ -4,7 +4,7 @@ cli_auth_credentials_store = "file"
 sandbox_mode = "danger-full-access"
 approval_policy = "never"
 personality = "pragmatic"
-model_reasoning_effort = "high"
+model_reasoning_effort = "low"
 model = "gpt-5.6-sol"
 approvals_reviewer = "user"
 service_tier = "default"
@@ -91,6 +91,9 @@ trust_level = "trusted"
 [projects."/Users/ct/dev/dots"]
 trust_level = "trusted"
 
+[projects."/Users/ct"]
+trust_level = "trusted"
+
 [projects."/Users/ct/dev/projects/notes"]
 trust_level = "trusted"
 
@@ -118,6 +121,15 @@ trust_level = "trusted"
 [projects."/Users/ct/dev/projects/wktree"]
 trust_level = "trusted"
 
+[projects."/Users/ct/Documents/Codex/2026-07-22/summarize-the-tenants-in-this-document"]
+trust_level = "trusted"
+
+[projects."/private/tmp/claude/kanban.spool-8wwjk"]
+trust_level = "trusted"
+
+[projects."/Users/ct/dev/projects/chatty"]
+trust_level = "trusted"
+
 [tui.model_availability_nux]
 "gpt-5.3-codex-spark" = 4
 "gpt-5.5" = 4
@@ -132,12 +144,12 @@ source_type = "local"
 source = "/Users/ct/dev/projects/agents"
 
 [marketplaces.openai-bundled]
-last_updated = "2026-07-17T09:08:40Z"
+last_updated = "2026-07-22T04:58:24Z"
 source_type = "local"
 source = "/Users/ct/.config/codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-07-16T07:51:28Z"
+last_updated = "2026-07-24T07:52:00Z"
 source_type = "local"
 source = "/Users/ct/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
@@ -183,6 +195,9 @@ enabled = true
 [plugins."template-creator@openai-primary-runtime"]
 enabled = true
 
+[plugins."sites@openai-bundled"]
+enabled = true
+
 [plugins."browser@openai-bundled"]
 enabled = true
 
@@ -214,13 +229,13 @@ NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_n
 NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/ct/.config/codex"
 CODEX_HOME = "/Users/ct/.config/codex"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "5b74180ac40ca4cf726cad15c5ff886f159224f1c0306ea364ad9eea6a7e7ac2,6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "2793c6809f8a4c90923435aa3a6d1e6f8cabb145212f06328b860b076b899525,6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
 NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
 NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.715.21425"
+BROWSER_USE_CODEX_APP_VERSION = "26.715.71837"
 CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
 
 [mcp_servers.computer-use]
@@ -247,5 +262,5 @@ global = "zed"
 
 [shell_environment_policy.set]
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "5b74180ac40ca4cf726cad15c5ff886f159224f1c0306ea364ad9eea6a7e7ac2,6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "2793c6809f8a4c90923435aa3a6d1e6f8cabb145212f06328b860b076b899525,6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/ct/.config/codex"
