@@ -179,6 +179,17 @@ return {
 							},
 						},
 					},
+					clojure_lsp = {
+						-- Repo root wins over any nested deps.edn. Clojure monorepos give each
+						-- sub-project its own deps.edn, and clojure-lsp resolves one classpath
+						-- per root — rooting at a sub-project drops every sibling and dependency
+						-- off the classpath, killing go-to-definition across the repo. Nested
+						-- tables are priority tiers; the second keeps non-git checkouts working.
+						root_markers = {
+							{ '.git' },
+							{ 'deps.edn', 'project.clj', 'build.boot', 'shadow-cljs.edn', 'bb.edn' },
+						},
+					},
 					zls = {},
 				},
 				-- you can do any additional lsp server setup here
