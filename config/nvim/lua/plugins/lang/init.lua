@@ -55,7 +55,7 @@ return U.flatten {
 			init = function()
 				vim.g['conjure#mapping#doc_word'] = false
 				vim.g['conjure#extract#tree_sitter#enabled'] = true
-				vim.g['conjure#mapping#doc_word'] = { 'K' }
+				-- vim.g['conjure#mapping#doc_word'] = { 'K' }
 				vim.cmd [[
 				  "" lua require('plugins.lang.nushell')
 				  " rust and lua removed
