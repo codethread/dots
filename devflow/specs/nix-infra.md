@@ -3,7 +3,7 @@
 Document ID: SPEC-006
 Configuration identification: SPEC-006; migrated from `specs/nix-infra.md`; canonical path `devflow/specs/nix-infra.md`.
 **Status:** Implemented
-**Last Updated:** 2026-07-13
+**Last Updated:** 2026-07-23
 
 ## [SPEC-006-S1] 1. Overview
 
@@ -72,8 +72,8 @@ Two nixpkgs inputs provide version flexibility:
 
 In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available,
 falling back to `pkgs`. TypeScript tooling and NixOS agent packages available
-through Nix use this channel. macOS agent CLIs are intentionally outside Nix and
-use the shared npm prefix instead.
+through Nix use this channel. On macOS, nix-darwin delegates native packages to
+Homebrew while user-managed npm tools use the shared npm prefix.
 
 ### [SPEC-006-S2.4] Custom Overlays
 
@@ -82,8 +82,8 @@ Defined in `flake.nix`, applied to all system configs:
 - **todoistOverlay** — `buildGoModule` for `todoist-cli` from `codethread/todoist` fork
 
 Fast-moving agent CLIs intentionally have no custom Nix overlay. On macOS,
-Homebrew owns Node and npm owns Codex, Pi, and Playwright CLI under `~/.local`;
-Playwright is npm-managed on NixOS too.
+nix-darwin declares Homebrew's native Node and Codex packages, while npm owns
+Pi and Playwright CLI under `~/.local`; Playwright is npm-managed on NixOS too.
 
 ### [SPEC-006-S2.5] Bootstrap Flow
 

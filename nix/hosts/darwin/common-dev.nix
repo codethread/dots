@@ -88,6 +88,7 @@ in
     "ungoogled-chromium" # Google Chromium, sans integration with Google
     "visual-studio-code" # Open-source code editor
     "zed" # Multiplayer code editor
+    "codex" # Native Codex CLI; avoids inheriting Volta's npm launcher state
   ];
 
   # shared extensions (work-specific ones live in common-work.nix)

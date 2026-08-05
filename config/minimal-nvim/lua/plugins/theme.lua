@@ -1,3 +1,14 @@
+-- Mirrors the main config's check without depending on it, so this stays standalone
+local function mode()
+	local state_home = vim.env.XDG_STATE_HOME or (vim.fn.expand '~' .. '/.local/state')
+	local path = state_home .. '/color-theme'
+	if vim.fn.filereadable(path) == 1 then
+		local lines = vim.fn.readfile(path)
+		if vim.trim(lines[1] or '') == 'light' then return 'light' end
+	end
+	return 'dark'
+end
+
 return {
 	{
 		'rose-pine/neovim',
@@ -5,8 +16,9 @@ return {
 		priority = 1000,
 		lazy = false,
 		config = function()
+			vim.o.background = mode()
 			require('rose-pine').setup {
-				variant = 'moon',
+				variant = mode() == 'light' and 'dawn' or 'moon',
 				styles = { italic = true, transparency = true },
 				enable = {
 					terminal = true,

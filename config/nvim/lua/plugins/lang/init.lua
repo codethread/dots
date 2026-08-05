@@ -73,7 +73,10 @@ return U.flatten {
 		},
 
 		{
-			dir = '~/dev/projects/skein-src/integrations/neovim',
+			dir = U.machine {
+				work = '~/dev/projects/skein/integrations/neovim',
+				home = '~/dev/projects/skein-src/integrations/neovim',
+			},
 			name = 'skein.nvim',
 			dependencies = { 'Olical/conjure' },
 			ft = { 'clojure' },

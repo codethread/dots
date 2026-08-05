@@ -3,7 +3,7 @@
 Document ID: SPEC-001
 Configuration identification: SPEC-001; migrated from `specs/agentic-config.md`; canonical path `devflow/specs/agentic-config.md`.
 **Status:** Implemented
-**Last Updated:** 2026-04-09
+**Last Updated:** 2026-07-23
 
 ## [SPEC-001-S1] 1. Overview
 
@@ -14,7 +14,8 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 ### [SPEC-001-S1.2] Goals
 
 - Single source of truth for global settings in Nix (`nix/features/claude-code.nix`)
-- On macOS, Codex, Pi, and Playwright CLI share one user-writable npm prefix
+- On macOS, nix-darwin declares Homebrew's native Codex CLI while Pi and
+  Playwright CLI share one user-writable npm prefix
 - All agent assets (agents, skills, commands, rules) version-controlled and symlinked into place via dotty
 - Type-safe hook contracts shared across TypeScript and Bash implementations
 - Context-aware shell wrappers that inject environment-specific prompts
@@ -35,7 +36,7 @@ Four configuration layers compose at runtime:
 ```
 ┌─────────────────────────────────────────────────────┐
 │ Package layer                                        │
-│   macOS: Homebrew Node + ~/.local npm globals       │
+│   macOS: Homebrew Codex/Node + ~/.local npm globals │
 │   NixOS: Nix packages where available               │
 │   Owns: agent CLI binaries                          │
 ├─────────────────────────────────────────────────────┤
@@ -79,15 +80,18 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 
 ### [SPEC-001-S2.2] Package Provisioning
 
-- Homebrew supplies Node on macOS; Codex, Pi, and Playwright CLI use their native
-  or npm-managed installation and update paths under `~/.local`
+- nix-darwin declares Homebrew's native Node and Codex packages on macOS, while
+  Pi and Playwright CLI use npm-managed installation and update paths under
+  `~/.local`
 - NixOS Codex, Pi, and Claude are Nix-packaged and updated with `nrs --update`;
   Playwright CLI remains npm-managed
 - Claude Code continues to use its native installer on macOS
 
-The npm-managed tools install and update through their own upstream commands.
-Boot and system activation do not orchestrate them. `nix-smoke` still requires
-their binaries, so a missing user-managed install remains visible.
+`make system` installs the declared Homebrew cask when Codex is missing.
+Homebrew upgrades remain intentional because `homebrew.onActivation.upgrade` is
+disabled; use `brew upgrade --cask codex` to update it. The npm-managed tools
+install and update through their upstream commands. `nix-smoke` still requires
+their binaries, so a missing install remains visible.
 
 - `config/dotty/dotty.toml` links the tracked `pi/` directory into `~/.pi/agent`
 - Most mutable Pi config now lives in `https://github.com/codethread/agents`; this repo keeps the `pi/agent.njk` template plus minimal bootstrap files and symlinks that make Pi consume the shared prompt/config layout
@@ -291,10 +295,11 @@ Disables Ctrl+A in Global context.
 
 - **Nix as settings source of truth.** `~/.claude/settings.json` is Nix-store-linked and read-only. Prevents drift from manual edits. Trade-off: requires `make system` (nix rebuild) to change global settings.
 
-- **Native package ownership on macOS.** Homebrew supplies Node and npm owns the
-  fast-moving Codex, Pi, and Playwright CLIs in `~/.local`. This keeps updates
-  independent of Nix rebuilds without a shared update wrapper. NixOS retains
-  `llm-agents.nix` packaging for Codex, Pi, and Claude; Playwright remains npm-managed.
+- **Native package ownership on macOS.** nix-darwin declares Homebrew's native
+  Node and Codex packages, while npm owns Pi and Playwright in `~/.local`.
+  Running Codex as a native binary prevents it from inheriting a project-scoped
+  Node runtime. NixOS retains `llm-agents.nix` packaging for Codex, Pi, and
+  Claude; Playwright remains npm-managed.
 
 - **Dotty for asset linking, not Nix.** Agents, skills, commands, and rules are symlinked by dotty rather than Nix home-manager. This allows editing assets in dots and seeing changes immediately without a nix rebuild. Settings.json (which is JSON and auto-generated) stays in Nix.
 

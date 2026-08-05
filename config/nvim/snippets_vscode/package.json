@@ -24,6 +24,8 @@
       },
       {
         "language": [
+          "javascript",
+          "javascriptreact",
           "typescript",
           "typescriptreact"
         ],
