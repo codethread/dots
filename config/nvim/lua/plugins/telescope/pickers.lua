@@ -90,6 +90,17 @@ function M.workspace_symbols(opts)
 		:find()
 end
 
+local function load_help_plugin(filename)
+	local plugin_dir = vim.fs.dirname(vim.fs.dirname(filename))
+
+	for _, plugin in pairs(require('lazy.core.config').plugins) do
+		if plugin.dir == plugin_dir and not plugin._.loaded then
+			require('lazy').load { plugins = { plugin } }
+			return
+		end
+	end
+end
+
 function M.action_open_help_vert(prompt_bufnr)
 	return function()
 		local utils = require 'telescope.utils'
@@ -99,7 +110,14 @@ function M.action_open_help_vert(prompt_bufnr)
 			return
 		end
 		actions.close(prompt_bufnr)
-		vim.cmd('vert help ' .. selection.value)
+
+		if selection.filename then load_help_plugin(selection.filename) end
+
+		vim.cmd {
+			cmd = 'help',
+			args = { selection.value },
+			mods = { vertical = true },
+		}
 	end
 end
 
