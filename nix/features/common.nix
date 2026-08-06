@@ -98,13 +98,6 @@ in
       source = direnvNushellInit;
       force = true;
     };
-  }
-  // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-    # Stable short path so PI_PACKAGE_DIR avoids the hash-heavy nix store path in system prompts.
-    ".pi/pi-source" = {
-      source = "${llmAgents.pi}/lib/node_modules/@earendil-works/pi-coding-agent";
-      force = true;
-    };
   };
 
   home.activation.userBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

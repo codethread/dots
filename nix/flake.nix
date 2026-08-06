@@ -46,7 +46,6 @@
         "llm-agents" = llm-agents.packages.${final.system};
       };
       nativeAgentOverlay = import ./overlays/native-agent-installers.nix;
-      nativeNpmAgentOverlay = import ./overlays/native-npm-installers.nix;
       nufmtOverlay = final: prev: {
         nufmt = nufmt.packages.${final.system}.default;
       };
@@ -146,7 +145,6 @@
               nixpkgs.overlays = [
                 llmAgentsOverlay
                 nativeAgentOverlay
-                nativeNpmAgentOverlay
                 nufmtOverlay
                 todoistOverlay
                 nvimTreesitterJsoncOverlay
@@ -165,7 +163,6 @@
           overlays = [
             llmAgentsOverlay
             nativeAgentOverlay
-            nativeNpmAgentOverlay
             nufmtOverlay
             nvimTreesitterJsoncOverlay
           ];
@@ -209,7 +206,6 @@
             nixpkgs.overlays = [
               llmAgentsOverlay
               nativeAgentOverlay
-              nativeNpmAgentOverlay
               nufmtOverlay
               todoistOverlay
               nvimTreesitterJsoncOverlay
@@ -232,7 +228,6 @@
             nixpkgs.overlays = [
               llmAgentsOverlay
               nativeAgentOverlay
-              nativeNpmAgentOverlay
               nufmtOverlay
               todoistOverlay
               nvimTreesitterJsoncOverlay

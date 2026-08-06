@@ -36,7 +36,6 @@ in
     clojure
     graphEasy
     jdk
-    nativeNpmOpenspec
     flock
   ];
 
@@ -52,18 +51,6 @@ in
       StandardErrorPath = "${ccNotifyStateDir}/std.log";
     };
   };
-
-  system.activationScripts.nativeOpenspecCli.text = ''
-    home="/Users/${config.system.primaryUser}"
-
-    echo ">>> Syncing OpenSpec CLI"
-    if ! /usr/bin/sudo -u ${config.system.primaryUser} /usr/bin/env \
-      HOME="$home" \
-      NPM_CONFIG_PREFIX="$home/.local" \
-      ${lib.getExe' pkgs.nativeNpmInstallOpenspec "native-npm-install-openspec"} --if-missing; then
-      echo ">>> WARN: failed to sync OpenSpec CLI; continuing"
-    fi
-  '';
 
   system.activationScripts.ccNotify.text = ''
     home=${lib.escapeShellArg homeDir}

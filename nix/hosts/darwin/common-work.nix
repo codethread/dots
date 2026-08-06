@@ -1,9 +1,4 @@
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}:
+{ ... }:
 
 {
   imports = [ ./common-dev.nix ];
@@ -12,18 +7,6 @@
     home = "/Users/${config.system.primaryUser}";
     shell = pkgs.nushell;
   };
-
-  system.activationScripts.nativeBitwardenCli.text = ''
-    home="/Users/${config.system.primaryUser}"
-
-    echo ">>> Syncing Bitwarden CLI"
-    if ! /usr/bin/sudo -u ${config.system.primaryUser} /usr/bin/env \
-      HOME="$home" \
-      NPM_CONFIG_PREFIX="$home/.local" \
-      ${lib.getExe pkgs.nativeAgentInstallBitwarden} --if-missing; then
-      echo ">>> WARN: failed to sync Bitwarden CLI; continuing"
-    fi
-  '';
 
   environment.systemPackages = [ pkgs.pandoc ];
 

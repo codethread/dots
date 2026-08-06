@@ -93,11 +93,6 @@ fi
 
 # Agent and service state ----------------------------------------------------
 
-if [ -e /etc/NIXOS ]; then
-  PI_PACKAGE_DIR="${PI_PACKAGE_DIR:-$HOME/.pi/pi-source}"
-else
-  PI_PACKAGE_DIR="$NPM_CONFIG_PREFIX/lib/node_modules/@earendil-works/pi-coding-agent"
-fi
 PI_CODING_AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
 PI_CACHE_RETENTION="${PI_CACHE_RETENTION:-long}"
 PI_OFFLINE="${PI_OFFLINE:-1}"
@@ -153,6 +148,40 @@ if [ -n "${IN_NIX_SHELL:-}${DIRENV_DIR:-}" ]; then
   ct_project_path_first=true
   ct_path_append_list "$ct_inherited_path"
 fi
+# Volta launches tools with a selected image directory first in PATH and sets
+# _VOLTA_TOOL_RECURSION. Preserve (or recover) those directories before adding
+# Volta's shim: rebuilding PATH with only the shim makes it fall back to the
+# system Node instead of the project-pinned toolchain.
+ct_volta_image_prefix=false
+if [ -n "${_VOLTA_TOOL_RECURSION+x}" ]; then
+  ct_remaining=$ct_inherited_path
+  while [ -n "$ct_remaining" ]; do
+    case "$ct_remaining" in
+      *:*) ct_dir=${ct_remaining%%:*}; ct_remaining=${ct_remaining#*:} ;;
+      *) ct_dir=$ct_remaining; ct_remaining= ;;
+    esac
+    case "$ct_dir" in
+      "$VOLTA_HOME"/tools/image/*/*/bin)
+        ct_path_append "$ct_dir"
+        ct_volta_image_prefix=true
+        ;;
+      *) break ;;
+    esac
+  done
+  if [ "$ct_volta_image_prefix" = false ]; then
+    ct_volta_cli=$(command -v volta 2>/dev/null || true)
+    if [ -n "$ct_volta_cli" ]; then
+      for ct_volta_tool in pnpm yarn npm node; do
+        ct_volta_executable=$($ct_volta_cli which "$ct_volta_tool" 2>/dev/null || true)
+        case "$ct_volta_executable" in
+          "$VOLTA_HOME"/tools/image/*/*/bin/*)
+            ct_path_append "${ct_volta_executable%/*}"
+            ;;
+        esac
+      done
+    fi
+  fi
+fi
 ct_path_append "$HOME/.local/bin"
 ct_path_append "$CARGO_BIN"
 ct_path_append "$VOLTA_HOME/bin"
@@ -206,6 +235,7 @@ else
 fi
 
 unset ct_dir ct_inherited_path ct_inherited_shell ct_os ct_path ct_project_path_first ct_remaining
+unset ct_volta_cli ct_volta_executable ct_volta_image_prefix ct_volta_tool
 unset -f ct_path_append ct_path_append_list 2>/dev/null || true
 if [ "$ct_restore_allexport" = true ]; then
   set +a

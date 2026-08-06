@@ -156,6 +156,8 @@ in
   homebrew = {
     enable = true;
     onActivation = {
+      # Keep Bundle-managed npm CLIs in the user-owned location on PATH.
+      extraEnv.NPM_CONFIG_PREFIX = "${homeDir}/.local";
       autoUpdate = false;
       upgrade = false;
       cleanup = "uninstall"; # remove packages not listed here (use "zap" only when stable)
@@ -180,6 +182,12 @@ in
       "graphviz" # provides dot for diagraph
       "node" # Runtime for user-owned global npm tools
     ];
+    extraConfig = ''
+      npm "@earendil-works/pi-coding-agent"
+      npm "@openai/codex"
+      npm "@playwright/cli"
+      npm "@bitwarden/cli"
+    '';
     casks = [
       "kitty" # GPU-based terminal emulator
       "font-fira-code" # Fira Code font
