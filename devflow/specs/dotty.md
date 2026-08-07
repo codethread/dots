@@ -24,8 +24,8 @@ General-purpose dotfile symlink manager written in Nushell. Takes a TOML configu
 
 - Managing application-specific config generation (that's each tool's concern; e.g. `claude-code.nix` generates `settings.json`)
 - Package installation or system configuration (that's Nix)
-- Template rendering or variable substitution in linked files (files are symlinked as-is)
-- Cross-machine config variation (handled at the Nix profile layer, not dotty)
+- Text template rendering or variable substitution in linked files
+- Structured formats other than TOML (the merge architecture may add formats later)
 
 ## [SPEC-003-S2] 2. Architecture
 
@@ -42,6 +42,7 @@ config/nushell/scripts/ct/dotty/
     cache.nu                Per-project cache (load/store/delete)
     helpers.nu              Conflict detection, path overlap validation
     list-files.nu           File enumeration with git-ignore filtering
+    template.nu             Three-way TOML merge and template cache
 ```
 
 ### [SPEC-003-S2.2] Linking Algorithm (`dotty link`)
@@ -101,6 +102,24 @@ target = "~/path/to/destination"          # Required. Supports `~` and `${ENV}` 
 excludes = ["glob_pattern", ...]          # Optional. Combined with global excludes.
 ```
 
+Templates merge repository-owned values into machine-local structured files:
+
+```toml
+[[template]]
+name = "codex"
+origin = "${DOTFILES}/templates/codex-config.toml"
+target = "~/.config/codex/config.toml"
+array_identity = { "skills.config" = "path" }
+```
+
+A template cache stores the previous parsed source and synchronized target under
+`~/.local/data/dotty-templates/<name>.toml`. The previous source defines the
+VCS-owned subset. Target edits to owned paths sync back into the source; direct
+source edits sync forward into the target. Target-only paths and record-array
+identities remain machine-local. Scalar arrays synchronize as ordered values;
+record arrays require an explicit dotted-path identity. Dotty collects divergent
+edits and reports all conflicting paths without changing source, target, or cache.
+
 ### [SPEC-003-S3.2] Current Projects
 
 | Name | Origin | Target | Project-Specific Excludes |
@@ -130,7 +149,7 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 
 | Command | Purpose |
 |---|---|
-| `dotty link [--no-cache] [--force] [config_path]` | Create/update symlinks. `--no-cache` forces full re-sync. `--force` removes conflicting real files. Optional config path overrides default. |
+| `dotty link [--no-cache] [--force] [config_path]` | Create/update symlinks, then bidirectionally synchronize owned TOML template paths. `--no-cache` applies to symlink discovery; template caches are always used for merge safety. |
 | `dotty format` | Format link output for editor integration (pipe: `dotty link \| dotty format`) |
 | `dotty is-cwd [dir] [--exit]` | Check if directory is a dotty project. `--exit` returns exit code instead of bool. |
 | `dotty prune [target]` | Remove broken symlinks under target (default: `~/.config/**/*`) |

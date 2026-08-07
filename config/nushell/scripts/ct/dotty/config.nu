@@ -92,6 +92,24 @@ def validate-toml-config [toml_config: record] {
         }
     }
 
+    if "template" in $toml_config {
+        let template_names = $toml_config.template | get name
+        if ($template_names | length) != ($template_names | uniq | length) {
+            error make {msg: "Error: Duplicate template names found in configuration", help: "Each template must have a unique name"}
+        }
+
+        for template in $toml_config.template {
+            for field in [name origin target] {
+                if not ($field in $template) {
+                    error make {msg: $"Error: Missing required field '($field)' in template configuration"}
+                }
+            }
+            if ("array_identity" in $template) and not ($template.array_identity | describe | str starts-with "record") {
+                error make {msg: $"Error: Field 'array_identity' in template '($template.name)' must be a table"}
+            }
+        }
+    }
+
     # Validate global section if present
     if "global" in $toml_config {
         if ("excludes" in $toml_config.global) and not (($toml_config.global.excludes | describe) | str starts-with "list") {
@@ -100,6 +118,28 @@ def validate-toml-config [toml_config: record] {
     }
 
     $toml_config
+}
+
+# Load merge-template configurations from the same TOML file.
+export def load-templates [config_path?: path] {
+    let config_file = $config_path | default (get-config-path)
+    if not ($config_file | path exists) {
+        error make {msg: $"Error: Configuration file not found at ($config_file)"}
+    }
+
+    let toml_config = validate-toml-config (open $config_file)
+    if "template" not-in $toml_config { return [] }
+
+    $toml_config.template
+    | each {|template|
+        {
+            name: $template.name
+            origin: ($template.origin | expand-env-vars | path expand)
+            target: ($template.target | expand-env-vars | path expand --no-symlink)
+            array_identity: ($template | get --optional array_identity | default {})
+        }
+    }
+    | where {|template| $template.origin | path exists }
 }
 
 # Load configuration from TOML file

@@ -9,7 +9,7 @@ export def assert-no-conflicts [
     let files = $proj
     | get files
     | each {|| get target }
-    | reduce {|it,acc| $it ++ $acc }
+    | reduce --fold [] {|it,acc| $it ++ $acc }
 
     let repeated_files = $files | uniq --repeated
     match ($repeated_files | is-empty) {
