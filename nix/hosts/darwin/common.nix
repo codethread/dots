@@ -199,6 +199,7 @@ in
       "todoist-app" # To-do list
       "obsidian" # Knowledge base that works on top of a local folder of plain text Markdown files
       "1password" # Password manager that keeps all passwords secure behind one password
+      "google-chrome"
     ];
     # enable on boot load machine
     # bug requires login on every switch

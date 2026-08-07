@@ -19,6 +19,7 @@
     tmux
     atuin
     starship
+    vivid
     fzf
     fd
     ripgrep
