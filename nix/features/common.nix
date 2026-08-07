@@ -9,6 +9,12 @@
 let
   agentPkgSet = if pkgsMaster == null then pkgs else pkgsMaster;
   llmAgents = agentPkgSet."llm-agents";
+  cursorAgent = llmAgents.cursor-agent;
+  cursorAgentCommand = pkgs.runCommand "cursor-agent-command" { } ''
+    mkdir -p "$out/bin"
+    ln -s ${lib.getExe cursorAgent} "$out/bin/agent"
+  '';
+  pi = llmAgents.pi.override { useBun = true; };
 
   # Pre-compiled treesitter parsers — avoids recompilation on every nvim
   # launch (nix store GC invalidates dynamically-compiled .so paths)
@@ -31,7 +37,6 @@ let
   grepCmd = lib.getExe' pkgs.gnugrep "grep";
   sedCmd = lib.getExe' pkgs.gnused "sed";
   nuCmd = lib.getExe pkgs.nushell;
-  nativeAgentInstallClaudeCmd = lib.getExe' pkgs.nativeAgentInstallClaude "native-agent-install-claude";
   bootstrapPath = lib.makeBinPath [
     pkgs.git
     pkgs.coreutils
@@ -174,23 +179,7 @@ in
     fi
   '';
 
-  home.activation.nativeAgentBootstrap = lib.hm.dag.entryAfter [ "userBootstrap" ] ''
-    ${lib.optionalString pkgs.stdenv.isDarwin ''
-      sync_native_agent() {
-        local label="$1"
-        shift
-
-        echo ">>> Syncing $label"
-        if ! "$@"; then
-          echo ">>> WARN: failed to sync $label; continuing"
-        fi
-      }
-
-      sync_native_agent "Claude Code" ${nativeAgentInstallClaudeCmd}
-    ''}
-  '';
-
-  home.activation.dottyLink = lib.hm.dag.entryAfter [ "nativeAgentBootstrap" ] ''
+  home.activation.dottyLink = lib.hm.dag.entryAfter [ "userBootstrap" ] ''
     DOTFILES="''${DOTFILES:-$HOME/dev/dots}"
     if [ ! -d "$DOTFILES" ]; then
       echo ">>> WARN: skipping dotty link; $DOTFILES missing"
@@ -213,13 +202,14 @@ in
       # --- Agent tools ---
       agentPkgSet.typescript
       agentPkgSet.typescript-language-server
+      llmAgents.claude-code
+      llmAgents.codex
+      cursorAgent
+      cursorAgentCommand
+      pi
     ]
     ++ lib.optionals (!pkgs.stdenv.isDarwin) [
-      # macOS gets Node from Homebrew; these CLIs manage their own updates.
       agentPkgSet.nodejs_24
-      codex
-      llmAgents.pi
-      llmAgents.claude-code
     ]
     ++ [
       # --- Languages ---

@@ -199,7 +199,7 @@ in
         CLAUDE_CODE_DISABLE_AUTO_MEMORY = "1";
         DISABLE_FEEDBACK_COMMAND = "1";
         DISABLE_ERROR_REPORTING = "1";
-        DISABLE_AUTOUPDATER = "0";
+        DISABLE_AUTOUPDATER = "1";
         CLAUDE_CODE_NO_FLICKER = "1";
         # so we can see files
         MANPAGER = "cat";

@@ -27,17 +27,6 @@ let
     "/usr/sbin"
     "/sbin"
   ];
-  homebrewTapName = tap: if builtins.isString tap then tap else tap.name;
-  trustedHomebrewTaps = lib.filter (tap: !(lib.hasPrefix "homebrew/" tap)) (
-    map homebrewTapName config.homebrew.taps
-  );
-  trustHomebrewTapCommands = lib.concatMapStringsSep "\n" (tap: ''
-    echo >&2 "Trusting Homebrew tap ${tap}..."
-    if ! brew tap | /usr/bin/grep -qx ${lib.escapeShellArg tap}; then
-      brew tap ${lib.escapeShellArg tap}
-    fi
-    brew trust ${lib.escapeShellArg tap}
-  '') trustedHomebrewTaps;
 in
 {
   imports = [ ../../services/darwin-git-maintenance.nix ];
@@ -45,6 +34,10 @@ in
   nix.settings = {
     experimental-features = "nix-command flakes";
     accept-flake-config = true;
+    extra-substituters = [ "https://cache.numtide.com" ];
+    extra-trusted-public-keys = [
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+    ];
   };
   nixpkgs.config.allowUnfree = true;
 
@@ -120,19 +113,6 @@ in
     };
   };
 
-  system.activationScripts.preActivation.text = lib.mkIf (trustedHomebrewTaps != [ ]) ''
-    if [ -x ${config.homebrew.prefix}/bin/brew ]; then
-      echo >&2 "Homebrew tap trust..."
-      PATH=${config.homebrew.prefix}/bin:$PATH \
-      /usr/bin/sudo \
-        --preserve-env=PATH \
-        --user=${lib.escapeShellArg config.homebrew.user} \
-        --set-home \
-        env HOMEBREW_NO_AUTO_UPDATE=1 \
-        /bin/sh -c ${lib.escapeShellArg trustHomebrewTapCommands}
-    fi
-  '';
-
   system.activationScripts.postActivation.text = ''
     /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${syncengineStateDir}
 
@@ -158,20 +138,30 @@ in
     onActivation = {
       # Keep Bundle-managed npm CLIs in the user-owned location on PATH.
       extraEnv.NPM_CONFIG_PREFIX = "${homeDir}/.local";
-      autoUpdate = false;
-      upgrade = false;
+      autoUpdate = true;
+      upgrade = true;
       cleanup = "uninstall"; # remove packages not listed here (use "zap" only when stable)
-      # brew bundle now requires --force when --cleanup is passed (since Homebrew 5.x)
-      extraFlags = [ "--force" ];
     };
     taps = [
-      "nikitabobko/tap" # aerospace
-      "morantron/tmux-fingers" # tmux-fingers
+      {
+        name = "nikitabobko/tap";
+        trusted = true;
+      } # aerospace
+      {
+        name = "morantron/tmux-fingers";
+        trusted = true;
+      } # tmux-fingers
+      {
+        name = "codethread/wktree";
+        clone_target = "https://github.com/codethread/wktree";
+        trusted = true;
+      } # wktree
     ];
     brews = [
       "mas" # required for masApps to function
       "pam-reattach" # PAM module so Touch ID works inside tmux sudo prompts
       "morantron/tmux-fingers/tmux-fingers" # mouseless terminal interaction
+      "codethread/wktree/wktree" # Deterministic git worktree manager
       "ical-buddy" # Get events and tasks from the macOS calendar database
       "pngpaste" # Paste PNG into files
       "podman" # Container CLI on macOS; nixpkgs podman is Linux-only
@@ -183,8 +173,6 @@ in
       "node" # Runtime for user-owned global npm tools
     ];
     extraConfig = ''
-      npm "@earendil-works/pi-coding-agent"
-      npm "@openai/codex"
       npm "@playwright/cli"
       npm "@bitwarden/cli"
     '';

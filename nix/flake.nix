@@ -1,6 +1,13 @@
 {
   description = "codethread's system configuration — macOS (nix-darwin) + NixOS";
 
+  nixConfig = {
+    extra-substituters = [ "https://cache.numtide.com" ];
+    extra-trusted-public-keys = [
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+    ];
+  };
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-master.url = "github:nixos/nixpkgs";
@@ -45,7 +52,6 @@
       llmAgentsOverlay = final: prev: {
         "llm-agents" = llm-agents.packages.${final.system};
       };
-      nativeAgentOverlay = import ./overlays/native-agent-installers.nix;
       nufmtOverlay = final: prev: {
         nufmt = nufmt.packages.${final.system}.default;
       };
@@ -144,7 +150,6 @@
             {
               nixpkgs.overlays = [
                 llmAgentsOverlay
-                nativeAgentOverlay
                 nufmtOverlay
                 todoistOverlay
                 nvimTreesitterJsoncOverlay
@@ -162,7 +167,6 @@
           inherit system;
           overlays = [
             llmAgentsOverlay
-            nativeAgentOverlay
             nufmtOverlay
             nvimTreesitterJsoncOverlay
           ];
@@ -205,7 +209,6 @@
           {
             nixpkgs.overlays = [
               llmAgentsOverlay
-              nativeAgentOverlay
               nufmtOverlay
               todoistOverlay
               nvimTreesitterJsoncOverlay
@@ -227,7 +230,6 @@
           {
             nixpkgs.overlays = [
               llmAgentsOverlay
-              nativeAgentOverlay
               nufmtOverlay
               todoistOverlay
               nvimTreesitterJsoncOverlay

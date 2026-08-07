@@ -366,11 +366,6 @@ export def nix-smoke [
             expected: ($dotfiles | path join "config/nushell/config.nu")
         }
         {
-            check: "config: codex"
-            actual: ($xdg_config | path join "codex/config.toml")
-            expected: ($dotfiles | path join "config/codex/config.toml")
-        }
-        {
             check: "config: kitty"
             actual: ($xdg_config | path join "kitty/kitty.conf")
             expected: ($dotfiles | path join "config/kitty/kitty.conf")
@@ -393,7 +388,13 @@ export def nix-smoke [
         )
     }
 
-    # settings.json is Nix-store-managed (read-only), not dotty-symlinked — just check it exists
+    # Generated and Nix-managed files are regular files, not dotty symlinks.
+    let codex_config = $xdg_config | path join "codex/config.toml"
+    $checks = (
+        $checks
+        | append (_smoke-check "config: codex (generated)" ($codex_config | path exists) $codex_config)
+    )
+
     let claude_settings = $env.HOME | path join ".claude/settings.json"
     $checks = (
         $checks
