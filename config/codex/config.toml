@@ -133,6 +133,48 @@ trust_level = "trusted"
 [projects."/Users/ct/dev/vendor/codex"]
 trust_level = "trusted"
 
+[projects."/Users/ct/dev/projects/tidy.spool"]
+trust_level = "trusted"
+
+[projects."/Users/ct/dev/projects/notebook.spool"]
+trust_level = "trusted"
+
+[projects."/Users/ct/dev/projects/standup.spool"]
+trust_level = "trusted"
+
+[projects."/private/var/folders/6w/lnly9x394flgz3q7zty955500000gn/T/tmp.1cNWXkATrQ"]
+trust_level = "trusted"
+
+[projects."/private/var/folders/6w/lnly9x394flgz3q7zty955500000gn/T/tmp.au3iicmA8x"]
+trust_level = "trusted"
+
+[projects."/private/var/folders/6w/lnly9x394flgz3q7zty955500000gn/T/tmp.yy8EQdrrzI"]
+trust_level = "trusted"
+
+[projects."/private/var/folders/6w/lnly9x394flgz3q7zty955500000gn/T/tmp.HK57vJlhLz/session"]
+trust_level = "trusted"
+
+[projects."/private/var/folders/6w/lnly9x394flgz3q7zty955500000gn/T/tmp.1FOWfkvnMY/session"]
+trust_level = "trusted"
+
+[projects."/private/tmp/claude/foreign-repo.5E2YNy"]
+trust_level = "trusted"
+
+[projects."/private/var/folders/6w/lnly9x394flgz3q7zty955500000gn/T/tmp.4fdYxgp8sI/session"]
+trust_level = "trusted"
+
+[projects."/private/var/folders/6w/lnly9x394flgz3q7zty955500000gn/T/tmp.DsYwmcqzhV/session"]
+trust_level = "trusted"
+
+[projects."/private/var/folders/6w/lnly9x394flgz3q7zty955500000gn/T/tmp.18rBY82Llm/session"]
+trust_level = "trusted"
+
+[projects."/private/tmp"]
+trust_level = "trusted"
+
+[projects."/Users/ct/Documents/Codex/2026-08-04/what-tools"]
+trust_level = "trusted"
+
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "context-remaining", "weekly-limit", "used-tokens", "thread-id"]
 status_line_use_colors = true
@@ -151,6 +193,9 @@ trust_level = "trusted"
 "gpt-5.5" = 4
 "gpt-5.6-sol" = 4
 
+[notice]
+hide_rate_limit_model_nudge = true
+
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
 
@@ -160,14 +205,14 @@ source_type = "local"
 source = "/Users/ct/dev/projects/agents"
 
 [marketplaces.openai-bundled]
-last_updated = "2026-08-05T05:01:37Z"
+last_updated = "2026-08-07T05:25:47Z"
 source_type = "local"
-source = "/Users/adamhall/.config/codex/.tmp/bundled-marketplaces/openai-bundled"
+source = "/Users/ct/.config/codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-08-03T02:02:45Z"
+last_updated = "2026-08-06T02:51:43Z"
 source_type = "local"
-source = "/Users/adamhall/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+source = "/Users/ct/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
 [plugins."coding@agents"]
 enabled = true
@@ -197,22 +242,22 @@ enabled = true
 enabled = true
 
 [plugins."documents@openai-primary-runtime"]
-enabled = true
+enabled = false
 
 [plugins."pdf@openai-primary-runtime"]
-enabled = true
+enabled = false
 
 [plugins."spreadsheets@openai-primary-runtime"]
-enabled = true
+enabled = false
 
 [plugins."presentations@openai-primary-runtime"]
-enabled = true
+enabled = false
 
 [plugins."template-creator@openai-primary-runtime"]
-enabled = true
+enabled = false
 
 [plugins."sites@openai-bundled"]
-enabled = true
+enabled = false
 
 [plugins."browser@openai-bundled"]
 enabled = true
@@ -243,8 +288,8 @@ startup_timeout_sec = 120
 NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
 NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
 NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
-NODE_REPL_TRUSTED_CODE_PATHS = "/Users/adamhall/.config/codex:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
-CODEX_HOME = "/Users/adamhall/.config/codex"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/ct/.config/codex:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
+CODEX_HOME = "/Users/ct/.config/codex"
 NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "091a81603ff202a16ed56557709bf42d97caf8f0dd2e07ae9e26d7c014d71035"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
@@ -279,4 +324,30 @@ global = "zed"
 [shell_environment_policy.set]
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "091a81603ff202a16ed56557709bf42d97caf8f0dd2e07ae9e26d7c014d71035"
-NODE_REPL_TRUSTED_CODE_PATHS = "/Users/adamhall/.config/codex:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/ct/.config/codex:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
+
+[shell_environment_policy.filters]
+"_VOLTA_TOOL_RECURSION" = "exclude"
+
+[apps.connector_20205bf7d4e99a89d7154bb849718324]
+enabled = false
+
+[[skills.config]]
+path = "/Users/ct/.config/codex/skills/.system/imagegen/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "/Users/ct/.config/codex/skills/.system/plugin-creator/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "/Users/ct/.config/codex/skills/.system/skill-creator/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "/Users/ct/.config/codex/skills/.system/review-agent/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "/Users/ct/.config/codex/skills/.system/skill-installer/SKILL.md"
+enabled = false
