@@ -29,6 +29,7 @@ def _darwin_default_profile [] {
         "work-adamhall-boot" => "work-adamhall-boot"
         "work-boot" => "work-boot"
         work => "work"
+        home => "personal"
         personal => "personal"
         _ => "dev"
     }
