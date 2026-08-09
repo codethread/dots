@@ -1,3 +1,5 @@
+config-version = 2
+
 after-startup-command = []
 start-at-login = false
 enable-normalization-flatten-containers = true
@@ -13,6 +15,9 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
 # prevent cmd+h
 automatically-unhide-macos-hidden-apps = true
+
+# Config version 2 no longer infers these from workspace keybindings.
+persistent-workspaces = ['primary', 'alt', 'social', 'planner', 'figma', 'other', 'test', 'ide']
 
 [exec]
 inherit-env-vars = true
@@ -123,9 +128,13 @@ run = 'move-node-to-workspace primary'
 if.app-name-regex-substring = 'Cursor'
 run = 'move-node-to-workspace ide'
 
-# [[on-window-detected]]
-# if.app-id = 'com.google.Chrome'
-# run = 'move-node-to-workspace alt'
+[[on-window-detected]]
+if.app-id = 'com.openai.codex'
+run = 'move-node-to-workspace ide'
+
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+run = 'move-node-to-workspace alt'
 
 [[on-window-detected]]
 if.app-id = 'company.thebrowser.Browser'
@@ -149,9 +158,9 @@ run = 'move-node-to-workspace figma'
 # Test
 
 # always own screen and flexible for ui testing
-[[on-window-detected]]
-if.app-id = 'com.google.Chrome'
-run = ['layout floating', 'move-node-to-workspace test']
+# [[on-window-detected]]
+# if.app-id = 'com.google.Chrome'
+# run = ['layout floating', 'move-node-to-workspace test']
 [[on-window-detected]]
 if.app-id = 'org.chromium.Chromium'
 run = ['layout floating', 'move-node-to-workspace test']
