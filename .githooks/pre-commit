@@ -63,7 +63,7 @@ collect_staged_files '*.nix' nix_files
 
 if [ ${#nix_files[@]} -gt 0 ]; then
 	ensure_no_unstaged_changes nixfmt "${nix_files[@]}"
-	nixfmt "${nix_files[@]}"
+	nix develop "${ROOT}/nix" --command nixfmt "${nix_files[@]}"
 	git add -- "${nix_files[@]}"
 fi
 

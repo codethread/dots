@@ -175,6 +175,20 @@
         };
     in
     {
+      devShells =
+        nixpkgs.lib.genAttrs
+          [
+            "aarch64-darwin"
+            "x86_64-darwin"
+            "aarch64-linux"
+            "x86_64-linux"
+          ]
+          (system: {
+            default = nixpkgs.legacyPackages.${system}.mkShell {
+              packages = [ nixpkgs.legacyPackages.${system}.nixfmt ];
+            };
+          });
+
       # macOS (personal dev machine) — darwin-rebuild switch --flake .#dev
       # Hostname must match: scutil --get LocalHostName
       darwinConfigurations.dev = darwinFor ./hosts/darwin/dev.nix "ct" ./profiles/dev.nix;

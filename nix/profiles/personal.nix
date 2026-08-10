@@ -1,6 +1,15 @@
-{ pkgs, config, ... }:
+{
+  pkgs,
+  pkgsMaster ? pkgs,
+  config,
+  ...
+}:
 
 # Lightweight personal laptop profile: terminal, shell, ssh/git, and small CLI basics.
+let
+  llmAgents = pkgsMaster."llm-agents";
+  pi = llmAgents.pi.override { useBun = true; };
+in
 {
   imports = [
     ../features/darwin-common.nix
@@ -11,6 +20,9 @@
   home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
   home.packages = with pkgs; [
+    llmAgents.claude-code
+    llmAgents.codex
+    pi
     nushell
     openssh
     git

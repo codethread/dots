@@ -1,6 +1,6 @@
 {
   "lastChangelogVersion": "0.84.0",
-  "theme": "rose-pine",
+  "theme": "rose-pine-moon",
   "quietStartup": true,
   "npmCommand": [
     "npm",
