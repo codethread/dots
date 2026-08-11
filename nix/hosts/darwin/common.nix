@@ -162,7 +162,6 @@ in
       "pam-reattach" # PAM module so Touch ID works inside tmux sudo prompts
       "morantron/tmux-fingers/tmux-fingers" # mouseless terminal interaction
       "codethread/wktree/wktree" # Deterministic git worktree manager
-      "codethread/chatty/chatty" # Menu-bar dictation helper
       "ical-buddy" # Get events and tasks from the macOS calendar database
       "pngpaste" # Paste PNG into files
       "podman" # Container CLI on macOS; nixpkgs podman is Linux-only
