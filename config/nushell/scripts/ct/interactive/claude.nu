@@ -12,6 +12,19 @@ def cl-output-format-completions [] {
     ["text" "json" "stream-json"]
 }
 
+def cl-output-style-completions [] {
+
+    # built-ins plus the custom styles linked from claude/output-styles/
+    [
+        "Default"
+        "Proactive"
+        "Explanatory"
+        "Learning"
+        "ELI5"
+        "pairing"
+    ]
+}
+
 def cl-permission-mode-completions [] {
     [
         "acceptEdits"
@@ -59,9 +72,29 @@ def _cl-run [
     system_prompt: string
     name: string
     worktree: string
+    output_style: string
+    settings: record
     rest: list<string>
 ] {
     mut args = [--model $model]
+    # tty sessions get the pairing style by default; headless --print runs stay terse
+    let style = if ($output_style | is-not-empty) {
+        $output_style
+    } else if $print or ("outputStyle" in $settings) {
+        ""
+    } else {
+        "pairing"
+    }
+    # --settings takes inline json; dedicated flags win over the raw record
+    let overrides = if ($style | is-not-empty) {
+        $settings | upsert outputStyle $style
+    } else {
+        $settings
+    }
+    if ($overrides | is-not-empty) { $args ++= [
+        --settings
+        ($overrides | to json --raw)
+    ] }
     if $continue { $args ++= [--continue] }
     # dangerous-skip is the default for tty usage; --safe opts back into permission prompts
     if not $safe { $args ++= [--dangerously-skip-permissions] }
@@ -112,6 +145,8 @@ export def clf [
 	--system-prompt: string = ""                             # System prompt for the session
 	--name(-n): string = ""                                  # Display name for this session
 	--worktree(-w): string = ""                              # Create a new git worktree for this session
+	--output-style: string@cl-output-style-completions = ""   # Output style for this session
+	--settings: record = {}                                  # Raw settings.json overrides for this session
 	...rest: string
 ] {
     (_cl-run
@@ -134,6 +169,8 @@ export def clf [
         $system_prompt
         $name
         $worktree
+        $output_style
+        $settings
         $rest
     )
 }
@@ -158,6 +195,8 @@ export def clo [
 	--system-prompt: string = ""                             # System prompt for the session
 	--name(-n): string = ""                                  # Display name for this session
 	--worktree(-w): string = ""                              # Create a new git worktree for this session
+	--output-style: string@cl-output-style-completions = ""   # Output style for this session
+	--settings: record = {}                                  # Raw settings.json overrides for this session
 	...rest: string
 ] {
     (_cl-run
@@ -180,6 +219,8 @@ export def clo [
         $system_prompt
         $name
         $worktree
+        $output_style
+        $settings
         $rest
     )
 }
@@ -204,6 +245,8 @@ export def cls [
 	--system-prompt: string = ""                             # System prompt for the session
 	--name(-n): string = ""                                  # Display name for this session
 	--worktree(-w): string = ""                              # Create a new git worktree for this session
+	--output-style: string@cl-output-style-completions = ""   # Output style for this session
+	--settings: record = {}                                  # Raw settings.json overrides for this session
 	...rest: string
 ] {
     (_cl-run
@@ -226,6 +269,8 @@ export def cls [
         $system_prompt
         $name
         $worktree
+        $output_style
+        $settings
         $rest
     )
 }
@@ -250,6 +295,8 @@ export def clh [
 	--system-prompt: string = ""                             # System prompt for the session
 	--name(-n): string = ""                                  # Display name for this session
 	--worktree(-w): string = ""                              # Create a new git worktree for this session
+	--output-style: string@cl-output-style-completions = ""   # Output style for this session
+	--settings: record = {}                                  # Raw settings.json overrides for this session
 	...rest: string
 ] {
     (_cl-run
@@ -272,6 +319,8 @@ export def clh [
         $system_prompt
         $name
         $worktree
+        $output_style
+        $settings
         $rest
     )
 }

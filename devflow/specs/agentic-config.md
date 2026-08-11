@@ -258,7 +258,9 @@ Direct `pi` invocation with shared repo-aware configuration:
 
 ### [SPEC-001-S4.10] Nushell Wrappers (`config/nushell/scripts/ct/interactive/claude.nu`)
 
-- `clo`/`cls`/`clh` — model-specific Claude wrappers (opus/sonnet/haiku)
+- `clf`/`clo`/`cls`/`clh` — model-specific Claude wrappers (fable/opus/sonnet/haiku)
+- `--output-style` and `--settings` (a nushell record) serialise to `claude --settings '<json>'`, giving per-session overrides of the Nix-managed globals
+- output style defaults to `pairing` for tty sessions; `--print` runs omit it so headless output stays terse
 - `cll` — ephemeral haiku session with auto-cleanup of session files
 - `_claude-session`, `_claude-prompts`, `_claude-session-stats` — session log analysis
 
