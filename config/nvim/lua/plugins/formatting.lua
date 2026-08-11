@@ -85,6 +85,9 @@ return {
 
 				proto = { 'buf' },
 
+				edn = { 'cljfmt' },
+				clojure = { 'cljfmt' },
+
 				-- applied as fallback
 				['_'] = { 'trim_whitespace' },
 			},

@@ -49,7 +49,12 @@ vim.opt.updatetime = 300 -- Faster completion
 vim.opt.timeoutlen = 500 -- By default timeoutlen is 1000 ms
 -- vim.opt.formatoptions-=cro                  -- Stop newline continution of comments
 -- vim.opt.clipboard:append("unnamed") -- Copy paste between vim and everything else
-if vim.env.SSH_TTY then vim.g.clipboard = 'osc52' end
+-- Kitty's SSH kitten does not always provide SSH_TTY (for example, without a
+-- remote PTY), but it does preserve the other standard SSH environment vars.
+-- Force OSC 52 for any SSH session so writes to the + register reach the
+-- clipboard of the Kitty instance that initiated the connection.
+local is_ssh = vim.env.SSH_CONNECTION or vim.env.SSH_CLIENT or vim.env.SSH_TTY
+if is_ssh then vim.g.clipboard = 'osc52' end
 vim.opt.signcolumn = 'yes'
 -- always keep some space around the window
 vim.opt.scrolloff = 4
