@@ -38,6 +38,7 @@ return {
 			provider_selector = function(_, filetype)
 				---@type table<string, UfoProviderEnum[] | ''> empty '' disables
 				local ftMap = {
+					clojure = { 'indent' },
 					vim = { 'indent' },
 					typescriptreact = { 'lsp' },
 					typescript = { 'lsp' },

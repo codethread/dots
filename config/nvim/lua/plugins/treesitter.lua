@@ -31,7 +31,7 @@ return {
 				-- scripting
 				{ 'awk', 'bash', 'jq', 'nu' },
 				-- langs
-				{ 'c', 'rust', 'gleam', 'zig', 'disassembly', 'devicetree' },
+				{ 'c', 'clojure', 'rust', 'gleam', 'zig', 'disassembly', 'devicetree' },
 				{ 'go', 'gosum', 'gomod', 'gowork' },
 				-- DB
 				{ 'sql' },
