@@ -11,7 +11,6 @@ set -euo pipefail
 # --- Prompt snippets ---
 PROMPT_PERSONAL="this repo uses github (via gh)"
 PROMPT_CONCURRENCY="Sub-agent concurrency: spawn multiple read-only agents freely (explore, research, etc), but only ever one mutating agent at a time. Don't run read-only agents alongside a mutating agent — they may read stale data."
-PROMPT_CONCISE="When reporting information, be extremely concise and sacrifice grammar for sake of concision."
 
 # --- Parse flags ---
 DANGEROUSLY_SKIP=false
@@ -56,7 +55,6 @@ if [[ ! "$PWD" == */work/* ]]; then
 fi
 
 PROMPTS+=("$PROMPT_CONCURRENCY")
-PROMPTS+=("$PROMPT_CONCISE")
 
 if [[ ${#PROMPTS[@]} -gt 0 ]]; then
     JOINED="$(printf '%s\n' "${PROMPTS[@]}")"
