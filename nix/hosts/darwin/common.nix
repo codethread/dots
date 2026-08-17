@@ -125,6 +125,11 @@ in
       echo "warning: could not write com.apple.universalaccess reduceMotion; set it in System Settings > Accessibility > Display" >&2
     fi
 
+    # nix-darwin's `upgrade` option upgrades both formulae and casks. Update
+    # formulae explicitly after the Bundle install so casks can self-update.
+    /usr/bin/sudo -u ${config.system.primaryUser} -H \
+      ${config.homebrew.prefix}/bin/brew upgrade --formula
+
     /usr/bin/killall SystemUIServer >/dev/null 2>&1 || true
     /usr/bin/killall Finder >/dev/null 2>&1 || true
     /usr/bin/killall Dock >/dev/null 2>&1 || true
@@ -139,7 +144,7 @@ in
       # Keep Bundle-managed npm CLIs in the user-owned location on PATH.
       extraEnv.NPM_CONFIG_PREFIX = "${homeDir}/.local";
       autoUpdate = true;
-      upgrade = true;
+      upgrade = false; # casks manage their own updates
       cleanup = "uninstall"; # remove packages not listed here (use "zap" only when stable)
     };
     taps = [
