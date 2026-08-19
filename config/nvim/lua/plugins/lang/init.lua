@@ -72,16 +72,16 @@ return U.flatten {
 			end,
 		},
 
-		{
-			dir = U.machine {
-				work = '~/dev/projects/skein/integrations/neovim',
-				home = '~/dev/projects/skein-src/integrations/neovim',
-			},
-			name = 'skein.nvim',
-			dependencies = { 'Olical/conjure' },
-			ft = { 'clojure' },
-			cmd = { 'SkeinConnect' },
-		},
+		-- {
+		-- 	dir = U.machine {
+		-- 		work = '~/dev/projects/skein/integrations/neovim',
+		-- 		home = '~/dev/projects/skein-src/integrations/neovim',
+		-- 	},
+		-- 	name = 'skein.nvim',
+		-- 	dependencies = { 'Olical/conjure' },
+		-- 	ft = { 'clojure' },
+		-- 	cmd = { 'SkeinConnect' },
+		-- },
 
 		{
 			'gpanders/nvim-parinfer',

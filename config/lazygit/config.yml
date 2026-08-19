@@ -4,48 +4,36 @@ git:
   paging:
     # set the inline pager to difft for better context
     externalDiffCommand: difft --color=always
-  pagers:
+  diffRenderers:
     # <c-t> to view full diff in kitty (or whatever set in gitconfig)
-    - useExternalDiffGitConfig: true
+    - type: extDiff
 gui:
   skipDiscardChangeWarning: true
-
   theme:
     activeBorderColor:
       - default
       - bold
-
     inactiveBorderColor:
       - default
-
     searchingActiveBorderColor:
       - default
       - bold
-
     optionsTextColor:
       - default
-
     selectedLineBgColor:
       - default
-
     inactiveViewSelectedLineBgColor:
       - default
       - bold
-
     cherryPickedCommitFgColor:
       - default
-
     cherryPickedCommitBgColor:
       - default
-
     markedBaseCommitFgColor:
       - default
-
     markedBaseCommitBgColor:
       - default
-
     unstagedChangesColor:
       - default
-
     defaultFgColor:
       - default
