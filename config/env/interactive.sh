@@ -12,7 +12,8 @@ if [ -n "${VSCODE_IPC_HOOK_CLI:-}" ]; then
 elif [ -n "${SSH_CONNECTION:-}${SSH_CLIENT:-}${SSH_TTY:-}" ]; then
   VISUAL="nvim"
 else
-  VISUAL="${VISUAL:-zed --wait}"
+  VISUAL="nvim"
+  # VISUAL="${VISUAL:-zed --wait}"
 fi
 
 HISTFILE="${HISTFILE:-$XDG_STATE_HOME/bash/history}"

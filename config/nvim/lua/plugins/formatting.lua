@@ -11,12 +11,59 @@ if vim.g.vscode then return {} end
 
 if vim.g.vscode then return {} end
 
-local prettier_format = {
-	-- 'biome',
-	'prettierd',
-	'prettier',
-	stop_after_first = true,
-}
+local function has_config(bufnr, names)
+	local filename = vim.api.nvim_buf_get_name(bufnr)
+	local start = filename ~= '' and vim.fs.dirname(filename) or vim.uv.cwd()
+
+	return vim.fs.find(names, {
+		path = start,
+		upward = true,
+		type = 'file',
+	})[1] ~= nil
+end
+
+local function package_uses_prettier(bufnr)
+	local filename = vim.api.nvim_buf_get_name(bufnr)
+	local start = filename ~= '' and vim.fs.dirname(filename) or vim.uv.cwd()
+
+	for _, package_json in ipairs(vim.fs.find('package.json', {
+		path = start,
+		upward = true,
+		type = 'file',
+	})) do
+		local package = vim.json.decode(table.concat(vim.fn.readfile(package_json), '\n'))
+		if package.prettier ~= nil then return true end
+	end
+
+	return false
+end
+
+local function web_formatters(bufnr)
+	if has_config(bufnr, { 'biome.json', 'biome.jsonc' }) then
+		return { 'biome', stop_after_first = true }
+	end
+
+	if has_config(bufnr, {
+		'.prettierrc',
+		'.prettierrc.json',
+		'.prettierrc.json5',
+		'.prettierrc.yaml',
+		'.prettierrc.yml',
+		'.prettierrc.toml',
+		'.prettierrc.js',
+		'.prettierrc.cjs',
+		'.prettierrc.mjs',
+		'.prettierrc.ts',
+		'prettier.config.js',
+		'prettier.config.cjs',
+		'prettier.config.mjs',
+		'prettier.config.ts',
+	}) or package_uses_prettier(bufnr) then
+		return { 'prettierd', 'prettier', stop_after_first = true }
+	end
+
+	return { 'oxfmt', stop_after_first = true }
+end
 
 return {
 	{
@@ -64,18 +111,18 @@ return {
 				-- },
 				--
 
-				javascript = prettier_format,
-				javascriptreact = prettier_format,
-				typescript = prettier_format,
-				typescriptreact = prettier_format,
-				css = prettier_format,
-				html = prettier_format,
+				javascript = web_formatters,
+				javascriptreact = web_formatters,
+				typescript = web_formatters,
+				typescriptreact = web_formatters,
+				css = web_formatters,
+				html = web_formatters,
 				json = { lsp_format = 'prefer', stop_after_first = true },
 				jsonc = { lsp_format = 'prefer', stop_after_first = true },
-				yaml = prettier_format,
-				markdown = prettier_format,
-				graphql = prettier_format,
-				svelte = prettier_format,
+				yaml = web_formatters,
+				markdown = web_formatters,
+				graphql = web_formatters,
+				svelte = web_formatters,
 
 				sh = { 'shfmt' },
 				bash = { 'shfmt' },

@@ -24,6 +24,9 @@ source (if ($carapace | path exists) { $carapace } else { null })
 const direnv = "~/.local/cache/direnv/init.nu" | path expand
 source (if ($direnv | path exists) { $direnv } else { null })
 
+const strands = "~/dev/projects/skein-src/integrations/nushell/strand-completions.nu" | path expand
+source (if ($strands | path exists) { $strands } else { null })
+
 def get-package-scripts [] {
     open package.json | get scripts | items {|key,_| $key }
 }

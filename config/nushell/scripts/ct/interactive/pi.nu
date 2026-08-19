@@ -7,13 +7,13 @@ export alias pim = pi --agent main --provider openai-codex --model gpt-5.6-terra
 export alias pil = pi --agent main --provider openai-codex --model gpt-5.6-luna --thinking high
 
 # Hard quality-first work
-export alias pih = pi --agent main --provider openai-codex --model gpt-5.6-sol --thinking high
+export alias pih = pi --agent main --provider openai-codex --model gpt-5.6-sol --thinking low
 
 # Cheaper deep reasoning
-export alias pit = pi --agent main --provider openai-codex --model gpt-5.6-terra --thinking high
+export alias pix = pi --agent main --provider openai-codex --model gpt-5.6-terra --thinking high
 
 # Fastest; separate Spark quota
-export alias pif = pi --agent main --provider openai-codex --model gpt-5.3-codex-spark --thinking low
+export alias pif = pi --agent main --provider openai-codex --model gpt-5.6-luna --thinking low
 
 # Opus big OG
 export alias pio = pi --agent main --provider anthropic --model claude-opus-4-6 --thinking high

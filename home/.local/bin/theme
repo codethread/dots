@@ -251,10 +251,11 @@ echo "$MODE" > "$MODE_FILE"
 echo "$FAMILY" > "$FAMILY_FILE"
 cp "$THEME_CONF" "$ACTIVE_THEME_CONF"
 
-# reload live kitty instances; silence errors if no instance is running
+# Reload the full config so theme options beyond colors, such as
+# text_fg_override_threshold, are updated in live kitty instances too.
 if command -v kitty >/dev/null 2>&1; then
-  kitty @ --to "$KITTY_SOCKET" set-colors --all --configured "$THEME_CONF" 2>/dev/null \
-    || kitty @ set-colors --all --configured "$THEME_CONF" 2>/dev/null \
+  kitty @ --to "$KITTY_SOCKET" load-config 2>/dev/null \
+    || kitty @ load-config 2>/dev/null \
     || true
 fi
 
