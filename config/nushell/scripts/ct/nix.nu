@@ -17,20 +17,12 @@ def _work_default_profile_for_user [user: string] {
     }
 }
 
+# Nix profiles identify a machine/account; CT_USER only identifies home vs work context.
 def _darwin_default_profile [] {
-    let default = match ($env.USER? | default "") {
+    match ($env.USER? | default "") {
         "adam.hall" => (_work_default_profile_for_user "adam.hall")
         "adamhall" => (_work_default_profile_for_user "adamhall")
         codethread => "personal"
-        _ => "dev"
-    }
-
-    match ($env.CT_USER? | default $default) {
-        "work-adamhall-boot" => "work-adamhall-boot"
-        "work-boot" => "work-boot"
-        work => "work"
-        home => "personal"
-        personal => "personal"
         _ => "dev"
     }
 }

@@ -82,6 +82,10 @@ in
     fi
   '';
 
+  homebrew.brews = [
+    "imagemagick" # image maker
+  ];
+
   homebrew.casks = [
     "1password-cli" # Command-line interface for 1Password
     "google-chrome" # Web browser

@@ -152,8 +152,4 @@ in
     /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${backupNotesStateDir}
     /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${highCpuStateDir}
   '';
-
-  homebrew.casks = [
-    "discord" # Voice and text chat software
-  ];
 }
