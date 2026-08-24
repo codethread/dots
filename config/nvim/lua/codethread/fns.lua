@@ -258,6 +258,15 @@ function M.yank_absolute_path()
 	return path
 end
 
+---Copy the current location in vimgrep format: /absolute/path:line:column
+function M.yank_current_location()
+	local path = vim.fn.expand '%:p'
+	if not path or path == '' then return end
+	local location = string.format('%s:%d:%d', path, vim.fn.line '.', vim.fn.col '.')
+	M.store_to_clipboard(location)
+	return location
+end
+
 function M.yank_home_relative_path()
 	local path = vim.fn.expand '%:p'
 	if not path or path == '' then return end

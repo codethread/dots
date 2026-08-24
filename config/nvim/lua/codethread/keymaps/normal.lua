@@ -48,31 +48,31 @@ else
 
 --[[stylua: ignore]] --format
 Keys.list({}, {
-	{ 'jk'   , 'esc'            , '<ESC>'                                     , mode = 'i' },
-	{ 'jj'   , 'backspace word' , '<C-w>'                                     , mode = 'i' },
-	{ '<C-d>', 'delete char'    , '<C-o>C'                                    , mode = 'i' },
-	{ '}'    , 'next'           , Cmd 'AerialPrev'                             },
-	{ '{'    , 'prev'           , Cmd 'AerialNex'                              },
-	{ 'ga'   , 'alt file'       , Cmd 'Other'                                  },
-	-- { 'gx'   , 'Go to link'     , function() require('codethread.gx').gx() end },
-	{ 'n'    , 'Center next'    , 'nzzzv'                                      },
-	{ 'N'    , 'Center prev'    , 'Nzzzv'                                      },
-	{ 'J'    , 'Center join'    , 'mzJ`z'                                      },
-	{ 'ZQ'   , 'Quit no save'   , '<cmd>qa!<cr>'                               },
-	{ '<C-n>', 'NeoTree'        , Cmd 'Neotree reveal'                         },
-	{ '<C-u>', 'Center Up'      , '<C-u>zz'                                    },
-	{ '<C-d>', 'Center Up'      , '<C-d>zz'                                    },
-	{ '<C-q>', 'Toggle quickfix', fns.toggle_quickfix                          },
+	{ 'jk'   , 'esc'                   , '<ESC>'                  , mode = 'i' },
+	{ 'jj'   , 'backspace word'        , '<C-w>'                  , mode = 'i' },
+	{ '<C-d>', 'delete char'           , '<C-o>C'                 , mode = 'i' },
+	{ '}'    , 'next'                  , Cmd 'AerialPrev'          },
+	{ '{'    , 'prev'                  , Cmd 'AerialNex'           },
+	{ 'ga'   , 'alt file'              , Cmd 'Other'               },
+	{ 'gy'   , 'copy absolute location', fns.yank_current_location },
+	{ 'n'    , 'Center next'           , 'nzzzv'                   },
+	{ 'N'    , 'Center prev'           , 'Nzzzv'                   },
+	{ 'J'    , 'Center join'           , 'mzJ`z'                   },
+	{ 'ZQ'   , 'Quit no save'          , '<cmd>qa!<cr>'            },
+	{ '<C-n>', 'NeoTree'               , Cmd 'Neotree reveal'      },
+	{ '<C-u>', 'Center Up'             , '<C-u>zz'                 },
+	{ '<C-d>', 'Center Up'             , '<C-d>zz'                 },
+	{ '<C-q>', 'Toggle quickfix'       , fns.toggle_quickfix       },
 })
 end
 
 
 --[[stylua: ignore]] --format
 Keys.list({ mode = 'v' }, {
-	{ '<leader>y', 'copy to clipboard', function() require('codethread.clipper').copy_visual_selection() end },
-	{ 'ss', 'live'        , function() require('telescope-live-grep-args.shortcuts').grep_visual_selection() end },
-	 { 'sr', 'find-replace', function() require('spectre').open_visual { select_word = true } end                 },
-	{ 'sr', 'find-replace', function () require('grug-far').open({ visualSelectionUsage = 'operate-within-range' }) end },
+	{ '<leader>y', 'copy to clipboard', function() require('codethread.clipper').copy_visual_selection() end                        },
+	{ 'ss'       , 'live'             , function() require('telescope-live-grep-args.shortcuts').grep_visual_selection() end        },
+	{ 'sr'       , 'find-replace'     , function() require('spectre').open_visual { select_word = true } end                        },
+	{ 'sr'       , 'find-replace'     , function () require('grug-far').open({ visualSelectionUsage = 'operate-within-range' }) end },
 })
 
 -- overrides marks, these get lost by most formatters making them pretty much useless
