@@ -2,15 +2,10 @@
   "lastChangelogVersion": "0.84.2",
   "theme": "rose-pine",
   "quietStartup": true,
-  "npmCommand": [
-    "npm",
-    "--prefix",
-    "~/.pi/npm-global"
-  ],
   "showHardwareCursor": true,
   "editorPaddingX": 1,
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.6-terra",
+  "defaultModel": "gpt-5.6-luna",
   "defaultThinkingLevel": "medium",
   "enabledModels": [
     "openai-codex/gpt-5.6-sol",
@@ -36,5 +31,11 @@
   "terminal": {
     "showTerminalProgress": false
   },
-  "tuiMode": "fullscreen"
+  "tuiMode": "fullscreen",
+  "steeringMode": "all",
+  "followUpMode": "all",
+  "showCacheMissNotices": true,
+  "defaultProjectTrust": "always",
+  "doubleEscapeAction": "tree",
+  "fullscreenScrollbar": "auto"
 }

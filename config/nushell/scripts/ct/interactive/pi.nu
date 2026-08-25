@@ -21,3 +21,7 @@ export alias pio = pi --agent main --provider anthropic --model claude-opus-4-6 
 export alias pioo = pi --agent main --provider anthropic --model claude-opus-4-8 --thinking medium
 # Sonnet
 export alias pis = pi --agent main --provider anthropic --model claude-sonnet-4-6 --thinking high
+
+export def pi-install [] {
+    with-env { PI_OFFLINE: null } { pi update --extensions }
+}
