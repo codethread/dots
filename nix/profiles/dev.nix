@@ -11,6 +11,7 @@
 
   home.packages = with pkgs; [
     qmk
+    dos2unix # qmk dep
     luarocks
     entr
   ];

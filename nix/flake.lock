@@ -218,6 +218,23 @@
         "type": "github"
       }
     },
+    "pi-btw-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1781038321,
+        "narHash": "sha256-tXcZUh20xYUTn80cubpd9BjFPAcLQK7CrEKxTnsdQ2s=",
+        "owner": "dbachelder",
+        "repo": "pi-btw",
+        "rev": "4f858102706910ee9d520a9666832f3103631b61",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dbachelder",
+        "ref": "v0.4.1",
+        "repo": "pi-btw",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "home-manager": "home-manager",
@@ -226,6 +243,7 @@
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-master": "nixpkgs-master",
         "nufmt": "nufmt",
+        "pi-btw-src": "pi-btw-src",
         "todoist-src": "todoist-src",
         "tree-sitter-jsonc-src": "tree-sitter-jsonc-src"
       }

@@ -8,11 +8,11 @@
 # Lightweight personal laptop profile: terminal, shell, ssh/git, and small CLI basics.
 let
   llmAgents = pkgsMaster."llm-agents";
-  pi = llmAgents.pi.override { useBun = true; };
 in
 {
   imports = [
     ../features/darwin-common.nix
+    ../features/pi.nix
   ];
 
   home.stateVersion = "24.11";
@@ -22,7 +22,6 @@ in
   home.packages = with pkgs; [
     llmAgents.claude-code
     llmAgents.codex
-    pi
     nushell
     openssh
     git

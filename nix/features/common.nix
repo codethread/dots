@@ -14,7 +14,6 @@ let
     mkdir -p "$out/bin"
     ln -s ${lib.getExe cursorAgent} "$out/bin/agent"
   '';
-  pi = llmAgents.pi.override { useBun = true; };
 
   # Pre-compiled treesitter parsers — avoids recompilation on every nvim
   # launch (nix store GC invalidates dynamically-compiled .so paths)
@@ -83,7 +82,10 @@ let
   '';
 in
 {
-  imports = [ ./claude-code.nix ];
+  imports = [
+    ./claude-code.nix
+    ./pi.nix
+  ];
 
   home.stateVersion = "24.11";
 
@@ -206,7 +208,6 @@ in
       llmAgents.codex
       cursorAgent
       cursorAgentCommand
-      pi
     ]
     ++ lib.optionals (!pkgs.stdenv.isDarwin) [
       agentPkgSet.nodejs_24

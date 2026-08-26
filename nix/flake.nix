@@ -24,6 +24,11 @@
       flake = false;
     };
 
+    pi-btw-src = {
+      url = "github:dbachelder/pi-btw/v0.4.1";
+      flake = false;
+    };
+
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -44,6 +49,7 @@
       nufmt,
       tree-sitter-jsonc-src,
       todoist-src,
+      pi-btw-src,
       nix-darwin,
       home-manager,
       ...
@@ -133,7 +139,9 @@
       hmFor = username: profile: pkgsMaster: {
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
-        home-manager.extraSpecialArgs = { inherit pkgsMaster; };
+        home-manager.extraSpecialArgs = {
+          inherit pkgsMaster pi-btw-src;
+        };
         home-manager.users = {
           "${username}" = import profile;
         };
