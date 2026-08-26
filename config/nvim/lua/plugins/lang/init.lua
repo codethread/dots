@@ -96,7 +96,7 @@ return U.flatten {
 						vim.cmd [[ParinferOn]]
 					end,
 				})
-				vim.g.parinfer_force_balance = true
+				-- vim.g.parinfer_force_balance = true
 			end,
 		},
 	},

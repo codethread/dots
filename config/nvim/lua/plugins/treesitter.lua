@@ -22,7 +22,16 @@ return {
 				group = vim.api.nvim_create_augroup('CodeThreadTreesitter', { clear = true }),
 				callback = function()
 					local ok = pcall(vim.treesitter.start)
-					if ok then vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()" end
+					if not ok then return end
+
+					if vim.bo.filetype == 'clojure' then
+						-- Clojure has no Treesitter indent queries. Copy the current
+						-- indentation first, then let Parinfer adjust it.
+						vim.bo.indentexpr = ''
+						vim.bo.autoindent = true
+					else
+						vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+					end
 				end,
 			})
 
