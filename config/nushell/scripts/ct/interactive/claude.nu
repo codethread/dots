@@ -55,6 +55,7 @@ def cl-tools-completions [] {
 def _cl-run [
     model: string
     mine: bool
+    mcp_work: bool
     continue: bool
     safe: bool
     print: bool
@@ -91,10 +92,12 @@ def _cl-run [
     } else {
         $settings
     }
-    if ($overrides | is-not-empty) { $args ++= [
-        --settings
-        ($overrides | to json --raw)
-    ] }
+    if ($overrides | is-not-empty) {
+        $args ++= [
+            --settings
+            ($overrides | to json --raw)
+        ]
+    }
     if $continue { $args ++= [--continue] }
     # dangerous-skip is the default for tty usage; --safe opts back into permission prompts
     if not $safe { $args ++= [--dangerously-skip-permissions] }
@@ -116,11 +119,19 @@ def _cl-run [
     # closures can't capture a mutable var, so freeze args before the with-env block
     let final_args = $args
     # --mine points claude at the personal config dir, enabling a separate login from the work default
-    if $mine {
-        with-env { CLAUDE_CONFIG_DIR: ("~/.config/claude" | path expand) } {
-            ^cl ...$final_args ...$rest
+    let environment = if $mine {
+        {
+            CLAUDE_CONFIG_DIR: ("~/.config/claude" | path expand)
         }
     } else {
+        {}
+    }
+    let environment = if $mcp_work {
+        $environment | upsert ENABLE_CLAUDEAI_MCP_SERVERS "1"
+    } else {
+        $environment
+    }
+    with-env $environment {
         ^cl ...$final_args ...$rest
     }
 }
@@ -129,6 +140,7 @@ def _cl-run [
 export def clf [
 	--continue(-c)                                           # Continue most recent conversation
 	--mine(-m)                                               # Use personal config dir (~/.config/claude) for a separate login
+	--mcp-work                                                # Enable Claude AI MCP servers for this work session
 	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
@@ -152,6 +164,7 @@ export def clf [
     (_cl-run
         "fable"
         $mine
+        $mcp_work
         $continue
         $safe
         $print
@@ -179,6 +192,7 @@ export def clf [
 export def clo [
 	--continue(-c)                                           # Continue most recent conversation
 	--mine(-m)                                               # Use personal config dir (~/.config/claude) for a separate login
+	--mcp-work                                                # Enable Claude AI MCP servers for this work session
 	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
@@ -202,6 +216,7 @@ export def clo [
     (_cl-run
         "opus"
         $mine
+        $mcp_work
         $continue
         $safe
         $print
@@ -229,6 +244,7 @@ export def clo [
 export def cls [
 	--continue(-c)                                           # Continue most recent conversation
 	--mine(-m)                                               # Use personal config dir (~/.config/claude) for a separate login
+	--mcp-work                                                # Enable Claude AI MCP servers for this work session
 	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
@@ -252,6 +268,7 @@ export def cls [
     (_cl-run
         "sonnet"
         $mine
+        $mcp_work
         $continue
         $safe
         $print
@@ -279,6 +296,7 @@ export def cls [
 export def clh [
 	--continue(-c)                                           # Continue most recent conversation
 	--mine(-m)                                               # Use personal config dir (~/.config/claude) for a separate login
+	--mcp-work                                                # Enable Claude AI MCP servers for this work session
 	--safe(-s)                                               # Re-enable permission prompts (dangerous-skip is default)
 	--print(-p)                                              # Print response and exit (non-interactive)
 	--verbose                                                # Override verbose mode
@@ -302,6 +320,7 @@ export def clh [
     (_cl-run
         "haiku"
         $mine
+        $mcp_work
         $continue
         $safe
         $print
@@ -332,13 +351,23 @@ export alias _claude-prompts = jq 'select(.event == "UserPromptSubmit") | {promp
 export alias _claude-session-stats = jq -s 'group_by(.tool_name) | map({tool: .[0].tool_name, count: length})' .logs/claude-session-*.jsonl
 
 # Ephemeral claude session with haiku model - deletes session files on exit
-export def cll --wrapped [...rest] {
+export def cll [
+    --mcp-work # Enable Claude AI MCP servers for this work session
+    ...rest: string
+] {
     let session_id = (random uuid)
     let normalized_path = $env.PWD | str replace --all "/" "-"
     let project_dir = $"~/.claude/projects/($normalized_path)" | path expand
 
     print $"(ansi yellow)Simple details mode(ansi reset)"
-    claude --model haiku --dangerously-skip-permissions --session-id $session_id ...$rest
+    let environment = if $mcp_work {
+        {ENABLE_CLAUDEAI_MCP_SERVERS: "true"}
+    } else {
+        {}
+    }
+    with-env $environment {
+        claude --model haiku --dangerously-skip-permissions --session-id $session_id ...$rest
+    }
 
     for name in [$"($session_id).jsonl" $session_id] {
         let p = $project_dir | path join $name
@@ -352,9 +381,18 @@ export def cll --wrapped [...rest] {
     }
 }
 
-export def cl-doc [doc: path]: nothing -> string {
-    pandoc $doc -t markdown --wrap none
-    | (claude
+export def cl-doc [
+    doc: path
+    --mcp-work # Enable Claude AI MCP servers for this work session
+]: nothing -> string {
+    let environment = if $mcp_work {
+        {ENABLE_CLAUDEAI_MCP_SERVERS: "true"}
+    } else {
+        {}
+    }
+    with-env $environment {
+        pandoc $doc -t markdown --wrap none
+        | (claude
 		--model haiku
 		--no-session-persistence
 		--tools ""
@@ -364,4 +402,5 @@ export def cl-doc [doc: path]: nothing -> string {
 		Don't make any other changes or consider any other details.
 		Return the reponse as markdown in your final message, say nothing else, the result will be bash piped into a file`)
 	)
+    }
 }

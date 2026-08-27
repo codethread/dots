@@ -20,6 +20,7 @@ let
     if cfg.workMachine then
       {
         "admin@local-work" = true;
+        "backend@local-work" = true;
         "pb-prose@pb-claude" = true;
         "pb-news@pb-claude" = true;
         "pb-claude-harness-engineering@pb-claude" = true;

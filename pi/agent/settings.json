@@ -25,6 +25,9 @@
       "source": "../../pb/adam.hall/local-work-claude/plugins/admin"
     },
     {
+      "source": "../../pb/adam.hall/local-work-claude/plugins/backend"
+    },
+    {
       "source": "./packages/pi-nvim"
     },
     {
