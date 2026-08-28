@@ -11,23 +11,12 @@ indent_style = tab
 indent_style = space
 indent_size = 4
 
-# shell
-[*.{sh,zsh}]
-indent_style = space
-indent_size = 2
-
-# nix (nixfmt/RFC style)
-[*.nix]
-indent_style = space
-indent_size = 2
-
 # nushell (nufmt style)
 [*.nu]
 indent_style = space
 indent_size = 4
 
-# web
-[*.{json,js,jsx,ts,tsx,html,css,yml}]
+[*.{json,js,jsx,ts,tsx,html,css,yml,sh,zsh,nix,clj,edn}]
 indent_style = space
 indent_size = 2
 
