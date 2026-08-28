@@ -128,7 +128,7 @@ in
     # nix-darwin's `upgrade` option upgrades both formulae and casks. Update
     # formulae explicitly after the Bundle install so casks can self-update.
     /usr/bin/sudo -u ${config.system.primaryUser} -H \
-      ${config.homebrew.prefix}/bin/brew upgrade --formula
+      ${config.homebrew.prefix}/bin/brew upgrade --formula --no-ask
 
     /usr/bin/killall SystemUIServer >/dev/null 2>&1 || true
     /usr/bin/killall Finder >/dev/null 2>&1 || true
