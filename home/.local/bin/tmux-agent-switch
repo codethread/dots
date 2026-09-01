@@ -51,43 +51,32 @@ if [[ -z "${TMUX:-}" ]] && ! tmux list-clients >/dev/null 2>&1; then
 	exit 1
 fi
 
-pane_process() {
-	local pane_pid=$1
-	local pid args exec line children
+declare -a PROCESS_ARGS NEWEST_CHILD
 
-	children=$(pgrep -P "$pane_pid" 2>/dev/null || true)
-	if [[ -n "$children" ]]; then
-		# Prefer the most recent direct child of the pane shell. This intentionally
-		# avoids `pgrep -a`: on macOS it may emit only PIDs, while the original
-		# NixOS implementation expected args too. If NixOS process trees differ,
-		# replace this with a small cross-platform process lookup abstraction.
-		pid=$(printf '%s\n' "$children" | tail -n 1)
-	else
-		pid=$pane_pid
-	fi
-
-	line=$(ps -o pid=,args= -p "$pid" 2>/dev/null | awk 'NF {print; exit}' || true)
-	[[ -z "$line" ]] && return 1
-	pid=$(awk '{print $1}' <<< "$line")
-	args=${line#* }
-
-	exec=${args%% *}
-	exec=${exec##*/}
-	printf '%s\t%s\t%s\n' "$pid" "$exec" "$args"
+snapshot_processes() {
+	local ppid pid args
+	while read -r ppid pid args; do
+		PROCESS_ARGS[$pid]=$args
+		if [[ -z "${NEWEST_CHILD[$ppid]:-}" ]] || (( pid > NEWEST_CHILD[ppid] )); then
+			NEWEST_CHILD[$ppid]=$pid
+		fi
+	done < <(ps -axo ppid=,pid=,args=)
 }
 
 agent_label() {
 	local exec=$1
 	local args=$2
 
-	if [[ "$exec" == "pi" || "$exec" == "pim" ]] || [[ "$args" =~ (^|[[:space:]])(pi|pim)([[:space:]]|$) ]]; then
-		echo 'pi'
+	if [[ "$exec" == "agent" ]] || [[ "$args" =~ cursor-agent ]]; then
+		AGENT_LABEL='cursor'
+	elif [[ "$exec" == "pi" || "$exec" == "pim" ]] || [[ "$args" =~ (^|[[:space:]])(pi|pim)([[:space:]]|$) ]]; then
+		AGENT_LABEL='pi'
 	elif [[ "$exec" == "codex" || "$exec" == "codex-raw" ]] || [[ "$args" =~ codex ]]; then
-		echo 'codex'
+		AGENT_LABEL='codex'
 	elif [[ "$exec" == "claude" || "$exec" == "cl" ]] || [[ "$args" =~ claude([-/ ]code)? ]] || [[ "$args" =~ @anthropic-ai/claude-code ]]; then
-		echo 'claude'
+		AGENT_LABEL='claude'
 	else
-		echo "$exec"
+		AGENT_LABEL=$exec
 	fi
 }
 
@@ -98,18 +87,22 @@ agent_label() {
 # delimiter cannot collide with session/window names or filesystem paths.
 list_agent_panes() {
 	local pane_format
+	snapshot_processes
 	pane_format=$'#{session_name}\t#{window_index}\t#{window_name}\t#{pane_index}\t#{pane_id}\t#{pane_pid}\t#{pane_current_command}\t#{pane_current_path}\t#{pane_active}\t#{pane_tty}\t#{pane_title}'
 	while IFS=$'\t' read -r session_name window_index window_name pane_index pane_id pane_pid pane_current_command pane_current_path pane_active pane_tty pane_title; do
-		local fg pid exec args tool active_mark short_path
-		fg=$(pane_process "$pane_pid") || continue
-		[[ -z "$fg" ]] && continue
-		IFS=$'\t' read -r pid exec args <<< "$fg"
+		local pid exec args tool active_mark short_path
+		pid=${NEWEST_CHILD[$pane_pid]:-$pane_pid}
+		args=${PROCESS_ARGS[$pid]:-}
+		[[ -z "$args" ]] && continue
+		exec=${args%% *}
+		exec=${exec##*/}
 
-		if [[ ! "$args" =~ $AGENT_REGEX ]] && [[ ! "$exec" =~ ^(claude|cl|codex|codex-raw|pi|pim|node)$ ]]; then
+		if [[ ! "$args" =~ $AGENT_REGEX ]] && [[ ! "$exec" =~ ^(agent|claude|cl|codex|codex-raw|pi|pim|node)$ ]]; then
 			continue
 		fi
 
-		tool=$(agent_label "$exec" "$args")
+		agent_label "$exec" "$args"
+		tool=$AGENT_LABEL
 		if [[ "$tool" == "node" && ! "$args" =~ $AGENT_REGEX ]]; then
 			continue
 		fi
