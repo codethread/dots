@@ -1,7 +1,6 @@
 {
   pkgs,
   pkgsMaster ? pkgs,
-  config,
   ...
 }:
 
@@ -11,13 +10,10 @@ let
 in
 {
   imports = [
+    ../features/home-base.nix
     ../features/darwin-common.nix
     ../features/pi.nix
   ];
-
-  home.stateVersion = "24.11";
-
-  home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
   home.packages = with pkgs; [
     llmAgents.claude-code

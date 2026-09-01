@@ -42,13 +42,16 @@ flake.nix (inputs, overlays, system configurations)
     │   └─ imports features/*
     │
     ├─ features/                     Reusable home-manager modules
+    │   ├─ home-base.nix            Home Manager state version and baseline user PATH
     │   ├─ common.nix               All platforms: packages, activations, dotfile linking
     │   ├─ darwin-common.nix         macOS-specific packages
     │   ├─ nixos-common.nix          NixOS-specific: systemd services, GTK/Qt theming
     │   └─ claude-code.nix           Claude Code settings.json generation
     │
     └─ services/
-        └─ repo-service.nix           Generic builder for repo-local systemd services
+        ├─ repo-service.nix           Generic builder for repo-local systemd services
+        ├─ darwin-cc-notify.nix       cc-notify launchd service and checkout bootstrap
+        └─ darwin-git-maintenance.nix Declarative launchd git maintenance jobs
 ```
 
 ### [SPEC-006-S2.2] System Configurations
@@ -58,7 +61,7 @@ flake.nix (inputs, overlays, system configurations)
 | dev | `darwinConfigurations.dev` | aarch64-darwin | `ct` | `hosts/darwin/dev.nix` | `profiles/dev.nix` |
 | personal | `darwinConfigurations.personal` | aarch64-darwin | `codethread` | `hosts/darwin/personal.nix` | `profiles/personal.nix` |
 | work-boot | `darwinConfigurations.work-boot` | aarch64-darwin | `adam.hall` | `hosts/darwin/work-boot.nix` | `profiles/work-boot.nix` |
-| work-adamhall-boot | `darwinConfigurations.work-adamhall-boot` | aarch64-darwin | `adamhall` | `hosts/darwin/work-adamhall-boot.nix` | `profiles/work-boot.nix` |
+| work-adamhall-boot | `darwinConfigurations.work-adamhall-boot` | aarch64-darwin | `adamhall` | `hosts/darwin/work-boot.nix` | `profiles/work-boot.nix` |
 | work | `darwinConfigurations.work` | aarch64-darwin | `adamhall` | `hosts/darwin/work-adamhall.nix` | `profiles/work.nix` |
 | homelab | `nixosConfigurations.homelab` | x86_64-linux | `codethread` | `hosts/nixos/homelab` | `profiles/homelab.nix` |
 | vm | `nixosConfigurations.vm` | aarch64-linux | `codethread` | `hosts/nixos/vm-aarch` | `profiles/vm.nix` |

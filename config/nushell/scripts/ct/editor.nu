@@ -21,3 +21,5 @@ export def nvim-sync [] {
     nvim --headless "+Lazy! clean" +qa
     nvim --headless "+Lazy! install" +qa
 }
+
+export alias nn = nvim '+Telescope find_files'

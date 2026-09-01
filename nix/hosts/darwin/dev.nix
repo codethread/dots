@@ -100,14 +100,10 @@ let
   '';
 in
 {
-  imports = [ ./common-dev.nix ];
-
-  system.primaryUser = "ct";
-
-  users.users.ct = {
-    home = "/Users/ct";
-    shell = pkgs.nushell;
-  };
+  imports = [
+    ./dev-tools.nix
+    ../../services/darwin-cc-notify.nix
+  ];
 
   services.openssh = {
     enable = true;

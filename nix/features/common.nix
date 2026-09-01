@@ -83,13 +83,10 @@ let
 in
 {
   imports = [
+    ./home-base.nix
     ./claude-code.nix
     ./pi.nix
   ];
-
-  home.stateVersion = "24.11";
-
-  home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
   home.file = {
     ".local/share/nvim/nix-treesitter-parsers".source = treesitter-parsers;

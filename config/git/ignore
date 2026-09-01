@@ -95,3 +95,7 @@ scratch.nu
 .claude/worktrees/
 
 .pandora/
+
+# clojure
+**/.lsp/.cache/
+**/.clj-kondo/.cache/

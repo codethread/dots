@@ -1,20 +1,14 @@
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 {
-  imports = [ ./common-dev.nix ];
-
-  users.users.${config.system.primaryUser} = {
-    home = "/Users/${config.system.primaryUser}";
-    shell = pkgs.nushell;
-  };
+  imports = [
+    ./dev-tools.nix
+    ../../services/darwin-cc-notify.nix
+  ];
 
   environment.systemPackages = [ pkgs.pandoc ];
 
   homebrew.taps = [
-    {
-      name = "borkdude/brew";
-      trusted = true;
-    } # clj-kondo
     {
       name = "codethread/millstrand";
       clone_target = "https://github.com/codethread/millstrand";
@@ -27,7 +21,6 @@
     "jira-cli" # Feature-rich interactive Jira CLI
     "beads"
     "codethread/millstrand/millstrand" # GOAT
-    "borkdude/brew/clj-kondo" # Static linter for Clojure
   ];
 
   homebrew.casks = [

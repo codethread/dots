@@ -185,10 +185,10 @@ return {
 						-- per root — rooting at a sub-project drops every sibling and dependency
 						-- off the classpath, killing go-to-definition across the repo. Nested
 						-- tables are priority tiers; the second keeps non-git checkouts working.
-						root_markers = {
-							{ '.git' },
-							{ 'deps.edn', 'project.clj', 'build.boot', 'shadow-cljs.edn', 'bb.edn' },
-						},
+						-- root_markers = {
+						-- 	{ '.git' },
+						-- 	{ 'deps.edn', 'project.clj', 'build.boot', 'shadow-cljs.edn', 'bb.edn' },
+						-- },
 					},
 					zls = {},
 				},
@@ -358,7 +358,6 @@ return {
 					prefix = '',
 				},
 			}
-
 		end,
 	},
 }

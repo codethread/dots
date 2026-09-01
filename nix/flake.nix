@@ -147,6 +147,14 @@
         };
       };
 
+      darwinUser = username: { pkgs, ... }: {
+        system.primaryUser = username;
+        users.users.${username} = {
+          home = "/Users/${username}";
+          shell = pkgs.nushell;
+        };
+      };
+
       darwinFor =
         hostModule: username: profile:
         nix-darwin.lib.darwinSystem {
@@ -163,6 +171,7 @@
                 nvimTreesitterJsoncOverlay
               ];
             }
+            (darwinUser username)
             hostModule
             home-manager.darwinModules.home-manager
             (hmFor username profile (pkgsMasterFor "aarch64-darwin"))
@@ -213,7 +222,7 @@
 
       # macOS (work boot, short username) — darwin-rebuild switch --flake .#work-adamhall-boot
       darwinConfigurations.work-adamhall-boot =
-        darwinFor ./hosts/darwin/work-adamhall-boot.nix "adamhall"
+        darwinFor ./hosts/darwin/work-boot.nix "adamhall"
           ./profiles/work-boot.nix;
 
       # macOS (full work, current username) — darwin-rebuild switch --flake .#work

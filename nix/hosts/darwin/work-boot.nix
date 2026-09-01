@@ -1,14 +1,7 @@
-{ config, pkgs, ... }:
+{ config, ... }:
 
 {
-  imports = [ ./common-dev.nix ];
-
-  system.primaryUser = "adam.hall";
-
-  users.users.${config.system.primaryUser} = {
-    home = "/Users/${config.system.primaryUser}";
-    shell = pkgs.nushell;
-  };
+  imports = [ ./common.nix ];
 
   system.activationScripts.workBootMessage.text = ''
     home="/Users/${config.system.primaryUser}"

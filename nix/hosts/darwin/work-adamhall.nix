@@ -6,8 +6,6 @@ in
 {
   imports = [ ./common-work.nix ];
 
-  system.primaryUser = "adamhall";
-
   codethread.gitMaintenance.repositories = [
     "${homeDir}/pb/app/deals-light-ui"
   ];
