@@ -19,6 +19,7 @@ in
 
   environment.systemPackages = with pkgs; [
     clojure
+    clj-kondo
     graphEasy
     jdk
     flock
@@ -26,16 +27,8 @@ in
 
   environment.variables.JAVA_HOME = "${pkgs.jdk.home}";
 
-  homebrew.taps = [
-    {
-      name = "borkdude/brew";
-      trusted = true;
-    } # clj-kondo
-  ];
-
   homebrew.brews = [
     "imagemagick" # image maker
-    "borkdude/brew/clj-kondo" # Static linter for Clojure
   ];
 
   homebrew.casks = [
@@ -75,6 +68,6 @@ in
 
     # tools
     "ms-playwright.playwright"
-    "github.copilot-chat"
+    # "github.copilot-chat"
   ];
 }

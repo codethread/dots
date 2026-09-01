@@ -47,6 +47,16 @@ in
   environment.systemPackages = with pkgs; [
     kitty.terminfo # xterm-kitty
     ncurses # tmux-256color
+    pngpaste
+    volta
+    yazi
+    bitwarden-cli
+  ];
+
+  fonts.packages = with pkgs; [
+    fira-code
+    victor-mono
+    nerd-fonts.symbols-only
   ];
 
   # Keyboard repeat: lower values are faster on macOS.
@@ -163,29 +173,20 @@ in
       } # wktree
     ];
     brews = [
-      "mas" # required for masApps to function
-      "pam-reattach" # PAM module so Touch ID works inside tmux sudo prompts
       "morantron/tmux-fingers/tmux-fingers" # mouseless terminal interaction
       "codethread/wktree/wktree" # Deterministic git worktree manager
       "ical-buddy" # Get events and tasks from the macOS calendar database
-      "pngpaste" # Paste PNG into files
-      "podman" # Container CLI on macOS; nixpkgs podman is Linux-only
-      "podman-compose" # Compose wrapper for podman on macOS
-      "volta" # JavaScript toolchain manager for reproducible environments
-      "yazi" # Blazing fast terminal file manager written in Rust, based on async I/O
+      "podman" # Homebrew tracks Podman and its macOS machine integration more closely
+      "podman-compose" # Compose wrapper kept alongside Homebrew Podman
       "rsync" # Utility that provides fast incremental file transfer
       "graphviz" # provides dot for diagraph
       "node" # Runtime for user-owned global npm tools
     ];
     extraConfig = ''
       npm "@playwright/cli"
-      npm "@bitwarden/cli"
     '';
     casks = [
       "kitty" # GPU-based terminal emulator
-      "font-fira-code" # Fira Code font
-      "font-victor-mono" # Victor Mono font
-      "font-symbols-only-nerd-font" # Symbols Nerd Font (Symbols Only)
       "aerospace" # AeroSpace is an i3-like tiling window manager for macOS
       "alfred" # Application launcher and productivity software
       "spotify" # Music streaming service
@@ -201,8 +202,11 @@ in
     # };
   };
 
-  # Touch ID for sudo; requires pam-reattach brew for tmux compatibility.
-  security.pam.services.sudo_local.touchIdAuth = true;
+  # Touch ID for sudo, including inside tmux and screen.
+  security.pam.services.sudo_local = {
+    touchIdAuth = true;
+    reattach = true;
+  };
 
   system.stateVersion = 5;
 }

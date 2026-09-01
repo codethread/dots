@@ -6,7 +6,10 @@
     ../../services/darwin-cc-notify.nix
   ];
 
-  environment.systemPackages = [ pkgs.pandoc ];
+  environment.systemPackages = with pkgs; [
+    pandoc
+    jira-cli-go
+  ];
 
   homebrew.taps = [
     {
@@ -18,7 +21,6 @@
 
   homebrew.brews = [
     "cocoapods" # Dependency manager for Cocoa projects
-    "jira-cli" # Feature-rich interactive Jira CLI
     "beads"
     "codethread/millstrand/millstrand" # GOAT
   ];
