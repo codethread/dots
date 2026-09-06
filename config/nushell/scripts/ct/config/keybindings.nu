@@ -1,6 +1,6 @@
 export const keybindings = [
     {
-        name: help_menu
+        name: open_help_menu
         modifier: alt
         keycode: char_/
         mode: [emacs, vi_insert, vi_normal]
@@ -49,7 +49,7 @@ export const keybindings = [
 			'}
     }
     {
-        name: fuzzy_dir
+        name: fuzzy_insert_dir
         modifier: control
         keycode: char_t
         mode: [emacs, vi_normal, vi_insert]
