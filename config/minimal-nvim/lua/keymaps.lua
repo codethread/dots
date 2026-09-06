@@ -26,25 +26,10 @@ map('v', '<Up>', ":m '<-2<CR>gv=gv", { desc = 'move up' })
 -- Clipboard yank
 map('v', '<leader>y', '"+y', { desc = 'yank to clipboard' })
 
--- Leader maps
-map('n', '<leader><leader>', '<cmd>Telescope find_files<cr>', { desc = 'Files' })
-map('n', '<leader>;', '<cmd>Telescope commands<cr>', { desc = 'Commands' })
-map('n', '<leader>,', '<cmd>Telescope resume<cr>', { desc = 'Resume' })
-
+-- Leader maps not owned by plugins
 map('n', '<leader>fb', '<C-^>', { desc = 'Toggle buffer' })
-map('n', '<leader>fl', '<cmd>Telescope buffers<cr>', { desc = 'List buffers' })
-map('n', '<leader>fr', '<cmd>Telescope oldfiles<cr>', { desc = 'Recent files' })
 map('n', '<leader>fs', '<cmd>w<cr>', { desc = 'Save' })
 map('n', '<leader>fR', '<cmd>e!<cr>', { desc = 'Reload' })
-
-map('n', '<leader>sf', '<cmd>Telescope current_buffer_fuzzy_find mirror=true<cr>', { desc = 'Buffer search' })
-map('n', '<leader>sp', '<cmd>Telescope live_grep<cr>', { desc = 'Live grep' })
-map('n', '<leader>sr', '<cmd>Telescope registers<cr>', { desc = 'Registers' })
-map('n', '<leader>sk', '<cmd>Telescope keymaps<cr>', { desc = 'Keymaps' })
-
-map('n', '<leader>hh', '<cmd>Telescope help_tags<cr>', { desc = 'Help' })
-
-map('n', '<leader>od', '<cmd>Oil<cr>', { desc = 'Dir (oil)' })
 
 map('n', '<leader>ww', '<cmd>vsplit<cr>', { desc = 'Vsplit' })
 map('n', '<leader>wk', '<cmd>close<cr>', { desc = 'Close window' })

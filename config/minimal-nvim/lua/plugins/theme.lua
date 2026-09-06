@@ -13,12 +13,12 @@ return {
 	{
 		'rose-pine/neovim',
 		name = 'rose-pine',
-		priority = 1000,
-		lazy = false,
-		config = function()
-			vim.o.background = mode()
-			require('rose-pine').setup {
-				variant = mode() == 'light' and 'dawn' or 'moon',
+		lazy = true,
+		opts = function()
+			local background = mode()
+			vim.o.background = background
+			return {
+				variant = background == 'light' and 'dawn' or 'moon',
 				styles = { italic = true, transparency = true },
 				enable = {
 					terminal = true,
@@ -35,20 +35,16 @@ return {
 
 					['@variable'] = { italic = false },
 					['@variable.builtin'] = { fg = 'text', bold = true },
-
 					['@keyword.return'] = { fg = 'iris' },
 					['@keyword.export'] = { fg = 'love' },
-
 					['@markup'] = { fg = 'rose' },
 					['@markup.italic'] = { italic = true },
 					['@markup.heading.1'] = { fg = 'gold', underline = true },
 					['@markup.heading.2'] = { fg = 'rose', bold = true },
-
 					['@text.emphasis'] = { italic = true },
 					Comment = { italic = true },
 				},
 			}
-			vim.cmd [[colorscheme rose-pine]]
 		end,
 	},
 }

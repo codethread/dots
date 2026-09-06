@@ -1,7 +1,17 @@
+local treesitter_parsers = {
+	'bash', 'lua', 'javascript', 'typescript', 'json', 'yaml',
+	'markdown', 'markdown_inline', 'python', 'toml', 'vim', 'vimdoc',
+	'html', 'css', 'nix', 'diff', 'git_rebase', 'gitcommit',
+}
+
 return {
 	{
 		'stevearc/oil.nvim',
+		-- Oil recommends eager loading so directory buffers work as the default explorer.
 		lazy = false,
+		keys = {
+			{ '<leader>od', '<cmd>Oil<cr>', desc = 'Dir (oil)' },
+		},
 		opts = {
 			default_file_explorer = true,
 			view_options = { show_hidden = true },
@@ -24,53 +34,31 @@ return {
 				['!'] = 'actions.open_cmdline',
 			},
 		},
-		dependencies = { 'nvim-tree/nvim-web-devicons' },
-	},
-
-	{
-		'nvim-tree/nvim-web-devicons',
-		opts = {},
-		lazy = true,
-	},
-
-	{
-		'nvim-treesitter/nvim-treesitter',
-		build = ':TSUpdate',
-		event = { 'BufReadPost', 'BufNewFile' },
-		config = function()
-			-- nvim-treesitter.configs was removed in newer versions;
-			-- use vim.treesitter directly for highlight/indent
-			local ok, configs = pcall(require, 'nvim-treesitter.configs')
-			if ok then
-				configs.setup {
-					ensure_installed = {
-						'bash', 'lua', 'javascript', 'typescript', 'json', 'yaml',
-						'markdown', 'markdown_inline', 'python', 'toml', 'vim', 'vimdoc',
-						'html', 'css', 'nix', 'diff', 'git_rebase', 'gitcommit',
-					},
-					highlight = { enable = true },
-					indent = { enable = true },
-				}
-			end
-		end,
-	},
-
-	{
-		'nvim-telescope/telescope.nvim',
-		cmd = 'Telescope',
-		dependencies = { 'nvim-lua/plenary.nvim' },
-		opts = {
-			defaults = {
-				layout_strategy = 'flex',
-				sorting_strategy = 'ascending',
-				layout_config = {
-					prompt_position = 'top',
-				},
-			},
+		dependencies = {
+			{ 'nvim-mini/mini.icons', opts = {} },
 		},
 	},
 
-	{ 'nvim-lua/plenary.nvim', lazy = true },
+	-- nvim-treesitter explicitly does not support lazy-loading.
+	{
+		'nvim-treesitter/nvim-treesitter',
+		lazy = false,
+		build = function()
+			local treesitter = require 'nvim-treesitter'
+			treesitter.update():wait(300000)
+			treesitter.install(treesitter_parsers):wait(300000)
+		end,
+		config = function()
+			vim.api.nvim_create_autocmd('FileType', {
+				pattern = {
+					'bash', 'sh', 'lua', 'javascript', 'typescript', 'json', 'yaml',
+					'markdown', 'python', 'toml', 'vim', 'help', 'html', 'css', 'nix',
+					'diff', 'gitrebase', 'gitcommit',
+				},
+				callback = function() vim.treesitter.start() end,
+			})
+		end,
+	},
 
 	{
 		'folke/which-key.nvim',
@@ -78,16 +66,16 @@ return {
 		opts = {},
 	},
 
-	-- surround text objects
 	{
 		'kylechui/nvim-surround',
-		event = { 'BufReadPost', 'BufNewFile' },
+		keys = { 'ys', 'yss', 'yS', 'ySS', 'ds', 'cs', { 'S', mode = 'x' } },
 		opts = {},
 	},
 
-	-- readline keybindings in insert/command mode
-	{ 'tpope/vim-rsi', event = 'InsertEnter' },
-
-	-- case coercion (crs, crm, crc, etc.)
-	{ 'tpope/vim-abolish', event = { 'BufReadPost', 'BufNewFile' } },
+	{ 'tpope/vim-rsi', event = { 'InsertEnter', 'CmdlineEnter' } },
+	{
+		'tpope/vim-abolish',
+		cmd = { 'Abolish', 'Subvert' },
+		keys = { 'cr' },
+	},
 }
