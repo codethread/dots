@@ -49,7 +49,7 @@ Four configuration layers compose at runtime:
 ├─────────────────────────────────────────────────────┤
 │ Layer 2: Dotty-symlinked assets                     │
 │   claude/ → ~/.claude/                              │
-│     agents/, commands/, skills/, rules/,            │
+│     agents/, commands/, skills/,                    │
 │     CLAUDE.md, keybindings.json                     │
 │   pi/ → ~/.pi/agent/                                │
 │     agent.njk, README.md, settings.json             │
@@ -215,13 +215,10 @@ Note: `PermissionRequest` is a Claude Code hook event not represented in the Typ
 | ct/socrates | Self-introspection on knowledge sources                            |
 | ct/speak    | Audio communication via cc-speak TTS                               |
 
-### [SPEC-001-S4.5] Rules (`claude/rules/` → `~/.claude/rules/`)
+### [SPEC-001-S4.5] Global rules (`claude/CLAUDE.md` → `~/.claude/CLAUDE.md`)
 
-| Rule           | Enforces                                                          |
-| -------------- | ----------------------------------------------------------------- |
-| git            | Commit only when asked, atomic, HEREDOC format, never --no-verify |
-| review         | Mandatory `code-review` CLI before reporting done                 |
-| fixes/comments | Comments explain ambiguity, not changes                           |
+Single file covering ways of working, repo conventions, git rules (commit only when
+asked, atomic, HEREDOC format, never `--no-verify`), comment style, and tool-schema fixes.
 
 ### [SPEC-001-S4.6] Claude Wrapper (`home/.local/bin/cl`)
 
