@@ -39,9 +39,10 @@ in
   # Dark mode: GTK
   gtk = {
     enable = true;
+    colorScheme = "dark";
     theme = {
-      name = "rose-pine-moon";
-      package = pkgs.rose-pine-gtk-theme;
+      name = "adw-gtk3-dark";
+      package = pkgs.adw-gtk3;
     };
     gtk4.theme = null;
     iconTheme = {

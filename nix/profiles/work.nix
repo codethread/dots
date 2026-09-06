@@ -6,7 +6,6 @@
 {
   imports = [
     ../features/common.nix
-    ../features/darwin-common.nix
   ];
 
   ct.claude-code.workMachine = true;

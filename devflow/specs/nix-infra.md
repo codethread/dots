@@ -44,7 +44,6 @@ flake.nix (inputs, overlays, system configurations)
     ├─ features/                     Reusable home-manager modules
     │   ├─ home-base.nix            Home Manager state version and baseline user PATH
     │   ├─ common.nix               All platforms: packages, activations, dotfile linking
-    │   ├─ darwin-common.nix         macOS-specific packages
     │   ├─ nixos-common.nix          NixOS-specific: systemd services, GTK/Qt theming
     │   └─ claude-code.nix           Claude Code settings.json generation
     │

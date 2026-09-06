@@ -6,7 +6,6 @@
 {
   imports = [
     ../features/common.nix
-    ../features/darwin-common.nix
   ];
 
   home.packages = with pkgs; [

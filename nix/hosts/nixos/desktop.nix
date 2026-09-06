@@ -40,7 +40,7 @@
     mako
 
     # Theme
-    rose-pine-gtk-theme
+    adw-gtk3
     rose-pine-icon-theme
 
     # Wayland utils
@@ -51,7 +51,7 @@
 
   # Propagate GTK theme into sessions
   environment.sessionVariables = {
-    GTK_THEME = "rose-pine-moon";
+    GTK_THEME = "adw-gtk3-dark";
     # wlroots: no hardware cursor plane (safe for all NixOS hosts including bare metal)
     WLR_NO_HARDWARE_CURSORS = "1";
   };

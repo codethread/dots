@@ -11,7 +11,6 @@ in
 {
   imports = [
     ../features/home-base.nix
-    ../features/darwin-common.nix
     ../features/pi.nix
   ];
 
