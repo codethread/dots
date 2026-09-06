@@ -1,1 +1,0 @@
-- use `$TMPDIR="/tmp/claude"`
