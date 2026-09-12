@@ -21,7 +21,6 @@
 
   homebrew.brews = [
     "cocoapods" # Dependency manager for Cocoa projects
-    "beads"
     "codethread/millstrand/millstrand" # GOAT
   ];
 

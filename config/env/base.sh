@@ -102,12 +102,6 @@ PDX_DATA_DIR="${PDX_DATA_DIR:-$HOME/.pdx}"
 PITHOS_DB="${PITHOS_DB:-$PDX_DATA_DIR/pithos.sqlite}"
 PDX_USER_DATA_DIR="${PDX_USER_DATA_DIR:-$HOME/dev/projects/pdx}"
 
-BEADS_DIR="${BEADS_DIR:-$HOME/dev/beads-db/.beads}"
-BEADS_DOLT_SERVER_MODE="${BEADS_DOLT_SERVER_MODE:-1}"
-BEADS_DOLT_SERVER_HOST="${BEADS_DOLT_SERVER_HOST:-127.0.0.1}"
-BEADS_DOLT_SERVER_PORT="${BEADS_DOLT_SERVER_PORT:-3307}"
-BEADS_DOLT_SERVER_USER="${BEADS_DOLT_SERVER_USER:-root}"
-
 # Toolchains and CLI defaults ------------------------------------------------
 
 GOBIN="${GOBIN:-$HOME/go/bin}"
