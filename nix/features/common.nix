@@ -237,6 +237,7 @@ in
       neovim
       tmux
       smug
+      antidote
       atuin
       starship
       carapace
