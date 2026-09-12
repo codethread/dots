@@ -21,4 +21,8 @@
     "podman" # Homebrew tracks Podman and its macOS machine integration more closely
     "podman-compose" # Compose wrapper kept alongside Homebrew Podman
   ];
+
+  homebrew.casks = [
+    "terminal-browser"
+  ];
 }

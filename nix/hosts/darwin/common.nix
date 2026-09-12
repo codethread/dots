@@ -190,8 +190,14 @@ in
         name = "BRO3886/tap";
         trusted = true;
       } # ical
+      {
+        name = "dicklesworthstone/tap";
+        trusted = true;
+      } # beads_rust
     ];
     brews = [
+      "dicklesworthstone/tap/br" # beads rust
+      "dicklesworthstone/tap/bv" # Graph-aware Beads viewer
       "morantron/tmux-fingers/tmux-fingers" # mouseless terminal interaction
       "codethread/wktree/wktree" # Deterministic git worktree manager
       "BRO3886/tap/ical" # native macOS Calendar CLI
