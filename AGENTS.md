@@ -113,3 +113,5 @@ Given the monorepo nature of this repo, we want to exercise discretion, to that 
 ## Beads / br / bv
 
 Track work in repo-local `.beads/`. From the repo root, use `br --db .beads/beads.db show <id>`, `update <id> --claim`, and `close <id>` to inspect, own, and finish verified tasks; keep progress in bead notes. Use `bv --db .beads/beads.db --robot-triage` or `--robot-next` for coordinator reports. Flush tracking changes with `br --db .beads/beads.db sync --flush-only`; do not commit or push automatically unless the task or user authorizes it.
+
+`.beads/issues.jsonl` is generated and included in normal commits by the pre-commit hook; ignore incidental diffs and do not edit it manually.

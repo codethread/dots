@@ -33,6 +33,29 @@ workflow guidance is a separate setup step.
    rejects symlinked instruction files; in that case, edit the resolved target
    manually to explain `br ready`, `br show <id>`, `br update <id> --claim`,
    `br close <id>`, and `br sync --flush-only`.
+5. For new repositories, add Beads automation to the pre-commit workflow. Inspect
+   `git config --show-origin --get core.hooksPath` and the active hook first.
+   Extend the existing hook/framework or call a Git-tracked Bash helper; preserve
+   custom/global hooks rather than replacing their ownership. With no existing
+   hook setup, create an executable, tracked `.githooks/pre-commit` and put
+   `git config --local core.hooksPath .githooks` in the project's tracked bootstrap
+   script or setup target, then run it to activate the hook reproducibly rather
+   than leaving activation only in `.git/config`.
+   Use this Bash body (add a Bash shebang for a standalone hook):
+
+   ```bash
+   repo_root="$(git rev-parse --show-toplevel)" || exit $?
+   br --db "$repo_root/.beads/beads.db" sync --flush-only --quiet || exit $?
+   case "$(basename "${GIT_INDEX_FILE:-index}")" in
+     next-index-*) ;; # Git's path-limited commit index: do not widen its scope.
+     *) git add -- "$repo_root/.beads/issues.jsonl" || exit $? ;;
+   esac
+   ```
+
+   Keep flush failures fatal and stage only the generated collaboration file,
+   never the SQLite DB or other `.beads/` state. Add just this line to `AGENTS.md`:
+   “`.beads/issues.jsonl` is generated and included in normal commits by the
+   pre-commit hook; ignore incidental diffs and do not edit it manually.”
 
 ## Constraints
 
@@ -47,3 +70,8 @@ contain the Beads workflow. For regular instruction files, verify with
 `br agents --check`.
 For new repositories, also verify both relative symlinks resolve to the canonical
 instruction file and skills directory.
+Confirm the hook/helper and its activation instructions are in version-controlled
+project files and the effective hook path/framework invokes it alongside existing
+hooks. Check in isolation that
+ordinary commits stage only JSONL, `next-index-*` indexes skip automatic staging,
+and a failed flush stops before staging; do not make live commits to verify setup.
