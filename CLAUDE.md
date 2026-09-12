@@ -109,3 +109,7 @@ Given the monorepo nature of this repo, we want to exercise discretion, to that 
   - where apparent, we would remove this dependency
   - where difficult, discuss alternatives or fallbacks
 - finally commit in one single commit with convention `GOODBYE <tool>\n\n<Reason and details if needed>`, this makes it easy to dig out old features at a later date to revisit
+
+## Beads / br / bv
+
+Track work in repo-local `.beads/`. From the repo root, use `br --db .beads/beads.db show <id>`, `update <id> --claim`, and `close <id>` to inspect, own, and finish verified tasks; keep progress in bead notes. Use `bv --db .beads/beads.db --robot-triage` or `--robot-next` for coordinator reports. Flush tracking changes with `br --db .beads/beads.db sync --flush-only`; do not commit or push automatically unless the task or user authorizes it.

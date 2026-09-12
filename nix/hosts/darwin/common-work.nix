@@ -11,17 +11,8 @@
     jira-cli-go
   ];
 
-  homebrew.taps = [
-    {
-      name = "codethread/millstrand";
-      clone_target = "https://github.com/codethread/millstrand";
-      trusted = true;
-    }
-  ];
-
   homebrew.brews = [
     "cocoapods" # Dependency manager for Cocoa projects
-    "codethread/millstrand/millstrand" # GOAT
   ];
 
   homebrew.casks = [
