@@ -1,0 +1,6 @@
+name: br
+description: Bash completions for br
+parsing: disabled
+completion:
+  positionalany:
+  - $carapace.bridge.Bash([br])
