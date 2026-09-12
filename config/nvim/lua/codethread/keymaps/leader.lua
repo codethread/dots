@@ -167,7 +167,7 @@ Keys.tbl('<leader>', {
 		group = 'Toggle',
 		i = { 'Inlay Hints', Snacks.toggle.indent },
 		-- i = { 'Inlay Hints', Cmd "lua print'nothing setup'" },
-		m = { 'Markdown Preview', Cmd 'Markview Toggle' },
+		m = { 'Markdown Preview', Cmd 'RenderMarkdown buf_toggle' },
 		[' '] = { 'Whitespace', fns.toggle_listchars },
 		l = { 'Linewrap', fns.toggle_linewrap },
 	},

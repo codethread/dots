@@ -38,18 +38,12 @@ return U.F {
 	{
 		'MeanderingProgrammer/render-markdown.nvim',
 		enabled = false,
-		-- also 'OXY2DEV/markview.nvim',
+		-- also 'OXY2DEV/markview.nvim' but i found the indents annoying and cba to edit
 		ft = 'markdown',
 		---@module 'render-markdown'
 		---@type render.md.UserConfig
 		opts = {
 			completions = { lsp = { enabled = true } },
 		},
-	},
-	{
-		'OXY2DEV/markview.nvim',
-		lazy = false,
-		-- Completion for `blink.cmp`
-		-- dependencies = { "saghen/blink.cmp" },
 	},
 }
