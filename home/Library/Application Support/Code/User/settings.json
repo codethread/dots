@@ -1,4 +1,5 @@
 {
+  "terminal.integrated.enableImages": true,
   // test
   // helps to turn on minimap for this file only
   // MARK: cursor
