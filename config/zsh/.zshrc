@@ -1,7 +1,7 @@
 # zsh remains minimal, but accidental interactive launches get human-facing env.
 source "$DOTFILES/config/env/interactive.sh"
 
-source "/etc/profiles/per-user/$USER/share/antidote/antidote.zsh"
+source "$XDG_STATE_HOME/home-manager/gcroots/current-home/home-path/share/antidote/antidote.zsh"
 antidote load
 
 autoload -Uz promptinit
