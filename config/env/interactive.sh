@@ -28,14 +28,6 @@ FZF_CTRL_T_COMMAND="${FZF_CTRL_T_COMMAND:-fd --type f --hidden --exclude '{.git}
 FZF_DEFAULT_COMMAND="${FZF_DEFAULT_COMMAND:-fd --type f --hidden --exclude '{.git}'}"
 FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS:---color=fg+:#e0def4,bg+:#393552,hl+:#ea9a97,border:#44415a,header:#3e8fb0,gutter:#232136,spinner:#f6c177,info:#9ccfd8,pointer:#c4a7e7,marker:#eb6f92,prompt:#908caa}"
 
-if [ "$(uname -s)" = Darwin ] && [ -d /Applications/kitty.app/Contents/Resources/man ]; then
-  case ":${MANPATH:-}:" in
-    *:/Applications/kitty.app/Contents/Resources/man:*) ;;
-    ::) MANPATH="/Applications/kitty.app/Contents/Resources/man:" ;;
-    *) MANPATH="/Applications/kitty.app/Contents/Resources/man:$MANPATH" ;;
-  esac
-fi
-
 if [ "$ct_interactive_restore_allexport" = true ]; then
   set +a
 fi

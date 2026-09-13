@@ -127,12 +127,22 @@ if [ "$ct_os" = Darwin ]; then
   HOMEBREW_PREFIX="${HOMEBREW_PREFIX:-/opt/homebrew}"
   HOMEBREW_REPOSITORY="${HOMEBREW_REPOSITORY:-/opt/homebrew}"
   ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
+
   if [ -d /opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home ]; then
     JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home}"
   else
     JAVA_HOME="${JAVA_HOME:-/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home}"
   fi
+
+  if [ -d /Applications/kitty.app/Contents/Resources/man ]; then
+    case ":${MANPATH:-}:" in
+      *:/Applications/kitty.app/Contents/Resources/man:*) ;;
+      ::) MANPATH="/Applications/kitty.app/Contents/Resources/man:" ;;
+      *) MANPATH="/Applications/kitty.app/Contents/Resources/man:$MANPATH" ;;
+    esac
+  fi
 fi
+
 
 # PATH -----------------------------------------------------------------------
 
