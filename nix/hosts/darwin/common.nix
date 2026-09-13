@@ -58,6 +58,7 @@ in
   # and sudo contexts while keeping kitty's native TERM=xterm-kitty.
   # enableAllTerminfo pulls in termite which fails to build on current Apple SDK.
   environment.systemPackages = with pkgs; [
+    agent-browser
     kitty.terminfo # xterm-kitty
     ncurses # tmux-256color
     pngpaste
