@@ -3,7 +3,18 @@ source ct/interactive/mod.nu
 alias p = ^p
 alias als = scope aliases
 
-alias yy = yazi
+# alias yy = yazi
+
+# Yazi and set CWD on `q`
+def --env yy [...args] {
+    let tmp = (mktemp -t "yazi-cwd.XXXXXX")
+    ^yazi ...$args --cwd-file $tmp
+    let cwd = (open $tmp)
+    if $cwd != $env.PWD and ($cwd | path exists) {
+        cd $cwd
+    }
+    rm -fp $tmp
+}
 
 def cdy [] {
     echo $env.PWD | pbcopy

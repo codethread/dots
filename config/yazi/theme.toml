@@ -1,0 +1,5 @@
+# Select local flavors so Yazi follows the terminal's dark/light appearance.
+# Their palettes mirror config/nvim/lua/codethread/theme.lua.
+[flavor]
+dark = "rose-pine-moon"
+light = "rose-pine-dawn"
