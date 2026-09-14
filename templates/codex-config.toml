@@ -71,9 +71,9 @@ enabled = false
 enabled = true
 
 [desktop]
-conversationDetailMode = "STEPS_COMMANDS"
+conversationDetailMode = "STEPS_PROSE"
 ambient-suggestions-enabled = false
-mac-menu-bar-enabled = false
+mac-menu-bar-enabled = true
 show-context-window-usage = true
 composerEnterBehavior = "cmdAlways"
 notifications-turn-mode = "off"
