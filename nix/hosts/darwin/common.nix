@@ -215,6 +215,7 @@ in
     '';
     casks = [
       "kitty" # GPU-based terminal emulator
+      "ghostty"
       "aerospace" # AeroSpace is an i3-like tiling window manager for macOS
       "alfred" # Application launcher and productivity software
       "spotify" # Music streaming service
