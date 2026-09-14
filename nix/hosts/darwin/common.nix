@@ -139,7 +139,9 @@ in
     };
   };
 
-  system.activationScripts.postActivation.text = ''
+  # Complete formula upgrades before Home Manager's postActivation hooks
+  # snapshot the installed Zsh completions.
+  system.activationScripts.postActivation.text = lib.mkBefore ''
     /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${syncengineStateDir}
 
     # Best-effort: this domain may be protected on some macOS versions. Keep it

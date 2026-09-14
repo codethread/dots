@@ -23,7 +23,7 @@ Adapters may add shell-native state but must not duplicate the base contract:
 | Consumer | Adapter |
 |---|---|
 | Bash | `config/bash/env` sources the base, adds interactive state only for interactive shells, then optional `env.local` |
-| zsh | `config/zsh/.zshenv` sources the base; `.zshrc` adds interactive state |
+| zsh | `config/zsh/.zshenv` sources the base; `.zshrc` adds interactive state and loads the switch-generated completion dump |
 | Nushell | `config/nushell/env.nu` imports the base plus interactive state only when `$nu.is-interactive`, converts PATH to a list, then adds typed/Nushell-only values |
 | terminal launch | `config/env/terminal-startup.sh` sources the base, then execs login Nushell |
 | tmux | `emit.sh --tmux` seeds the tmux global environment and default shell |
@@ -79,6 +79,34 @@ therefore propagate without a manifest.
 after the base. It must not be generated from Nushell or used as a portable env
 snapshot. Transient values such as SSH agent sockets remain inherited from the
 launching client and are not part of the stable manifest.
+
+## Zsh completion lifecycle
+
+`nix/features/zsh-completions.nix` generates the completion cache during Home
+Manager activation, after packages and dotfile links are installed. On Darwin,
+Homebrew Bundle and formula upgrades finish before Home Manager activates. The
+scan uses the incoming system profile because `/run/current-system` still points
+to the previous generation until Darwin activation finishes.
+
+`config/zsh/completion-path.zsh` is shared by activation and interactive startup.
+It includes Nix profiles, Zsh's built-in functions, and Homebrew completions.
+Activation audits those paths as the user, builds a fresh dump even if the number
+of completion files is unchanged, compiles it with the installed Nix Zsh, and
+atomically replaces each cache file under `$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION`.
+An insecure path fails activation without replacing the previous cache.
+
+Interactive shells use `compinit -C`: completion discovery and security checks
+happen at switch time, not at every launch. Completion files remain live on disk;
+the dump does not freeze their contents. After installing or changing completions
+outside Nix, run the normal system switch. There is no separate refresh command.
+If the versioned cache is missing, startup warns and uses audited, uncached
+completion initialization until the next activation.
+
+Starship, fzf, and Atuin init scripts are cached separately by resolved executable
+path. Startup generates into temporary files and publishes the init script and
+path stamp only after the generator succeeds. A failed generator returns failure
+without sourcing partial output or replacing the previous cache, so the next
+launch retries. Empty init caches are regenerated as well.
 
 ## [SPEC-009-S6] Validation
 

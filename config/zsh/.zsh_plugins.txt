@@ -1,3 +1,1 @@
-zsh-users/zsh-autosuggestions
-sindresorhus/pure kind:fpath
-zsh-users/zsh-syntax-highlighting
+zdharma-continuum/fast-syntax-highlighting kind:defer

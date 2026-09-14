@@ -91,6 +91,7 @@ in
     ./home-base.nix
     ./claude-code.nix
     ./pi.nix
+    ./zsh-completions.nix
   ];
 
   home.file = {

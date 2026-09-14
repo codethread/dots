@@ -124,12 +124,13 @@ make system [<profile>]
 
 ### [SPEC-006-S2.7] Home-Manager Activation DAG
 
-Three ordered activation scripts run during every rebuild:
+Activation includes these ordered steps:
 
 1. **bootDotfiles** (NixOS only, after `installPackages`) — clones dots if missing
 2. **userBootstrap** (after `writeBoundary`) — creates directory structure, clones vendor repos (nu_scripts, gitwatch, Alfred and images on macOS), sets git hooks path
 3. **clone-\<name\>** (per service, after `installPackages`) — each `repo-service.nix` instance generates its own activation hook that clones its repo via SSH with a 5s BatchMode auth test; skips gracefully if SSH auth unavailable
 4. **dottyLink** (after `userBootstrap`) — symlinks dotfiles into place via dotty (see [dotty spec](./dotty.md))
+5. **zshCompletions** (after `dottyLink`, `linkGeneration`, and `installPackages`) — audits installed completion paths and generates a versioned, compiled Zsh completion dump. Darwin formula upgrades run before Home Manager activation so this includes the updated Homebrew completions.
 
 ### [SPEC-006-S2.8] Service Module
 
