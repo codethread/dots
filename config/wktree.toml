@@ -94,7 +94,7 @@ policy = "origin_default"
 [[project]]
 name = "deals ui bootstrap"
 root = "~/pb/app/deals-light-ui"
-pool_size = 8
+pool_size = 12
 copy_mode_default = "symlink"
 copy = [
 	".env",
