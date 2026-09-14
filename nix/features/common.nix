@@ -248,6 +248,7 @@ in
 
       # --- Utils ---
       poppler-utils
+      resvg
       coreutils
       fswatch
       entr
@@ -273,6 +274,7 @@ in
       tokei
       grc
       todoist-cli
+      taplo # toml parser
       gh
       git-lfs
       lazygit
