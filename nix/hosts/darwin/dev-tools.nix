@@ -4,7 +4,7 @@
 # config. Only things too large or too invasive to hand to a personal laptop
 # belong here — JVM toolchains and the container runtime. Everything else lives
 # in ./common.nix so dev, personal, and work stay in sync by default.
-# Imported by: hosts/darwin/dev.nix, hosts/darwin/common-work.nix
+# Imported by: hosts/darwin/millstrand.nix
 
 {
   imports = [ ./common.nix ];

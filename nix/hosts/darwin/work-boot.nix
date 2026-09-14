@@ -1,7 +1,7 @@
 { config, ... }:
 
 {
-  imports = [ ./common.nix ];
+  imports = [ ./millstrand.nix ];
 
   system.activationScripts.workBootMessage.text = ''
     home="/Users/${config.system.primaryUser}"

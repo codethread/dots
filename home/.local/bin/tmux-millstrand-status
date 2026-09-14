@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# :module: read-only running Weaver count for the tmux status bar
+set -euo pipefail
+
+case "${1:-}" in
+  -h|--help)
+    printf 'Usage: tmux-millstrand-status\nShows running Weavers from the local Mill; ? means unavailable.\n'
+    exit 0
+    ;;
+esac
+
+# Machines without Millstrand do not need a status segment.
+command -v mill >/dev/null 2>&1 || exit 0
+
+if count=$(mill weaver list | jq -er '[.[] | select(.state == "running")] | length'); then
+  printf 'weavers:%s' "$count"
+else
+  printf 'weavers:?'
+fi

@@ -2,7 +2,7 @@
 
 {
   imports = [
-    ./dev-tools.nix
+    ./millstrand.nix
     ../../services/darwin-cc-notify.nix
   ];
 
