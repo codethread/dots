@@ -50,6 +50,15 @@
 theme = Rose pine moon
 shell-integration-features = ssh-terminfo,ssh-env
 
+background-opacity = 0.95
+custom-shader = ~/.config/ghostty/shaders/snow_cursor_impulse.glsl
+# custom-shader = ~/.config/ghostty/shaders/embers.glsl
+# Draw the short Neovide-style cursor smear on top of the snow.
+custom-shader = ~/.config/ghostty/shaders/cursor_smear.glsl
+# custom-shader = /Users/adamhall/dev/vendor/ghostty-shaders/cursor_lightning.glsl
+# Animate only while focused ("always" also animates unfocused terminals).
+custom-shader-animation = true
+
 # Remap Cmd+Shift+[ / ] to Ctrl+Alt+z / Ctrl+Alt+x for tmux prev/next window
 keybind = super+shift+left_bracket=text:\x1b\x1a
 keybind = super+shift+right_bracket=text:\x1b\x18
