@@ -27,11 +27,21 @@ return {
 		},
 	},
 	{
-		'dlyongemallo/diffview.nvim',
-		lazy = false,
+		-- trial
+		'esmuellert/codediff.nvim',
+		cmd = 'CodeDiff',
+	},
+	{
+		'dlyongemallo/diffview-plus.nvim',
+		-- lazy = false,
+		version = '*',
+		-- optional: lazy-load on command
 		cmd = {
-			'DiffviewFileHistory',
 			'DiffviewOpen',
+			'DiffviewToggle',
+			'DiffviewFileHistory',
+			'DiffviewDiffFiles',
+			'DiffviewLog',
 		},
 		opts = {
 			view = {
