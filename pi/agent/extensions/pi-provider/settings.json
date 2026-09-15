@@ -17,6 +17,10 @@
       "provider": "openai-codex"
     },
     {
+      "path": "~/pb/adam.hall/work.spool",
+      "provider": "openai-codex"
+    },
+    {
       "path": "~/pb",
       "provider": "openai"
     }

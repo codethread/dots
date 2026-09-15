@@ -94,7 +94,8 @@ fi
 # Agent and service state ----------------------------------------------------
 
 PI_CODING_AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
-PI_CACHE_RETENTION="${PI_CACHE_RETENTION:-long}"
+# TODO: likely want this in the cli wrapper so it's only interactive and on demand
+# PI_CACHE_RETENTION="${PI_CACHE_RETENTION:-long}"
 PI_OFFLINE="${PI_OFFLINE:-1}"
 PI_SKIP_VERSION_CHECK="${PI_SKIP_VERSION_CHECK:-1}"
 
