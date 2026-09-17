@@ -9,7 +9,7 @@ Configuration identification: SPEC-007; migrated from `specs/theming.md`; canoni
 
 ### [SPEC-007-S1.1] Purpose
 
-Shared light/dark and theme-family control for the interactive desktop and terminal stack. The current implementation coordinates macOS appearance, desktop wallpaper, Kitty colors, Nushell syntax/table colors, `LS_COLORS`, and Neovim colors from one small state contract.
+Shared light/dark and theme-family control for the interactive desktop and terminal stack. The current implementation coordinates macOS appearance, desktop wallpaper, Kitty and Ghostty colors, Nushell syntax/table colors, `LS_COLORS`, and Neovim colors from one small state contract.
 
 Most terminal applications are expected to follow the active theme through the combined terminal palette, shell color config, and `LS_COLORS`. Neovim is the main app with explicit extra theme integration; LazyGit has a small adjustment to prefer terminal defaults. Additional app-specific handling should be added only when inheritance is not enough.
 
@@ -21,7 +21,7 @@ The system is intentionally narrow for now. Nix and NixOS desktop theming are no
 - Preserve the chosen theme family while toggling light/dark.
 - Support at least `tokyonight` and `rose-pine`.
 - Keep terminals and editor config reading the same state.
-- Reload live Kitty windows without restarting them.
+- Reload live Kitty and Ghostty windows without restarting them.
 - Avoid scattering plugin-specific theme choices throughout the Neovim config.
 
 ### [SPEC-007-S1.3] Non-Goals
@@ -58,18 +58,22 @@ theme light|dark|toggle [--family tokyonight|rose-pine]
     |  +- color-theme-family
     |
     +- Kitty
-       +- copy selected theme to $XDG_STATE_HOME/kitty/active-theme.conf
-       +- reload live windows through kitty remote control
+    |  +- copy selected theme to the active Kitty config
+    |  +- reload live windows through Kitty remote control
+    |
+    +- Ghostty
+       +- write selected theme to the active Ghostty config
+       +- reload live windows with SIGUSR2
 ```
 
 ### [SPEC-007-S2.2] Component Layout
 
 ```
 home/.local/bin/theme
-    Main theme switcher. Writes shared state, controls macOS, updates Kitty.
+    Main theme switcher. Writes shared state, controls macOS, and updates Kitty and Ghostty.
 
 config/kitty/kitty.conf
-    Includes $XDG_STATE_HOME/kitty/active-theme.conf and enables remote control.
+    Includes $XDG_CONFIG_HOME/kitty/themes/active.conf and enables remote control.
 
 config/kitty/themes/
     rose-pine.conf
@@ -77,7 +81,13 @@ config/kitty/themes/
     tokyonight-day.conf
     tokyonight-moon.conf
 
-$XDG_STATE_HOME/kitty/active-theme.conf
+$XDG_CONFIG_HOME/kitty/themes/active.conf
+    Written by theme switcher; not tracked in git to avoid noisy history.
+
+config/ghostty/config
+    Includes the generated active-theme.conf.
+
+$XDG_CONFIG_HOME/ghostty/active-theme.conf
     Written by theme switcher; not tracked in git to avoid noisy history.
 
 config/nushell/config.nu
@@ -104,18 +114,19 @@ config/nvim/lua/plugins/ui.lua
 |---|---|---|---|
 | `$XDG_STATE_HOME/color-theme` | `light`, `dark` | `theme` | `theme`, Nushell, Neovim |
 | `$XDG_STATE_HOME/color-theme-family` | `tokyonight`, `rose-pine` | `theme` | `theme`, Nushell `LS_COLORS`, Neovim |
-| `$XDG_STATE_HOME/kitty/active-theme.conf` | Kitty color config | `theme` | Kitty |
+| `$XDG_CONFIG_HOME/kitty/themes/active.conf` | Kitty color config | `theme` | Kitty |
+| `$XDG_CONFIG_HOME/ghostty/active-theme.conf` | Ghostty theme selection | `theme` | Ghostty |
 
-`$XDG_STATE_HOME` defaults to `~/.local/state` when unset.
+`$XDG_STATE_HOME` defaults to `~/.local/state` and `$XDG_CONFIG_HOME` defaults to `~/.config` when unset.
 
 ### [SPEC-007-S3.2] Theme Mapping
 
-| Family | Mode | Kitty theme | Neovim style/variant | vivid theme |
-|---|---|---|---|---|
-| `tokyonight` | `light` | `tokyonight-day` | `day` | `tokyonight-day` |
-| `tokyonight` | `dark` | `tokyonight-moon` | `moon` | `tokyonight-moon` |
-| `rose-pine` | `light` | `rose-pine-dawn` | `dawn` | `rose-pine-dawn` |
-| `rose-pine` | `dark` | `rose-pine` | `moon` | `rose-pine-moon` |
+| Family | Mode | Kitty theme | Ghostty theme | Neovim style/variant | vivid theme |
+|---|---|---|---|---|---|
+| `tokyonight` | `light` | `tokyonight-day` | `TokyoNight Day` | `day` | `tokyonight-day` |
+| `tokyonight` | `dark` | `tokyonight-moon` | `TokyoNight Moon` | `moon` | `tokyonight-moon` |
+| `rose-pine` | `light` | `rose-pine-dawn` | `Rose Pine Dawn` | `dawn` | `rose-pine-dawn` |
+| `rose-pine` | `dark` | `rose-pine` | `Rose Pine Moon` | `moon` | `rose-pine-moon` |
 
 Note: the Kitty dark Rose Pine file is `rose-pine.conf`, while vivid and Neovim refer to the dark variant as `rose-pine-moon`.
 
@@ -154,13 +165,22 @@ On non-macOS systems these steps are no-ops.
 
 Implemented by `home/.local/bin/theme` and `config/kitty/kitty.conf`.
 
-- `kitty.conf` includes `$XDG_STATE_HOME/kitty/active-theme.conf`.
-- The switcher copies the selected theme file to `$XDG_STATE_HOME/kitty/active-theme.conf`; this file is not tracked in git.
-- Live reload uses `kitty @ set-colors --all --configured`.
+- `kitty.conf` includes `$XDG_CONFIG_HOME/kitty/themes/active.conf`.
+- The switcher copies the selected theme file to `$XDG_CONFIG_HOME/kitty/themes/active.conf`; this file is not tracked in git.
+- Live reload uses `kitty @ load-config` so all theme options are reapplied.
 - Primary remote socket is `unix:/tmp/mykitty`; fallback is Kitty's default remote target.
 - `allow_remote_control yes` and `listen_on unix:/tmp/mykitty` must remain enabled.
 
-### [SPEC-007-S4.4] Nushell
+### [SPEC-007-S4.4] Ghostty
+
+Implemented by `home/.local/bin/theme` and `config/ghostty/config`.
+
+- `config` optionally includes `$XDG_CONFIG_HOME/ghostty/active-theme.conf`.
+- The switcher writes the selected built-in Ghostty theme to that file.
+- Live reload uses Ghostty's supported `SIGUSR2` mechanism.
+- Before the first switch, Ghostty defaults to the Tokyo Night light/dark pair and follows system appearance.
+
+### [SPEC-007-S4.5] Nushell
 
 Implemented by `config/nushell/config.nu`, `ct/themes.nu`, and `ct/ls-colors.nu`.
 
@@ -168,7 +188,7 @@ Implemented by `config/nushell/config.nu`, `ct/themes.nu`, and `ct/ls-colors.nu`
 - `LS_COLORS` is selected by mode and family using `vivid generate`.
 - This is evaluated when Nushell starts; existing shells do not live-reload.
 
-### [SPEC-007-S4.5] Neovim
+### [SPEC-007-S4.6] Neovim
 
 Implemented by `config/nvim/lua/codethread/theme.lua` and consumers.
 
@@ -187,6 +207,7 @@ Neovim reads state at startup. A running instance needs restart or manual reload
 | macOS appearance | Implemented | Dark/light only, via AppleScript |
 | macOS wallpaper | Implemented | External image directory, not managed by repo |
 | Kitty config | Implemented | File include plus remote live reload |
+| Ghostty config | Implemented | File include plus SIGUSR2 live reload |
 | Nushell UI colors | Implemented | Mode-aware, not family-specific |
 | Nushell `LS_COLORS` | Implemented | Mode and family aware, generated by vivid |
 | Neovim theme plugins | Implemented | Tokyo Night and Rose Pine |
@@ -222,7 +243,7 @@ Most CLI/TUI applications should be covered by terminal colors, shell colors, an
 
 Known areas outside the current shared flow:
 
-- WezTerm and Ghostty, if used instead of Kitty.
+- WezTerm, if used instead of Kitty or Ghostty.
 - Zellij, if terminal inheritance is not enough.
 - GUI editors such as Zed and VS Code.
 - Desktop/session styling such as Hyprland.
@@ -232,7 +253,7 @@ Known areas outside the current shared flow:
 
 - **Tiny state contract** - plain files under `$XDG_STATE_HOME` are easy for Bash, Nushell, Lua, and future Nix activation scripts to share.
 - **Imperative runtime switcher** - day/night switching should not require a Nix rebuild.
-- **Kitty theme file copy** - `$XDG_STATE_HOME/kitty/active-theme.conf` keeps normal Kitty startup simple while still allowing live reload. Stored outside the repo to avoid git churn on every theme switch.
+- **Generated terminal theme configs** - active Kitty and Ghostty theme files under `$XDG_CONFIG_HOME` keep startup simple while allowing live reload. They are stored outside the repo to avoid git churn on every theme switch.
 - **Family and mode are separate** - toggling light/dark preserves the user's preferred family.
 - **Neovim owns plugin-specific details** - external state picks family/mode; `codethread.theme` translates that into plugin options and custom highlight palettes.
 - **Terminal apps inherit first** - the default approach is terminal palette plus shell color config plus `LS_COLORS`; add app-specific theme config only when inheritance fails.

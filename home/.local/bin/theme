@@ -11,6 +11,7 @@ DEFAULT_FAMILY="tokyonight"
 KITTY_THEMES="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/themes"
 ACTIVE_THEME_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/kitty/themes/active.conf"
 KITTY_SOCKET="unix:/tmp/mykitty"
+ACTIVE_GHOSTTY_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/active-theme.conf"
 BG_DIR="${CT_BACKGROUNDS_DIR:-$HOME/sync/images/backgrounds}"
 
 usage() {
@@ -103,6 +104,30 @@ theme_name() {
       ;;
     *)
       echo "Unsupported theme: $family $mode" >&2
+      return 1
+      ;;
+  esac
+}
+
+ghostty_theme_name() {
+  local family="$1"
+  local mode="$2"
+
+  case "$family:$mode" in
+    tokyonight:light)
+      echo "TokyoNight Day"
+      ;;
+    tokyonight:dark)
+      echo "TokyoNight Moon"
+      ;;
+    rose-pine:light)
+      echo "Rose Pine Dawn"
+      ;;
+    rose-pine:dark)
+      echo "Rose Pine Moon"
+      ;;
+    *)
+      echo "Unsupported Ghostty theme: $family $mode" >&2
       return 1
       ;;
   esac
@@ -232,6 +257,7 @@ esac
 
 THEME_NAME="$(theme_name "$FAMILY" "$MODE")"
 THEME_CONF="$KITTY_THEMES/$THEME_NAME.conf"
+GHOSTTY_THEME_NAME="$(ghostty_theme_name "$FAMILY" "$MODE")"
 WALLPAPER="$(wallpaper_path "$FAMILY" "$MODE" || true)"
 
 if [[ ! -f "$THEME_CONF" ]]; then
@@ -244,12 +270,13 @@ if is_macos && [[ -z "$WALLPAPER" ]]; then
   exit 1
 fi
 
-mkdir -p "$STATE_DIR" "$(dirname "$ACTIVE_THEME_CONF")"
+mkdir -p "$STATE_DIR" "$(dirname "$ACTIVE_THEME_CONF")" "$(dirname "$ACTIVE_GHOSTTY_CONF")"
 set_system_mode "$MODE"
 set_wallpaper "$WALLPAPER"
 echo "$MODE" > "$MODE_FILE"
 echo "$FAMILY" > "$FAMILY_FILE"
 cp "$THEME_CONF" "$ACTIVE_THEME_CONF"
+printf 'theme = %s\n' "$GHOSTTY_THEME_NAME" > "$ACTIVE_GHOSTTY_CONF"
 
 # Reload the full config so theme options beyond colors, such as
 # text_fg_override_threshold, are updated in live kitty instances too.
@@ -258,5 +285,8 @@ if command -v kitty >/dev/null 2>&1; then
     || kitty @ load-config 2>/dev/null \
     || true
 fi
+
+# Ghostty reloads its configuration in response to SIGUSR2.
+pkill -USR2 -x ghostty 2>/dev/null || true
 
 echo "Theme: $FAMILY $MODE"

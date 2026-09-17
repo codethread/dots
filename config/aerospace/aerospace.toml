@@ -140,6 +140,12 @@ run = 'move-node-to-workspace alt'
 if.app-id = 'company.thebrowser.Browser'
 run = 'move-node-to-workspace alt'
 
+[[on-window-detected]]
+if.app-id="com.mitchellh.ghostty"
+run= [
+  "layout tiling",
+]
+
 #####################################
 # Special
 [[on-window-detected]]

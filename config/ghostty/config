@@ -1,8 +1,36 @@
 # Run `ghostty +show-config --default --docs` to view a list of
+# ghostty +validate-config
+
+keybind = super+r=reload_config
+
 font-family = Victor Mono
-font-size = 14.0
-font-feature = "salt=2 cv01=1 cv02=1 cv06=1 cv14=1 +zero +onum +ss04 cv18=1 cv30=1 +ss09 +ss07"
-theme = Rose pine moon
+font-size = 14
+font-thicken = true
+font-thicken-strength = 50
+
+font-feature = salt=2
+font-feature = cv01=1
+font-feature = cv02=1
+font-feature = cv06=1
+font-feature = cv14=1
+font-feature = +zero
+font-feature = +onum
+font-feature = +ss04
+font-feature = cv18=1
+font-feature = cv30=1
+font-feature = +ss09
+font-feature = +ss07
+
+# `theme` writes the selected family/mode here, then asks Ghostty to reload.
+# Follow the system appearance with Tokyo Night until the first selection.
+theme = light:TokyoNight Day,dark:TokyoNight Moon
+config-file = ?active-theme.conf
+
+macos-titlebar-style = hidden
+window-padding-x = 4
+window-padding-y = 2
+
+
 shell-integration-features = ssh-terminfo,ssh-env
 
 background-opacity = 0.95
