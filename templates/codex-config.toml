@@ -8,6 +8,9 @@ model = "gpt-6-astra"
 approvals_reviewer = "user"
 service_tier = "default"
 
+[agents]
+enabled = false
+
 [tui]
 status_line = [
     "model-with-reasoning",
@@ -41,13 +44,13 @@ enabled = true
 enabled = true
 
 [plugins."google-calendar@openai-curated"]
-enabled = true
+enabled = false
 
 [plugins."slack@openai-curated"]
-enabled = true
+enabled = false
 
 [plugins."visualize@openai-bundled"]
-enabled = true
+enabled = false
 
 [plugins."documents@openai-primary-runtime"]
 enabled = false
