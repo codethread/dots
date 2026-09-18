@@ -22,6 +22,13 @@ status_line_use_colors = true
 [notice]
 hide_rate_limit_model_nudge = true
 
+[agents]
+enabled = false
+
+[marketplaces.agents]
+source_type = "git"
+source = "https://github.com/codethread/agents.git"
+
 [plugins."coding@agents"]
 enabled = true
 
@@ -38,6 +45,13 @@ enabled = true
 enabled = true
 
 [plugins."harness@agents"]
+enabled = true
+
+[marketplaces.harnesses]
+source_type = "git"
+source = "https://github.com/codethread/harnesses.spool.git"
+
+[plugins."millstrand-identity@harnesses"]
 enabled = true
 
 [plugins."google-calendar@openai-curated"]

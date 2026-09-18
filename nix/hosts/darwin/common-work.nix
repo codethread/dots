@@ -18,7 +18,6 @@
   homebrew.casks = [
     "figma" # Collaborative team software
     "licecap" # Animated screen capture application
-    "logseq" # Privacy-first, open-source platform for knowledge sharing and management
     "obs" # Open-source software for live streaming and screen recording
     "proxyman" # HTTP debugging proxy
   ];
