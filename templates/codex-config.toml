@@ -22,13 +22,6 @@ status_line_use_colors = true
 [notice]
 hide_rate_limit_model_nudge = true
 
-[agents]
-enabled = false
-
-[marketplaces.agents]
-source_type = "git"
-source = "https://github.com/codethread/agents.git"
-
 [plugins."coding@agents"]
 enabled = true
 
@@ -45,13 +38,6 @@ enabled = true
 enabled = true
 
 [plugins."harness@agents"]
-enabled = true
-
-[marketplaces.harnesses]
-source_type = "git"
-source = "https://github.com/codethread/harnesses.spool.git"
-
-[plugins."millstrand-identity@harnesses"]
 enabled = true
 
 [plugins."google-calendar@openai-curated"]
@@ -78,11 +64,14 @@ enabled = false
 [plugins."template-creator@openai-primary-runtime"]
 enabled = false
 
-[plugins."sites@openai-bundled"]
-enabled = false
-
 [plugins."browser@openai-bundled"]
 enabled = true
+
+[plugins."millstrand-identity@harnesses"]
+enabled = true
+
+[plugins."sites@openai-bundled"]
+enabled = false
 
 [desktop]
 conversationDetailMode = "STEPS_COMMANDS"
@@ -122,10 +111,10 @@ enabled = false
 path = "~/.config/.codex/skills/.system/skill-installer/SKILL.md"
 enabled = false
 
-[agents]
-enabled = false
+[marketplaces.agents]
+source_type = "git"
+source = "https://github.com/codethread/agents.git"
 
-# [mcp_servers.chrome-devtools]
-# command = "bunx"
-# args = ["chrome-devtools-mcp@latest"]
-#
+[marketplaces.harnesses]
+source_type = "git"
+source = "https://github.com/codethread/harnesses.spool.git"
