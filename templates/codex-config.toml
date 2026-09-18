@@ -3,13 +3,10 @@ cli_auth_credentials_store = "file"
 sandbox_mode = "danger-full-access"
 approval_policy = "never"
 personality = "pragmatic"
-model_reasoning_effort = "xhigh"
-model = "gpt-6-astra"
+model_reasoning_effort = "high"
+model = "gpt-5.6-terra"
 approvals_reviewer = "user"
 service_tier = "default"
-
-[agents]
-enabled = false
 
 [tui]
 status_line = [
@@ -74,7 +71,7 @@ enabled = false
 enabled = true
 
 [desktop]
-conversationDetailMode = "STEPS_PROSE"
+conversationDetailMode = "STEPS_COMMANDS"
 ambient-suggestions-enabled = false
 mac-menu-bar-enabled = true
 show-context-window-usage = true
@@ -110,3 +107,11 @@ enabled = false
 [[skills.config]]
 path = "~/.config/.codex/skills/.system/skill-installer/SKILL.md"
 enabled = false
+
+[agents]
+enabled = false
+
+# [mcp_servers.chrome-devtools]
+# command = "bunx"
+# args = ["chrome-devtools-mcp@latest"]
+#
