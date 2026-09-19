@@ -123,8 +123,20 @@ find_agent_process() {
 	[[ -n "$MATCH_ARGS" ]]
 }
 
+# Agent CLIs may omit these flags or source them from configuration. Missing
+# values intentionally remain empty so discovery is best effort.
+agent_flag_value() {
+	local args=$1
+	local flag=$2
+
+	AGENT_FLAG_VALUE=''
+	if [[ "$args" =~ (^|[[:space:]])--${flag}(=|[[:space:]])([^[:space:]]+) ]]; then
+		AGENT_FLAG_VALUE=${BASH_REMATCH[3]}
+	fi
+}
+
 # Outputs one line per matching pane:
-#   <active>\x1f<session>\x1f<window_name>\x1f<tool>\x1f<path>\t<pane_id>\t<window_target>
+#   <active>\x1f<session>\x1f<window_name>\x1f<title>\x1f<tool>\x1f<model>\x1f<thinking>\x1f<path>\t<pane_id>\t<window_target>
 #
 # Fields within the display block use \x1f (ASCII unit separator) so the
 # delimiter cannot collide with session/window names or filesystem paths.
@@ -133,22 +145,29 @@ list_agent_panes() {
 	snapshot_processes
 	pane_format=$'#{session_name}\t#{window_index}\t#{window_name}\t#{pane_index}\t#{pane_id}\t#{pane_pid}\t#{pane_current_command}\t#{pane_current_path}\t#{pane_active}\t#{pane_tty}\t#{pane_title}'
 	while IFS=$'\t' read -r session_name window_index window_name pane_index pane_id pane_pid pane_current_command pane_current_path pane_active pane_tty pane_title; do
-		local tool active_mark short_path
+		local tool model thinking active_mark short_path
 		find_agent_process "$pane_pid" || continue
 
 		agent_label "$MATCH_EXEC" "$MATCH_ARGS"
 		tool=$AGENT_LABEL
+		agent_flag_value "$MATCH_ARGS" model
+		model=$AGENT_FLAG_VALUE
+		agent_flag_value "$MATCH_ARGS" thinking
+		thinking=$AGENT_FLAG_VALUE
 
 		active_mark=' '
 		[[ "$pane_active" == '1' ]] && active_mark='*'
 
 		short_path="${pane_current_path/#$HOME/\~}"
 
-		printf $'%s\x1f%s\x1f%s\x1f%s\x1f%s\t%s\t%s\n' \
+		printf $'%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s\t%s\t%s\n' \
 			"$active_mark" \
 			"$session_name" \
 			"$window_name" \
+			"$pane_title" \
 			"$tool" \
+			"$model" \
+			"$thinking" \
 			"$short_path" \
 			"$pane_id" \
 			"$session_name:$window_index"
@@ -165,30 +184,36 @@ align_candidates() {
 
 	[[ ${#lines[@]} -eq 0 ]] && return
 
-	local max_session=0 max_window=0 max_tool=0
-	local display_part active session window tool path display_tool
+	local max_session=0 max_window=0 max_title=0 max_tool=0 max_model=0 max_thinking=0
+	local display_part active session window title tool model thinking path display_tool
 	for line in "${lines[@]}"; do
 		display_part="${line%%$'\t'*}"
-		IFS=$'\x1f' read -r active session window tool path <<< "$display_part"
+		IFS=$'\x1f' read -r active session window title tool model thinking path <<< "$display_part"
 		display_tool="$tool"
 		[[ "$session" =~ ^pandora--([^_]+)__(.+)$ ]] && display_tool="${BASH_REMATCH[1]}"
-		[[ ${#session}      -gt $max_session ]] && max_session=${#session}
-		[[ ${#window}       -gt $max_window  ]] && max_window=${#window}
-		[[ ${#display_tool} -gt $max_tool    ]] && max_tool=${#display_tool}
+		[[ ${#session}      -gt $max_session  ]] && max_session=${#session}
+		[[ ${#window}       -gt $max_window   ]] && max_window=${#window}
+		[[ ${#title}        -gt $max_title    ]] && max_title=${#title}
+		[[ ${#display_tool} -gt $max_tool     ]] && max_tool=${#display_tool}
+		[[ ${#model}        -gt $max_model    ]] && max_model=${#model}
+		[[ ${#thinking}     -gt $max_thinking ]] && max_thinking=${#thinking}
 	done
 
 	local label rest
 	for line in "${lines[@]}"; do
 		rest="${line#*$'\t'}"
 		display_part="${line%%$'\t'*}"
-		IFS=$'\x1f' read -r active session window tool path <<< "$display_part"
+		IFS=$'\x1f' read -r active session window title tool model thinking path <<< "$display_part"
 		display_tool="$tool"
 		[[ "$session" =~ ^pandora--([^_]+)__(.+)$ ]] && display_tool="${BASH_REMATCH[1]}"
-		label=$(printf '%s  %-*s  %-*s  %-*s  %s' \
+		label=$(printf '%s  %-*s  %-*s  %-*s  %-*s  %-*s  %-*s  %s' \
 			"$active" \
-			"$max_session" "$session" \
-			"$max_window"  "$window" \
-			"$max_tool"    "$display_tool" \
+			"$max_session"  "$session" \
+			"$max_window"   "$window" \
+			"$max_title"    "$title" \
+			"$max_tool"     "$display_tool" \
+			"$max_model"    "$model" \
+			"$max_thinking" "$thinking" \
 			"$path")
 		printf '%s\t%s\n' "$label" "$rest"
 	done
@@ -226,8 +251,8 @@ json_panes() {
 
 	local objects=()
 	while IFS=$'\t' read -r display_part pane_id window_target; do
-		local active_mark session window tool path active_bool preview session_type envy_repo
-		IFS=$'\x1f' read -r active_mark session window tool path <<< "$display_part"
+		local active_mark session window title tool model thinking path active_bool preview session_type envy_repo
+		IFS=$'\x1f' read -r active_mark session window title tool model thinking path <<< "$display_part"
 		active_bool='false'
 		[[ "$active_mark" == '*' ]] && active_bool='true'
 		if [[ "$session" =~ ^pandora--([^_]+)__(.+)$ ]]; then
@@ -247,7 +272,10 @@ json_panes() {
 		objects+=("$(jq -n \
 			--arg session "$session" \
 			--arg window "$window" \
+			--arg title "$title" \
 			--arg tool "$tool" \
+			--arg model "$model" \
+			--arg thinking "$thinking" \
 			--arg path "$path" \
 			--arg pane_id "$pane_id" \
 			--arg window_target "$window_target" \
@@ -255,7 +283,7 @@ json_panes() {
 			--arg preview "$preview" \
 			--arg session_type "$session_type" \
 			--arg envy_repo "$envy_repo" \
-			'{session:$session,window:$window,tool:$tool,path:$path,pane_id:$pane_id,window_target:$window_target,active:$active,preview:$preview,session_type:$session_type,envy_repo:$envy_repo}')")
+			'{session:$session,window:$window,title:$title,tool:$tool,model:$model,thinking:$thinking,path:$path,pane_id:$pane_id,window_target:$window_target,active:$active,preview:$preview,session_type:$session_type,envy_repo:$envy_repo}')")
 	done <<< "$raw"
 
 	printf '%s\n' "${objects[@]}" | jq -s '.'
