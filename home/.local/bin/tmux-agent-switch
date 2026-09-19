@@ -5,6 +5,7 @@
 #:
 #: Finds tmux panes running agentic CLIs (Claude, Codex, Pi, etc.), shows them
 #: in an fzf-tmux popup with a live pane preview, and jumps to the selection.
+#: Press Tab to toggle the preview between below and beside the pane list.
 #:
 #: Options:
 #:   --debug   Print pane list and their captured content to stdout (no fzf)
@@ -38,6 +39,11 @@ fi
 
 if [[ $DEBUG_MODE -eq 0 ]] && [[ $JSON_MODE -eq 0 ]] && ! command -v fzf-tmux >/dev/null 2>&1; then
 	echo 'tmux-agent-switch: fzf-tmux is required' >&2
+	exit 1
+fi
+
+if [[ $DEBUG_MODE -eq 0 ]] && [[ $JSON_MODE -eq 0 ]] && ! command -v perl >/dev/null 2>&1; then
+	echo 'tmux-agent-switch: perl is required for the foreground-colour preview' >&2
 	exit 1
 fi
 
@@ -274,15 +280,31 @@ main() {
 		exit 0
 	fi
 
+	# Parse tmux's SGR parameters as colour groups so RGB/palette values that
+	# happen to equal background codes are preserved. Disable inverse too.
+	local preview_command
+	preview_command=$(cat <<'PREVIEW'
+tmux capture-pane -ep -t {2} | perl -pe '
+	s{\e\[([0-9;]*)m}{
+		my @codes = $1 =~ /(?:38|48|58);(?:5;\d+|2;\d+;\d+;\d+)|\d+/g;
+		@codes = map {
+			/^(?:4[0-9]|10[0-7]|48;.*)$/ ? 49 : $_ eq "7" ? 27 : $_
+		} @codes;
+		"\e[" . join(";", @codes) . "m"
+	}ge;
+'
+PREVIEW
+	)
+	# Follow opens at the newest output even when the pane is taller than the preview.
 	selected=$(printf '%s\n' "$candidates" \
 		| fzf-tmux -p -w 90% -h 80% \
 			--prompt='Agents > ' \
 			--layout=reverse-list \
 			--delimiter=$'\t' \
 			--with-nth=1 \
-			--preview='tmux capture-pane -ep -t {2}' \
-			--preview-window='down,70%,wrap' \
-			--bind 'enter:accept') || exit 0
+			--preview="$preview_command" \
+			--preview-window='down,70%,nowrap,follow' \
+			--bind 'enter:accept,tab:change-preview-window(right,70%|down,70%)') || exit 0
 
 	pane_id=$(printf '%s' "$selected" | cut -f2)
 	window_target=$(printf '%s' "$selected" | cut -f3)
