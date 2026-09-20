@@ -79,10 +79,6 @@ push = true
 remove_worktree = true
 delete_branch = true
 
-# wktree itself dogfoods the nested layout: worktrees are created under
-# ~/dev/projects/wktree/.wktree/<branch> instead of sibling paths.
-# Policy-only exact project: everything else (command, add/finish policy) is
-# still inherited from the ~/dev/projects/** rule.
 [[project]]
 name = "wktree"
 root = "~/dev/projects/wktree"
@@ -92,8 +88,9 @@ worktree_location = "nested"
 # require mutating the canonical root first. Finish uses the conservative
 # defaults above.
 [[project]]
-root = "~/dev/dots"
 name = "dots"
+root = "~/dev/dots"
+worktree_location = "nested"
 
 [project.add]
 policy = "origin_default"
