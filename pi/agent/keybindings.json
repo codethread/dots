@@ -4,5 +4,6 @@
   "app.model.cycleBackward": "ctrl+shift+alt+p",
   "app.session.togglePath": "ctrl+alt+o",
   "app.models.toggleProvider": "ctrl+alt+t",
-  "tui.altScreen.searchNext": "alt+g"
+  "tui.altScreen.searchNext": "alt+g",
+  "app.session.rename": "alt+ctrl+shift+1"
 }

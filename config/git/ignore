@@ -97,3 +97,6 @@ scratch.nu
 # clojure
 **/.lsp/.cache/
 **/.clj-kondo/.cache/
+
+# millstrand
+.millstrand/.land-merge-lock.acquire

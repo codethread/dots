@@ -70,9 +70,6 @@ enabled = true
 [plugins."millstrand-identity@harnesses"]
 enabled = true
 
-[plugins."sites@openai-bundled"]
-enabled = false
-
 [desktop]
 conversationDetailMode = "STEPS_COMMANDS"
 ambient-suggestions-enabled = false

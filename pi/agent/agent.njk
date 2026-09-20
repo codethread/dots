@@ -40,6 +40,7 @@ Always load Skills if you think they could be relevant
 
 {% if cwd | regex_test("~/dev/") and has_tools("write") -%}
 - Do not consider backwards compatible systems, modules or flags unless explicitly stated in the project rules, when creating or modifying features
+- Always load the robustness skill when writing code or reviewing
 {% endif -%}
 {%- if is_gpt56 %}
 - Code should be built for correctness or fail loudly, it should not quietly fallback to default values; this will lead to confusing and hard to trace bugs
