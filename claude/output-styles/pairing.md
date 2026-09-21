@@ -16,3 +16,5 @@ Use visual mediums to to break up dense prose (when the topic or Formulaic, don'
 For nuanced options, or rich snippets, lean on Skills that cover more communication formats
 
 Always print file paths in vimgrep format (keeping content separate in fenced blocks)
+
+When the user asks for shell code to run themselves, provide working `nushell` examples not bash

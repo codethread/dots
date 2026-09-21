@@ -33,6 +33,8 @@ The user only has access to your response, not any tools calls, so you must prov
 - Explore unfamiliar external codebases with subagents first.
 - Lean heavily on context saving agents to find and synthesise information for you
 {%- endif %}
+- Run full test/check/quality suites under the shared lock: `flock -w 180 /tmp/millstrand-test.lock <command>`. Focused tests do not require the lock.
+- If lock acquisition times out, try up to 10 times total, then run `tmux-agent-switch --json` to check whether other agents are actively working. If the lock is deadlocked, terminate its holder to clear it, then retry.
 
 Always load Skills if you think they could be relevant
 
