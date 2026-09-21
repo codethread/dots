@@ -13,6 +13,7 @@
 		{"bin": "notif", "entry": "notif.ts"},
 		{"bin": "prepend-comment", "entry": "prepend-comment.ts"},
 		{"bin": "strip-markdown", "entry": "strip-markdown.ts"},
+		{"bin": "theme", "entry": "theme.ts"},
 		{"bin": "tts", "entry": "tts.ts"}
 	]
 }

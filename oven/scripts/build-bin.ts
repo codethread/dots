@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import {chmod, mkdir, readdir, stat} from "fs/promises";
+import {chmod, mkdir, readdir, rename, rm, stat} from "fs/promises";
 import {homedir} from "os";
 import {isAbsolute, join, normalize, sep} from "path";
 import {parseArgs} from "util";
@@ -176,13 +176,18 @@ async function generateWrapper(entry: BinEntry) {
 	const srcPath = join(BIN_SRC_DIR, entry.entry);
 	const destName = entry.bin;
 	const destPath = join(DEST_DIR, destName);
+	const temporaryPath = `${destPath}.${process.pid}.tmp`;
 
 	try {
 		const wrapper = `#!/usr/bin/env bash\nexec bun run "${srcPath}" "$@"\n`;
-		await Bun.write(destPath, wrapper);
-		await chmod(destPath, 0o755);
+		await Bun.write(temporaryPath, wrapper);
+		await chmod(temporaryPath, 0o755);
+		// Replace old dotty symlinks rather than overwriting their Bash source targets.
+		await rename(temporaryPath, destPath);
 		return {entry: entry.entry, destName, success: true};
 	} catch (error) {
 		return {entry: entry.entry, destName, success: false, error: `${error}`};
+	} finally {
+		await rm(temporaryPath, {force: true});
 	}
 }

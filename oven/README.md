@@ -53,6 +53,7 @@ nix develop --command bun run verify
 - **notif** - Show macOS native notifications
 - **prepend-comment** - Add or update module documentation comments
 - **strip-markdown** - Strip markdown formatting from text, optimized for text-to-speech or plain text output.
+- **theme** - Switch macOS and terminal color theme
 - **tts** - Basic OpenAI text-to-speech wrapper
 
 ### Quick Usage

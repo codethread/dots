@@ -3,7 +3,7 @@
 Document ID: SPEC-007
 Configuration identification: SPEC-007; migrated from `specs/theming.md`; canonical path `devflow/specs/theming.md`.
 **Status:** Partially Implemented
-**Last Updated:** 2026-04-18
+**Last Updated:** 2026-09-20
 
 ## [SPEC-007-S1] 1. Overview
 
@@ -49,28 +49,29 @@ theme light|dark|toggle [--family tokyonight|rose-pine]
     |  +- $XDG_STATE_HOME/color-theme-family
     |  +- tokyonight fallback
     |
-    +- macOS only
-    |  +- set system dark/light appearance
-    |  +- set wallpaper on every desktop
+    +- Preflight Kitty theme and macOS wallpaper concurrently
     |
-    +- write state files
-    |  +- color-theme
-    |  +- color-theme-family
+    +- Apply independent branches concurrently
+    |  +- macOS system dark/light appearance
+    |  +- macOS wallpaper on every desktop
+    |  +- shared mode/family state files
+    |  +- Kitty: write active config -> reload live windows
+    |  +- Ghostty: write active config -> SIGUSR2 live windows
     |
-    +- Kitty
-    |  +- copy selected theme to the active Kitty config
-    |  +- reload live windows through Kitty remote control
-    |
-    +- Ghostty
-       +- write selected theme to the active Ghostty config
-       +- reload live windows with SIGUSR2
+    +- Await all branches, then report success or failure
 ```
 
 ### [SPEC-007-S2.2] Component Layout
 
 ```
-home/.local/bin/theme
-    Main theme switcher. Writes shared state, controls macOS, and updates Kitty and Ghostty.
+oven/bin/theme.ts
+    Bun/TypeScript theme switcher. Writes shared state, controls macOS, and updates Kitty and Ghostty.
+
+oven/bin/manifest.json
+    Registers theme for installation to ~/.local/bin/theme through the Oven build.
+
+oven/tests/theme.test.ts
+    State, mapping, preflight, reload ordering, and concurrent update coverage.
 
 config/kitty/kitty.conf
     Includes $XDG_CONFIG_HOME/kitty/themes/active.conf and enables remote control.
@@ -105,6 +106,14 @@ config/nvim/lua/codethread/theme.lua
 config/nvim/lua/plugins/ui.lua
     Enables the active Neovim theme plugin and applies its colorscheme.
 ```
+
+### [SPEC-007-S2.3] Execution and Installation
+
+The switcher uses Bun filesystem APIs and asynchronous subprocesses rather than shell pipelines. Independent work runs concurrently without a worker limit: state resolution, asset preflight, appearance, wallpaper, state writes, and each terminal's update chain. Explicit `light`/`dark` skips the system appearance query. Wallpaper selection retains exact-theme-before-default and JPG-before-PNG priority even though existence checks run concurrently.
+
+Each terminal reload waits for its own config write, not for macOS automation or the other terminal. Kitty's default-target retry waits for the primary socket attempt to fail. All update branches are awaited before reporting a result; nothing is detached. Terminal reloads remain best effort (including absent applications). Required file or macOS update failures return nonzero after the other branches finish. A failed switch can leave partially applied changes; there is no cross-application rollback.
+
+Run `make build` to install the Oven entrypoint. The Bash source formerly at `home/.local/bin/theme` is removed, not retained as a second implementation. Oven's builder replaces existing executable symlinks rather than writing through them, so an old dotty-managed `theme` link can be migrated safely. For development, run `bun run ./bin/theme.ts` from `oven/`.
 
 ## [SPEC-007-S3] 3. State Model
 
@@ -152,7 +161,7 @@ Note: the Kitty dark Rose Pine file is `rose-pine.conf`, while vivid and Neovim 
 
 ### [SPEC-007-S4.2] macOS
 
-Implemented in `home/.local/bin/theme`.
+Implemented in `oven/bin/theme.ts`.
 
 - Reads current system appearance through `osascript`.
 - Sets system dark mode through `System Events`.
@@ -163,7 +172,7 @@ On non-macOS systems these steps are no-ops.
 
 ### [SPEC-007-S4.3] Kitty
 
-Implemented by `home/.local/bin/theme` and `config/kitty/kitty.conf`.
+Implemented by `oven/bin/theme.ts` and `config/kitty/kitty.conf`.
 
 - `kitty.conf` includes `$XDG_CONFIG_HOME/kitty/themes/active.conf`.
 - The switcher copies the selected theme file to `$XDG_CONFIG_HOME/kitty/themes/active.conf`; this file is not tracked in git.
@@ -173,7 +182,7 @@ Implemented by `home/.local/bin/theme` and `config/kitty/kitty.conf`.
 
 ### [SPEC-007-S4.4] Ghostty
 
-Implemented by `home/.local/bin/theme` and `config/ghostty/config`.
+Implemented by `oven/bin/theme.ts` and `config/ghostty/config`.
 
 - `config` optionally includes `$XDG_CONFIG_HOME/ghostty/active-theme.conf`.
 - The switcher writes the selected built-in Ghostty theme to that file.
