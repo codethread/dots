@@ -45,5 +45,7 @@ custom-shader-animation = true
 # Remap Cmd+Shift+[ / ] to Ctrl+Alt+z / Ctrl+Alt+x for tmux prev/next window
 keybind = super+shift+left_bracket=text:\x1b\x1a
 keybind = super+shift+right_bracket=text:\x1b\x18
+# quick terminal replace window switch (tmux so don't have multiple)
+keybind = global:cmd+backquote=toggle_quick_terminal
 
 command = ~/.config/ghostty/startup.sh
