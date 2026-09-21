@@ -180,29 +180,29 @@ describe("theme switching", () => {
 		]);
 	});
 
-	test.each([false, true])(
-		"all independent updates overlap and finish, including on failure=%s",
-		async (fail) => {
-			const runtime = await fixture("darwin");
-			await Bun.write(join(runtime.backgroundsDir, "default.jpg"), "image");
-			const gate = Promise.withResolvers<void>();
-			const started = new Set<string>();
-			const completed = new Set<string>();
-			runtime.run = async (args) => {
-				const name = args[0] === "osascript" ? args[1] : args[0];
-				started.add(name);
-				if (started.size === 4) gate.resolve();
-				if (fail && name === "-e") return {...ok, exitCode: 1, stderr: "appearance denied"};
-				await gate.promise;
-				completed.add(name);
-				return ok;
-			};
-			const switching = themeLib({mode: "light"}, runtime);
-			const result = await switching.catch((error: Error) => error.message);
-			expect(result).toEqual(fail ? expect.stringContaining("appearance denied") : "Theme: tokyonight light");
-			expect(started.size).toBe(4);
-			expect(completed.size).toBe(fail ? 3 : 4);
-			expect(await read(runtime, "color-theme")).toBe("light\n");
-		},
-	);
+	test.each([
+		false,
+		true,
+	])("all independent updates overlap and finish, including on failure=%s", async (fail) => {
+		const runtime = await fixture("darwin");
+		await Bun.write(join(runtime.backgroundsDir, "default.jpg"), "image");
+		const gate = Promise.withResolvers<void>();
+		const started = new Set<string>();
+		const completed = new Set<string>();
+		runtime.run = async (args) => {
+			const name = args[0] === "osascript" ? args[1] : args[0];
+			started.add(name);
+			if (started.size === 4) gate.resolve();
+			if (fail && name === "-e") return {...ok, exitCode: 1, stderr: "appearance denied"};
+			await gate.promise;
+			completed.add(name);
+			return ok;
+		};
+		const switching = themeLib({mode: "light"}, runtime);
+		const result = await switching.catch((error: Error) => error.message);
+		expect(result).toEqual(fail ? expect.stringContaining("appearance denied") : "Theme: tokyonight light");
+		expect(started.size).toBe(4);
+		expect(completed.size).toBe(fail ? 3 : 4);
+		expect(await read(runtime, "color-theme")).toBe("light\n");
+	});
 });
