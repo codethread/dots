@@ -1,0 +1,187 @@
+#!/usr/bin/env bash
+#:module: Search repositories owned by the authenticated GitHub user
+#:
+#: Usage:
+#:   fzf-github --sync   Refresh the local repository index
+#:   fzf-github          Pick a repository and open it in the browser
+
+set -euo pipefail
+
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/fzf-github"
+CACHE_FILE="$CACHE_DIR/repos.tsv"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/fzf-github"
+BLACKLIST_FILE="$CONFIG_DIR/blacklist.txt"
+INCLUDE_ARCHIVED=false
+
+usage() {
+	cat <<'EOF'
+fzf-github - search your GitHub repositories with fzf
+
+Usage:
+  fzf-github --sync            Refresh the local repository index
+  fzf-github                   Pick active repositories and open them in the browser
+  fzf-github --with-archived   Include archived repositories in the picker
+  fzf-github --show-blacklist  Edit the repository blacklist with $EDITOR
+  fzf-github --help            Show this help
+
+Picker bindings:
+  Tab / Shift-Tab  Toggle a repository selection
+  Enter            Open the selected repositories
+  Ctrl-X           Blacklist the selected repositories
+
+The index includes public and private repositories owned by the user currently
+authenticated with gh. Blacklist entries are repository names or shell-style
+patterns, one per line. Ctrl-X adds exact names; add glob patterns manually.
+Set BROWSER to override the browser used by gh.
+EOF
+}
+
+require() {
+	if ! command -v "$1" >/dev/null 2>&1; then
+		echo "fzf-github: $1 is required" >&2
+		exit 1
+	fi
+}
+
+sync_repos() (
+	require gh
+
+	mkdir -p "$CACHE_DIR"
+	local tmp_file
+	tmp_file=$(mktemp "$CACHE_FILE.tmp.XXXXXX")
+	trap 'rm -f "$tmp_file"' EXIT
+
+	gh api --paginate --method GET /user/repos \
+		-f affiliation=owner \
+		-f sort=full_name \
+		-f direction=asc \
+		-f per_page=100 \
+		--jq '.[] | [.full_name, (.visibility // "public"), .archived, (.description // ""), .html_url] | @tsv' \
+		>"$tmp_file"
+
+	mv "$tmp_file" "$CACHE_FILE"
+	printf 'Indexed %s repositories in %s\n' "$(wc -l <"$CACHE_FILE" | tr -d ' ')" "$CACHE_FILE"
+)
+
+is_blacklisted() {
+	local repo=$1 pattern
+	[[ -f "$BLACKLIST_FILE" ]] || return 1
+
+	while IFS= read -r pattern || [[ -n "$pattern" ]]; do
+		pattern=${pattern%$'\r'}
+		[[ -z "$pattern" || "$pattern" == \#* ]] && continue
+		[[ "$repo" == $pattern ]] && return 0
+	done <"$BLACKLIST_FILE"
+
+	return 1
+}
+
+list_repos() {
+	local repo visibility archived description url name_width=4 state
+
+	while IFS=$'\t' read -r repo visibility archived description url; do
+		[[ "$archived" == "true" && "$INCLUDE_ARCHIVED" == false ]] && continue
+		is_blacklisted "$repo" && continue
+		((${#repo} > name_width)) && name_width=${#repo}
+	done <"$CACHE_FILE"
+
+	printf "%-*s  %-10s  %-8s  %s\n" "$name_width" "name" "visibility" "status" "description"
+	while IFS=$'\t' read -r repo visibility archived description url; do
+		[[ "$archived" == "true" && "$INCLUDE_ARCHIVED" == false ]] && continue
+		is_blacklisted "$repo" && continue
+		[[ "$archived" == "true" ]] && state=archived || state=active
+		printf "%-*s  %-10s  %-8s  %s\t%s\n" \
+			"$name_width" "$repo" "$visibility" "$state" "$description" "$repo"
+	done <"$CACHE_FILE"
+}
+
+blacklist_repos() {
+	(($# > 0)) || return 0
+	mkdir -p "$CONFIG_DIR"
+	touch "$BLACKLIST_FILE"
+
+	local repo existing pattern
+	for repo in "$@"; do
+		existing=false
+		while IFS= read -r pattern || [[ -n "$pattern" ]]; do
+			[[ "$pattern" == "$repo" ]] && existing=true && break
+		done <"$BLACKLIST_FILE"
+		$existing || printf '%s\n' "$repo" >>"$BLACKLIST_FILE"
+	done
+}
+
+edit_blacklist() {
+	if [[ -z "${EDITOR:-}" ]]; then
+		echo "fzf-github: EDITOR is not set" >&2
+		exit 1
+	fi
+
+	mkdir -p "$CONFIG_DIR"
+	touch "$BLACKLIST_FILE"
+
+	local -a editor_command
+	read -r -a editor_command <<<"$EDITOR"
+	"${editor_command[@]}" "$BLACKLIST_FILE"
+}
+
+open_repo() {
+	require fzf
+	require gh
+
+	if [[ ! -s "$CACHE_FILE" ]]; then
+		echo "fzf-github: no repository index; run 'fzf-github --sync' first" >&2
+		exit 1
+	fi
+	if ! awk -F '\t' 'NF != 5 { exit 1 }' "$CACHE_FILE"; then
+		echo "fzf-github: repository index is outdated; run 'fzf-github --sync'" >&2
+		exit 1
+	fi
+
+	local selection line repo script_path list_args=""
+	printf -v script_path '%q' "${BASH_SOURCE[0]}"
+	[[ "$INCLUDE_ARCHIVED" == true ]] && list_args=" --with-archived"
+	selection=$(list_repos | fzf \
+		--multi \
+		--delimiter=$'\t' \
+		--with-nth=1 \
+		--header-lines=1 \
+		--header='Tab/Shift-Tab: select  Enter: open  Ctrl-X: blacklist' \
+		--no-hscroll \
+		--prompt='GitHub repo> ' \
+		--bind='tab:toggle+down,btab:toggle+up' \
+		--bind="ctrl-x:execute-silent($script_path --blacklist {+2})+reload($script_path --list$list_args)") || exit 0
+
+	while IFS= read -r line; do
+		repo=${line##*$'\t'}
+		gh browse --repo "$repo"
+	done <<<"$selection"
+}
+
+case "${1:-}" in
+	"") open_repo ;;
+	--sync) sync_repos ;;
+	--with-archived)
+		INCLUDE_ARCHIVED=true
+		open_repo
+		;;
+	--show-blacklist) edit_blacklist ;;
+	--list)
+		if [[ "${2:-}" == "--with-archived" ]]; then
+			INCLUDE_ARCHIVED=true
+		elif [[ -n "${2:-}" ]]; then
+			echo "fzf-github: unknown option: $2" >&2
+			exit 2
+		fi
+		list_repos
+		;;
+	--blacklist)
+		shift
+		blacklist_repos "$@"
+		;;
+	-h | --help) usage ;;
+	*)
+		echo "fzf-github: unknown option: $1" >&2
+		usage >&2
+		exit 2
+		;;
+esac
