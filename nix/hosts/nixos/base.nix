@@ -19,6 +19,11 @@
     extra-trusted-public-keys = [
       "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
     ];
+    # Without this, flake-declared caches (exactly the extra-trusted-public-keys
+    # above) are ignored with "not a trusted user" on every user-run nix command,
+    # since restricted settings need a trusted user to take effect. Root is
+    # trusted by default; the list merges with that default.
+    trusted-users = [ "codethread" ];
     max-substitution-jobs = lib.mkDefault 32;
     http-connections = lib.mkDefault 50;
   };

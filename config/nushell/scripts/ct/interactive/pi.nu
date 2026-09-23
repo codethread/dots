@@ -23,7 +23,7 @@ export alias pih = pi --tools ($core_tools ++ $subagent ++ $goal_tools | str joi
 export alias pil = pi --tools ($core_tools ++ $subagent | str join ",") --provider openai-codex --model gpt-5.6-terra --thinking high
 
 # Fastest; response
-export alias pif = pi --tools ($core_tools | str join ",") --model deepseek/deepseek-v4-flash --thinking max
+export alias pif = pi --tools ($core_tools | str join ",") --model deepseek/deepseek-flash --thinking max
 
 # Opus big OG
 export alias pio = pi --tools ($core_tools ++ $subagent ++ $goal_tools | str join ",") --provider anthropic --model claude-opus-4-6 --thinking high

@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+# :module: Show cached Codex weekly usage in tmux and notify at low-usage thresholds.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: tmux-codex-usage [-h|--help]
+
+Print the Codex weekly allowance remaining as a coloured tmux status segment.
+Codex is queried in an isolated tmux PTY and the result is cached for 1 minute.
+
+Environment:
+  CODEX_USAGE_TTL  Cache lifetime in seconds (default: 60)
+EOF
+}
+
+case "${1:-}" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  "") ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
+
+cache_dir="${TMPDIR:-/tmp}"
+cache_file="$cache_dir/tmux-codex-usage.${UID}.cache"
+lock_dir="$cache_dir/tmux-codex-usage.${UID}.lock"
+log_file="$cache_dir/tmux-codex-usage.${UID}.log"
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/tmux-codex-usage"
+previous_file="$state_dir/previous-percent"
+ttl="${CODEX_USAGE_TTL:-60}"
+
+if ! [[ "$ttl" =~ ^[0-9]+$ ]]; then
+  printf 'CODEX_USAGE_TTL must be a non-negative integer\n' >&2
+  exit 2
+fi
+
+file_mtime() {
+  if stat -f %m "$1" >/dev/null 2>&1; then
+    stat -f %m "$1"
+  else
+    stat -c %Y "$1"
+  fi
+}
+
+cache_is_fresh() {
+  [[ -f "$cache_file" ]] || return 1
+  local modified
+  modified=$(file_mtime "$cache_file")
+  (( $(date +%s) - modified < ttl ))
+}
+
+capture_percentage() {
+  command -v codex >/dev/null 2>&1 || return 1
+  command -v tmux >/dev/null 2>&1 || return 1
+
+  local socket="codex-usage-${UID}-$$"
+  local output=""
+  local work_dir="$state_dir/workdir"
+  mkdir -p "$work_dir"
+  tmux -L "$socket" -f /dev/null new-session -d -x 160 -y 50 -c "$work_dir" "$(command -v codex)"
+
+  for _ in {1..15}; do
+    sleep 1
+    output=$(tmux -L "$socket" capture-pane -p -J -S -100 2>/dev/null) || break
+    if [[ "$output" == *"Do you trust the contents of this directory?"* ]]; then
+      tmux -L "$socket" send-keys 1 Enter
+      continue
+    fi
+    if [[ "$output" =~ weekly[[:space:]]+([0-9]+)%[[:space:]]+left ]]; then
+      tmux -L "$socket" kill-server 2>/dev/null || true
+      local percentage="${BASH_REMATCH[1]}"
+      (( percentage >= 0 && percentage <= 100 )) || return 1
+      printf '%s\n' "$percentage"
+      return 0
+    fi
+  done
+
+  tmux -L "$socket" kill-server 2>/dev/null || true
+  return 1
+}
+
+run_cc_notify() {
+  local title="$1"
+  if command -v cc-notify >/dev/null 2>&1; then
+    cc-notify --at "$(date +%s)" "$title"
+  elif [[ -x "$HOME/dev/projects/cc-notify/scripts/cc-notify.js" ]]; then
+    "$HOME/dev/projects/cc-notify/scripts/cc-notify.js" --at "$(date +%s)" "$title"
+  else
+    return 1
+  fi
+}
+
+notify_if_needed() {
+  local current="$1"
+  local previous=""
+  local notify=0
+
+  mkdir -p "$state_dir"
+  if [[ -f "$previous_file" ]]; then
+    previous=$(<"$previous_file")
+    [[ "$previous" =~ ^[0-9]+$ ]] || previous=""
+  fi
+
+  if [[ -z "$previous" ]]; then
+    (( current == 50 || current == 20 || current == 10 || current <= 8 )) && notify=1
+  elif (( current < previous )); then
+    if (( current <= 8 || (previous > 10 && current <= 10) || (previous > 20 && current <= 20) || (previous > 50 && current <= 50) )); then
+      notify=1
+    fi
+  fi
+
+  if (( notify )); then
+    if ! printf 'Codex has %s%% of its weekly allowance remaining.\n' "$current" \
+      | run_cc_notify "Codex weekly usage: ${current}% left" >>"$log_file" 2>&1; then
+      return
+    fi
+  fi
+
+  printf '%s\n' "$current" > "$previous_file.tmp"
+  mv "$previous_file.tmp" "$previous_file"
+}
+
+refresh_cache() {
+  local percentage
+  if ! percentage=$(capture_percentage); then
+    printf '[%s] Could not read Codex weekly usage\n' "$(date -Iseconds)" >> "$log_file"
+    return 1
+  fi
+
+  printf '%s\n' "$percentage" > "$cache_file.tmp"
+  mv "$cache_file.tmp" "$cache_file"
+  notify_if_needed "$percentage"
+}
+
+render() {
+  local percentage
+  percentage=$(<"$cache_file")
+  [[ "$percentage" =~ ^[0-9]+$ ]] || return 1
+
+  local colour="green"
+  (( percentage <= 10 )) && colour="colour214"
+  (( percentage <= 3 )) && colour="red"
+  printf '#[fg=%s]codex: %s%%#[default]' "$colour" "$percentage"
+}
+
+if ! cache_is_fresh; then
+  if mkdir "$lock_dir" 2>/dev/null; then
+    trap 'rmdir "$lock_dir" 2>/dev/null || true' EXIT
+    refresh_cache || true
+  fi
+fi
+
+[[ -f "$cache_file" ]] && render

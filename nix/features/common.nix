@@ -63,11 +63,6 @@ let
       }
       ''
         ${atuinCmd} init nu > "$out"
-        # Atuin < 18.20.1 gives Ctrl-R and Up the same name, which Nushell warns about.
-        substituteInPlace "$out" \
-          --replace-fail \
-          $'            name: atuin\n            modifier: none\n            keycode: up' \
-          $'            name: atuin_up_arrow\n            modifier: none\n            keycode: up'
       '';
 
   carapaceNushellInit = pkgs.runCommand "carapace-init.nu" { } ''

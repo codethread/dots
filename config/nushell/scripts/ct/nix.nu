@@ -136,13 +136,36 @@ export def nrs [profile?: string, --update(-u)] {
     if $update { nfu }
     let p = _resolve_profile ($profile | default (_default_profile))
     let flake = (_flake_ref $p)
-    if (sys host).name == "Darwin" {
-        print $"sudo -H darwin-rebuild switch --flake '($flake)'"
-        sudo -H darwin-rebuild switch --flake $flake
+    let lock = "/tmp/millstrand-test.lock"
+    let darwin = (sys host).name == "Darwin"
+    let rebuild = if $darwin {
+        [
+            sudo
+            -H
+            darwin-rebuild
+            switch
+            --flake
+            $flake
+        ]
     } else {
-        print $"sudo nixos-rebuild switch --flake '($flake)'"
-        sudo nixos-rebuild switch --flake $flake
-        _kernel_reboot_check
+        [sudo nixos-rebuild switch --flake $flake]
+    }
+    print ($rebuild | str join " ")
+    _with-build-lock $lock $rebuild
+    if not $darwin { _kernel_reboot_check }
+}
+
+# Queue a command on the shared build lock. flock is only present once the
+# system has switched at least once, so fresh installs run without it.
+def _with-build-lock [lock: string, cmd: list<string>] {
+    if (which flock | is-empty) {
+        run-external ...$cmd
+    } else {
+        if (^flock -n $lock true | complete).exit_code != 0 {
+            print $"(ansi yellow)Waiting for build lock ($lock) up to 180s...(ansi reset)"
+        }
+        # -E 99 marks a lock-wait timeout apart from a failed command
+        run-external "flock" "-w" "180" "-E" "99" $lock ...$cmd
     }
 }
 
