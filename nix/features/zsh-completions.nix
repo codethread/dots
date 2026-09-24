@@ -8,11 +8,10 @@
 
 let
   isDarwin = darwinConfig != null;
-  cacheZsh = if isDarwin then "/bin/zsh" else lib.getExe pkgs.zsh;
+  cacheZsh = lib.getExe pkgs.zsh;
   incomingSystem = if isDarwin then toString darwinConfig.system.path else "/run/current-system/sw";
 in
 {
-  # NixOS supplies the interactive Zsh; Darwin uses macOS /bin/zsh.
   home.packages = lib.optionals (!isDarwin) [ pkgs.zsh ];
 
   home.activation.zshCompletions =

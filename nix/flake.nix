@@ -145,7 +145,7 @@
         system.primaryUser = username;
         users.users.${username} = {
           home = "/Users/${username}";
-          shell = pkgs.nushell;
+          shell = pkgs.zsh;
         };
       };
 

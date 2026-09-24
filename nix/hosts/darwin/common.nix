@@ -128,8 +128,8 @@ in
   };
 
   # --- Shell ---
-  # Register nushell as a valid login shell.
-  environment.shells = [ pkgs.nushell ];
+  # Register the Nix-managed Zsh as a valid login shell.
+  environment.shells = [ pkgs.zsh ];
 
   launchd.user.agents.syncengine = {
     serviceConfig = {
@@ -204,14 +204,13 @@ in
       } # beads_rust
     ];
     brews = [
-      # {
-      #   name = "gascity";
-      #   args = [ "HEAD" ];
-      #   # link = true;
-      #    link = "overwrite";
-      #   conflicts_with = [ "graphviz" ];
-      # }
-      "dicklesworthstone/tap/br" # beads rust
+      {
+        name = "gascity";
+        args = [ "HEAD" ];
+        # link = true;
+        link = "overwrite";
+        conflicts_with = [ "graphviz" ];
+      }
       "dicklesworthstone/tap/bv" # Graph-aware Beads viewer
       "morantron/tmux-fingers/tmux-fingers" # mouseless terminal interaction
       "codethread/wktree/wktree" # Deterministic git worktree manager
