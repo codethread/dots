@@ -12,6 +12,7 @@ syntax match markdownUltrathink /\<ultrathink\>/ containedin=ALL
 syntax match markdownAtReference /@\S\+/ containedin=ALL
 syntax match markdownImportant /\<IMPORTANT\>/ containedin=ALL
 syntax match markdownMUST /\<YOU MUST\>/ containedin=ALL
+syntax match markdownNEVER /\<NEVER\>/ containedin=ALL
 
 " Link to highlight groups
 highlight link markdownAtReference @keyword.return
@@ -20,6 +21,7 @@ highlight link markdownAtReference @keyword.return
 " highlight link markdownThinkHarder Error
 highlight link markdownImportant WarningMsg
 highlight link markdownMUST WarningMsg
+highlight link markdownNEVER WarningMsg
 
 " Custom highlight for ultrathink with italic
 highlight markdownUltrathink gui=italic cterm=italic guifg=#ff5555 ctermfg=Red
