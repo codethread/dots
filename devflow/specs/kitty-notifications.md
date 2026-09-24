@@ -1,9 +1,9 @@
 # Kitty Agent Notifications Specification
 
-Document ID: SPEC-005
-Configuration identification: SPEC-005; migrated from `specs/kitty-notifications.md`; canonical path `devflow/specs/kitty-notifications.md`.
-**Status:** Not Yet Implemented
-**Last Updated:** 2026-04-21
+- Document ID: SPEC-005
+- Configuration identification: SPEC-005; migrated from `specs/kitty-notifications.md`; canonical path `devflow/specs/kitty-notifications.md`.
+- **Status:** Not Yet Implemented
+- **Last Updated:** 2026-04-21
 
 ## [SPEC-005-S1] Purpose
 

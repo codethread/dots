@@ -1,9 +1,9 @@
 # Agentic Configuration Specification
 
-Document ID: SPEC-001
-Configuration identification: SPEC-001; migrated from `specs/agentic-config.md`; canonical path `devflow/specs/agentic-config.md`.
-**Status:** Implemented
-**Last Updated:** 2026-07-23
+- Document ID: SPEC-001
+- Configuration identification: SPEC-001; migrated from `specs/agentic-config.md`; canonical path `devflow/specs/agentic-config.md`.
+- **Status:** Implemented
+- **Last Updated:** 2026-07-23
 
 ## [SPEC-001-S1] 1. Overview
 
@@ -14,8 +14,7 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 ### [SPEC-001-S1.2] Goals
 
 - Single source of truth for global settings in Nix (`nix/features/claude-code.nix`)
-- On macOS, nix-darwin declares Homebrew's native Codex CLI while Pi and
-  Playwright CLI share one user-writable npm prefix
+- On macOS, nix-darwin declares Homebrew's native Codex CLI while Pi and Playwright CLI share one user-writable npm prefix
 - All agent assets (agents, skills, commands, rules) version-controlled and symlinked into place via dotty
 - Type-safe hook contracts shared across TypeScript and Bash implementations
 - Context-aware shell wrappers that inject environment-specific prompts
@@ -80,18 +79,11 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 
 ### [SPEC-001-S2.2] Package Provisioning
 
-- nix-darwin declares Homebrew's native Node and Codex packages on macOS, while
-  Pi and Playwright CLI use npm-managed installation and update paths under
-  `~/.local`
-- NixOS Codex, Pi, and Claude are Nix-packaged and updated with `nrs --update`;
-  Playwright CLI remains npm-managed
+- nix-darwin declares Homebrew's native Node and Codex packages on macOS, while Pi and Playwright CLI use npm-managed installation and update paths under `~/.local`
+- NixOS Codex, Pi, and Claude are Nix-packaged and updated with `nrs --update`; Playwright CLI remains npm-managed
 - Claude Code continues to use its native installer on macOS
 
-`make system` installs the declared Homebrew cask when Codex is missing.
-Homebrew upgrades remain intentional because `homebrew.onActivation.upgrade` is
-disabled; use `brew upgrade --cask codex` to update it. The npm-managed tools
-install and update through their upstream commands. `nix-smoke` still requires
-their binaries, so a missing install remains visible.
+`make system` installs the declared Homebrew cask when Codex is missing. Homebrew upgrades remain intentional because `homebrew.onActivation.upgrade` is disabled; use `brew upgrade --cask codex` to update it. The npm-managed tools install and update through their upstream commands. `nix-smoke` still requires their binaries, so a missing install remains visible.
 
 - `config/dotty/dotty.toml` links the tracked `pi/` directory into `~/.pi/agent`
 - Most mutable Pi config now lives in `https://github.com/codethread/agents`; this repo keeps the `pi/agent.njk` template plus minimal bootstrap files and symlinks that make Pi consume the shared prompt/config layout
@@ -158,12 +150,12 @@ The `config` project covers `config/codex/` → `~/.config/codex/` as part of th
 
 **Hooks (global):**
 
-| Event              | Handler                                   | Type   | Behavior                                                       |
-| ------------------ | ----------------------------------------- | ------ | -------------------------------------------------------------- |
-| SessionStart       | `cc-hook--context-injector session-start` | TS     | Scans README.md files, outputs listing as plain text to stdout |
-| PreToolUse[Bash]   | `cc-hook--npm-redirect`                   | TS     | Redirects npm/npx/node to detected package manager             |
-| PostToolUse[Write] | `git add -N`                              | inline | Intent-to-add for new files                                    |
-| SessionEnd         | `cc-hook--context-injector session-end`   | TS     | Removes session state file                                     |
+| Event | Handler | Type | Behavior |
+| --- | --- | --- | --- |
+| SessionStart | `cc-hook--context-injector session-start` | TS | Scans README.md files, outputs listing as plain text to stdout |
+| PreToolUse[Bash] | `cc-hook--npm-redirect` | TS | Redirects npm/npx/node to detected package manager |
+| PostToolUse[Write] | `git add -N` | inline | Intent-to-add for new files |
+| SessionEnd | `cc-hook--context-injector session-end` | TS | Removes session state file |
 
 **Plugin hooks (wired by the cc-notify plugin itself, not the Nix module; available when `enableNotify=true`):**
 
@@ -190,10 +182,10 @@ Note: `PermissionRequest` is a Claude Code hook event not represented in the Typ
 
 **Global (`claude/agents/` → `~/.claude/agents/`):**
 
-| Agent          | Model  | Tools/Skills                                               | Purpose                                     |
-| -------------- | ------ | ---------------------------------------------------------- | ------------------------------------------- |
-| api-researcher | haiku  | Glob, Grep, Read, Skill, WebFetch, WebSearch, context7 MCP | Version-aware API documentation research    |
-| browser-user   | sonnet | playwright-cli skill                                       | Browser interaction with auth state loading |
+| Agent | Model | Tools/Skills | Purpose |
+| --- | --- | --- | --- |
+| api-researcher | haiku | Glob, Grep, Read, Skill, WebFetch, WebSearch, context7 MCP | Version-aware API documentation research |
+| browser-user | sonnet | playwright-cli skill | Browser interaction with auth state loading |
 
 **Disabled (`claude/x-agents/`):** `browser-devtools` (sonnet, chrome-devtools MCP) — DevTools diagnostics. Prefix convention keeps files out of Claude's agent discovery.
 
@@ -217,8 +209,7 @@ Note: `PermissionRequest` is a Claude Code hook event not represented in the Typ
 
 ### [SPEC-001-S4.5] Global rules (`claude/CLAUDE.md` → `~/.claude/CLAUDE.md`)
 
-Single file covering ways of working, repo conventions, git rules (commit only when
-asked, atomic, HEREDOC format, never `--no-verify`), comment style, and tool-schema fixes.
+Single file covering ways of working, repo conventions, git rules (commit only when asked, atomic, HEREDOC format, never `--no-verify`), comment style, and tool-schema fixes.
 
 ### [SPEC-001-S4.6] Claude Wrapper (`home/.local/bin/cl`)
 
@@ -265,26 +256,26 @@ Direct `pi` invocation with shared repo-aware configuration:
 
 **TypeScript (oven/bin/, compiled to ~/.local/bin/):**
 
-| Hook                      | Key Behavior                                                                                                                       |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| cc-hook--context-injector | Session start: glob README.md files, output listing as plain text to stdout. Session end: rm /tmp state file.                      |
-| cc-hook--npm-redirect     | Walk dir tree for lock files (bun > pnpm > yarn > npm). Quote-aware. Skill/plugin context bypass. Exit 2 + suggestion on mismatch. |
+| Hook | Key Behavior |
+| --- | --- |
+| cc-hook--context-injector | Session start: glob README.md files, output listing as plain text to stdout. Session end: rm /tmp state file. |
+| cc-hook--npm-redirect | Walk dir tree for lock files (bun > pnpm > yarn > npm). Quote-aware. Skill/plugin context bypass. Exit 2 + suggestion on mismatch. |
 
 **Bash (home/.local/bin/):**
 
-| Hook              | Key Behavior                                                                                                   |
-| ----------------- | -------------------------------------------------------------------------------------------------------------- |
-| cc-hook--notify   | POST to cc-notify daemon. Stop: "Done · $PROJECT" + 120-char snippet. PermissionRequest: tool-specific detail. |
-| cc-hook--activity | POST session_id to /activity to cancel pending notification. Fail silent.                                      |
+| Hook | Key Behavior |
+| --- | --- |
+| cc-hook--notify | POST to cc-notify daemon. Stop: "Done · $PROJECT" + 120-char snippet. PermissionRequest: tool-specific detail. |
+| cc-hook--activity | POST session_id to /activity to cancel pending notification. Fail silent. |
 
 ### [SPEC-001-S4.12] Supporting Tools
 
-| Tool                    | Source                    | Purpose                                                      |
-| ----------------------- | ------------------------- | ------------------------------------------------------------ |
-| cc-statusline           | oven/bin/cc-statusline.ts | Process Claude Code status line data                         |
-| cc-speak                | oven/bin/cc-speak.ts      | TTS with markdown stripping, file/section reading            |
-| cindex                  | oven/bin/cindex.ts        | Project file index generator for context injection           |
-| cc-logs--extract-agents | home/.local/bin/ (bash)   | Extract agent IDs with prompts/models for session resumption |
+| Tool | Source | Purpose |
+| --- | --- | --- |
+| cc-statusline | oven/bin/cc-statusline.ts | Process Claude Code status line data |
+| cc-speak | oven/bin/cc-speak.ts | TTS with markdown stripping, file/section reading |
+| cindex | oven/bin/cindex.ts | Project file index generator for context injection |
+| cc-logs--extract-agents | home/.local/bin/ (bash) | Extract agent IDs with prompts/models for session resumption |
 
 ### [SPEC-001-S4.13] Keybindings (`claude/keybindings.json`)
 
@@ -294,11 +285,7 @@ Disables Ctrl+A in Global context.
 
 - **Nix as settings source of truth.** `~/.claude/settings.json` is Nix-store-linked and read-only. Prevents drift from manual edits. Trade-off: requires `make system` (nix rebuild) to change global settings.
 
-- **Native package ownership on macOS.** nix-darwin declares Homebrew's native
-  Node and Codex packages, while npm owns Pi and Playwright in `~/.local`.
-  Running Codex as a native binary prevents it from inheriting a project-scoped
-  Node runtime. NixOS retains `llm-agents.nix` packaging for Codex, Pi, and
-  Claude; Playwright remains npm-managed.
+- **Native package ownership on macOS.** nix-darwin declares Homebrew's native Node and Codex packages, while npm owns Pi and Playwright in `~/.local`. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime. NixOS retains `llm-agents.nix` packaging for Codex, Pi, and Claude; Playwright remains npm-managed.
 
 - **Dotty for asset linking, not Nix.** Agents, skills, commands, and rules are symlinked by dotty rather than Nix home-manager. This allows editing assets in dots and seeing changes immediately without a nix rebuild. Settings.json (which is JSON and auto-generated) stays in Nix.
 

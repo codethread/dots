@@ -61,9 +61,9 @@ From `docs/mapping.rst`:
 
 - **Purpose**: Select and act on text snippets visible on screen
 - **Key Mappings**:
-  - `open_url` - Select and open URLs
-  - `insert_selected_path` - Insert paths into terminal
-  - `goto_file_line` - Open files at specific lines
+    - `open_url` - Select and open URLs
+    - `insert_selected_path` - Insert paths into terminal
+    - `goto_file_line` - Open files at specific lines
 - **Customization**: Support for custom Python scripts
 - **Example**: `map ctrl+g kitten hints --type=linenum --linenum-action=tab nvim +{line} {path}`
 
@@ -94,16 +94,16 @@ From `docs/mapping.rst`:
 
 - **Purpose**: File transfer over TTY (works through SSH, serial, etc.)
 - **Usage**:
-  - Download: `kitten transfer some-file /local/path`
-  - Upload: `kitten transfer --direction=upload /local/path remote-file`
+    - Download: `kitten transfer some-file /local/path`
+    - Upload: `kitten transfer --direction=upload /local/path remote-file`
 - **Features**: Directory trees, rsync protocol support, permission preservation
 
 #### **`clipboard`** (`docs/kittens/clipboard.rst`)
 
 - **Purpose**: System clipboard access from shell
 - **Usage**:
-  - Copy: `echo text | kitten clipboard`
-  - Paste: `kitten clipboard --get-clipboard`
+    - Copy: `echo text | kitten clipboard`
+    - Paste: `kitten clipboard --get-clipboard`
 - **Features**: Arbitrary data types (images, etc.), MIME type control
 
 ### User Interface

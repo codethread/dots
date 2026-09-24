@@ -21,37 +21,37 @@ The `cc-speak` command converts text to speech using TTS and plays it through th
 
 1. **Speak text responses**:
 
-   ```bash
-   cc-speak --text "Your response text here"
-   # Or shorthand:
-   cc-speak -t "Your response text here"
-   ```
+    ```bash
+    cc-speak --text "Your response text here"
+    # Or shorthand:
+    cc-speak -t "Your response text here"
+    ```
 
 2. **Speak entire files** (automatically strips markdown):
 
-   ```bash
-   cc-speak --file README.md
-   # Or shorthand:
-   cc-speak -f README.md
-   ```
+    ```bash
+    cc-speak --file README.md
+    # Or shorthand:
+    cc-speak -f README.md
+    ```
 
 3. **Speak specific sections of files** using line numbers (1-indexed, inclusive):
 
-   ```bash
-   # Read lines 5 through 20
-   cc-speak --file README.md --start=5 --end=20
+    ```bash
+    # Read lines 5 through 20
+    cc-speak --file README.md --start=5 --end=20
 
-   # Read from line 10 to end of file
-   cc-speak --file README.md --start=10
+    # Read from line 10 to end of file
+    cc-speak --file README.md --start=10
 
-   # Read from beginning to line 50
-   cc-speak --file README.md --end=50
-   ```
+    # Read from beginning to line 50
+    cc-speak --file README.md --end=50
+    ```
 
 4. **Combine text and file** (text is spoken first, then file):
-   ```bash
-   cc-speak --text "Here's the documentation:" --file README.md
-   ```
+    ```bash
+    cc-speak --text "Here's the documentation:" --file README.md
+    ```
 
 ### Line Number Notes:
 

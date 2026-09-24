@@ -1,0 +1,8 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"ignorePatterns": ["oven/**/*.json", "oven/**/*.ts"],
+	"printWidth": 110,
+	"proseWrap": "never",
+	"tabWidth": 4,
+	"useTabs": true
+}

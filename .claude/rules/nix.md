@@ -1,6 +1,6 @@
 ---
 paths:
-  - "nix/**/*"
+    - "nix/**/*"
 ---
 
 # Nix Configuration (Agent instructions via CLAUDE.md)

@@ -1,9 +1,9 @@
 # Dotty Specification
 
-Document ID: SPEC-003
-Configuration identification: SPEC-003; migrated from `specs/dotty.md`; canonical path `devflow/specs/dotty.md`.
-**Status:** Implemented
-**Last Updated:** 2026-04-04
+- Document ID: SPEC-003
+- Configuration identification: SPEC-003; migrated from `specs/dotty.md`; canonical path `devflow/specs/dotty.md`.
+- **Status:** Implemented
+- **Last Updated:** 2026-04-04
 
 ## [SPEC-003-S1] 1. Overview
 
@@ -72,7 +72,7 @@ config/nushell/scripts/ct/dotty/
 Two strategies in `list-files.nu`, selected by cache state:
 
 | Strategy | Trigger | Method | Rationale |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Fresh | Cache empty (first run) | `git ls-files` | Respects gitignore natively, fast on large repos |
 | Incremental | Cache populated | `glob **/*` then `git check-ignore --stdin` | Catches untracked files that should be linked |
 
@@ -112,18 +112,12 @@ target = "~/.config/codex/config.toml"
 array_identity = { "skills.config" = "path" }
 ```
 
-A template cache stores the previous parsed source and synchronized target under
-`~/.local/data/dotty-templates/<name>.toml`. The previous source defines the
-VCS-owned subset. Target edits to owned paths sync back into the source; direct
-source edits sync forward into the target. Target-only paths and record-array
-identities remain machine-local. Scalar arrays synchronize as ordered values;
-record arrays require an explicit dotted-path identity. Dotty collects divergent
-edits and reports all conflicting paths without changing source, target, or cache.
+A template cache stores the previous parsed source and synchronized target under `~/.local/data/dotty-templates/<name>.toml`. The previous source defines the VCS-owned subset. Target edits to owned paths sync back into the source; direct source edits sync forward into the target. Target-only paths and record-array identities remain machine-local. Scalar arrays synchronize as ordered values; record arrays require an explicit dotted-path identity. Dotty collects divergent edits and reports all conflicting paths without changing source, target, or cache.
 
 ### [SPEC-003-S3.2] Current Projects
 
 | Name | Origin | Target | Project-Specific Excludes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | home | `${DOTFILES}/home` | `~` | — |
 | config | `${DOTFILES}/config` | `~/.config` | — |
 | claude | `${DOTFILES}/claude` | `~/.claude` | `**/settings.json`, `**/settings.local.json` |
@@ -148,7 +142,7 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 ### [SPEC-003-S4.1] CLI Commands
 
 | Command | Purpose |
-|---|---|
+| --- | --- |
 | `dotty link [--no-cache] [--force] [config_path]` | Create/update symlinks, then bidirectionally synchronize owned TOML template paths. `--no-cache` applies to symlink discovery; template caches are always used for merge safety. |
 | `dotty format` | Format link output for editor integration (pipe: `dotty link \| dotty format`) |
 | `dotty is-cwd [dir] [--exit]` | Check if directory is a dotty project. `--exit` returns exit code instead of bool. |
@@ -158,7 +152,7 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 ### [SPEC-003-S4.2] Integration Points
 
 | System | Command | When | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Makefile** (`make link`) | `DOTFILES=$(ROOT) dotty link --no-cache <repo>/config/dotty/dotty.toml` | Manual rebuild | Exports `DOTFILES` as the current checkout root for worktree support |
 | **Nix activation** (`dottyLink`) | `dotty link --no-cache` | Every `*-rebuild switch` | Runs after `userBootstrap` phase. Exports `DOTFILES`, `XDG_*` vars. Explicit `PATH` with git, coreutils, findutils, gnugrep, gnused, nushell, bash. Skips gracefully if `$DOTFILES` directory missing. |
 | **Neovim** | `dotty link`, `dotty format`, `dotty is-cwd` | Editor events | Auto-links on `BufWritePost`/`BufFilePost`/`VimLeavePre`. Detects dotfiles project via `is-cwd` on git root. |

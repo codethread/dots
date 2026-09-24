@@ -22,33 +22,33 @@ iOS push notifications via Pushover, triggered by Claude Code hooks.
 
 ### Active (`claude/agents/`)
 
-| Agent | Model | Purpose |
-|-------|-------|---------|
-| api-researcher | haiku | API documentation research via context7 MCP |
-| browser-user | sonnet | Browser interaction via playwright-cli |
+| Agent          | Model  | Purpose                                     |
+| -------------- | ------ | ------------------------------------------- |
+| api-researcher | haiku  | API documentation research via context7 MCP |
+| browser-user   | sonnet | Browser interaction via playwright-cli      |
 
 ### Disabled (`claude/x-agents/`)
 
-| Agent | Model | Purpose |
-|-------|-------|---------|
+| Agent            | Model  | Purpose                                      |
+| ---------------- | ------ | -------------------------------------------- |
 | browser-devtools | sonnet | DevTools diagnostics via chrome-devtools MCP |
 
 ## Skills
 
-| Skill | Purpose |
-|-------|---------|
+| Skill              | Purpose                                              |
+| ------------------ | ---------------------------------------------------- |
 | commit (ct:commit) | Conventional commits with auto status/diff injection |
-| playwright-cli | Browser automation with 7 reference docs |
-| wktree | Local git worktree workflow via `wk`/`wktree` |
+| playwright-cli     | Browser automation with 7 reference docs             |
+| wktree             | Local git worktree workflow via `wk`/`wktree`        |
 
 ## Slash Commands
 
-| Command | Purpose |
-|---------|---------|
+| Command            | Purpose                                   |
+| ------------------ | ----------------------------------------- |
 | /github \<number\> | Read GitHub issues/PRs with image support |
-| /ct:speak [msg] | Audio communication via cc-speak TTS |
-| /ct:bonkai [plan] | Architect role with subagent delegation |
-| /ct:socrates | Self-introspection on knowledge sources |
+| /ct:speak [msg]    | Audio communication via cc-speak TTS      |
+| /ct:bonkai [plan]  | Architect role with subagent delegation   |
+| /ct:socrates       | Self-introspection on knowledge sources   |
 
 ## Plugins
 
@@ -56,11 +56,11 @@ Configured in `nix/features/claude-code.nix`. Official: frontend-design, typescr
 
 ## Supporting Tools
 
-| Tool | Source | Purpose |
-|------|--------|---------|
-| cc-statusline | oven/bin/ | Status line formatter |
-| cc-speak | oven/bin/ | TTS with file/section reading |
-| cindex | oven/bin/ | Project file index generator |
+| Tool                    | Source           | Purpose                                  |
+| ----------------------- | ---------------- | ---------------------------------------- |
+| cc-statusline           | oven/bin/        | Status line formatter                    |
+| cc-speak                | oven/bin/        | TTS with file/section reading            |
+| cindex                  | oven/bin/        | Project file index generator             |
 | cc-logs--extract-agents | home/.local/bin/ | Extract agent IDs for session resumption |
 
 ## Hook Development

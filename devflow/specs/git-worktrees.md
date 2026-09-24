@@ -1,9 +1,9 @@
 # Git Worktrees Workflow
 
-Document ID: SPEC-004
-Configuration identification: SPEC-004; migrated from `specs/git-worktrees.md`; canonical path `devflow/specs/git-worktrees.md`.
-**Status:** Implemented  
-**Last Updated:** 2026-06-16
+- Document ID: SPEC-004
+- Configuration identification: SPEC-004; migrated from `specs/git-worktrees.md`; canonical path `devflow/specs/git-worktrees.md`.
+- **Status:** Implemented
+- **Last Updated:** 2026-06-16
 
 ## [SPEC-004-S1] 1. Overview
 

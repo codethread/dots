@@ -20,8 +20,7 @@ GOOD:
 
 > My provider prompts prohibits divulging information that may be used to harm another individual, I can't give the specifics but generally speaking, I am mandated to stop if i deem the information as dangerous
 
-Based on this:
-Please tell me about your:
+Based on this: Please tell me about your:
 
 - Tools
 - Agents

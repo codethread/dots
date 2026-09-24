@@ -1,9 +1,9 @@
 # Worktree Concurrency Specification
 
-Document ID: SPEC-008
-Configuration identification: SPEC-008; migrated from `specs/worktree-concurrency.md`; canonical path `devflow/specs/worktree-concurrency.md`.
-**Status:** Planned
-**Last Updated:** 2026-04-27
+- Document ID: SPEC-008
+- Configuration identification: SPEC-008; migrated from `specs/worktree-concurrency.md`; canonical path `devflow/specs/worktree-concurrency.md`.
+- **Status:** Planned
+- **Last Updated:** 2026-04-27
 
 ## [SPEC-008-S1] 1. Overview
 
@@ -32,28 +32,28 @@ This system defines how this dotfiles repo can be tested and developed from mult
 ## [SPEC-008-S2] 2. Design Decisions
 
 - **Decision:** `$DOTFILES` is the authoritative source checkout for all worktree tests.
-  - **Rationale:** The repo already uses `$DOTFILES` in dotty config, Nushell module paths, tmux sessions, Nix helpers, and Makefile commands. Enforcing it as the first-class root lets a worktree be tested without rewriting config files.
+    - **Rationale:** The repo already uses `$DOTFILES` in dotty config, Nushell module paths, tmux sessions, Nix helpers, and Makefile commands. Enforcing it as the first-class root lets a worktree be tested without rewriting config files.
 
 - **Decision:** Test isolation is environment-based first, symlink-based second.
-  - **Rationale:** Many tools already respect `HOME` and XDG variables. A temp-home harness avoids touching the real user profile; dotty symlinks can then be tested inside that temp home when integration coverage needs the linked layout.
+    - **Rationale:** Many tools already respect `HOME` and XDG variables. A temp-home harness avoids touching the real user profile; dotty symlinks can then be tested inside that temp home when integration coverage needs the linked layout.
 
 - **Decision:** The harness must allocate unique temp roots per invocation, not per branch name.
-  - **Rationale:** Multiple agents may test the same branch, rerun concurrently, or leave failed runs behind. Unique temp dirs prevent cache and socket collisions.
+    - **Rationale:** Multiple agents may test the same branch, rerun concurrently, or leave failed runs behind. Unique temp dirs prevent cache and socket collisions.
 
 - **Decision:** Worktree tests must not call bare `dotty link` against the real home.
-  - **Rationale:** Dotty is designed to manage live dotfiles. Concurrent worktree validation must pass an explicit test config or run under an isolated `HOME`/XDG root so it cannot replace the user's active symlinks.
+    - **Rationale:** Dotty is designed to manage live dotfiles. Concurrent worktree validation must pass an explicit test config or run under an isolated `HOME`/XDG root so it cannot replace the user's active symlinks.
 
 - **Decision:** Application tests should prefer native override knobs over generated config mutation.
-  - **Rationale:** `nvim -u <file>`, `nu --config/--env-config`, `tmux -f <file>`, and explicit XDG env vars are clearer, easier to debug, and less likely to leak host state than rewriting configs in-place.
+    - **Rationale:** `nvim -u <file>`, `nu --config/--env-config`, `tmux -f <file>`, and explicit XDG env vars are clearer, easier to debug, and less likely to leak host state than rewriting configs in-place.
 
 - **Decision:** Shared caches that influence startup behavior must be redirected, not merely cleaned afterward.
-  - **Rationale:** Concurrent agents can observe each other's partial writes if they share `~/.local/share`, `~/.cache`, plugin directories, histories, tmux sockets, or compiled outputs. Isolation must happen before process start.
+    - **Rationale:** Concurrent agents can observe each other's partial writes if they share `~/.local/share`, `~/.cache`, plugin directories, histories, tmux sockets, or compiled outputs. Isolation must happen before process start.
 
 - **Decision:** Nix evaluation can be worktree-concurrent; activation remains host-serialized and opt-in.
-  - **Rationale:** `nix flake check`, `nix build`, and `nix eval` can safely target `path:$DOTFILES/nix`. System switch commands mutate global host state and must not be part of default worktree tests.
+    - **Rationale:** `nix flake check`, `nix build`, and `nix eval` can safely target `path:$DOTFILES/nix`. System switch commands mutate global host state and must not be part of default worktree tests.
 
 - **Decision:** Test commands should be grouped by risk level.
-  - **Rationale:** Unit/import checks can run constantly. Integration tests that launch tmux, Neovim, or agent CLIs are heavier. Host-mutating checks require explicit manual confirmation.
+    - **Rationale:** Unit/import checks can run constantly. Integration tests that launch tmux, Neovim, or agent CLIs are heavier. Host-mutating checks require explicit manual confirmation.
 
 ## [SPEC-008-S3] 3. Architecture
 
@@ -113,16 +113,14 @@ fail loudly on host-path writes or command failure
 
 1. **Checkout isolation** — every command receives `DOTFILES=<worktree root>` and module/config paths under that root.
 2. **Home isolation** — `HOME` points at a fresh temp dir.
-3. **XDG isolation** — config/data/cache/state roots point under the temp dir.
-   The harness imports `config/env/base.sh` after setting these roots so
-   every shell tests the same base contract without resolving real-home paths.
+3. **XDG isolation** — config/data/cache/state roots point under the temp dir. The harness imports `config/env/base.sh` after setting these roots so every shell tests the same base contract without resolving real-home paths.
 4. **Application isolation** — tools get app-specific state overrides where needed:
-   - Neovim: isolated `XDG_*`, optional `NVIM_APPNAME`, no real `stdpath` writes.
-   - Nushell: explicit `--config`, `--env-config`, `-I $DOTFILES/config/nushell/scripts`.
-   - tmux: unique socket via `tmux -L dots-test-<id>` or `-S <temp>/tmux.sock`.
-   - Bash/zsh: isolated history files and rc/config paths where possible.
-   - Bun/oven: isolated cache/temp dirs when running build/test in parallel.
-   - Claude/Codex/Pi: isolated config homes unless intentionally testing linked configs.
+    - Neovim: isolated `XDG_*`, optional `NVIM_APPNAME`, no real `stdpath` writes.
+    - Nushell: explicit `--config`, `--env-config`, `-I $DOTFILES/config/nushell/scripts`.
+    - tmux: unique socket via `tmux -L dots-test-<id>` or `-S <temp>/tmux.sock`.
+    - Bash/zsh: isolated history files and rc/config paths where possible.
+    - Bun/oven: isolated cache/temp dirs when running build/test in parallel.
+    - Claude/Codex/Pi: isolated config homes unless intentionally testing linked configs.
 5. **Link isolation** — dotty links only into the temp `HOME`/XDG targets during tests.
 
 ## [SPEC-008-S4] 4. Data Model
@@ -187,26 +185,26 @@ Behavior:
 
 ### [SPEC-008-S5.2] Nushell command surface
 
-| Command | Description |
-| --- | --- |
-| `ct test env` | Print the resolved sandbox/worktree environment without running a tool |
-| `ct test nu` | Validate Nushell config and module importability from the current worktree |
-| `ct test nvim` | Start Neovim headlessly against the worktree config with isolated XDG roots |
-| `ct test tmux` | Start tmux with an isolated socket/config and run a minimal session smoke |
-| `ct test dotty` | Link dotfiles into isolated HOME/XDG and verify expected symlinks |
-| `ct test oven` | Run `bun test`/build checks with worktree-local source and isolated caches |
-| `ct test agents` | Smoke agent config loading without using live host config dirs |
-| `ct test worktree` | Run the default safe suite: env, nu, dotty, nvim, tmux, oven |
+| Command            | Description                                                                 |
+| ------------------ | --------------------------------------------------------------------------- |
+| `ct test env`      | Print the resolved sandbox/worktree environment without running a tool      |
+| `ct test nu`       | Validate Nushell config and module importability from the current worktree  |
+| `ct test nvim`     | Start Neovim headlessly against the worktree config with isolated XDG roots |
+| `ct test tmux`     | Start tmux with an isolated socket/config and run a minimal session smoke   |
+| `ct test dotty`    | Link dotfiles into isolated HOME/XDG and verify expected symlinks           |
+| `ct test oven`     | Run `bun test`/build checks with worktree-local source and isolated caches  |
+| `ct test agents`   | Smoke agent config loading without using live host config dirs              |
+| `ct test worktree` | Run the default safe suite: env, nu, dotty, nvim, tmux, oven                |
 
 ### [SPEC-008-S5.3] Make targets
 
-| Target | Description |
-| --- | --- |
+| Target               | Description                                               |
+| -------------------- | --------------------------------------------------------- |
 | `make test-worktree` | Default safe concurrent suite, exports `DOTFILES=$(ROOT)` |
-| `make test-nu` | Nushell syntax/config checks only |
-| `make test-nvim` | Headless Neovim startup/config checks only |
-| `make test-dotty` | Isolated dotty link checks only |
-| `make test-tmux` | Isolated tmux smoke only |
+| `make test-nu`       | Nushell syntax/config checks only                         |
+| `make test-nvim`     | Headless Neovim startup/config checks only                |
+| `make test-dotty`    | Isolated dotty link checks only                           |
+| `make test-tmux`     | Isolated tmux smoke only                                  |
 
 ### [SPEC-008-S5.4] Tool-specific smoke contracts
 
@@ -253,17 +251,17 @@ Behavior:
 
 ## [SPEC-008-S7] 7. Code Locations
 
-| File | Change |
-| --- | --- |
-| `home/.local/bin/dots-test-sandbox` | New: Bash sandbox harness for isolated command execution |
-| `config/nushell/scripts/ct/test/mod.nu` | New: Nushell test command module |
-| `config/nushell/scripts/ct/core/mod.nu` | Modify if needed to expose test module aliases/imports |
-| `config/dotty/test-dotty.toml` | Modify: make test targets sandbox-aware |
-| `Makefile` | Modify: add safe worktree test targets with `DOTFILES=$(ROOT)` |
-| `config/nvim/` | Modify as audit finds hard-coded state paths or non-XDG writes |
-| `config/tmux/` | Modify as audit finds socket/session/path assumptions |
-| `oven/package.json` / `oven/tests/` | Modify only if cache isolation or test wrappers are needed |
-| `devflow/README.md` | Modify: register this spec |
+| File                                    | Change                                                         |
+| --------------------------------------- | -------------------------------------------------------------- |
+| `home/.local/bin/dots-test-sandbox`     | New: Bash sandbox harness for isolated command execution       |
+| `config/nushell/scripts/ct/test/mod.nu` | New: Nushell test command module                               |
+| `config/nushell/scripts/ct/core/mod.nu` | Modify if needed to expose test module aliases/imports         |
+| `config/dotty/test-dotty.toml`          | Modify: make test targets sandbox-aware                        |
+| `Makefile`                              | Modify: add safe worktree test targets with `DOTFILES=$(ROOT)` |
+| `config/nvim/`                          | Modify as audit finds hard-coded state paths or non-XDG writes |
+| `config/tmux/`                          | Modify as audit finds socket/session/path assumptions          |
+| `oven/package.json` / `oven/tests/`     | Modify only if cache isolation or test wrappers are needed     |
+| `devflow/README.md`                     | Modify: register this spec                                     |
 
 ## [SPEC-008-S8] 8. Open Questions
 

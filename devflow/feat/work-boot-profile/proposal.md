@@ -1,7 +1,7 @@
 # Work Boot Profile Proposal
 
-Document ID: PROP-001
-Status: Accepted
+- Document ID: PROP-001
+- Status: Accepted
 
 ## [PROP-001-S1] Problem
 

@@ -31,31 +31,31 @@ make system  # Rebuild nix-darwin or NixOS (override with `PROFILE=work`, etc)
 Build tools in order of increasing complexity
 
 1. **Nushell alias** (1 line)
-   - Location: `config/nushell/scripts/ct/alias/*.nu`
-   - Example: `export alias ga = git add`
-   - When: Simple command shortcuts
+    - Location: `config/nushell/scripts/ct/alias/*.nu`
+    - Example: `export alias ga = git add`
+    - When: Simple command shortcuts
 
 2. **Nushell function** (3-4 lines)
-   - Location: `config/nushell/scripts/ct/<category>/mod.nu`
-   - Example: Short functions like `git_current_branch`
-   - When: Need parameters or simple logic
+    - Location: `config/nushell/scripts/ct/<category>/mod.nu`
+    - Example: Short functions like `git_current_branch`
+    - When: Need parameters or simple logic
 
 3. **Bash script** (≤200 lines)
-   - Location: `home/.local/bin/`
-   - Example: `home/.local/bin/nush`
-   - When: Composition of multiple tools, and or needs to be globally available in PATH for non-tty usage
-   - Notes:
-     - `$ make link` links executables to `~/.local/bin/` (in PATH)
-     - Always use bash (not zsh or other shells)
-     - Add `:module:` comment for documentation
-     - Use `-h` or `--help` flag for usage info
+    - Location: `home/.local/bin/`
+    - Example: `home/.local/bin/nush`
+    - When: Composition of multiple tools, and or needs to be globally available in PATH for non-tty usage
+    - Notes:
+        - `$ make link` links executables to `~/.local/bin/` (in PATH)
+        - Always use bash (not zsh or other shells)
+        - Add `:module:` comment for documentation
+        - Use `-h` or `--help` flag for usage info
 
 4. **TypeScript/Bun** (>200 lines or needs dependencies)
-   - Location: entrypoints declared in `oven/bin/manifest.json`
-   - When: Complex logic, dependencies, async task control or shared code
-   - Notes:
-     - `$ make build` builds manifest-declared executables to `~/.local/bin/` (in PATH)
-     - Full development environment with testing
+    - Location: entrypoints declared in `oven/bin/manifest.json`
+    - When: Complex logic, dependencies, async task control or shared code
+    - Notes:
+        - `$ make build` builds manifest-declared executables to `~/.local/bin/` (in PATH)
+        - Full development environment with testing
 
 ### Script Evolution Path
 
@@ -64,9 +64,9 @@ Start simple → Graduate as needed:
 1. Try as nushell alias first
 2. Expand to nushell function if needed
 3. Create bash script in `home/.local/bin/` for standalone tools
-   - `make link` to add script to PATH
+    - `make link` to add script to PATH
 4. Migrate to `oven/` when exceeding 200 lines or needing TypeScript
-   - Build with `make build` (or `bun run build` inside `oven/`) to create executable
+    - Build with `make build` (or `bun run build` inside `oven/`) to create executable
 
 ## Claude Code integrations
 
@@ -106,6 +106,6 @@ Given the monorepo nature of this repo, we want to exercise discretion, to that 
 - remove the obvious code `config/vim/vimrc`
 - remove any specs
 - flag any other tooling that is expecting said tool, e.g a tmux workflow that tries to use `vim` directly.
-  - where apparent, we would remove this dependency
-  - where difficult, discuss alternatives or fallbacks
+    - where apparent, we would remove this dependency
+    - where difficult, discuss alternatives or fallbacks
 - finally commit in one single commit with convention `GOODBYE <tool>\n\n<Reason and details if needed>`, this makes it easy to dig out old features at a later date to revisit

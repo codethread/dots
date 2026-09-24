@@ -1,8 +1,8 @@
 # Work Boot Profile Plan
 
-Document ID: PLAN-001
-Status: Reviewed
-Last Updated: 2026-06-24
+- Document ID: PLAN-001
+- Status: Reviewed
+- Last Updated: 2026-06-24
 
 ## [PLAN-001-S1] Goal and scope
 

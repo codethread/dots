@@ -1,9 +1,9 @@
 # Nix Infrastructure Specification
 
-Document ID: SPEC-006
-Configuration identification: SPEC-006; migrated from `specs/nix-infra.md`; canonical path `devflow/specs/nix-infra.md`.
-**Status:** Implemented
-**Last Updated:** 2026-09-06
+- Document ID: SPEC-006
+- Configuration identification: SPEC-006; migrated from `specs/nix-infra.md`; canonical path `devflow/specs/nix-infra.md`.
+- **Status:** Implemented
+- **Last Updated:** 2026-09-06
 
 ## [SPEC-006-S1] 1. Overview
 
@@ -57,7 +57,7 @@ flake.nix (inputs, overlays, system configurations)
 ### [SPEC-006-S2.2] System Configurations
 
 | Name | Flake Output | Arch | User | Host Module | Profile |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | dev | `darwinConfigurations.dev` | aarch64-darwin | `ct` | `hosts/darwin/dev.nix` | `profiles/dev.nix` |
 | personal | `darwinConfigurations.personal` | aarch64-darwin | `codethread` | `hosts/darwin/personal.nix` | `profiles/personal.nix` |
 | work-boot | `darwinConfigurations.work-boot` | aarch64-darwin | `adam.hall` | `hosts/darwin/work-boot.nix` | `profiles/work-boot.nix` |
@@ -73,10 +73,7 @@ Two nixpkgs inputs provide version flexibility:
 - `pkgs` ← `nixpkgs` (unstable) — default for most packages
 - `pkgsMaster` ← `nixpkgs-master` (bleeding edge) — for packages needing latest versions
 
-In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available,
-falling back to `pkgs`. TypeScript tooling and NixOS agent packages available
-through Nix use this channel. On macOS, nix-darwin delegates native packages to
-Homebrew while user-managed npm tools use the shared npm prefix.
+In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available, falling back to `pkgs`. TypeScript tooling and NixOS agent packages available through Nix use this channel. On macOS, nix-darwin delegates native packages to Homebrew while user-managed npm tools use the shared npm prefix.
 
 ### [SPEC-006-S2.4] Custom Overlays
 
@@ -84,9 +81,7 @@ Defined in `flake.nix`, applied to all system configs:
 
 - **todoistOverlay** — `buildGoModule` for `todoist-cli` from `codethread/todoist` fork
 
-Fast-moving agent CLIs intentionally have no custom Nix overlay. On macOS,
-nix-darwin declares Homebrew's native Node and Codex packages, while npm owns
-Pi and Playwright CLI under `~/.local`; Playwright is npm-managed on NixOS too.
+Fast-moving agent CLIs intentionally have no custom Nix overlay. On macOS, nix-darwin declares Homebrew's native Node and Codex packages, while npm owns Pi and Playwright CLI under `~/.local`; Playwright is npm-managed on NixOS too.
 
 ### [SPEC-006-S2.5] Bootstrap Flow
 
@@ -158,20 +153,17 @@ Defined directly in `features/nixos-common.nix` (not via `repo-service.nix`):
 
 ### [SPEC-006-S2.10] Darwin launchd Services
 
-Deliberately **not** shared via `hosts/darwin/common.nix` — each is tied to a repo,
-a workload, or a machine's role. Declared in the host module that wants it.
+Deliberately **not** shared via `hosts/darwin/common.nix` — each is tied to a repo, a workload, or a machine's role. Declared in the host module that wants it.
 
 | Service | Declared in | Applies to | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `syncengine` | `hosts/darwin/common.nix` | all macOS | The one exception; keeps `~/.local/bin/syncengine` running everywhere |
 | `git-maintenance-{hourly,daily,weekly}` | `services/darwin-git-maintenance.nix` | any host setting `codethread.gitMaintenance.repositories` | No-ops when the list is empty |
 | `cc-notify` | `services/darwin-cc-notify.nix` | dev, work | Clones + runs `codethread/cc-notify`; needs SSH auth to GitHub |
 | `backup-notes` | `hosts/darwin/dev.nix` | dev | Auto-commits the notes vault every 15 min; NixOS has its own systemd equivalent |
 | `high-cpu-watch` | `hosts/darwin/dev.nix` | dev | Alerts via `cc-notify` after 10 min above 95% CPU |
 
-Adding a service to a host is a three-step change: import (or inline) the module,
-create its state dir in `system.activationScripts.postActivation`, and confirm any
-repo it depends on is cloned by an activation hook.
+Adding a service to a host is a three-step change: import (or inline) the module, create its state dir in `system.activationScripts.postActivation`, and confirm any repo it depends on is cloned by an activation hook.
 
 ## [SPEC-006-S3] 3. Data Model
 
@@ -179,46 +171,42 @@ repo it depends on is cloned by an activation hook.
 
 macOS profiles are resolved from username and, for work users, whether the private workfiles checkout exists at `$HOME/pb/adam.hall/workfiles`. Only the current full-work username auto-promotes to `work`; the other work username remains on its boot profile until `nix/flake.nix` and the wrapper's full-work username are updated and committed.
 
-| Username | Workfiles present | Current full-work username | Default Profile |
-|---|---:|---:|---|
-| `adam.hall` | yes | no | `work-boot` |
-| `adam.hall` | no | no | `work-boot` |
-| `adamhall` | yes | yes | `work` |
-| `adamhall` | no | yes | `work-adamhall-boot` |
-| `codethread` | n/a | n/a | `personal` |
-| (other) | n/a | n/a | `dev` |
+| Username     | Workfiles present | Current full-work username | Default Profile      |
+| ------------ | ----------------: | -------------------------: | -------------------- |
+| `adam.hall`  |               yes |                         no | `work-boot`          |
+| `adam.hall`  |                no |                         no | `work-boot`          |
+| `adamhall`   |               yes |                        yes | `work`               |
+| `adamhall`   |                no |                        yes | `work-adamhall-boot` |
+| `codethread` |               n/a |                        n/a | `personal`           |
+| (other)      |               n/a |                        n/a | `dev`                |
 
 NixOS defaults to `homelab`. The `_resolve_profile` function handles the special case where explicit profile `work-boot` + username `adamhall` maps to `work-adamhall-boot`.
 
 For bootstrap-only hardware file management, `boot/boot.sh` may need an additional profile → host-directory mapping when the flake output name differs from the on-disk host directory. Current example:
 
-| NixOS profile | Host directory |
-|---|---|
-| `homelab` | `nix/hosts/nixos/homelab` |
-| `vm` | `nix/hosts/nixos/vm-aarch` |
+| NixOS profile | Host directory             |
+| ------------- | -------------------------- |
+| `homelab`     | `nix/hosts/nixos/homelab`  |
+| `vm`          | `nix/hosts/nixos/vm-aarch` |
 
 When adding or renaming NixOS hosts, update both `nix/flake.nix` and `boot/boot.sh` together.
 
 ### [SPEC-006-S3.2] Environment Variables (Set by All Configs)
 
-Portable shell environment ownership lives in `config/env/base.sh`; see
-[SPEC-009](./shell-environment.md). Nix/Home Manager supplies packages, login
-shell registration, and pre-shell session seeds. Bash, zsh, Nushell, tmux,
-bootstrap, and containers consume the shared contract rather than maintaining
-independent PATH/environment lists.
+Portable shell environment ownership lives in `config/env/base.sh`; see [SPEC-009](./shell-environment.md). Nix/Home Manager supplies packages, login shell registration, and pre-shell session seeds. Bash, zsh, Nushell, tmux, bootstrap, and containers consume the shared contract rather than maintaining independent PATH/environment lists.
 
-| Variable | Value |
-|---|---|
-| `DOTFILES` | `~/dev/dots` by default |
-| `EDITOR` | `nvim` |
-| `SHELL` | `<pkgs.nushell>/bin/nu` |
-| `XDG_CONFIG_HOME` | `~/.config` (macOS: `~/dev/dots/config` during bootstrap) |
-| `XDG_DATA_HOME` | `~/.local/share` |
-| `XDG_STATE_HOME` | `~/.local/state` |
-| `XDG_CACHE_HOME` | `~/.local/cache` |
-| `CODEX_HOME` | `~/.config/codex` |
-| `VOLTA_HOME` | `~/.volta` |
-| `NPM_CONFIG_PREFIX` | `~/.local` |
+| Variable            | Value                                                     |
+| ------------------- | --------------------------------------------------------- |
+| `DOTFILES`          | `~/dev/dots` by default                                   |
+| `EDITOR`            | `nvim`                                                    |
+| `SHELL`             | `<pkgs.nushell>/bin/nu`                                   |
+| `XDG_CONFIG_HOME`   | `~/.config` (macOS: `~/dev/dots/config` during bootstrap) |
+| `XDG_DATA_HOME`     | `~/.local/share`                                          |
+| `XDG_STATE_HOME`    | `~/.local/state`                                          |
+| `XDG_CACHE_HOME`    | `~/.local/cache`                                          |
+| `CODEX_HOME`        | `~/.config/codex`                                         |
+| `VOLTA_HOME`        | `~/.volta`                                                |
+| `NPM_CONFIG_PREFIX` | `~/.local`                                                |
 
 For interactive shells and Nix-managed environments, `DOTFILES` remains the canonical clone path. Rebuild helpers (`nrs`, `nfu`, `nrb`, related flake queries) additionally detect the current git worktree root and use it when invoked from a valid dotfiles checkout. The root `Makefile` also overrides `DOTFILES` to the current checkout so `make link` / `make system` operate on the active worktree.
 
@@ -231,7 +219,7 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 ### [SPEC-006-S4.1] CLI Commands (Nushell — `ct/nix.nu`)
 
 | Command | Purpose |
-|---|---|
+| --- | --- |
 | `nrs [profile] [--update]` | Rebuild and switch system configuration, preferring the current dotfiles worktree when valid |
 | `nfu` | Update flake inputs for the current dotfiles worktree when valid |
 | `nrs-flake-host [profile]` | Resolve current machine's flake host name |
@@ -246,7 +234,7 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 ### [SPEC-006-S4.2] CLI Commands (Nushell — `ct/nixos.nu`, NixOS only)
 
 | Command | Purpose |
-|---|---|
+| --- | --- |
 | `nrb [profile=homelab]` | Set boot target without switching, preferring the current dotfiles worktree when valid |
 | `nix-store-info` | Show store size and generation count |
 | `nix-wifi-setup [--ssid --env-file --var]` | Interactive WiFi password configuration |
@@ -255,12 +243,12 @@ WiFi PSK stored at `/etc/codethread/nm.env` (NixOS homelab only), referenced via
 
 ### [SPEC-006-S4.3] Makefile Targets
 
-| Target | Action |
-|---|---|
-| `make system` | Rebuild nix system via local `ct/nix.nu` from the current checkout |
-| `make link` | Symlink dotfiles from the current checkout via `dotty link --no-cache` |
-| `make build` | Build `oven/` tools from the current checkout via `nix develop` + `bun run verify` |
-| `make all` | `link` → `build` → `system` |
+| Target        | Action                                                                             |
+| ------------- | ---------------------------------------------------------------------------------- |
+| `make system` | Rebuild nix system via local `ct/nix.nu` from the current checkout                 |
+| `make link`   | Symlink dotfiles from the current checkout via `dotty link --no-cache`             |
+| `make build`  | Build `oven/` tools from the current checkout via `nix develop` + `bun run verify` |
+| `make all`    | `link` → `build` → `system`                                                        |
 
 ### [SPEC-006-S4.4] Git Pre-Commit Hook
 

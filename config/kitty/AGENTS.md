@@ -16,10 +16,10 @@ This directory contains configuration for the Kitty terminal emulator.
 - tmux owns multiplexing/session behavior; kitty keybindings should stay terminal-focused unless explicitly requested
 - use vim fold markers for grouping config sections:
 
-  ```
-  #: section_name {{{
+    ```
+    #: section_name {{{
 
-  content here
+    content here
 
-  #: }}}
-  ```
+    #: }}}
+    ```

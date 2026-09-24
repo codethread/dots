@@ -9,13 +9,13 @@ Persistent domain specifications. Organized by system area, not feature chronolo
 ## Agentic
 
 | Spec | Code | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | [SPEC-001 agentic-config](./specs/agentic-config.md) | `nix/flake.nix`, `nix/features/common.nix`, `nix/features/claude-code.nix`, `claude/`, `pi/`, `config/codex/`, `config/nushell/scripts/ct/interactive/{claude,pi}.nu`, `home/.local/bin/cl`, `oven/bin/cc-hook--*.ts`, `oven/shared/claude-hooks.ts`, `home/.local/bin/cc-hook--*` | Claude Code, Codex, and Pi global configuration: package provisioning, settings, hooks, agents, skills, plugins, wrappers (Note: much of the reusable Pi configuration has moved to the `agents` project repository) |
 
 ## Infrastructure
 
 | Spec | Code | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | [SPEC-006 nix-infra](./specs/nix-infra.md) | `nix/`, `boot/`, `config/nushell/scripts/ct/nix.nu`, `config/nushell/scripts/ct/nixos.nu`, `.githooks/pre-commit` | Declarative system configuration and bootstrap for macOS and NixOS machines |
 | [SPEC-009 shell-environment](./specs/shell-environment.md) | `config/env/`, `config/{bash,zsh,nushell}/`, `config/tmux/tmux.conf`, `boot/boot.sh` | Shared Bash-authored environment and PATH contract with shell adapters |
 | [SPEC-003 dotty](./specs/dotty.md) | `config/nushell/scripts/ct/dotty/`, `config/dotty/dotty.toml`, `config/nvim/lua/codethread/dotty.lua`, `Makefile`, `nix/features/common.nix` | General-purpose dotfile symlink manager: TOML-driven file and directory linking with caching and conflict resolution |

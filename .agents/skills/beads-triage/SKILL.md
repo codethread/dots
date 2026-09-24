@@ -1,7 +1,7 @@
 ---
 name: beads-triage
 description: >
-  Choose and coordinate repository work tracked with Beads using bv robot reports. Use when asked to figure out the next work, prioritize a backlog, plan parallel tracks, analyze dependency bottlenecks, or review project health. Not for implementing an assigned task or bead, recording work, or routine br status, notes, and closure.
+    Choose and coordinate repository work tracked with Beads using bv robot reports. Use when asked to figure out the next work, prioritize a backlog, plan parallel tracks, analyze dependency bottlenecks, or review project health. Not for implementing an assigned task or bead, recording work, or routine br status, notes, and closure.
 ---
 
 # Beads triage
