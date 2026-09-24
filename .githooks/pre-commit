@@ -8,49 +8,46 @@ GIT_DIR="$(git rev-parse --git-dir)"
 
 # skip during rebase — intermediate commits may be intentionally broken
 if [ -d "${GIT_DIR}/rebase-merge" ] || [ -d "${GIT_DIR}/rebase-apply" ]; then
-	exit 0
+  exit 0
 fi
 # skip during cherry-pick sequences
 if [ -f "${GIT_DIR}/CHERRY_PICK_HEAD" ]; then
-	exit 0
+  exit 0
 fi
-
-# Keep the Git collaboration file current; sync failures abort the commit.
-br --db "${ROOT}/.beads/beads.db" sync --flush-only --quiet
 
 # Path-limited commits use a temporary index. Do not widen their requested scope.
 case "$(basename "${GIT_INDEX_FILE:-index}")" in
-	next-index-*) ;;
-	*) git add -- "${ROOT}/.beads/issues.jsonl" ;;
+next-index-*) ;;
+*) git add -- "${ROOT}/.beads/issues.jsonl" ;;
 esac
 
 collect_staged_files() {
-	local pattern="$1"
-	local -n out="$2"
+  local pattern="$1"
+  local -n out="$2"
 
-	while IFS= read -r -d '' file; do
-		out+=("$file")
-	done < <(git diff --cached --name-only --diff-filter=ACMR -z -- "$pattern")
+  while IFS= read -r -d '' file; do
+    out+=("$file")
+  done < <(git diff --cached --name-only --diff-filter=ACMR -z -- "$pattern")
 }
 
 ensure_no_unstaged_changes() {
-	local label="$1"
-	shift
-	local files=("$@")
-	local conflicted=()
+  local label="$1"
+  shift
+  local files=("$@")
+  local conflicted=()
 
-	for file in "${files[@]}"; do
-		if ! git diff --quiet -- "$file"; then
-			conflicted+=("$file")
-		fi
-	done
+  for file in "${files[@]}"; do
+    if ! git diff --quiet -- "$file"; then
+      conflicted+=("$file")
+    fi
+  done
 
-	if [ ${#conflicted[@]} -gt 0 ]; then
-		echo "$label skipped: these staged files also have unstaged changes."
-		echo "Stage or stash the unstaged changes before committing:"
-		printf '  %s\n' "${conflicted[@]}"
-		exit 1
-	fi
+  if [ ${#conflicted[@]} -gt 0 ]; then
+    echo "$label skipped: these staged files also have unstaged changes."
+    echo "Stage or stash the unstaged changes before committing:"
+    printf '  %s\n' "${conflicted[@]}"
+    exit 1
+  fi
 }
 
 markdown_files=()
@@ -58,36 +55,36 @@ collect_staged_files '*.md' markdown_files
 collect_staged_files '*.markdown' markdown_files
 
 if [ ${#markdown_files[@]} -gt 0 ]; then
-	ensure_no_unstaged_changes oxfmt "${markdown_files[@]}"
-	pnpm --dir "${ROOT}" exec oxfmt --disable-nested-config -- "${markdown_files[@]}"
-	git add -- "${markdown_files[@]}"
+  ensure_no_unstaged_changes oxfmt "${markdown_files[@]}"
+  pnpm --dir "${ROOT}" exec oxfmt --disable-nested-config -- "${markdown_files[@]}"
+  git add -- "${markdown_files[@]}"
 fi
 
 nu_files=()
 collect_staged_files '*.nu' nu_files
 
 if [ ${#nu_files[@]} -gt 0 ]; then
-	ensure_no_unstaged_changes nufmt "${nu_files[@]}"
+  ensure_no_unstaged_changes nufmt "${nu_files[@]}"
 
-	if command -v nufmt >/dev/null 2>&1; then
-		nufmt "${nu_files[@]}"
-	else
-		nix run github:nushell/nufmt -- "${nu_files[@]}"
-	fi
-	git add -- "${nu_files[@]}"
+  if command -v nufmt >/dev/null 2>&1; then
+    nufmt "${nu_files[@]}"
+  else
+    nix run github:nushell/nufmt -- "${nu_files[@]}"
+  fi
+  git add -- "${nu_files[@]}"
 fi
 
 nix_files=()
 collect_staged_files '*.nix' nix_files
 
 if [ ${#nix_files[@]} -gt 0 ]; then
-	ensure_no_unstaged_changes nixfmt "${nix_files[@]}"
-	nix develop "${ROOT}/nix" --command nixfmt "${nix_files[@]}"
-	git add -- "${nix_files[@]}"
+  ensure_no_unstaged_changes nixfmt "${nix_files[@]}"
+  nix develop "${ROOT}/nix" --command nixfmt "${nix_files[@]}"
+  git add -- "${nix_files[@]}"
 fi
 
 if ! git diff --cached --name-only | grep -q '^nix/'; then
-	exit 0
+  exit 0
 fi
 
 FLAKE="path:${ROOT}/nix"
@@ -96,9 +93,9 @@ SCRIPTS="${ROOT}/config/nushell/scripts"
 host=$(nu -I "$SCRIPTS" -c 'use ct/nix.nu [nrs-flake-host]; nrs-flake-host')
 
 case "$(uname -s)" in
-	Darwin)  rebuild_cmd="darwin-rebuild" ;;
-	Linux)   rebuild_cmd="nixos-rebuild" ;;
-	*)       exit 0 ;;
+Darwin) rebuild_cmd="darwin-rebuild" ;;
+Linux) rebuild_cmd="nixos-rebuild" ;;
+*) exit 0 ;;
 esac
 
 output=$("$rebuild_cmd" build --flake "${FLAKE}#${host}" 2>&1)
@@ -106,7 +103,7 @@ rc=$?
 rm -f "${ROOT}/result"
 
 if [ $rc -ne 0 ]; then
-	echo "nix build failed:"
-	echo "$output"
-	exit 1
+  echo "nix build failed:"
+  echo "$output"
+  exit 1
 fi
