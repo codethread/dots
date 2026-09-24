@@ -29,4 +29,11 @@ zcompile -U "$tmp/$dump"
 # Publish source first; until bytecode arrives Zsh can parse the new source.
 mv -f -- "$tmp/$dump" "$cache/$dump"
 mv -f -- "$tmp/$dump.zwc" "$cache/$dump.zwc"
+
+# Keep only the dump for the Zsh selected by this platform.
+rm -f -- "$cache/zcompdump" "$cache/zcompdump.zwc"
+for stale in "$cache"/zcompdump-*(N); do
+  [[ "$stale" == "$cache/$dump" || "$stale" == "$cache/$dump.zwc" ]] || rm -f -- "$stale"
+done
+
 print 'zsh: rebuilt and compiled completion cache (including Homebrew when present).'
