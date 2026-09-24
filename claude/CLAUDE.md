@@ -10,6 +10,6 @@
 ## Git, Worktrees and Repo Discovery
 
 - Investigate unexpected state (unfamiliar files, branches, lock files) before deleting or overwriting
-- clone external repos with `nu -l -c "clone --help"`;
+- clone external repos with `clone --help`;
 - use `wktree -h` instead of raw git worktree commands when operating on git branches or worktrees.
 - vendored repos go to `~/dev/vendor` for discovery/study, personal repos go to `~/dev/projects`
