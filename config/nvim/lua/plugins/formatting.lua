@@ -126,7 +126,7 @@ return {
 
 				sh = { 'shfmt' },
 				bash = { 'shfmt' },
-				zsh = { 'shfmt' },
+				zsh = { 'shuck' },
 
 				c = { 'clang_format' },
 
@@ -148,6 +148,22 @@ return {
 			formatters = {
 				shfmt = {
 					prepend_args = { '-i', '2' },
+				},
+				shuck = {
+					command = 'shuck',
+					args = {
+						'format',
+						'--dialect',
+						'zsh',
+						'--indent-style',
+						'space',
+						'--indent-width',
+						'2',
+						'--space-redirects',
+						'--stdin-filename',
+						'$FILENAME',
+						'-',
+					},
 				},
 			},
 		},
