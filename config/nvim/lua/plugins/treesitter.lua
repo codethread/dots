@@ -10,11 +10,12 @@ return {
 		build = use_nix_parsers and nil or ':TSUpdate',
 		dependencies = { 'andymass/vim-matchup' },
 		config = function()
-			-- Prefer the Home Manager linked runtime when present. Neovim discovers both
-			-- parser/*.so and queries/**/*.scm from runtimepath, so if this directory
-			-- exists we let Nix own parser management entirely.
+			-- Keep the config runtime first so its queries can override Nix-provided
+			-- queries, while preferring Nix over plugin-provided parsers and queries.
 			if use_nix_parsers and not vim.tbl_contains(vim.opt.rtp:get(), nix_parsers_dir) then
-				vim.opt.rtp:prepend(nix_parsers_dir)
+				local runtimepath = vim.opt.rtp:get()
+				table.insert(runtimepath, 2, nix_parsers_dir)
+				vim.opt.rtp = runtimepath
 			end
 
 			-- Enable treesitter highlighting and indentation for all filetypes with a parser.
