@@ -71,10 +71,10 @@ export def gwip [msg: string = "wip"] {
 
 export def gnah [--force] {
     if $force {
-        git stash
-    } else {
         git reset --hard
         git clean -df
+    } else {
+        git stash
     }
 }
 
