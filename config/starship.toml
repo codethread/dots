@@ -167,6 +167,10 @@ symbol = " "
 [scala]
 symbol = " "
 
+[shell]
+disabled = false
+style = "cyan dimmed"
+
 [swift]
 symbol = " "
 

@@ -215,11 +215,12 @@ if [ "$ct_project_path_first" = false ]; then
   ct_path_append_list "$ct_inherited_path"
 fi
 PATH=$ct_path
-if command -v nu >/dev/null 2>&1; then
-  SHELL="$(command -v nu)"
-else
-  SHELL=$ct_inherited_shell
-fi
+SHELL="zsh"
+# if command -v nu >/dev/null 2>&1; then
+#   SHELL="$(command -v nu)"
+# else
+#   SHELL=$ct_inherited_shell
+# fi
 
 unset ct_dir ct_inherited_path ct_inherited_shell ct_os ct_path ct_project_path_first ct_remaining
 
