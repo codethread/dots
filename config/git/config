@@ -60,3 +60,5 @@
 
 [includeIf "gitdir:~/pb/"] # job needs, like workspace/* so all included projects
 	path = ~/pb/.gitconfig
+[beads]
+	role = maintainer
