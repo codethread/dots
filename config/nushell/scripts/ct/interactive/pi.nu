@@ -27,7 +27,3 @@ export alias pif = pi --tools ($core_tools | str join ",") --model deepseek/deep
 
 # Opus big OG
 export alias pio = pi --tools ($core_tools ++ $subagent ++ $goal_tools | str join ",") --provider anthropic --model claude-opus-4-6 --thinking high
-
-export def pi-install [] {
-    with-env { PI_OFFLINE: null } { pi update --extensions }
-}
