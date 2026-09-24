@@ -204,6 +204,13 @@ in
       } # beads_rust
     ];
     brews = [
+      # {
+      #   name = "gascity";
+      #   args = [ "HEAD" ];
+      #   # link = true;
+      #    link = "overwrite";
+      #   conflicts_with = [ "graphviz" ];
+      # }
       "dicklesworthstone/tap/br" # beads rust
       "dicklesworthstone/tap/bv" # Graph-aware Beads viewer
       "morantron/tmux-fingers/tmux-fingers" # mouseless terminal interaction
