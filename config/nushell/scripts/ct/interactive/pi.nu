@@ -14,10 +14,10 @@ const subagent = [subagent]
 const goal_tools = [goal_complete, goal_blocked, goal_wait]
 
 # Pi daily default
-export alias pim = pi --tools ($core_tools ++ $subagent ++ $goal_tools | str join ",") --provider openai-codex --model gpt-5.6-sol --thinking medium
+export alias pim = pi --tools ($core_tools ++ $subagent ++ $goal_tools | str join ",") --provider openai-codex --model gpt-5.6-sol --thinking high
 
 # Hard quality-first work
-export alias pih = pi --tools ($core_tools ++ $subagent ++ $goal_tools | str join ",") --provider openai-codex --model gpt-6-astra --thinking high
+export alias pih = pi --tools ($core_tools ++ $subagent ++ $goal_tools | str join ",") --provider openai-codex --model gpt-6-astra --thinking xhigh
 
 # Cheap lightweight work
 export alias pil = pi --tools ($core_tools ++ $subagent | str join ",") --provider openai-codex --model gpt-5.6-terra --thinking high

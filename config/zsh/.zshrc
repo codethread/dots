@@ -4,6 +4,7 @@
 
 # zsh remains minimal, but accidental interactive launches get human-facing env.
 source "$DOTFILES/config/env/interactive.sh"
+source "$HOME/.privates.sh"
 
 #: }}}
 #: history {{{
@@ -23,11 +24,11 @@ bindkey -e
 pi_core_tools=(read bash edit write interactive_shell pi-internals harness_metadata subagent)
 pi_goal_tools=(goal_complete goal_blocked goal_wait)
 
-alias pim="pi --provider openai-codex --model gpt-5.6-sol       --thinking medium --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
-alias pih="pi --provider openai-codex --model gpt-6-astra       --thinking high   --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
+alias pim="pi --provider openai-codex --model gpt-5.6-sol       --thinking high   --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
+alias pih="pi --provider openai-codex --model gpt-6-astra       --thinking xhigh  --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
 alias pil="pi --provider openai-codex --model gpt-5.6-terra     --thinking high   --tools ${(j:,:)pi_core_tools}"
 alias pif="pi --provider deepseek     --model deepseek-v4-flash --thinking max    --tools ${(j:,:)pi_core_tools}"
-alias pio="pi --provider anthropic    --model claude-opus-4-6   --thinking high   --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
+alias pio="pi --provider anthropic    --model claude-opus-5-5   --thinking high   --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
 
 # Change to the current repository's root.
 cdd() {
