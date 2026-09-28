@@ -47,7 +47,8 @@ describe("theme CLI", () => {
 		["light", "dark"],
 		["unknown"],
 		["--unknown"],
-	])("rejects invalid arguments %j", (...args) => {
+	])("rejects invalid arguments %j", (...allArgs: any[]) => {
+		const args = allArgs.filter((arg) => typeof arg !== "function") as string[];
 		expect(() => parseThemeArgs(args)).toThrow();
 	});
 
