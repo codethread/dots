@@ -54,6 +54,12 @@ cache_is_fresh() {
   (( $(date +%s) - modified < ttl ))
 }
 
+# tmux kill-server leaves the socket file behind, so remove it explicitly.
+stop_usage_server() {
+  tmux -L "$1" kill-server 2>/dev/null || true
+  rm -f "${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/$1"
+}
+
 capture_percentage() {
   command -v codex >/dev/null 2>&1 || return 1
   command -v tmux >/dev/null 2>&1 || return 1
@@ -64,23 +70,26 @@ capture_percentage() {
   mkdir -p "$work_dir"
   tmux -L "$socket" -f /dev/null new-session -d -x 160 -y 50 -c "$work_dir" "$(command -v codex)"
 
-  for _ in {1..15}; do
+  local trust_sent=0
+  for _ in {1..25}; do
     sleep 1
     output=$(tmux -L "$socket" capture-pane -p -J -S -100 2>/dev/null) || break
-    if [[ "$output" == *"Do you trust the contents of this directory?"* ]]; then
-      tmux -L "$socket" send-keys 1 Enter
-      continue
-    fi
     if [[ "$output" =~ weekly[[:space:]]+([0-9]+)%[[:space:]]+left ]]; then
-      tmux -L "$socket" kill-server 2>/dev/null || true
+      stop_usage_server "$socket"
       local percentage="${BASH_REMATCH[1]}"
       (( percentage >= 0 && percentage <= 100 )) || return 1
       printf '%s\n' "$percentage"
       return 0
     fi
+    # The answered trust dialog stays in the transcript, so send the
+    # keystroke only once and keep polling for the usage footer.
+    if (( ! trust_sent )) && [[ "$output" == *"Trust this folder?"* ]]; then
+      tmux -L "$socket" send-keys 1 Enter
+      trust_sent=1
+    fi
   done
 
-  tmux -L "$socket" kill-server 2>/dev/null || true
+  stop_usage_server "$socket"
   return 1
 }
 
