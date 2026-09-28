@@ -1,52 +1,53 @@
 {
-  "lastChangelogVersion": "0.87.1",
-  "theme": "rose-pine",
-  "quietStartup": true,
-  "showHardwareCursor": true,
-  "editorPaddingX": 1,
-  "defaultProvider": "openai",
-  "defaultModel": "gpt-5.6-luna",
-  "defaultThinkingLevel": "high",
-  "enabledModels": [
-    "openai-codex/gpt-6-astra",
-    "openai-codex/gpt-5.6-sol",
-    "openai-codex/gpt-5.6-terra",
-    "openai-codex/gpt-5.6-luna",
-    "deepseek/deepseek-v4-flash"
-  ],
-  "packages": [
-    {
-      "source": "../../dev/projects/agents"
-    },
-    {
-      "source": "../../pb/adam.hall/local-work-claude/plugins/admin"
-    },
-    {
-      "source": "../../pb/adam.hall/local-work-claude/plugins/backend"
-    },
-    {
-      "source": "./packages/pi-nvim"
-    },
-    {
-      "source": "./packages/pi-goal"
-    },
-    {
-      "source": "./packages/pi-mcp-adapter"
-    }
-  ],
-  "hideThinkingBlock": true,
-  "treeFilterMode": "no-tools",
-  "terminal": {
-    "showTerminalProgress": false
-  },
-  "tuiMode": "fullscreen",
-  "steeringMode": "all",
-  "followUpMode": "all",
-  "showCacheMissNotices": true,
-  "defaultProjectTrust": "always",
-  "doubleEscapeAction": "tree",
-  "fullscreenScrollbar": "auto",
-  "pies": {
-    "excludeExtensions": []
-  }
+	"lastChangelogVersion": "0.87.1",
+	"theme": "rose-pine",
+	"quietStartup": true,
+	"showHardwareCursor": true,
+	"editorPaddingX": 1,
+	"defaultProvider": "openai",
+	"defaultModel": "gpt-5.6-luna",
+	"defaultThinkingLevel": "high",
+	"enabledModels": [
+		"openai-codex/gpt-6-astra",
+		"openai-codex/gpt-5.6-sol",
+		"openai-codex/gpt-5.6-terra",
+		"openai-codex/gpt-5.6-luna",
+		"deepseek/deepseek-flash"
+	],
+	"packages": [
+		{
+			"source": "../../dev/projects/agents"
+		},
+		{
+			"source": "../../pb/adam.hall/local-work-claude/plugins/admin"
+		},
+		{
+			"source": "../../pb/adam.hall/local-work-claude/plugins/backend"
+		},
+		{
+			"source": "./packages/pi-nvim"
+		},
+		{
+			"source": "./packages/pi-goal"
+		},
+		{
+			"source": "./packages/pi-mcp-adapter"
+		}
+	],
+	"hideThinkingBlock": true,
+	"treeFilterMode": "no-tools",
+	"terminal": {
+		"showTerminalProgress": false
+	},
+	"tuiMode": "fullscreen",
+	"steeringMode": "all",
+	"followUpMode": "all",
+	"showCacheMissNotices": true,
+	"defaultProjectTrust": "always",
+	"doubleEscapeAction": "tree",
+	"fullscreenScrollbar": "auto",
+	"pies": {
+		"excludeExtensions": []
+	}
 }
+

@@ -15,12 +15,6 @@ if [ -f "${GIT_DIR}/CHERRY_PICK_HEAD" ]; then
   exit 0
 fi
 
-# Path-limited commits use a temporary index. Do not widen their requested scope.
-case "$(basename "${GIT_INDEX_FILE:-index}")" in
-next-index-*) ;;
-*) git add -- "${ROOT}/.beads/issues.jsonl" ;;
-esac
-
 collect_staged_files() {
   local pattern="$1"
   local -n out="$2"

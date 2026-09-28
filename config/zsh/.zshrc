@@ -27,7 +27,7 @@ pi_goal_tools=(goal_complete goal_blocked goal_wait)
 alias pim="pi --provider openai-codex --model gpt-5.6-sol       --thinking high   --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
 alias pih="pi --provider openai-codex --model gpt-6-astra       --thinking xhigh  --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
 alias pil="pi --provider openai-codex --model gpt-5.6-terra     --thinking high   --tools ${(j:,:)pi_core_tools}"
-alias pif="pi --provider deepseek     --model deepseek-v4-flash --thinking max    --tools ${(j:,:)pi_core_tools}"
+alias pif="pi --provider deepseek     --model deepseek-flash    --thinking max    --tools ${(j:,:)pi_core_tools}"
 alias pio="pi --provider anthropic    --model claude-opus-5-5   --thinking high   --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
 
 # Change to the current repository's root.
@@ -98,6 +98,11 @@ else
 fi
 bashcompinit
 
+#: }}}
+#: keybindings {{{
+autoload -z edit-command-line
+zle -N edit-command-line
+bindkey "^X^E" edit-command-line
 #: }}}
 #: init {{{
 
