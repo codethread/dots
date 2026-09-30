@@ -1,3 +1,4 @@
+#:schema /Users/ct/dev/projects/hive/lib/honeycomb/honeycomb.schema.json
 # Worktree project bootstrap hooks.
 #
 # `root` must match the canonical/root worktree path for the repo.

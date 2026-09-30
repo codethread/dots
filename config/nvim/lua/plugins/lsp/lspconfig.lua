@@ -191,6 +191,11 @@ return {
 						-- },
 					},
 					zls = {},
+					taplo = {
+						-- `honeycomb.toml` doubles as a root marker so the linked
+						-- ~/.config/honeycomb.toml resolves a workspace and honours its #:schema.
+						root_markers = { '.taplo.toml', 'taplo.toml', 'honeycomb.toml', '.git' },
+					},
 				},
 				-- you can do any additional lsp server setup here
 				-- return true if you don't want this server to be setup with lspconfig
