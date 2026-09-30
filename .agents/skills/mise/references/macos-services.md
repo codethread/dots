@@ -36,7 +36,7 @@ LaunchAgents inherit launchd's minimal environment, not shell activation. Use a 
 
 A service launched with `mise -C <dotfiles> -E <profile> run <task>` can load tools from the dotfiles project while the task's `dir` selects the application checkout. This was verified with Bun and an app-local `.env`. Plain `mise -C <dotfiles> exec` changes the child's working directory too; do not assume a plist `working_directory` overrides it.
 
-`{{ config_root }}` refers to the declaring config's directory and becomes an absolute path in the generated plist. Apply production jobs from a durable checkout, not a worktree you intend to remove. Select profiles explicitly; login jobs do not inherit your terminal's `MISE_ENV`.
+`{{ config_root }}` refers to the declaring config's logical project root and becomes an absolute path in the generated plist. Recognized project locations such as `.mise/conf.d/*.toml` normalize back to the project root, not the fragment directory; `config_source` identifies the actual config file. Apply production jobs from a durable checkout, not a worktree you intend to remove. Select profiles explicitly; login jobs do not inherit your terminal's `MISE_ENV`.
 
 Path fields such as `program`, `working_directory`, and log paths expand `~/`. `args` do **not** expand tilde or shell variables: use templates for those values. Shell pipelines require an explicitly invoked shell or script.
 

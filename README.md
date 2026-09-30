@@ -15,7 +15,7 @@ curl -fsSL https://raw.githubusercontent.com/codethread/dots/main/boot/boot.sh |
 
 ## Mise services (macOS)
 
-Mise owns cc-notify and Git maintenance; Nix currently installs mise through Homebrew. From this checkout, select `dev` or `work` explicitly:
+Mise owns cc-notify and Git maintenance; Nix currently installs mise through Homebrew. Service definitions live in `.mise/conf.d/`, while `mise.toml` holds tools and shared tasks. From this checkout, select `dev` or `work` explicitly:
 
 ```nu
 mise -E dev tasks

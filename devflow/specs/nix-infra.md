@@ -117,8 +117,8 @@ Deliberately **not** shared via `hosts/darwin/common.nix` — each is tied to a 
 | Service | Declared in | Applies to | Notes |
 | --- | --- | --- | --- |
 | `syncengine` | `hosts/darwin/common.nix` | all macOS | The one exception; keeps `~/.local/bin/syncengine` running everywhere |
-| `git-maintenance-{hourly,daily,weekly}` | root `mise.toml` + profile overlay | dev, work | mise-owned LaunchAgents; filtered repository list, private state config |
-| `cc-notify` | root `mise.toml` + profile overlay | dev, work | mise-owned LaunchAgent; mise-managed Bun, explicit preparation before apply |
+| `git-maintenance-{hourly,daily,weekly}` | `.mise/conf.d/git-maintenance.toml` + profile overlay | dev, work | mise-owned LaunchAgents; filtered repository list, private state config |
+| `cc-notify` | `.mise/conf.d/cc-notify.toml` + profile overlay | dev, work | mise-owned LaunchAgent; mise-managed Bun, explicit preparation before apply |
 | `backup-notes` | `hosts/darwin/dev.nix` | dev | Auto-commits the notes vault every 15 min |
 | `high-cpu-watch` | `hosts/darwin/dev.nix` | dev | Alerts via `cc-notify` after 10 min above 95% CPU |
 

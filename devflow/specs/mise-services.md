@@ -2,14 +2,19 @@
 
 ## Scope and ownership
 
-The root `mise.toml` owns four user LaunchAgents: cc-notify and hourly/daily/weekly Git maintenance. macOS launchd supervises them; mise renders and applies their definitions. This is deliberately project-scoped, with no shell activation, global mise config, or extra supervisor.
+The project mise configuration owns four user LaunchAgents: cc-notify and hourly/daily/weekly Git maintenance. macOS launchd supervises them; mise renders and applies their definitions. This is deliberately project-scoped, with no shell activation, global mise config, or extra supervisor.
 
+- `mise.toml`: pinned tools and shared prepare/apply/status tasks.
+- `.mise/conf.d/cc-notify.toml`: foreground cc-notify task and its LaunchAgent.
+- `.mise/conf.d/git-maintenance.toml`: hourly/daily/weekly maintenance LaunchAgents.
 - `mise.dev.toml`: notes vault maintenance and cc-notify.
 - `mise.work.toml`: deals-light-ui maintenance and cc-notify.
 - Personal and work-boot machines do not apply these services. Select `dev` or `work` explicitly; a missing overlay cannot render the required profile variables.
 - Nix declares the Homebrew `mise` formula; the stable service executable is `/opt/homebrew/bin/mise`, not a Nix-store path. This matches the repository's Apple Silicon hosts.
 - mise installs pinned Bun 1.4.2 for cc-notify. Other Nix-managed runtimes are unchanged.
 - Git maintenance uses macOS `/usr/bin/git` (Command Line Tools required).
+
+mise discovers the `.mise/conf.d/*.toml` fragments automatically; no include directive or experimental setting is needed. Keep each complete agent declaration in one fragment: duplicate names replace the entire declaration, not individual fields. For these recognized project fragments, `config_root` remains the repository root, so moving declarations does not change generated executable paths. The root profile overlays still supply the shared variables.
 
 Apply from the durable canonical checkout, not a disposable worktree: generated jobs reference that checkout's absolute path. Applying from another checkout replaces those paths. Do not delete or move the active checkout without applying again from its replacement.
 

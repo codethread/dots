@@ -82,6 +82,8 @@ Use the normal hierarchy rather than duplicating whole profiles:
 - project `mise.<env>.toml`: project overlay.
 - `mise.local.toml` and `mise.<env>.local.toml`: uncommitted machine overrides.
 
+For modular project configuration, use `.mise/conf.d/*.toml`: mise automatically loads these full-schema fragments, while root `mise.toml` and its profile overlays remain available. Prefer plain hyphenated names such as `cc-notify.toml`; environment-suffixed fragment names require the separate `env_conf_d` opt-in during its rollout. `config_root` for recognized project fragments remains the project root; `config_source` identifies the actual file. Keep an agent's full declaration in one fragment because duplicate agent names replace whole declarations. After splitting, verify `mise config`, task metadata, and unchanged generated agent state before applying.
+
 Select overlays explicitly with `mise -E work …`, `MISE_ENV=work`, or a reviewed `.miserc.toml`. Multiple environments are ordered; the last wins. Run `mise -E work config` to verify the loaded files. Do not depend on automatic platform files unless `.miserc.toml` explicitly sets `auto_env = true`; the feature is currently disabled by default and in rollout.
 
 Use `os` filters where that section supports them, or platform environment files such as `mise.macos.toml` and `mise.linux.toml` with `auto_env` explicitly configured. Do not assume every table accepts `os`.
