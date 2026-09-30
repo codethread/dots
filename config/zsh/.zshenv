@@ -1,4 +1,4 @@
-# Minimal zsh compatibility only. Interactive shell is Nushell.
+# Every zsh sources the shared contract; interactive setup lives in .zshrc.
 # Keep PATH/XDG/SHELL aligned with terminal and tmux bootstrap.
 NOSYSZSHRC=1
 

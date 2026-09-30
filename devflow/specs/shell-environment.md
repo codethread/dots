@@ -2,11 +2,11 @@
 
 - Document ID: SPEC-009
 - **Status:** Implemented
-- **Last Updated:** 2026-07-13
+- **Last Updated:** 2026-09-30
 
 ## [SPEC-009-S1] Purpose
 
-Provide one stable environment and PATH contract for human shells, agent CLIs, tmux, machine bootstrap, and development containers. Nushell remains the primary interactive shell, but does not own portable process environment configuration.
+Provide one stable environment and PATH contract for human shells, agent CLIs, tmux, machine bootstrap, and development containers. Zsh is the default interactive shell and Nushell remains available; neither owns portable process environment configuration.
 
 ## [SPEC-009-S2] Ownership
 
@@ -19,7 +19,7 @@ Adapters may add shell-native state but must not duplicate the base contract:
 | Bash | `config/bash/env` sources the base, adds interactive state only for interactive shells, then optional `env.local` |
 | zsh | `config/zsh/.zshenv` sources the base; `.zshrc` adds interactive state and loads the switch-generated completion dump |
 | Nushell | `config/nushell/env.nu` imports the base plus interactive state only when `$nu.is-interactive`, converts PATH to a list, then adds typed/Nushell-only values |
-| terminal launch | `config/env/terminal-startup.sh` sources the base, then execs login Nushell |
+| terminal launch | `config/env/terminal-startup.sh` sources the base, then execs `$SHELL` as a login interactive shell |
 | tmux | `emit.sh --tmux` seeds the tmux global environment and default shell |
 | machine bootstrap | `boot/boot.sh` sets bootstrap-specific XDG roots, then sources the base |
 
@@ -32,6 +32,10 @@ The base builds PATH from user-local tool roots, Nix profiles, platform roots, s
 Known user/tool roots remain in PATH even before they exist. Installing into one of those roots therefore works in the current shell; stale nonexistent entries are harmless and intentionally tolerated.
 
 `~/.local/bin` remains first. Volta remains available for interactive Node work. On macOS, Homebrew Node is the stable fallback when a replaced HOME makes Volta unavailable.
+
+## [SPEC-009-S3a] SHELL Contract
+
+The base keeps the inherited `SHELL`, falling back to `zsh` when unset, and resolves it against the final PATH to an absolute executable path. Callers that deliberately set `SHELL`, such as agent CLIs, therefore keep their choice. If resolution fails, the base warns on stderr, leaves `SHELL` unchanged, and returns non-zero after restoring the caller's shell options. `emit.sh --tmux` passes the caller's `SHELL` into its clean subprocess and uses the resolved value as tmux's `default-shell`.
 
 ## [SPEC-009-S4] Interfaces
 
