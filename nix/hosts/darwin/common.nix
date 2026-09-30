@@ -204,13 +204,14 @@ in
       } # beads_rust
     ];
     brews = [
-      {
-        name = "gascity";
-        args = [ "HEAD" ];
-        # link = true;
-        link = "overwrite";
-        conflicts_with = [ "graphviz" ];
-      }
+      # {
+      #   name = "gascity";
+      #   args = [ "HEAD" ];
+      #   # link = true;
+      #   link = "overwrite";
+      #   conflicts_with = [ "graphviz" ];
+      # }
+      "dicklesworthstone/tap/br" # beads rust
       "dicklesworthstone/tap/bv" # Graph-aware Beads viewer
       "morantron/tmux-fingers/tmux-fingers" # mouseless terminal interaction
       "codethread/wktree/wktree" # Deterministic git worktree manager
@@ -225,6 +226,7 @@ in
       npm "@playwright/cli"
     '';
     casks = [
+      "gum" # beautiful shell TUI helpers
       "kitty" # GPU-based terminal emulator
       "ghostty"
       "aerospace" # AeroSpace is an i3-like tiling window manager for macOS
