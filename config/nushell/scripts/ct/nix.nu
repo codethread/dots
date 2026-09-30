@@ -1,5 +1,4 @@
-# Cross-platform Nix utilities — rebuild, GC, package queries
-# NixOS-only commands (boot target, Wi-Fi, store info) are in nixos.nu
+# nix-darwin utilities — rebuild, GC, package queries
 
 def _workfiles_path [] {
     $env.HOME | path join "pb" "adam.hall" "workfiles"
@@ -18,7 +17,7 @@ def _work_default_profile_for_user [user: string] {
 }
 
 # Nix profiles identify a machine/account; CT_USER only identifies home vs work context.
-def _darwin_default_profile [] {
+def _default_profile [] {
     match ($env.USER? | default "") {
         "adam.hall" => (_work_default_profile_for_user "adam.hall")
         "adamhall" => (_work_default_profile_for_user "adamhall")
@@ -27,13 +26,7 @@ def _darwin_default_profile [] {
     }
 }
 
-def _default_profile [] {
-    if (sys host).name == "Darwin" { (_darwin_default_profile) } else { "homelab" }
-}
-
 def _resolve_profile [profile: string] {
-    if (sys host).name != "Darwin" { return $profile }
-
     match [
         $profile
         ($env.USER? | default "")
@@ -131,28 +124,22 @@ export def nrs-flake-host [profile?: string] {
     _resolve_profile ($profile | default (_default_profile))
 }
 
-# Rebuild and switch system configuration (nixos-rebuild or darwin-rebuild)
+# Rebuild and switch nix-darwin system configuration
 export def nrs [profile?: string, --update(-u)] {
     if $update { nfu }
     let p = _resolve_profile ($profile | default (_default_profile))
     let flake = (_flake_ref $p)
     let lock = "/tmp/millstrand-test.lock"
-    let darwin = (sys host).name == "Darwin"
-    let rebuild = if $darwin {
-        [
-            sudo
-            -H
-            darwin-rebuild
-            switch
-            --flake
-            $flake
-        ]
-    } else {
-        [sudo nixos-rebuild switch --flake $flake]
-    }
+    let rebuild = [
+        sudo
+        -H
+        darwin-rebuild
+        switch
+        --flake
+        $flake
+    ]
     print ($rebuild | str join " ")
     _with-build-lock $lock $rebuild
-    if not $darwin { _kernel_reboot_check }
 }
 
 # Queue a command on the shared build lock. flock is only present once the
@@ -166,20 +153,6 @@ def _with-build-lock [lock: string, cmd: list<string>] {
         }
         # -E 99 marks a lock-wait timeout apart from a failed command
         run-external "flock" "-w" "180" "-E" "99" $lock ...$cmd
-    }
-}
-
-# Warn if the running kernel differs from the one NixOS will boot into
-def _kernel_reboot_check [] {
-    let running = (^uname -r)
-    let booted = (
-        ls /run/current-system/kernel-modules/lib/modules
-        | get name
-        | path basename
-        | first
-    )
-    if $running != $booted {
-        print $"\n(ansi yellow_bold)⚠ Reboot advised(ansi reset): running kernel (ansi d)($running)(ansi reset) differs from new kernel (ansi d)($booted)(ansi reset)"
     }
 }
 
@@ -202,8 +175,7 @@ export def nix-clean-older [days: int = 14] {
 export def nix-packages [profile?: string] {
     let p = _resolve_profile ($profile | default (_default_profile))
     let flake = $"path:((_flake_path))"
-    let config_type = if $p in ["dev" "personal" "work" "work-boot" "work-adamhall-boot"] { "darwinConfigurations" } else { "nixosConfigurations" }
-    let attr = $"($flake)#($config_type).($p).config.home-manager.users.($env.USER).home.packages"
+    let attr = $"($flake)#darwinConfigurations.($p).config.home-manager.users.($env.USER).home.packages"
     ^nix eval $attr --apply "map (p: p.name)" --json | from json | sort | uniq
 }
 
@@ -211,8 +183,7 @@ export def nix-packages [profile?: string] {
 export def nix-sys-packages [profile?: string] {
     let p = _resolve_profile ($profile | default (_default_profile))
     let flake = $"path:((_flake_path))"
-    let config_type = if $p in ["dev" "personal" "work" "work-boot" "work-adamhall-boot"] { "darwinConfigurations" } else { "nixosConfigurations" }
-    let attr = $"($flake)#($config_type).($p).config.environment.systemPackages"
+    let attr = $"($flake)#darwinConfigurations.($p).config.environment.systemPackages"
     ^nix eval $attr --apply "map (p: p.name)" --json | from json | sort | uniq
 }
 
@@ -230,7 +201,7 @@ def _brew_config_attr [profile: string, attr: string] {
 
 # Validate homebrew taps/brews/casks in the nix config resolve before rebuilding (no sudo needed)
 export def nrs-check [profile?: string] {
-    let p = _resolve_profile ($profile | default (_darwin_default_profile))
+    let p = _resolve_profile ($profile | default (_default_profile))
     print $"Checking brew config for profile: ($p)"
 
     let taps = (_brew_config_attr $p "taps")
@@ -282,11 +253,9 @@ export def nix-smoke [
 ] {
     let p = _resolve_profile ($profile | default (_default_profile))
     let flake = $"path:((_flake_path))"
-    let config_type = if $p in ["dev" "personal" "work" "work-boot" "work-adamhall-boot"] { "darwinConfigurations" } else { "nixosConfigurations" }
     let hm_user = (_hm_user_for_profile $p)
     let dotfiles = $env.DOTFILES? | default ($env.HOME | path join "dev" "dots")
     let xdg_config = $env.XDG_CONFIG_HOME? | default ($env.HOME | path join ".config")
-    let is_nixos = "/etc/NIXOS" | path exists
 
     mut checks = [
         (
@@ -312,13 +281,6 @@ export def nix-smoke [
         )
     ]
 
-    if $is_nixos {
-        $checks = ($checks ++ [
-			(_smoke-check "PATH has /run/current-system/sw/bin" (_path-has "/run/current-system/sw/bin") "/run/current-system/sw/bin")
-			(_smoke-check "PATH has /run/wrappers/bin" (_path-has "/run/wrappers/bin") "/run/wrappers/bin")
-		])
-    }
-
     for cmd in [
         nix
         nu
@@ -333,6 +295,7 @@ export def nix-smoke [
         codex
         pi
         playwright-cli
+        darwin-rebuild
     ] {
         let resolved = (_which-path $cmd)
         $checks = (
@@ -346,19 +309,6 @@ export def nix-smoke [
             )
         )
     }
-
-    let platform_cmd = if $is_nixos { "nixos-rebuild" } else { "darwin-rebuild" }
-    let platform_path = (_which-path $platform_cmd)
-    $checks = (
-        $checks
-        | append (
-            (_smoke-check
-                $"binary: ($platform_cmd)"
-                ($platform_path != null)
-                ($platform_path | default "missing")
-            )
-        )
-    )
 
     for file_check in [
         {
@@ -424,8 +374,8 @@ export def nix-smoke [
     )
 
     if not $skip_flake {
-        let home_attr = $"($flake)#($config_type).($p).config.home-manager.users.($hm_user).home.packages"
-        let sys_attr = $"($flake)#($config_type).($p).config.environment.systemPackages"
+        let home_attr = $"($flake)#darwinConfigurations.($p).config.home-manager.users.($hm_user).home.packages"
+        let sys_attr = $"($flake)#darwinConfigurations.($p).config.environment.systemPackages"
         $checks = ($checks ++ [
 			(_nix_eval_check "flake eval: home packages" $home_attr)
 			(_nix_eval_check "flake eval: system packages" $sys_attr)

@@ -12,7 +12,7 @@ New machine → `boot/boot.sh`. Existing clone → `make system`. Optional local
 - **home/** - Files that belong in home directory. Go here for home-specific scripts and configs.
 - **oven/** - TypeScript/Bun workspace for CLI tools. Go here for active development.
 - **devflow/** - Planning workspace. Root specs live in `devflow/specs/`; RFCs in `devflow/rfcs/`; active feature work in `devflow/feat/`.
-- **nix/** - nix configs for NixOS and nix-darwin. When scripting for NixOS or not, env `$IS_NIXOS='true'` if running NixOS.
+- **nix/** - nix-darwin system configuration for macOS.
 - **pdx/** - pandoras-box configs (pithos) for personal machines
 
 ### Makefile (Root)
@@ -21,7 +21,7 @@ New machine → `boot/boot.sh`. Existing clone → `make system`. Optional local
 make         # Run link then build (default) - quiet output, errors only
 make link    # Link dotfiles via dotty
 make build   # Build oven executables through `nix develop`
-make system  # Rebuild nix-darwin or NixOS (override with `PROFILE=work`, etc)
+make system  # Rebuild nix-darwin (override with `PROFILE=work`, etc)
 ```
 
 ## Tool Development Workflow
@@ -79,7 +79,7 @@ This repo defines Claude Code configurations such as commands and agents at `cla
 When checking flake builds, avoid leaving repo-local `result` symlinks. Use `--no-link` for `nix build` commands, for example:
 
 ```bash
-nix build ./nix#darwinConfigurations.home.system --show-trace --no-link
+nix build path:./nix#darwinConfigurations.dev.system --no-link
 ```
 
 `nrs` / `make system` switch the system and do not need a `result` link.

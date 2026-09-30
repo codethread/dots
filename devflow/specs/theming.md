@@ -13,7 +13,7 @@ Shared light/dark and theme-family control for the interactive desktop and termi
 
 Most terminal applications are expected to follow the active theme through the combined terminal palette, shell color config, and `LS_COLORS`. Neovim is the main app with explicit extra theme integration; LazyGit has a small adjustment to prefer terminal defaults. Additional app-specific handling should be added only when inheritance is not enough.
 
-The system is intentionally narrow for now. Nix and NixOS desktop theming are not yet controlled by this flow.
+The system is intentionally narrow for now. Nix and Linux desktop theming are not yet controlled by this flow.
 
 ### [SPEC-007-S1.2] Goals
 
@@ -27,7 +27,7 @@ The system is intentionally narrow for now. Nix and NixOS desktop theming are no
 ### [SPEC-007-S1.3] Non-Goals
 
 - Full Nix/Home Manager generation of themes. This is intended, but not implemented yet.
-- Linux desktop theme switching. NixOS currently has separate static dark GTK/Qt config.
+- Linux desktop theme switching.
 - Per-application theme tables by default. Most terminal apps should inherit from Kitty, Nushell, and `LS_COLORS`.
 - Dynamic reload inside already-running Neovim instances.
 - Theme package installation or wallpaper provisioning.
@@ -227,7 +227,7 @@ Neovim reads state at startup. A running instance needs restart or manual reload
 
 ### [SPEC-007-S6.1] Nix / Home Manager
 
-Nix currently provisions packages and has separate static desktop theme settings, but it does not own or generate this theme state.
+Nix currently provisions packages but does not own or generate this theme state.
 
 Planned direction:
 
@@ -235,16 +235,6 @@ Planned direction:
 - Generate initial `$XDG_STATE_HOME/color-theme*` files during activation.
 - Generate or install app theme assets where possible.
 - Keep imperative `theme` switching for day-to-day toggles.
-- Make NixOS GTK/Qt settings read from the same intended theme model instead of hardcoding Rose Pine dark.
-
-### [SPEC-007-S6.2] NixOS Desktop
-
-Current NixOS config hardcodes dark GTK/Qt/freedesktop preferences in `nix/features/nixos-common.nix`. It is not connected to `theme`.
-
-Planned direction:
-
-- Add Linux desktop switching for GTK, Qt, dconf color-scheme, wallpaper, and notification styling.
-- Decide whether runtime Linux switching belongs in `theme`, a Nushell function, or a Nix-generated helper.
 
 ### [SPEC-007-S6.3] Other Applications
 
@@ -255,7 +245,6 @@ Known areas outside the current shared flow:
 - WezTerm, if used instead of Kitty or Ghostty.
 - Zellij, if terminal inheritance is not enough.
 - GUI editors such as Zed and VS Code.
-- Desktop/session styling such as Hyprland.
 - minimal Neovim.
 
 ## [SPEC-007-S7] 7. Design Decisions

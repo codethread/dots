@@ -15,7 +15,6 @@ use ct/terminal.nu *
 use ct/onepassword.nu *
 use ct/system.nu *
 use ct/nix.nu *
-use ct/nixos.nu *
 use ct/search.nu *
 use ct/purge.nu
 

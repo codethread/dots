@@ -14,13 +14,11 @@ _reset='\033[0m'
 
 NIX_PROFILE=""
 GIT_BRANCH="main"
-BOOT_IS_NIXOS=0
-IS_MACOS=0
 
 usage() {
   echo "Usage: boot.sh [-p|--profile <name>] [-b|--branch <name>]"
   echo ""
-  echo "  -p, --profile  Nix profile to build (default: homelab on NixOS, username-based on macOS)"
+  echo "  -p, --profile  Nix profile to build (default: username-based on macOS)"
   echo "  -b, --branch   Git branch to clone (default: main)"
 }
 
@@ -45,17 +43,6 @@ resolve_profile() {
   case "$1:$(id -un)" in
     work-boot:adamhall)
       echo "work-adamhall-boot"
-      ;;
-    *)
-      echo "$1"
-      ;;
-  esac
-}
-
-resolve_nixos_host_dir() {
-  case "$1" in
-    vm)
-      echo "vm-aarch"
       ;;
     *)
       echo "$1"
@@ -98,26 +85,15 @@ done
 #: }}}
 #: profile {{{
 
-if [ -f "/etc/NIXOS" ]; then
-  BOOT_IS_NIXOS=1
-elif [ "$(uname)" = "Darwin" ]; then
-  IS_MACOS=1
-else
-  printf "${_red}( •_• )${_reset} Unsupported OS. boot.sh supports NixOS and macOS only\n" >&2
+if [ "$(uname)" != "Darwin" ]; then
+  printf "${_red}( •_• )${_reset} Unsupported OS. boot.sh supports macOS only\n" >&2
   exit 1
 fi
 
 if [ -z "$NIX_PROFILE" ]; then
-  if [ "$BOOT_IS_NIXOS" -eq 1 ]; then
-    NIX_PROFILE="homelab"
-  else
-    NIX_PROFILE="$(default_macos_profile)"
-  fi
+  NIX_PROFILE="$(default_macos_profile)"
 fi
-
-if [ "$IS_MACOS" -eq 1 ]; then
-  NIX_PROFILE="$(resolve_profile "$NIX_PROFILE")"
-fi
+NIX_PROFILE="$(resolve_profile "$NIX_PROFILE")"
 
 printf "${_cyan}( ◕ ◡ ◕ )${_reset} Setting up system (profile: %s, branch: %s)\n" "$NIX_PROFILE" "$GIT_BRANCH"
 echo "If this script fails at any point it can be rerun"
@@ -160,19 +136,6 @@ if [ ! -d "${DOTFILES}/.git" ]; then
 fi
 
 #: }}}
-#: hardware {{{
-
-if [ "$BOOT_IS_NIXOS" -eq 1 ]; then
-  _hw_src="/etc/nixos/hardware-configuration.nix"
-  _nixos_host_dir="$(resolve_nixos_host_dir "$NIX_PROFILE")"
-  _hw_dest="${DOTFILES}/nix/hosts/nixos/${_nixos_host_dir}/hardware-configuration.nix"
-  if [ -f "${_hw_src}" ] && grep -q '{ \.\.\. }: { }' "${_hw_dest}" 2>/dev/null; then
-    printf "${_cyan}( ◕ ◡ ◕ )${_reset} Copying hardware configuration from installer\n"
-    cp "${_hw_src}" "${_hw_dest}"
-  fi
-fi
-
-#: }}}
 #: environment {{{
 
 export XDG_CONFIG_HOME="${DOTFILES}/config"
@@ -188,51 +151,29 @@ mkdir -p "$XDG_STATE_HOME"
 mkdir -p "$XDG_CACHE_HOME"
 
 #: }}}
-#: nixos {{{
-
-if [ "$BOOT_IS_NIXOS" -eq 1 ]; then
-  if [ ! -f "/etc/codethread/nm.env" ]; then
-    printf "${_red}( •_• )${_reset} Missing /etc/codethread/nm.env for NetworkManager profiles\n"
-    echo "      Create with:"
-    echo "      sudo mkdir -p /etc/codethread"
-    echo "      printf 'PIFI_PSK=your_wifi_password\\n' | sudo tee /etc/codethread/nm.env >/dev/null"
-    echo "      sudo chmod 600 /etc/codethread/nm.env"
-    echo ""
-  fi
-  if [ ! -f "${DOTFILES}/nix/flake.lock" ]; then
-    printf "${_cyan}( ◕ ◡ ◕ )${_reset} NixOS: generating flake.lock\n"
-    nix-shell -p git --run "nix --extra-experimental-features 'nix-command flakes' flake update --flake ${DOTFILES}/nix"
-  fi
-  printf "${_cyan}( ◕ ◡ ◕ )${_reset} NixOS: running nixos-rebuild (profile: %s)\n" "$NIX_PROFILE"
-  sudo nixos-rebuild switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v
-fi
-
-#: }}}
 #: macos {{{
 
-if [ "$IS_MACOS" -eq 1 ]; then
-  # install Lix package manager if not already present
-  if ! command -v nix >/dev/null 2>&1; then
-    printf "${_cyan}( ◕ ◡ ◕ )${_reset} Installing Lix package manager\n"
-    curl -sSf -L https://install.lix.systems/lix | sh -s -- install -v --logger pretty
-    if [ -e "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
-      . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-    fi
+# install Lix package manager if not already present
+if ! command -v nix >/dev/null 2>&1; then
+  printf "${_cyan}( ◕ ◡ ◕ )${_reset} Installing Lix package manager\n"
+  curl -sSf -L https://install.lix.systems/lix | sh -s -- install -v --logger pretty
+  if [ -e "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
   fi
+fi
 
-  # install Homebrew if not already present (required by nix-darwin homebrew module)
-  if ! command -v brew >/dev/null 2>&1; then
-    printf "${_cyan}( ◕ ◡ ◕ )${_reset} Installing Homebrew\n"
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  fi
+# install Homebrew if not already present (required by nix-darwin homebrew module)
+if ! command -v brew >/dev/null 2>&1; then
+  printf "${_cyan}( ◕ ◡ ◕ )${_reset} Installing Homebrew\n"
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
 
-  # run darwin-rebuild
-  printf "${_cyan}( ◕ ◡ ◕ )${_reset} macOS: running darwin-rebuild (profile: %s)\n" "$NIX_PROFILE"
-  if command -v darwin-rebuild >/dev/null 2>&1; then
-    sudo -H darwin-rebuild switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v
-  else
-    sudo -H nix run nix-darwin/master#darwin-rebuild -- switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v
-  fi
+# run darwin-rebuild
+printf "${_cyan}( ◕ ◡ ◕ )${_reset} macOS: running darwin-rebuild (profile: %s)\n" "$NIX_PROFILE"
+if command -v darwin-rebuild >/dev/null 2>&1; then
+  sudo -H darwin-rebuild switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v
+else
+  sudo -H nix run nix-darwin/master#darwin-rebuild -- switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v
 fi
 
 #: }}}
@@ -252,25 +193,4 @@ nu \
   --commands "boot machine"
 
 #: }}}
-#: commit {{{
-
-if [ "$BOOT_IS_NIXOS" -eq 1 ]; then
-  _nixos_host_dir="$(resolve_nixos_host_dir "$NIX_PROFILE")"
-  _hw_file="nix/hosts/nixos/${_nixos_host_dir}/hardware-configuration.nix"
-  if git -C "${DOTFILES}" status --porcelain -- "${_hw_file}" | grep -q .; then
-    if git -C "${DOTFILES}" config user.name >/dev/null 2>&1 \
-      && git -C "${DOTFILES}" config user.email >/dev/null 2>&1; then
-      echo "( ◕ ◡ ◕ ) Committing hardware configuration"
-      git -C "${DOTFILES}" add "${_hw_file}"
-      git -C "${DOTFILES}" commit -m "Add hardware-configuration.nix for ${NIX_PROFILE}" -- "${_hw_file}"
-    else
-      echo "( •_• ) hardware-configuration.nix has uncommitted changes"
-      echo "      Run after setting up git identity:"
-      echo "      cd ${DOTFILES} && git add ${_hw_file} && git commit -m 'Add hardware-configuration.nix for ${NIX_PROFILE}'"
-    fi
-  fi
-fi
-
-#: }}}
-
 printf "${_cyan}( ◕ ◡ ◕ )${_reset} Complete, open new shell\n"

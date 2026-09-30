@@ -9,7 +9,7 @@ Architecture and design rationale are in [SPEC-006 nix-infra](devflow/specs/nix-
 
 ## Dual Channel Pattern
 
-Two nixpkgs channels: `pkgs` (unstable) and `pkgsMaster` (bleeding edge). In `common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available. Use `agentPkgSet.*` for fast-moving supporting packages from nixpkgs-master. On NixOS, Codex, Pi, and Claude Code come from Nix. Playwright is npm-managed on both platforms. On Darwin, nix-darwin declares Homebrew's native Node and Codex packages, Pi and Playwright are user-managed npm tools under `~/.local`, and only Claude is synced by Home Manager activation through the local `nativeAgentOverlay`.
+Two nixpkgs channels: `pkgs` (unstable) and `pkgsMaster` (bleeding edge). In `common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available. Use `agentPkgSet.*` for fast-moving supporting packages from nixpkgs-master. On Darwin, nix-darwin declares Homebrew's native Node and Codex packages and Playwright is a user-managed npm tool under `~/.local`, while Claude, Cursor, and Pi come from `llm-agents`.
 
 ## Adding a New Package
 
@@ -35,39 +35,12 @@ Use an empty string `""` for the initial hash (`vendorHash`, `npmDepsHash`, etc.
 - `dontNpmBuild = true` — package has no build script
 - `env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"` — skip postinstall browser downloads
 
-## Adding a Service
-
-In the host profile (e.g. `profiles/homelab.nix`):
-
-```nix
-imports = [
-  (import ../services/repo-service.nix {
-    name = "my-service";
-    gitUrl = "git@github.com:codethread/my-repo.git";
-    command = "{bun} start";  # {bun} and {dir} are substituted automatically
-    devShell = "default";     # standard: run under {dir}#default via `nix develop`
-    # extraPackages = pkgs: [ pkgs.some-tool ];  # last resort only — prefer target repo's flake.nix
-  })
-];
-
-services.my-service.enable = true;
-services.my-service.workingDirectory = "/home/codethread/dev/projects/my-repo";
-```
-
-Logs: `journalctl --user -u my-service -f`  
-Control: `systemctl --user restart my-service`  
-No flake input changes needed on the dotfiles side.
-
-**Standard pattern**: every service should use `devShell` pointing to a shell in the target repo's own `flake.nix`. This keeps runtime deps pinned alongside the code. The target repo must expose that shell (ideally with a committed `flake.lock`). Commands must start directly (no `make` / `bun install` / build pipelines).
-
-**`extraPackages`** is a last-resort escape hatch for tools that cannot be added to the target repo's flake (e.g. the repo is not yours). Prefer putting deps in the target flake's devShell instead.
-
 ## Validation
 
 After modifying any file under `nix/`, always verify the flake builds before committing:
 
 ```bash
-nixos-rebuild build --flake 'path:./nix#<host>'
+nix build 'path:./nix#darwinConfigurations.<host>.system' --no-link
 ```
 
 A pre-commit hook in `.githooks/` enforces this automatically.
@@ -77,11 +50,12 @@ A pre-commit hook in `.githooks/` enforces this automatically.
 
 ## Build Commands
 
-- macOS: `darwin-rebuild switch --flake .#home`
-- macOS (work, `adam.hall`): `darwin-rebuild switch --flake .#work`
-- macOS (work, `adamhall`): `darwin-rebuild switch --flake .#work-adamhall`
-- NixOS: `sudo nixos-rebuild switch --flake .#homelab`
-- Dry-run eval: `nix build .#nixosConfigurations.vm.config.system.build.toplevel --dry-run`
+- `dev`: `darwin-rebuild switch --flake .#dev`
+- `personal`: `darwin-rebuild switch --flake .#personal`
+- `work` (`adamhall`): `darwin-rebuild switch --flake .#work`
+- `work-boot` (`adam.hall`): `darwin-rebuild switch --flake .#work-boot`
+- `work-adamhall-boot` (`adamhall`): `darwin-rebuild switch --flake .#work-adamhall-boot`
+- Dry-run eval: `nix build 'path:./nix#darwinConfigurations.dev.system' --dry-run --no-link`
 
 ## Debugging
 

@@ -20,12 +20,6 @@ def cdy [] {
     echo $env.PWD | pbcopy
 }
 
-# linux clipboard equivalents for pbcopy/pbpaste (wayland)
-if $env.IS_NIXOS {
-    alias pbcopy = wl-copy
-    alias pbpaste = wl-paste
-}
-
 const atuin = "~/.local/share/atuin/init.nu" | path expand
 source (if ($atuin | path exists) { $atuin } else { null })
 

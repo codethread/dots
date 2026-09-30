@@ -1,5 +1,4 @@
 # Shared by interactive startup and switch-time completion generation.
-# Explicit profile paths also work on NixOS without a system-wide zshrc.
 typeset -Ua fpath
 for ct_zsh_profile in \
   /nix/var/nix/profiles/default \

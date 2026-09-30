@@ -12,7 +12,7 @@ Bun workspace for managing TypeScript/JavaScript executables. Entrypoints listed
 ## Commands
 
 ```bash
-# Enter the project shell on Nix/NixOS (pins bun/biome/typescript for this repo)
+# Enter the project shell via Nix (pins bun/biome/typescript for this repo)
 nix develop
 
 # Format and lint all code with Biome

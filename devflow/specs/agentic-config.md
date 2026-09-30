@@ -14,7 +14,7 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 ### [SPEC-001-S1.2] Goals
 
 - Single source of truth for global settings in Nix (`nix/features/claude-code.nix`)
-- On macOS, nix-darwin declares Homebrew's native Codex CLI while Pi and Playwright CLI share one user-writable npm prefix
+- On macOS, nix-darwin declares Homebrew's native Codex CLI and Playwright CLI uses a user-writable npm prefix, while Claude and Pi come from `llm-agents`
 - All agent assets (agents, skills, commands, rules) version-controlled and symlinked into place via dotty
 - Type-safe hook contracts shared across TypeScript and Bash implementations
 - Context-aware shell wrappers that inject environment-specific prompts
@@ -36,7 +36,6 @@ Four configuration layers compose at runtime:
 ┌─────────────────────────────────────────────────────┐
 │ Package layer                                        │
 │   macOS: Homebrew Codex/Node + ~/.local npm globals │
-│   NixOS: Nix packages where available               │
 │   Owns: agent CLI binaries                          │
 ├─────────────────────────────────────────────────────┤
 │                                                     │
@@ -79,9 +78,8 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 
 ### [SPEC-001-S2.2] Package Provisioning
 
-- nix-darwin declares Homebrew's native Node and Codex packages on macOS, while Pi and Playwright CLI use npm-managed installation and update paths under `~/.local`
-- NixOS Codex, Pi, and Claude are Nix-packaged and updated with `nrs --update`; Playwright CLI remains npm-managed
-- Claude Code continues to use its native installer on macOS
+- nix-darwin declares Homebrew's native Node and Codex packages on macOS; Playwright CLI uses an npm-managed installation and update path under `~/.local`
+- Claude and Pi are provided by `llm-agents` and updated with `nrs --update`
 
 `make system` installs the declared Homebrew cask when Codex is missing. Homebrew upgrades remain intentional because `homebrew.onActivation.upgrade` is disabled; use `brew upgrade --cask codex` to update it. The npm-managed tools install and update through their upstream commands. `nix-smoke` still requires their binaries, so a missing install remains visible.
 
@@ -241,7 +239,7 @@ Direct `pi` invocation with shared repo-aware configuration:
 ### [SPEC-001-S4.9] Agent CLI Packages (`nix/flake.nix`, `nix/features/common.nix`)
 
 - Source: `llm-agents.nix` overlay
-- Installed CLIs: `claude-code`, `codex`, `pi`
+- Installed CLIs: `claude-code` and `pi` from `llm-agents`; `codex` is a Homebrew cask
 - `pkgsMaster` remains the preferred source for fast-moving supporting packages like Node.js and TypeScript
 
 ### [SPEC-001-S4.10] Nushell Wrappers (`config/nushell/scripts/ct/interactive/claude.nu`)
@@ -285,7 +283,7 @@ Disables Ctrl+A in Global context.
 
 - **Nix as settings source of truth.** `~/.claude/settings.json` is Nix-store-linked and read-only. Prevents drift from manual edits. Trade-off: requires `make system` (nix rebuild) to change global settings.
 
-- **Native package ownership on macOS.** nix-darwin declares Homebrew's native Node and Codex packages, while npm owns Pi and Playwright in `~/.local`. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime. NixOS retains `llm-agents.nix` packaging for Codex, Pi, and Claude; Playwright remains npm-managed.
+- **Native package ownership on macOS.** nix-darwin declares Homebrew's native Node and Codex packages, while Playwright is npm-managed in `~/.local` and Claude and Pi come from `llm-agents`. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
 
 - **Dotty for asset linking, not Nix.** Agents, skills, commands, and rules are symlinked by dotty rather than Nix home-manager. This allows editing assets in dots and seeing changes immediately without a nix rebuild. Settings.json (which is JSON and auto-generated) stays in Nix.
 

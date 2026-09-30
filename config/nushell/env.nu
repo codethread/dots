@@ -19,7 +19,6 @@ load-env $imported
 $env.PATH = ($env.PATH | split row (char esep))
 
 # Preserve Nushell-native types for conditions and conversions.
-$env.IS_NIXOS = $env.IS_NIXOS == "true"
 $env.IS_WORK = $env.IS_WORK == "true"
 $env.KSM_WORK = $env.KSM_WORK == "true"
 $env.ENV_CONVERSIONS = {

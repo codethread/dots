@@ -168,10 +168,8 @@ in
       ${lnCmd} -sfn "$HOME/dev/vendor/gitwatch/gitwatch.sh" "$HOME/.local/bin/gitwatch"
     fi
 
-    ${lib.optionalString pkgs.stdenv.isDarwin ''
-      clone_if_missing_ssh "git@github.com:codethread/alfred.git" "$HOME/sync/Alfred" "Alfred"
-      clone_if_missing_ssh "git@github.com:codethread/images.git" "$HOME/sync/images" "images"
-    ''}
+    clone_if_missing_ssh "git@github.com:codethread/alfred.git" "$HOME/sync/Alfred" "Alfred"
+    clone_if_missing_ssh "git@github.com:codethread/images.git" "$HOME/sync/images" "images"
 
     DOTFILES="''${DOTFILES:-$HOME/dev/dots}"
     if [ -d "$DOTFILES/.git" ]; then
@@ -196,89 +194,82 @@ in
     fi
   '';
 
-  home.packages =
-    with pkgs;
-    [
-      # --- Agent tools ---
-      agentPkgSet.typescript
-      agentPkgSet.typescript-language-server
-      llmAgents.claude-code
-      llmAgents.codex
-      cursorAgent
-      cursorAgentCommand
-    ]
-    ++ lib.optionals (!pkgs.stdenv.isDarwin) [
-      agentPkgSet.nodejs_24
-      openssh
-    ]
-    ++ [
-      # --- Core ---
-      # Explicit rather than relying on the login shell / system git, so every
-      # profile (including lightweight laptops) gets the same versions. Darwin
-      # keeps its system OpenSSH for UseKeychain and 1Password IdentityAgent.
-      nushell
-      git
+  home.packages = with pkgs; [
+    # --- Agent tools ---
+    agentPkgSet.typescript
+    agentPkgSet.typescript-language-server
+    llmAgents.claude-code
+    llmAgents.codex
+    cursorAgent
+    cursorAgentCommand
 
-      # --- Languages ---
-      go
-      zig
-      bun
-      deno
-      pnpm
-      rustup
-      python311
-      luarocks
+    # --- Core ---
+    # Explicit rather than relying on the login shell / system git, so every
+    # profile (including lightweight laptops) gets the same versions. Darwin
+    # keeps its system OpenSSH for UseKeychain and 1Password IdentityAgent.
+    nushell
+    git
 
-      # --- Shell ---
-      neovim
-      tmux
-      smug
-      antidote
-      atuin
-      starship
-      carapace
-      fzf
-      skim
-      zellij
+    # --- Languages ---
+    go
+    zig
+    bun
+    deno
+    pnpm
+    rustup
+    python311
+    luarocks
 
-      # --- Utils ---
-      poppler-utils
-      resvg
-      coreutils
-      fswatch
-      entr
-      ffmpeg
-      fd
-      ripgrep
-      jq
-      yq
-      dasel
-      sd
-      tree
-      btop
-      dust
-      stylua
-      tree-sitter
-      wakatime-cli
-      prettierd
-      nixfmt
-      nufmt
-      just
-      uv
-      fx
-      tokei
-      grc
-      todoist-cli
-      taplo # toml parser
-      gh
-      git-lfs
-      lazygit
-      lazydocker
-      difftastic
-      yt-dlp
-      ast-grep
-      vivid
-    ];
+    # --- Shell ---
+    neovim
+    tmux
+    smug
+    antidote
+    atuin
+    starship
+    carapace
+    fzf
+    skim
+    zellij
+
+    # --- Utils ---
+    poppler-utils
+    resvg
+    coreutils
+    fswatch
+    entr
+    ffmpeg
+    fd
+    ripgrep
+    jq
+    yq
+    dasel
+    sd
+    tree
+    btop
+    dust
+    stylua
+    tree-sitter
+    wakatime-cli
+    prettierd
+    nixfmt
+    nufmt
+    just
+    uv
+    fx
+    tokei
+    grc
+    todoist-cli
+    taplo # toml parser
+    gh
+    git-lfs
+    lazygit
+    lazydocker
+    difftastic
+    yt-dlp
+    ast-grep
+    vivid
+  ];
 
   programs.direnv = {
     enable = true;

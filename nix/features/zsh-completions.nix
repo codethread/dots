@@ -2,18 +2,15 @@
   config,
   lib,
   pkgs,
-  darwinConfig ? null,
+  darwinConfig,
   ...
 }:
 
 let
-  isDarwin = darwinConfig != null;
   cacheZsh = lib.getExe pkgs.zsh;
-  incomingSystem = if isDarwin then toString darwinConfig.system.path else "/run/current-system/sw";
+  incomingSystem = toString darwinConfig.system.path;
 in
 {
-  home.packages = lib.optionals (!isDarwin) [ pkgs.zsh ];
-
   home.activation.zshCompletions =
     lib.hm.dag.entryAfter
       [

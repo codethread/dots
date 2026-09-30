@@ -64,32 +64,6 @@ P8 = "workfiles"
 P9 = "protobuf"
 P0 = "notes"
 
-[profiles.homelab.search]
-dirs = [
-  "$DOTFILES",
-  "~/.local/share/nvim/lazy/*",
-  "~/.local/share/nvim/mason/packages/*",
-  "~/dev/projects/notes"
-]
-vsc = ["~/dev"]
-
-[profiles.homelab.projects]
-notes = "~/dev/projects/notes"
-claude_code_plugins = "~/dev/projects/claude-code-plugins"
-cc_inspect = "~/dev/projects/cc-inspect"
-cc_notify = "~/dev/projects/cc-notify"
-claudet = "~/dev/projects/claudet"
-agents = "~/dev/projects/agents"
-
-[profiles.homelab.keys]
-P1 = "dots"
-P2 = "agents"
-P3 = "claude_code_plugins"
-P4 = "cc_notify"
-
-P9 = "cc_inspect"
-P0 = "notes"
-
 # ============================================================================
 # PROFILE SELECTION RULES
 # ============================================================================
@@ -102,7 +76,3 @@ profile = "work"
 [[auto_profile.rules]]
 env = { CT_USER = "work" }
 profile = "work"
-
-[[auto_profile.rules]]
-hostname_regex = "^homelab$"
-profile = "homelab"

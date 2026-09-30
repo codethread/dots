@@ -23,7 +23,7 @@ This system defines how this dotfiles repo can be tested and developed from mult
 
 ### [SPEC-008-S1.3] Non-Goals
 
-- Running multiple real `nix-darwin switch` or `nixos-rebuild switch` operations concurrently against the host.
+- Running multiple real `darwin-rebuild switch` operations concurrently against the host.
 - Proving visual correctness of terminal/editor UI beyond smoke-testable startup and command execution.
 - Virtualizing OS services, launch agents, global keybindings, GUI app preferences, or package-manager state.
 - Making all third-party tools perfectly hermetic if they ignore XDG or explicit state flags.

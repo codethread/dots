@@ -4,16 +4,11 @@ use log.nu
 
 # Post-nix-rebuild tasks — system rebuild is handled by boot.sh or `make system`
 export def main [] {
-    let is_macos = ((sys host).name == "Darwin")
-    let is_nixos = "/etc/NIXOS" | path exists
-
-    if not $is_macos and not $is_nixos {
-        error make {msg: "boot machine supports macOS and NixOS only"}
+    if (sys host).name != "Darwin" {
+        error make {msg: "boot machine supports macOS only"}
     }
 
-    if $is_macos {
-        macos_has_full_disk_access
-    }
+    macos_has_full_disk_access
 
     setup-bins
 

@@ -166,12 +166,10 @@ return {
 		end,
 	},
 
-	-- Ensure debug adapters are installed via Mason (skipped on NixOS where they come from nix)
+	-- Ensure debug adapters are installed via Mason
 	{
 		'WhoIsSethDaniel/mason-tool-installer.nvim',
 		opts = function(_, opts)
-			local is_nixos = vim.fn.filereadable('/etc/NIXOS') == 1
-			if is_nixos then return end
 			opts.ensure_installed = vim.list_extend(opts.ensure_installed or {}, {
 				'codelldb',
 				'js-debug-adapter',

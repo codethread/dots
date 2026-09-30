@@ -95,17 +95,7 @@ SCRIPTS="${ROOT}/config/nushell/scripts"
 
 host=$(nu -I "$SCRIPTS" -c 'use ct/nix.nu [nrs-flake-host]; nrs-flake-host')
 
-case "$(uname -s)" in
-Darwin) rebuild_cmd="darwin-rebuild" ;;
-Linux) rebuild_cmd="nixos-rebuild" ;;
-*) exit 0 ;;
-esac
-
-output=$("$rebuild_cmd" build --flake "${FLAKE}#${host}" 2>&1)
-rc=$?
-rm -f "${ROOT}/result"
-
-if [ $rc -ne 0 ]; then
+if ! output=$(nix build "${FLAKE}#darwinConfigurations.${host}.system" --no-link 2>&1); then
   echo "nix build failed:"
   echo "$output"
   exit 1

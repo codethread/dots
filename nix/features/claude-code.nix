@@ -86,11 +86,6 @@ in
       mkdir -p /tmp/claude && chmod 1777 /tmp/claude
     '';
 
-    # On Linux /tmp is a tmpfs cleared at reboot; recreate via systemd-tmpfiles
-    systemd.user.tmpfiles.rules = lib.optionals pkgs.stdenv.isLinux [
-      "d /tmp/claude 1777 - - -"
-    ];
-
     home.file.".claude/settings.json".text = builtins.toJSON {
       "$schema" = "https://json.schemastore.org/claude-code-settings.json";
       permissions = {

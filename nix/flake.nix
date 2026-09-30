@@ -1,5 +1,5 @@
 {
-  description = "codethread's system configuration — macOS (nix-darwin) + NixOS";
+  description = "codethread's system configuration — macOS (nix-darwin)";
 
   nixConfig = {
     extra-substituters = [ "https://cache.numtide.com" ];
@@ -223,47 +223,5 @@
       darwinConfigurations.work =
         darwinFor ./hosts/darwin/work-adamhall.nix "adamhall"
           ./profiles/work.nix;
-
-      # NixOS (homelab profile, Intel) — sudo nixos-rebuild switch --flake .#homelab
-      nixosConfigurations.homelab = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs = {
-          pkgsMaster = pkgsMasterFor "x86_64-linux";
-        };
-        modules = [
-          {
-            nixpkgs.overlays = [
-              llmAgentsOverlay
-              nufmtOverlay
-              todoistOverlay
-              nvimTreesitterJsoncOverlay
-            ];
-          }
-          ./hosts/nixos/homelab
-          home-manager.nixosModules.home-manager
-          (hmFor "codethread" ./profiles/homelab.nix (pkgsMasterFor "x86_64-linux"))
-        ];
-      };
-
-      # NixOS (VM on Apple Silicon) — sudo nixos-rebuild switch --flake .#vm
-      nixosConfigurations.vm = nixpkgs.lib.nixosSystem {
-        system = "aarch64-linux";
-        specialArgs = {
-          pkgsMaster = pkgsMasterFor "aarch64-linux";
-        };
-        modules = [
-          {
-            nixpkgs.overlays = [
-              llmAgentsOverlay
-              nufmtOverlay
-              todoistOverlay
-              nvimTreesitterJsoncOverlay
-            ];
-          }
-          ./hosts/nixos/vm-aarch
-          home-manager.nixosModules.home-manager
-          (hmFor "codethread" ./profiles/vm.nix (pkgsMasterFor "aarch64-linux"))
-        ];
-      };
     };
 }

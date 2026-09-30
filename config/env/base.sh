@@ -78,17 +78,10 @@ fi
 
 # Platform -------------------------------------------------------------------
 
-if [ -e /etc/NIXOS ]; then
-  IS_NIXOS=true
-  DOCKER_HOST="${DOCKER_HOST:-unix:///run/user/$(id -u)/podman/podman.sock}"
-  PLAYWRIGHT_MCP_EXECUTABLE_PATH="${PLAYWRIGHT_MCP_EXECUTABLE_PATH:-/etc/profiles/per-user/$USER/bin/chromium}"
+if [ "$ct_os" = Darwin ]; then
+  PLAYWRIGHT_MCP_EXECUTABLE_PATH="${PLAYWRIGHT_MCP_EXECUTABLE_PATH:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 else
-  IS_NIXOS=false
-  if [ "$ct_os" = Darwin ]; then
-    PLAYWRIGHT_MCP_EXECUTABLE_PATH="${PLAYWRIGHT_MCP_EXECUTABLE_PATH:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
-  else
-    PLAYWRIGHT_MCP_EXECUTABLE_PATH="${PLAYWRIGHT_MCP_EXECUTABLE_PATH:-/usr/bin/chromium}"
-  fi
+  PLAYWRIGHT_MCP_EXECUTABLE_PATH="${PLAYWRIGHT_MCP_EXECUTABLE_PATH:-/usr/bin/chromium}"
 fi
 
 # Agent and service state ----------------------------------------------------
@@ -188,9 +181,6 @@ ct_path_append "$XDG_STATE_HOME/nix/profile/bin"
 ct_path_append "/etc/profiles/per-user/$USER/bin"
 ct_path_append /run/current-system/sw/bin
 ct_path_append /nix/var/nix/profiles/default/bin
-if [ "$IS_NIXOS" = true ]; then
-  ct_path_append /run/wrappers/bin
-fi
 ct_path_append /opt/podman/bin
 
 if [ "$ct_os" = Darwin ]; then
