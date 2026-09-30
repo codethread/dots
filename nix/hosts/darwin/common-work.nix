@@ -3,7 +3,6 @@
 {
   imports = [
     ./millstrand.nix
-    ../../services/darwin-cc-notify.nix
   ];
 
   environment.systemPackages = with pkgs; [

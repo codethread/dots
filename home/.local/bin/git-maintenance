@@ -1,0 +1,56 @@
+#!/bin/bash
+# :module: Filter configured repositories and run incremental Git maintenance on macOS.
+set -euo pipefail
+
+usage() {
+  echo 'Usage: git-maintenance <register|hourly|daily|weekly>'
+  echo 'GIT_MAINTENANCE_REPOSITORIES contains one repository path per line (~ supported).'
+}
+
+case "${1:-}" in
+  -h|--help) usage; exit 0 ;;
+  register|hourly|daily|weekly) frequency="$1" ;;
+  *) usage >&2; exit 2 ;;
+esac
+[ "$#" -eq 1 ] || { usage >&2; exit 2; }
+: "${GIT_MAINTENANCE_REPOSITORIES:?Set the repository list through a mise profile}"
+
+# Use macOS Git, not an executable inside the Nix store or an interactive PATH.
+git=/usr/bin/git
+state_dir="$HOME/.local/state/com.codethread.git-maintenance"
+config="$state_dir/config"
+mkdir -p "$state_dir"
+tmp_config=$(mktemp "$state_dir/config.XXXXXX")
+trap 'rm -f "$tmp_config"' EXIT
+"$git" config --file "$tmp_config" maintenance.strategy incremental
+
+registered=0
+while IFS= read -r repo || [ -n "$repo" ]; do
+  [ -n "$repo" ] || continue
+  case "$repo" in
+    '~') repo="$HOME" ;;
+    '~/'*) repo="$HOME/${repo#\~/}" ;;
+  esac
+  if [ ! -d "$repo" ]; then
+    echo "Skipping Git maintenance for missing path: $repo"
+    continue
+  fi
+  if ! "$git" -C "$repo" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "Skipping Git maintenance for non-repo path: $repo"
+    continue
+  fi
+  "$git" -C "$repo" config maintenance.strategy incremental
+  "$git" -C "$repo" config maintenance.auto false
+  "$git" config --file "$tmp_config" --add maintenance.repo "$repo"
+  registered=$((registered + 1))
+done <<< "$GIT_MAINTENANCE_REPOSITORIES"
+
+mv -f "$tmp_config" "$config"
+trap - EXIT
+echo "Git maintenance registered $registered repo(s)"
+[ "$frequency" != register ] || exit 0
+
+# Keep machine-specific registrations out of the tracked global Git config.
+export GIT_CONFIG_GLOBAL="$config"
+exec "$git" for-each-repo --config=maintenance.repo --keep-going \
+  maintenance run --schedule="$frequency" --quiet

@@ -102,7 +102,6 @@ in
 {
   imports = [
     ./millstrand.nix
-    ../../services/darwin-cc-notify.nix
   ];
 
   services.openssh = {
@@ -115,10 +114,6 @@ in
       AllowUsers ct
     '';
   };
-
-  codethread.gitMaintenance.repositories = [
-    "${homeDir}/dev/projects/notes/vault"
-  ];
 
   launchd.user.agents = {
     backup-notes = {

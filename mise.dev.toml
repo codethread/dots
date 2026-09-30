@@ -1,0 +1,3 @@
+[vars]
+service_profile = "dev"
+git_maintenance_repositories = "~/dev/projects/notes/vault"

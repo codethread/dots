@@ -42,8 +42,6 @@ let
   ];
 in
 {
-  imports = [ ../../services/darwin-git-maintenance.nix ];
-
   nix.settings = {
     experimental-features = "nix-command flakes";
     accept-flake-config = true;
@@ -221,6 +219,7 @@ in
       "graphviz" # provides dot for diagraph
       "imagemagick" # image maker
       "node" # Runtime for user-owned global npm tools
+      "mise" # Stable native executable; owns cc-notify and Git maintenance LaunchAgents
       "gum" # beautiful shell TUI helpers
     ];
     extraConfig = ''

@@ -1,0 +1,3 @@
+[vars]
+service_profile = "work"
+git_maintenance_repositories = "~/pb/app/deals-light-ui"

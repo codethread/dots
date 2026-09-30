@@ -41,14 +41,10 @@ flake.nix (inputs, overlays, system configurations)
     ├─ profiles/<name>.nix           User-level: home-manager imports per role
     │   └─ imports features/*
     │
-    ├─ features/                     Reusable home-manager modules
-    │   ├─ home-base.nix            Home Manager state version and baseline user PATH
-    │   ├─ common.nix               Shared packages, activations, dotfile linking
-    │   └─ claude-code.nix           Claude Code settings.json generation
-    │
-    └─ services/
-        ├─ darwin-cc-notify.nix       cc-notify launchd service and checkout bootstrap
-        └─ darwin-git-maintenance.nix Declarative launchd git maintenance jobs
+    └─ features/                     Reusable home-manager modules
+        ├─ home-base.nix            Home Manager state version and baseline user PATH
+        ├─ common.nix               Shared packages, activations, dotfile linking
+        └─ claude-code.nix           Claude Code settings.json generation
 ```
 
 ### [SPEC-006-S2.2] System Configurations
@@ -121,12 +117,12 @@ Deliberately **not** shared via `hosts/darwin/common.nix` — each is tied to a 
 | Service | Declared in | Applies to | Notes |
 | --- | --- | --- | --- |
 | `syncengine` | `hosts/darwin/common.nix` | all macOS | The one exception; keeps `~/.local/bin/syncengine` running everywhere |
-| `git-maintenance-{hourly,daily,weekly}` | `services/darwin-git-maintenance.nix` | any host setting `codethread.gitMaintenance.repositories` | No-ops when the list is empty |
-| `cc-notify` | `services/darwin-cc-notify.nix` | dev, work | Clones + runs `codethread/cc-notify`; needs SSH auth to GitHub |
+| `git-maintenance-{hourly,daily,weekly}` | root `mise.toml` + profile overlay | dev, work | mise-owned LaunchAgents; filtered repository list, private state config |
+| `cc-notify` | root `mise.toml` + profile overlay | dev, work | mise-owned LaunchAgent; mise-managed Bun, explicit preparation before apply |
 | `backup-notes` | `hosts/darwin/dev.nix` | dev | Auto-commits the notes vault every 15 min |
 | `high-cpu-watch` | `hosts/darwin/dev.nix` | dev | Alerts via `cc-notify` after 10 min above 95% CPU |
 
-Adding a service to a host is a three-step change: import (or inline) the module, create its state dir in `system.activationScripts.postActivation`, and confirm any repo it depends on is cloned by an activation hook.
+cc-notify and Git maintenance have moved out of Nix; see [mise services](./mise-services.md). Nix only declares the Homebrew `mise` formula, keeping its executable at `/opt/homebrew/bin/mise`. `make system` does not apply mise services; use `mise -E dev run services:apply` (or `work`) separately. The remaining Nix-owned services retain their existing host declarations and activation hooks.
 
 ## [SPEC-006-S3] 3. Data Model
 
@@ -210,7 +206,7 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 
 - **Work boot profiles for username variants** — New work macOS machines may use `adam.hall` (dotted) or `adamhall`. Bootstrap supports both with minimal `work-boot` outputs. The full `work` output is intentionally single-user and only the current full-work username auto-promotes to it when workfiles exist; update `nix/flake.nix` and the rebuild wrapper's full-work username when the provisioned username changes.
 
-- **SSH-gated service cloning** — Service repos are cloned only if SSH auth to github.com succeeds (5s timeout, BatchMode). This prevents blocking the rebuild on machines without SSH keys or on first bootstrap before keys are deployed.
+- **Explicit mise service preparation** — cc-notify checkout/dependencies/credentials and Git maintenance registration are prepared by `mise -E dev run services:prepare` (or `work`), not Nix activation. Missing SSH access or credentials fails that explicit task before agents start. Services are not installed on personal or work-boot profiles.
 
 - **Neovim-managed Tree-sitter parsers** — `nvim-treesitter` installs the configured language list into Neovim's writable data directory (`stdpath('data')/site`); Lazy runs `:TSUpdate` when the plugin changes. Nix supplies Neovim and the `tree-sitter` CLI, not grammars or queries. Compilation uses the macOS Command Line Tools C compiler. On first launch, let parser installation finish, then reopen buffers for highlighting; additional languages can be installed with `:TSInstall <language>`.
 

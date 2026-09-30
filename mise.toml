@@ -1,0 +1,110 @@
+min_version = "2026.9.15"
+
+# This first mise migration is project-scoped; no shell activation is needed.
+[tools]
+bun = "1.4.2"
+
+[tasks."cc-notify:start"]
+description = "Run cc-notify in the foreground (launchd owns supervision)"
+dir = "{{ env.HOME }}/dev/projects/cc-notify"
+run = "exec bun run src/main.ts"
+
+[tasks."services:prepare"]
+description = "Prepare dependencies, credentials, logs, and filtered Git registrations"
+env.GIT_MAINTENANCE_REPOSITORIES = "{{ vars.git_maintenance_repositories }}"
+run = [
+  '"{{ config_root }}/home/.local/bin/mise-services-prepare"',
+  '"{{ config_root }}/home/.local/bin/git-maintenance" register',
+]
+
+[tasks."services:apply"]
+description = "Prepare then apply LaunchAgents; select -E dev or -E work"
+depends = ["services:prepare"]
+shell = "/bin/bash -c"
+run = '''
+for label in com.codethread.cc-notify com.codethread.git-maintenance.hourly com.codethread.git-maintenance.daily com.codethread.git-maintenance.weekly; do
+  if /bin/launchctl print "gui/$(/usr/bin/id -u)/$label" >/dev/null 2>&1; then
+    echo "Old Nix agent still loaded: $label. Switch the updated Nix configuration before applying mise services." >&2
+    exit 1
+  fi
+done
+mise bootstrap macos launchd-agents apply --yes
+'''
+
+[tasks."services:status"]
+description = "Show LaunchAgent definitions and whether they are loaded"
+run = "mise bootstrap macos launchd-agents status"
+
+# Do not use a bare `mise bootstrap`: its LaunchAgents phase precedes tools.
+# services:apply explicitly prepares everything before loading any agent.
+[bootstrap.macos.launchd.agents.cc-notify]
+program = "/opt/homebrew/bin/mise"
+args = [
+  "-C",
+  "{{ config_root }}",
+  "-E",
+  "{{ vars.service_profile }}",
+  "run",
+  "cc-notify:start",
+]
+working_directory = "~/dev/projects/cc-notify"
+run_at_load = true
+keep_alive = true
+environment = { HOME = "{{ env.HOME }}", PATH = "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
+stdout_path = "~/.local/state/com.codethread.cc-notify/std.log"
+stderr_path = "~/.local/state/com.codethread.cc-notify/std.log"
+
+[bootstrap.macos.launchd.agents.git-maintenance-hourly]
+program = "{{ config_root }}/home/.local/bin/git-maintenance"
+args = ["hourly"]
+environment = { HOME = "{{ env.HOME }}", GIT_MAINTENANCE_REPOSITORIES = "{{ vars.git_maintenance_repositories }}", PATH = "/usr/bin:/bin:/usr/sbin:/sbin" }
+start_calendar_interval = [
+  { hour = 1, minute = 53 },
+  { hour = 2, minute = 53 },
+  { hour = 3, minute = 53 },
+  { hour = 4, minute = 53 },
+  { hour = 5, minute = 53 },
+  { hour = 6, minute = 53 },
+  { hour = 7, minute = 53 },
+  { hour = 8, minute = 53 },
+  { hour = 9, minute = 53 },
+  { hour = 10, minute = 53 },
+  { hour = 11, minute = 53 },
+  { hour = 12, minute = 53 },
+  { hour = 13, minute = 53 },
+  { hour = 14, minute = 53 },
+  { hour = 15, minute = 53 },
+  { hour = 16, minute = 53 },
+  { hour = 17, minute = 53 },
+  { hour = 18, minute = 53 },
+  { hour = 19, minute = 53 },
+  { hour = 20, minute = 53 },
+  { hour = 21, minute = 53 },
+  { hour = 22, minute = 53 },
+  { hour = 23, minute = 53 },
+]
+stdout_path = "~/.local/state/com.codethread.git-maintenance/hourly.log"
+stderr_path = "~/.local/state/com.codethread.git-maintenance/hourly.log"
+
+[bootstrap.macos.launchd.agents.git-maintenance-daily]
+program = "{{ config_root }}/home/.local/bin/git-maintenance"
+args = ["daily"]
+environment = { HOME = "{{ env.HOME }}", GIT_MAINTENANCE_REPOSITORIES = "{{ vars.git_maintenance_repositories }}", PATH = "/usr/bin:/bin:/usr/sbin:/sbin" }
+start_calendar_interval = [
+  { weekday = 1, hour = 0, minute = 53 },
+  { weekday = 2, hour = 0, minute = 53 },
+  { weekday = 3, hour = 0, minute = 53 },
+  { weekday = 4, hour = 0, minute = 53 },
+  { weekday = 5, hour = 0, minute = 53 },
+  { weekday = 6, hour = 0, minute = 53 },
+]
+stdout_path = "~/.local/state/com.codethread.git-maintenance/daily.log"
+stderr_path = "~/.local/state/com.codethread.git-maintenance/daily.log"
+
+[bootstrap.macos.launchd.agents.git-maintenance-weekly]
+program = "{{ config_root }}/home/.local/bin/git-maintenance"
+args = ["weekly"]
+environment = { HOME = "{{ env.HOME }}", GIT_MAINTENANCE_REPOSITORIES = "{{ vars.git_maintenance_repositories }}", PATH = "/usr/bin:/bin:/usr/sbin:/sbin" }
+start_calendar_interval = { weekday = 0, hour = 0, minute = 53 }
+stdout_path = "~/.local/state/com.codethread.git-maintenance/weekly.log"
+stderr_path = "~/.local/state/com.codethread.git-maintenance/weekly.log"

@@ -13,6 +13,19 @@
 curl -fsSL https://raw.githubusercontent.com/codethread/dots/main/boot/boot.sh | DOTFILES="$HOME/dev/dots" bash -s --
 ```
 
+## Mise services (macOS)
+
+Mise owns cc-notify and Git maintenance; Nix currently installs mise through Homebrew. From this checkout, select `dev` or `work` explicitly:
+
+```nu
+mise -E dev tasks
+mise -E dev bootstrap macos launchd-agents apply --dry-run
+mise -E dev run services:apply
+mise -E dev run services:status
+```
+
+On an existing Nix installation, switch the updated Nix configuration **before** applying the mise agents so both managers never run the same service. See [mise services](devflow/specs/mise-services.md) for first-time setup, migration, logs, and restart commands. No shell activation is required.
+
 ## Formatting
 
 Install the development dependencies with `pnpm install`, then format Markdown with `pnpm fmt`. Use `pnpm fmt:check` to check formatting without writing changes. The pre-commit hook runs Oxfmt directly on staged Markdown files.

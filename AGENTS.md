@@ -4,6 +4,8 @@
 
 New machine → `boot/boot.sh`. Existing clone → `make system`. Optional local tool rebuild → `make build`.
 
+cc-notify and Git maintenance are owned separately by root `mise.toml` with explicit `dev`/`work` overlays. Load the mise skill before changing them; use `mise -E dev run services:apply` (or `work`), not bare `mise bootstrap`, so preparation finishes before agents load. See `devflow/specs/mise-services.md` for migration and verification. Apply from a durable checkout: generated agents reference its absolute path.
+
 ## Directories
 
 - **boot/** - System setup scripts. Go here to bootstrap a new machine.
