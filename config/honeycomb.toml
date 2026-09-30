@@ -6,6 +6,10 @@
 # Environment variables available to the command:
 #   WK_ROOT     canonical/root worktree path
 #   WK_CREATED  created worktree path or allocated pool slot path
+#
+# New worktrees and pool slots are created under <canonical-root>/.worktrees/
+# by default; set `worktree_location` on a rule or project to override.
+worktree_location = "nested"
 
 # Defaults are conservative: start new work from a fresh canonical root, but do
 # not push or clean up automatically unless a repo group opts in below.
@@ -56,8 +60,10 @@ delete_branch = true
 root_glob = "~/pb/**"
 pre_remote_check = "scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware wktree operations' >&2; exit 1; }"
 
+# Deals UI keeps sibling worktrees for its prepared pool of slots.
 [[rule]]
 root_glob = "~/pb/app/deals-light-ui*/**"
+worktree_location = "sibling"
 pre_remote_check = "git remote prune origin && scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware wktree operations' >&2; exit 1; }"
 
 
