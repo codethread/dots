@@ -6,7 +6,7 @@
 
 let
   agentPkgSet = if pkgsMaster == null then pkgs else pkgsMaster;
-  pi = agentPkgSet."llm-agents".pi.override { useBun = true; };
+  pi = agentPkgSet."llm-agents".pi.override { useBun = false; }; # bun doesn't bundle codemode
 
   piNvimTarball = pkgs.fetchurl {
     url = "https://registry.npmjs.org/pi-nvim/-/pi-nvim-0.2.4.tgz";
