@@ -4,7 +4,7 @@ sandbox_mode = "danger-full-access"
 approval_policy = "never"
 personality = "pragmatic"
 model_reasoning_effort = "xhigh"
-model = "gpt-6-astra"
+model = "gpt-6-sol"
 approvals_reviewer = "user"
 service_tier = "default"
 
@@ -113,5 +113,5 @@ source_type = "git"
 source = "https://github.com/codethread/agents.git"
 
 [marketplaces.harnesses]
-source_type = "git"
-source = "https://github.com/codethread/harnesses.spool.git"
+source_type = "local"
+source = "/Users/ct/dev/projects/millhouse.spool/spools/harnesses"
