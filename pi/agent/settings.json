@@ -29,9 +29,6 @@
 		},
 		{
 			"source": "./packages/pi-goal"
-		},
-		{
-			"source": "./packages/pi-mcp-adapter"
 		}
 	],
 	"hideThinkingBlock": true,

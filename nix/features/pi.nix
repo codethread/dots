@@ -49,42 +49,6 @@ let
     tar -xzf ${highlightJsTarball} --strip-components=1 -C "$out/node_modules/highlight.js"
   '';
 
-  piMcpAdapterSrc = pkgs.fetchFromGitHub {
-    owner = "nicobailon";
-    repo = "pi-mcp-adapter";
-    rev = "v2.28.0";
-    hash = "sha256-NPeVITORXcJevXrBhHdiunwPiOzx+8Wzx2M03alXW2E=";
-  };
-
-  piMcpAdapterProdSrc = pkgs.runCommand "pi-mcp-adapter-2.28.0-src" { } ''
-    cp -R ${piMcpAdapterSrc} "$out"
-    chmod -R u+w "$out"
-    ${pkgs.jq}/bin/jq 'del(.devDependencies)' \
-      "$out/package.json" > "$out/package.json.tmp"
-    mv "$out/package.json.tmp" "$out/package.json"
-
-    ${pkgs.jq}/bin/jq '
-      del(.packages[""].devDependencies)
-      | .packages |= with_entries(select(.value.dev != true))
-    ' "$out/package-lock.json" > "$out/package-lock.json.tmp"
-    mv "$out/package-lock.json.tmp" "$out/package-lock.json"
-  '';
-
-  piMcpAdapter = pkgs.buildNpmPackage {
-    pname = "pi-mcp-adapter";
-    version = "2.28.0";
-    src = piMcpAdapterProdSrc;
-
-    npmDepsHash = "sha256-VkatFWEjFJG++Js9xkm0fR0P30F/lBENOj4YhSu0J2E=";
-    npmPackFlags = [ "--ignore-scripts" ];
-    dontNpmBuild = true;
-
-    meta = {
-      description = "Connect Pi to MCP servers with progressive tool discovery";
-      homepage = "https://github.com/nicobailon/pi-mcp-adapter";
-      license = pkgs.lib.licenses.mit;
-    };
-  };
 in
 {
   home.packages = [ pi ];
@@ -92,6 +56,5 @@ in
   home.file = {
     ".pi/agent/packages/pi-nvim".source = piNvim;
     ".pi/agent/packages/pi-goal".source = piGoal;
-    ".pi/agent/packages/pi-mcp-adapter".source = piMcpAdapter + "/lib/node_modules/pi-mcp-adapter";
   };
 }
