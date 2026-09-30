@@ -14,11 +14,6 @@
     llm-agents.url = "github:numtide/llm-agents.nix";
     nufmt.url = "github:nushell/nufmt";
 
-    tree-sitter-jsonc-src = {
-      url = "github:lymansix/tree-sitter-jsonc";
-      flake = false;
-    };
-
     todoist-src = {
       url = "github:codethread/todoist/codethread";
       flake = false;
@@ -42,7 +37,6 @@
       nixpkgs-master,
       llm-agents,
       nufmt,
-      tree-sitter-jsonc-src,
       todoist-src,
       nix-darwin,
       home-manager,
@@ -67,66 +61,6 @@
             goyacc -o filter_parser.go filter_parser.y
           '';
         };
-      };
-
-      nvimTreesitterJsoncOverlay = final: prev: {
-        vimPlugins = prev.vimPlugins.extend (
-          self: super:
-          if (super.nvim-treesitter.parsers or { }) ? jsonc then
-            { }
-          else
-            let
-              jsoncParser = final.tree-sitter.buildGrammar {
-                language = "jsonc";
-                version = "0-unstable";
-                src = tree-sitter-jsonc-src;
-                meta.homepage = "https://github.com/lymansix/tree-sitter-jsonc";
-              };
-
-              jsoncPlugin = final.neovimUtils.grammarToPlugin jsoncParser;
-
-              builtGrammars = super.nvim-treesitter.builtGrammars // {
-                jsonc = jsoncParser;
-                "tree-sitter-jsonc" = jsoncParser;
-              };
-
-              grammarPlugins = super.nvim-treesitter.grammarPlugins // {
-                jsonc = jsoncPlugin;
-              };
-
-              allGrammars = super.nvim-treesitter.allGrammars ++ [ jsoncParser ];
-
-              withPlugins =
-                f:
-                let
-                  selectedGrammars = f (final.tree-sitter.builtGrammars // builtGrammars);
-                  grammarPlugins' = map final.neovimUtils.grammarToPlugin selectedGrammars;
-                  queryPlugins = final.lib.pipe selectedGrammars [
-                    (map (grammar: grammar.associatedQuery or null))
-                    (final.lib.filter (query: query != null))
-                  ];
-                in
-                self.nvim-treesitter.overrideAttrs {
-                  passthru.dependencies = grammarPlugins' ++ queryPlugins;
-                };
-            in
-            {
-              nvim-treesitter = super.nvim-treesitter.overrideAttrs (old: {
-                passthru = (old.passthru or { }) // {
-                  parsers = (super.nvim-treesitter.parsers or { }) // {
-                    jsonc = jsoncPlugin;
-                  };
-                  inherit
-                    builtGrammars
-                    grammarPlugins
-                    allGrammars
-                    withPlugins
-                    ;
-                  withAllGrammars = withPlugins (_: allGrammars);
-                };
-              });
-            }
-        );
       };
 
       # Each host picks a profile from nix/profiles/ and binds it to one user.
@@ -162,7 +96,6 @@
                 llmAgentsOverlay
                 nufmtOverlay
                 todoistOverlay
-                nvimTreesitterJsoncOverlay
               ];
             }
             (darwinUser username)
@@ -179,7 +112,6 @@
           overlays = [
             llmAgentsOverlay
             nufmtOverlay
-            nvimTreesitterJsoncOverlay
           ];
           config.allowUnfree = true;
           config.allowUnsupportedSystem = true;

@@ -221,12 +221,13 @@ in
       "graphviz" # provides dot for diagraph
       "imagemagick" # image maker
       "node" # Runtime for user-owned global npm tools
+      "gum" # beautiful shell TUI helpers
     ];
     extraConfig = ''
       npm "@playwright/cli"
     '';
     casks = [
-      "gum" # beautiful shell TUI helpers
+      "codex" # OpenAI coding agent CLI
       "kitty" # GPU-based terminal emulator
       "ghostty"
       "aerospace" # AeroSpace is an i3-like tiling window manager for macOS

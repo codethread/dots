@@ -15,13 +15,6 @@ let
     ln -s ${lib.getExe cursorAgent} "$out/bin/agent"
   '';
 
-  # Pre-compiled treesitter parsers — avoids recompilation on every nvim
-  # launch (nix store GC invalidates dynamically-compiled .so paths)
-  treesitter-parsers = pkgs.symlinkJoin {
-    name = "nvim-treesitter-parsers";
-    paths = (pkgs.vimPlugins.nvim-treesitter.withAllGrammars).passthru.dependencies;
-  };
-
   # Package executable bindings
   atuinCmd = lib.getExe pkgs.atuin;
   carapaceCmd = lib.getExe pkgs.carapace;
@@ -90,7 +83,6 @@ in
   ];
 
   home.file = {
-    ".local/share/nvim/nix-treesitter-parsers".source = treesitter-parsers;
     ".local/share/atuin/init.nu" = {
       source = atuinNushellInit;
       force = true;
@@ -199,7 +191,6 @@ in
     agentPkgSet.typescript
     agentPkgSet.typescript-language-server
     llmAgents.claude-code
-    llmAgents.codex
     cursorAgent
     cursorAgentCommand
 
@@ -249,7 +240,7 @@ in
     btop
     dust
     stylua
-    tree-sitter
+    tree-sitter # CLI for nvim-treesitter; Neovim owns parser installation
     wakatime-cli
     prettierd
     nixfmt

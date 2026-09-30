@@ -206,8 +206,7 @@
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-master": "nixpkgs-master",
         "nufmt": "nufmt",
-        "todoist-src": "todoist-src",
-        "tree-sitter-jsonc-src": "tree-sitter-jsonc-src"
+        "todoist-src": "todoist-src"
       }
     },
     "systems": {
@@ -239,22 +238,6 @@
         "owner": "codethread",
         "ref": "codethread",
         "repo": "todoist",
-        "type": "github"
-      }
-    },
-    "tree-sitter-jsonc-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1760758290,
-        "narHash": "sha256-SazxjhbqJ9dstCDV12qjCMIKTRQ9QKJGjxvBprDReJo=",
-        "owner": "lymansix",
-        "repo": "tree-sitter-jsonc",
-        "rev": "e56e61c2d2f980a28787c1dad5d015387b0f252f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "lymansix",
-        "repo": "tree-sitter-jsonc",
         "type": "github"
       }
     },

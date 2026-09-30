@@ -1,23 +1,12 @@
-local uv = vim.uv or vim.loop
-local nix_parsers_dir = vim.fn.stdpath 'data' .. '/nix-treesitter-parsers'
-local use_nix_parsers = uv.fs_stat(nix_parsers_dir) ~= nil
-
 ---@diagnostic disable: missing-fields
 return {
 	{
 		'nvim-treesitter/nvim-treesitter',
 		branch = 'main',
-		build = use_nix_parsers and nil or ':TSUpdate',
+		lazy = false,
+		build = ':TSUpdate',
 		dependencies = { 'andymass/vim-matchup' },
 		config = function()
-			-- Keep the config runtime first so its queries can override Nix-provided
-			-- queries, while preferring Nix over plugin-provided parsers and queries.
-			if use_nix_parsers and not vim.tbl_contains(vim.opt.rtp:get(), nix_parsers_dir) then
-				local runtimepath = vim.opt.rtp:get()
-				table.insert(runtimepath, 2, nix_parsers_dir)
-				vim.opt.rtp = runtimepath
-			end
-
 			-- Enable treesitter highlighting and indentation for all filetypes with a parser.
 			vim.api.nvim_create_autocmd('FileType', {
 				group = vim.api.nvim_create_augroup('CodeThreadTreesitter', { clear = true }),
@@ -49,8 +38,8 @@ return {
 				{ 'css','scss','html','jsdoc','javascript','typescript','tsx','graphql','styled' },
 				-- webish
 				{ 'embedded_template','http','prisma','proto' },
-				-- config
-				{ 'dockerfile','json','json5','jsonc','make','toml','yaml' },
+				-- config (the json parser also handles jsonc)
+				{ 'dockerfile','json','json5','make','nix','toml','yaml' },
 				-- git
 				{ 'diff','git_rebase','gitattributes','gitcommit' },
 				-- vim
@@ -59,13 +48,9 @@ return {
 				{ 'comment','todotxt','markdown','markdown_inline','regex' },
 			}):flatten():totable()
 
-			if not use_nix_parsers then
-				require('nvim-treesitter.configs').setup {
-					parser_install_dir = vim.fn.stdpath 'data' .. '/site',
-					ensure_installed = parsers,
-					auto_install = false,
-				}
-			end
+			-- Install missing parsers asynchronously; :TSUpdate handles plugin upgrades.
+			-- The default data/site directory keeps config queries first on runtimepath.
+			require('nvim-treesitter').install(parsers)
 
 			vim.treesitter.language.register('devicetree', 'keymap')
 		end,

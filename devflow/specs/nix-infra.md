@@ -212,7 +212,7 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 
 - **SSH-gated service cloning** — Service repos are cloned only if SSH auth to github.com succeeds (5s timeout, BatchMode). This prevents blocking the rebuild on machines without SSH keys or on first bootstrap before keys are deployed.
 
-- **Pre-compiled treesitter parsers via Nix** — `nvim-treesitter` grammars are built by Nix and symlinked into `~/.local/share/nvim/nix-treesitter-parsers`, avoiding runtime compilation.
+- **Neovim-managed Tree-sitter parsers** — `nvim-treesitter` installs the configured language list into Neovim's writable data directory (`stdpath('data')/site`); Lazy runs `:TSUpdate` when the plugin changes. Nix supplies Neovim and the `tree-sitter` CLI, not grammars or queries. Compilation uses the macOS Command Line Tools C compiler. On first launch, let parser installation finish, then reopen buffers for highlighting; additional languages can be installed with `:TSInstall <language>`.
 
 - **Generated shell init scripts** — `atuin`, `carapace`, and `direnv` init scripts are generated at Nix eval time and written to `~/.local/cache/`. This avoids runtime generation costs in shell startup.
 
