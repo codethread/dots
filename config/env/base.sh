@@ -41,7 +41,7 @@ XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.local/cache}"
 
 EDITOR="${EDITOR:-nvim}"
-ct_inherited_shell="${SHELL:-/bin/bash}"
+ct_inherited_shell="${SHELL:-}"
 
 ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}"
 VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
@@ -220,17 +220,27 @@ if [ "$ct_project_path_first" = false ]; then
   ct_path_append_list "$ct_inherited_path"
 fi
 PATH=$ct_path
-SHELL="zsh"
-# if command -v nu >/dev/null 2>&1; then
-#   SHELL="$(command -v nu)"
-# else
-#   SHELL=$ct_inherited_shell
-# fi
+ct_shell_candidate=${ct_inherited_shell:-zsh}
+ct_shell_resolution_failed=false
+if ct_resolved_shell=$(command -v "$ct_shell_candidate") &&
+  [ "${ct_resolved_shell#/}" != "$ct_resolved_shell" ] &&
+  [ -x "$ct_resolved_shell" ]; then
+  SHELL=$ct_resolved_shell
+else
+  printf 'could not resolve SHELL to an executable path: %s\n' "$ct_shell_candidate" >&2
+  ct_shell_resolution_failed=true
+fi
 
 unset ct_dir ct_inherited_path ct_inherited_shell ct_os ct_path ct_project_path_first ct_remaining
+unset ct_resolved_shell ct_shell_candidate
 
 unset -f ct_path_append ct_path_append_list 2>/dev/null || true
 if [ "$ct_restore_allexport" = true ]; then
   set +a
 fi
 unset ct_restore_allexport
+if [ "$ct_shell_resolution_failed" = true ]; then
+  unset ct_shell_resolution_failed
+  return 1
+fi
+unset ct_shell_resolution_failed

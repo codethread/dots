@@ -1,7 +1,7 @@
 #!/bin/sh
 # Machine adapters for the shared environment contract.
 
-. "${DOTFILES:-$HOME/dev/dots}/config/env/base.sh"
+. "${DOTFILES:-$HOME/dev/dots}/config/env/base.sh" || exit 1
 
 ct_env_stream0() {
   # Bash provides NUL-delimited read support missing from portable sh.
@@ -31,6 +31,7 @@ case "${1:-}" in
       HOME="$HOME" \
       USER="$USER" \
       DOTFILES="$DOTFILES" \
+      SHELL="$SHELL" \
       PATH=/usr/bin:/bin:/usr/sbin:/sbin \
       /bin/sh "$DOTFILES/config/env/emit.sh" --print0 | bash -c '
       while IFS= read -r -d "" entry; do
