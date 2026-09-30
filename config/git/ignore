@@ -100,3 +100,6 @@ scratch.nu
 
 # millstrand
 .millstrand/.land-merge-lock.acquire
+
+# beads
+.beads/.br-wal-index-*/
