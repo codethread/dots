@@ -33,7 +33,7 @@ env.DOTFILES = "{{ config_root }}"
 shell = "/bin/bash -c"
 run = '''
 set -euo pipefail
-nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --no-cache | ignore'
+nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --no-cache ($env.DOTFILES | path join "config/dotty/dotty.toml") | ignore'
 git -C "$DOTFILES" config core.hooksPath .githooks
 '''
 
