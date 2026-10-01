@@ -142,17 +142,14 @@ export def nrs [profile?: string, --update(-u)] {
     _with-build-lock $lock $rebuild
 }
 
-# Queue a command on the shared build lock. flock is only present once the
-# system has switched at least once, so fresh installs run without it.
+# Queue a command on the shared build lock, ahead of agents' queued runs.
+# qlock is only linked once dotty has run, so fresh installs run without it.
 def _with-build-lock [lock: string, cmd: list<string>] {
-    if (which flock | is-empty) {
+    if (which qlock | is-empty) {
         run-external ...$cmd
     } else {
-        if (^flock -n $lock true | complete).exit_code != 0 {
-            print $"(ansi yellow)Waiting for build lock ($lock) up to 180s...(ansi reset)"
-        }
         # -E 99 marks a lock-wait timeout apart from a failed command
-        run-external "flock" "-w" "180" "-E" "99" $lock ...$cmd
+        run-external "qlock" "-w" "180" "-E" "99" "--urgent" "user: nrs system switch" $lock ...$cmd
     }
 }
 

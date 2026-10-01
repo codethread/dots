@@ -1,0 +1,263 @@
+#!/usr/bin/env bash
+# :module: ticketed shared lock: take a place in line, await your turn, exec your command
+set -euo pipefail
+shopt -s nullglob
+
+GRACE=30
+
+usage() {
+  cat <<'EOF'
+Usage:
+  qlock -w SECS [--urgent REASON] LOCK CMD...  take + await + exec in one call
+  qlock take [--urgent REASON] LOCK            print a new ticket id on stdout
+  qlock await -w SECS --ticket ID LOCK         wait up to SECS for the ticket's turn
+  qlock exec --ticket ID LOCK CMD...           run CMD on a ready ticket
+  qlock status LOCK                            show the running command and queue
+
+Tickets are served in arrival order. A ready ticket must be exec'd within 30s
+or it is dropped. The slot frees when the exec'd command exits or its qlock
+process dies.
+
+For agents:
+  - Start with the one-call form, e.g. qlock -w 180 LOCK make check
+  - On timeout (exit 75) your ticket keeps its place; continue in ONE call:
+      qlock await -w 180 --ticket ID LOCK && qlock exec --ticket ID LOCK CMD...
+  - --urgent takes the next turn without pre-empting a ready or running ticket.
+    Use it only for merge/verify gates or when the user is blocked on the result.
+  - If the running command looks stuck, confirm its owner is no longer working
+    before killing the pid that `qlock status LOCK` reports.
+
+Options:
+  -w SECS          required for waiting; -1 waits forever (avoid in agents: a
+                   long blocking call outlives the prompt cache)
+  -E CODE          exit code when a wait times out (default: 75)
+  --urgent REASON  join the urgent lane; REASON is shown to other waiters
+
+Exit codes: 75 still queued (or not ready, for exec), 3 ticket gone (take a
+new one), 2 usage; otherwise CMD's exit code. Killing qlock with SIGKILL
+leaves CMD running without the lock.
+EOF
+}
+
+die() {
+  printf 'qlock: %s\n' "$1" >&2
+  exit "${2:-2}"
+}
+
+sub=run
+case "${1:-}" in
+  take | await | exec | status) sub=$1; shift ;;
+esac
+wait_max="" timeout_code=75 reason="" ticket=""
+while (($#)); do
+  case "$1" in
+    -h | --help) usage; exit 0 ;;
+    -w) wait_max="$2"; shift 2 ;;
+    -E) timeout_code="$2"; shift 2 ;;
+    --urgent) reason="$2"; shift 2 ;;
+    --ticket) ticket="$2"; shift 2 ;;
+    --) shift; break ;;
+    -*) die "unknown option $1 (see qlock -h)" ;;
+    *) break ;;
+  esac
+done
+(($#)) || die "missing LOCK (see qlock -h)"
+lock=$1
+shift
+case $sub in
+  take | await | status) (($# == 0)) || die "$sub takes no command" ;;
+  *) (($#)) || die "missing CMD (see qlock -h)" ;;
+esac
+if [[ $sub == await || $sub == exec ]]; then
+  [[ $ticket =~ ^[0-9]+$ ]] || die "$sub needs --ticket ID"
+  ticket=$((10#$ticket))
+fi
+if [[ $sub == await || $sub == run ]]; then
+  [[ -n $wait_max ]] || die "-w SECS is required (-1 waits forever)"
+  [[ $wait_max =~ ^(-1|[0-9]+)$ ]] || die "-w needs whole seconds or -1"
+  if [[ $wait_max == -1 ]]; then
+    printf 'qlock: -w -1 waits forever; agents should use a bounded wait and await again so long waits do not outlive the prompt cache\n' >&2
+    wait_max=""
+  fi
+fi
+
+state="$lock.d"
+tdir="$state/tickets"
+mkdir -p "$tdir"
+
+# Ticket files are named <lane>-<seq> (lane 0 is urgent), so glob order is
+# serving order. Fields are appended as key=value lines; the last one wins.
+lock_state() {
+  exec 8>>"$state/meta"
+  if command -v flock >/dev/null 2>&1; then flock 8; else lockf -s 8; fi
+}
+unlock_state() { exec 8>&-; }
+field() { sed -n "s/^$1=//p" "$2" 2>/dev/null | tail -n 1; }
+ticket_file() { printf '%s' "$tdir"/*-"$(printf %06d "$1")"; }
+ticket_id() { printf '%s' "$((10#${1##*-}))"; }
+
+# The ticket that owns the turn: a ready or running one, else the first in line.
+head_ticket() {
+  local f
+  for f in "$tdir"/*; do
+    [[ -z $(field ready "$f") ]] || { printf '%s' "$f"; return 0; }
+  done
+  for f in "$tdir"/*; do printf '%s' "$f"; return 0; done
+}
+
+# Every call moves the turn on, so no daemon is needed: dead runners and
+# expired ready tickets are removed, then the next ticket is marked ready.
+advance() {
+  local head pid ready
+  while head=$(head_ticket) && [[ -n $head ]]; do
+    pid=$(field pid "$head")
+    ready=$(field ready "$head")
+    if [[ -n $pid ]]; then
+      kill -0 "$pid" 2>/dev/null && return 0
+    elif [[ -n $ready ]]; then
+      ((EPOCHSECONDS - ready < GRACE)) && return 0
+    else
+      printf 'ready=%s\n' "$EPOCHSECONDS" >>"$head"
+      return 0
+    fi
+    rm -f "$head"
+  done
+}
+
+# Serving order: the head first, then the rest in glob order.
+in_order() {
+  local head f
+  head=$(head_ticket)
+  [[ -n $head ]] || return 0
+  printf '%s\n' "$head"
+  for f in "$tdir"/*; do [[ $f == "$head" ]] || printf '%s\n' "$f"; done
+}
+
+# Sets pos (0 when the ticket is gone), total and urgent_ahead for ticket file $1.
+locate() {
+  local f n=0
+  pos=0 total=0 urgent_ahead=0
+  while read -r f; do
+    n=$((n + 1))
+    if [[ $f == "$1" ]]; then
+      pos=$n
+    elif ((pos == 0)) && [[ ${f##*/} == 0-* ]]; then
+      urgent_ahead=$((urgent_ahead + 1))
+    fi
+  done < <(in_order)
+  total=$n
+}
+
+describe() {
+  local pid ready
+  pid=$(field pid "$1")
+  ready=$(field ready "$1")
+  printf 'ticket %s' "$(ticket_id "$1")"
+  if [[ -n $pid ]]; then
+    printf ' running pid %s "%s" %ss' "$pid" "$(field cmd "$1")" "$((EPOCHSECONDS - $(field started "$1")))"
+  elif [[ -n $ready ]]; then
+    printf ' ready, %ss left to exec' "$((GRACE - (EPOCHSECONDS - ready)))"
+  else
+    printf ' queued'
+  fi
+  printf ' (%s)' "$(basename "$(field cwd "$1")")"
+  [[ -z $(field reason "$1") ]] || printf ' [urgent: %s]' "$(field reason "$1")"
+}
+
+gone() {
+  die "ticket $ticket is gone (finished, or dropped after missing its ${GRACE}s exec window); take a new one" 3
+}
+
+take() {
+  local seq lane=1
+  [[ -z $reason ]] || lane=0
+  lock_state
+  seq=$(($(cat "$state/seq" 2>/dev/null || echo 0) + 1))
+  printf '%s\n' "$seq" >"$state/seq"
+  tfile="$tdir/$lane-$(printf %06d "$seq")"
+  printf '%s\n' "cwd=$PWD" "reason=$reason" >"$tfile"
+  advance
+  locate "$tfile"
+  unlock_state
+  ticket=$seq
+}
+
+await_turn() {
+  local started=$SECONDS next=$SECONDS waited head msg
+  while :; do
+    lock_state
+    advance
+    locate "$tfile"
+    head=$(head_ticket)
+    msg="#$pos/$total"
+    ((urgent_ahead)) && msg+=" · $urgent_ahead urgent ahead"
+    [[ -z $head || $head == "$tfile" ]] || msg+=" · $(describe "$head")"
+    unlock_state
+    ((pos)) || gone
+    ((pos == 1)) && return 0
+    waited=$((SECONDS - started))
+    if [[ -n $wait_max ]] && ((waited >= wait_max)); then
+      printf 'qlock: ticket %s still queued after %ss · %s · keep your place: qlock await -w %s --ticket %s %s && qlock exec --ticket %s %s CMD...\n' \
+        "$ticket" "$waited" "$msg" "$wait_max" "$ticket" "$lock" "$ticket" "$lock" >&2
+      exit "$timeout_code"
+    fi
+    if ((SECONDS >= next)); then
+      printf 'qlock: ticket %s waiting %s · waited %ss%s\n' "$ticket" "$msg" "$waited" "${wait_max:+/${wait_max}s}" >&2
+      next=$((SECONDS + 15))
+    fi
+    sleep 1
+  done
+}
+
+exec_ticket() {
+  local child rc
+  lock_state
+  advance
+  [[ -e $tfile ]] || { unlock_state; gone; }
+  if [[ $(head_ticket) != "$tfile" || -n $(field pid "$tfile") ]]; then
+    locate "$tfile"
+    unlock_state
+    die "ticket $ticket is not ready (#$pos/$total); qlock await -w SECS --ticket $ticket $lock first" 75
+  fi
+  printf '%s\n' "pid=$$" "cmd=$*" "started=$EPOCHSECONDS" >>"$tfile"
+  unlock_state
+  trap 'rm -f "$tfile"' EXIT
+  # The command stays this process's child; signals to qlock are forwarded so
+  # the slot is only freed once the command has exited.
+  "$@" <&0 &
+  child=$!
+  trap 'kill -TERM "$child" 2>/dev/null' INT TERM HUP
+  while :; do
+    rc=0
+    wait "$child" || rc=$?
+    kill -0 "$child" 2>/dev/null || break
+  done
+  exit "$rc"
+}
+
+case $sub in
+  take)
+    take
+    printf 'qlock: ticket %s · #%s/%s · next: qlock await -w SECS --ticket %s %s && qlock exec --ticket %s %s CMD...\n' \
+      "$ticket" "$pos" "$total" "$ticket" "$lock" "$ticket" "$lock" >&2
+    printf '%s\n' "$ticket"
+    ;;
+  await)
+    tfile=$(ticket_file "$ticket")
+    await_turn
+    printf 'qlock: ticket %s ready · exec within %ss: qlock exec --ticket %s %s CMD...\n' "$ticket" "$GRACE" "$ticket" "$lock" >&2
+    ;;
+  exec) tfile=$(ticket_file "$ticket"); exec_ticket "$@" ;;
+  run) take; await_turn; exec_ticket "$@" ;;
+  status)
+    lock_state
+    advance
+    n=0
+    while read -r f; do
+      n=$((n + 1))
+      printf '#%s %s\n' "$n" "$(describe "$f")"
+    done < <(in_order)
+    ((n)) || printf 'free\n'
+    unlock_state
+    ;;
+esac
