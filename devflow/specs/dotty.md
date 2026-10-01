@@ -22,7 +22,7 @@ General-purpose dotfile symlink manager written in Nushell. Takes a TOML configu
 
 ### [SPEC-003-S1.3] Non-Goals
 
-- Managing application-specific config generation (that's each tool's concern; e.g. `claude-code.nix` generates `settings.json`)
+- Managing application-specific config generation (that's each tool's concern; e.g. mise renders `templates/claude-settings.json.tera` to `~/.claude/settings.json`)
 - Package installation or system configuration (that's Nix)
 - Text template rendering or variable substitution in linked files
 - Structured formats other than TOML (the merge architecture may add formats later)

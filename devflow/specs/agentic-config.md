@@ -3,17 +3,17 @@
 - Document ID: SPEC-001
 - Configuration identification: SPEC-001; migrated from `specs/agentic-config.md`; canonical path `devflow/specs/agentic-config.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-07-23
+- **Last Updated:** 2026-09-30
 
 ## [SPEC-001-S1] 1. Overview
 
 ### [SPEC-001-S1.1] Purpose
 
-Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related agent CLIs. Manages package provisioning, settings generation, hook compilation, asset symlinks, plugin wiring, and shell wrappers — so that a single `make system && make link && make build` produces a fully-configured agentic environment from source.
+Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related agent CLIs. Manages package provisioning, settings generation, hook compilation, asset symlinks, plugin wiring, and shell wrappers — with `make system`, `make link`, and `make build` provisioning packages/assets/tools, and `mise -E dev run claude:apply` (or `work`) applying global Claude settings.
 
 ### [SPEC-001-S1.2] Goals
 
-- Single source of truth for global settings in Nix (`nix/features/claude-code.nix`)
+- Single source of truth for global Claude settings in `templates/claude-settings.json.tera`, rendered by mise
 - On macOS, nix-darwin declares Homebrew's native Codex CLI and Playwright CLI uses a user-writable npm prefix, while Claude and Pi come from `llm-agents`
 - All agent assets (agents, skills, commands, rules) version-controlled and symlinked into place via dotty
 - Type-safe hook contracts shared across TypeScript and Bash implementations
@@ -39,9 +39,9 @@ Four configuration layers compose at runtime:
 │   Owns: agent CLI binaries                          │
 ├─────────────────────────────────────────────────────┤
 │                                                     │
-│ Layer 1: Nix-generated globals                      │
-│   nix/features/claude-code.nix                      │
-│     → ~/.claude/settings.json (read-only, Nix store)│
+│ Layer 1: Mise-rendered globals                      │
+│   templates/claude-settings.json.tera               │
+│     → ~/.claude/settings.json (regular file)        │
 │   Owns: permissions, hooks, env vars, plugins,      │
 │         marketplaces, feature flags                  │
 ├─────────────────────────────────────────────────────┤
@@ -64,12 +64,13 @@ Four configuration layers compose at runtime:
 └─────────────────────────────────────────────────────┘
 ```
 
-Settings merge order: Nix globals → project settings → local overrides. Agent CLI packages are supplied separately by the flake package layer. This spec covers the package layer plus layers 1 and 2 only.
+Settings merge order: mise globals → project settings → local overrides. Agent CLI packages are supplied separately by the flake package layer. This spec covers the package layer plus layers 1 and 2 only.
 
 ### [SPEC-001-S2.1] Build Pipeline
 
 ```
-make system  →  nix rebuild  →  ~/.claude/settings.json regenerated
+make system  →  nix rebuild  →  agent CLI packages provisioned
+mise -E dev run claude:apply → ~/.claude/settings.json rendered + /tmp/claude prepared
 make link    →  dotty link   →  claude/ assets symlinked to ~/.claude/
 make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
 ```
@@ -137,44 +138,25 @@ The `config` project covers `config/codex/` → `~/.config/codex/` as part of th
 
 ## [SPEC-001-S4] 4. Interfaces
 
-### [SPEC-001-S4.1] Settings Generation (`nix/features/claude-code.nix`)
+### [SPEC-001-S4.1] Settings Generation (`templates/claude-settings.json.tera`)
 
-**Permissions:**
+Mise owns `~/.claude/settings.json` as a rendered regular file via `.mise/conf.d/claude-code.toml`; dotty excludes it. Apply with `mise -E dev run claude:apply` or `-E work`. That task prepares `/tmp/claude` with mode `1777`. See [Claude README](../../claude/README.md) for the apply workflow.
 
-- Allow: `Bash`, `Edit(.claude)`, `WebFetch`, `WebSearch`, `Skill`, context7 MCP tools
-- Deny: secret file reads (`*.key`, `*.pem`, `.env*`, `.netrc`, `id_rsa*`, `secrets/**`), dangerous git ops (`reset --hard`, `clean -f`, `branch -D`, `config`, `commit --amend`, `rebase -i`), `.git/hooks/**`, Plan/statusline-setup agents, `NotebookEdit`, `AskUserQuestion`, `EnterPlanMode`, `ExitPlanMode`
-- Default mode: `acceptEdits`
-- Additional directories: `~/dev/dots`, `~/.local`, `~/.claude`, `~/dev`, `~/work`, `~/work/me/workfiles`
+**Permissions:** The template preserves the previous allow/deny lists, `acceptEdits` default mode, and additional directories (`$DOTFILES`, `~/.local`, `~/.claude`, `~/dev`, `~/pb`). Secret-file reads, plan/worktree/cron tools, and other unwanted tools remain denied.
 
-**Hooks (global):**
+**Global hook:** `PostToolUse[Write]` runs inline `git add -N` for new files. Status line uses `cc-statusline`.
 
-| Event | Handler | Type | Behavior |
-| --- | --- | --- | --- |
-| SessionStart | `cc-hook--context-injector session-start` | TS | Scans README.md files, outputs listing as plain text to stdout |
-| PreToolUse[Bash] | `cc-hook--npm-redirect` | TS | Redirects npm/npx/node to detected package manager |
-| PostToolUse[Write] | `git add -N` | inline | Intent-to-add for new files |
-| SessionEnd | `cc-hook--context-injector session-end` | TS | Removes session state file |
-
-**Plugin hooks (wired by the cc-notify plugin itself, not the Nix module; available when `enableNotify=true`):**
-
-Note: `PermissionRequest` is a Claude Code hook event not represented in the TypeScript type system (`oven/shared/claude-hooks.ts`). It is handled only by the bash hook `cc-hook--notify`.
-
-| Event             | Handler             | Type | Behavior                                |
-| ----------------- | ------------------- | ---- | --------------------------------------- |
-| Stop              | `cc-hook--notify`   | bash | Schedule 60s delayed push notification  |
-| PermissionRequest | `cc-hook--notify`   | bash | Schedule notification with tool context |
-| UserPromptSubmit  | `cc-hook--activity` | bash | Cancel pending notification             |
-| SessionEnd        | `cc-hook--activity` | bash | Cancel pending notification             |
-
-**Environment variables (13):** Disables telemetry, error reporting, feedback, auto-memory, cron, MCP servers, terminal title, 1M context, tool search. Keeps auto-updater enabled (`DISABLE_AUTOUPDATER=0`). Enables PWD maintenance. Sets MANPAGER=cat, ZDOTDIR=~/.config/zsh-claude.
-
-**Nix option:** `ct.claude-code.enableNotify` (boolean) gates cc-notify plugin and its hooks.
+**Environment:** Keeps the previous environment variables, including `TMPDIR=/tmp/claude`, disabled auto-updater/feedback/error reporting/auto-memory/terminal titles, project PWD maintenance, and `MANPAGER=cat`. `SHELL` resolves Bash from PATH at render time rather than retaining a Nix store path.
 
 **Plugins & Marketplaces:**
 
-- Official marketplace: `frontend-design`, `typescript-lsp`, `claude-md-management`
-- `codethread-plugins` (local dir `~/dev/projects/claude-code-plugins`): `claude-code-knowledge`, `bdfl`, `dev`
-- `cc-notify-marketplace` (GitHub `codethread/cc-notify`, conditional): `cc-notify`
+- Shared: `claude-md-management@claude-plugins-official`, `harness@agents`, `coding@agents`; `devflow@agents` disabled
+- Personal/dev (`claude_work_machine=false`, the default): `claude-code-knowledge` and `dev` from the local `claude-code-plugins` marketplace, `writing@agents`
+- Work (`mise.work.toml`, `claude_work_machine=true`): `admin` and `backend` from `local-work`; `pb-prose`, `pb-news`, and `pb-claude-harness-engineering` from `pb-claude`
+- Local marketplaces resolve under the current user's home directory, including the existing work checkout paths
+- `claude_enable_notify` defaults to `false`; opt in via `[vars]` in untracked `mise.local.toml` to add `cc-notify@cc-notify-marketplace` and its GitHub marketplace. Notification hooks belong to that plugin; daemon deployment is separate via `services:apply`
+
+All remaining feature flags and skill overrides are preserved in the template. Project-local settings and local overrides are not managed by this resource.
 
 ### [SPEC-001-S4.2] Agents
 
@@ -245,7 +227,7 @@ Direct `pi` invocation with shared repo-aware configuration:
 ### [SPEC-001-S4.10] Nushell Wrappers (`config/nushell/scripts/ct/interactive/claude.nu`)
 
 - `clf`/`clo`/`cls`/`clh` — model-specific Claude wrappers (fable/opus/sonnet/haiku)
-- `--output-style` and `--settings` (a nushell record) serialise to `claude --settings '<json>'`, giving per-session overrides of the Nix-managed globals
+- `--output-style` and `--settings` (a nushell record) serialise to `claude --settings '<json>'`, giving per-session overrides of the mise-managed globals
 - output style defaults to `pairing` for tty sessions; `--print` runs omit it so headless output stays terse
 - `cll` — ephemeral haiku session with auto-cleanup of session files
 - `_claude-session`, `_claude-prompts`, `_claude-session-stats` — session log analysis
@@ -281,11 +263,11 @@ Disables Ctrl+A in Global context.
 
 ## [SPEC-001-S5] 5. Design Decisions
 
-- **Nix as settings source of truth.** `~/.claude/settings.json` is Nix-store-linked and read-only. Prevents drift from manual edits. Trade-off: requires `make system` (nix rebuild) to change global settings.
+- **Mise as settings source of truth.** `templates/claude-settings.json.tera` renders to a regular `~/.claude/settings.json`; profile overlays select work plugins and marketplaces. Applying settings no longer requires a Nix rebuild. Manual edits to the output are overwritten on apply; use project-local or local override settings for overrides.
 
 - **Native package ownership on macOS.** nix-darwin declares Homebrew's native Node and Codex packages, while Playwright is npm-managed in `~/.local` and Claude and Pi come from `llm-agents`. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
 
-- **Dotty for asset linking, not Nix.** Agents, skills, commands, and rules are symlinked by dotty rather than Nix home-manager. This allows editing assets in dots and seeing changes immediately without a nix rebuild. Settings.json (which is JSON and auto-generated) stays in Nix.
+- **Dotty for asset linking, not Nix.** Agents, skills, commands, and rules are symlinked by dotty rather than Nix home-manager. This allows editing assets in dots and seeing changes immediately without a nix rebuild. Global settings are templated by mise separately from asset linking.
 
 - **x-agents/ prefix convention.** Disabled agents live in `claude/x-agents/` — the prefix keeps them out of Claude's discovery path while keeping them version-controlled for re-enablement.
 

@@ -77,7 +77,6 @@ in
 {
   imports = [
     ./home-base.nix
-    ./claude-code.nix
     ./pi.nix
     ./zsh-completions.nix
   ];

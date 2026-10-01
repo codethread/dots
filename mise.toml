@@ -1,10 +1,10 @@
 min_version = "2026.9.15"
 
-# This first mise migration is project-scoped; no shell activation is needed.
+# Mise-managed services and Claude settings are project-scoped; no activation needed.
 [tools]
 bun = "1.4.2"
 
-# Native service declarations live in .mise/conf.d/*.toml.
+# Native services and Claude settings declarations live in .mise/conf.d/*.toml.
 # Do not use a bare `mise bootstrap`: its LaunchAgents phase precedes tools.
 # services:apply explicitly prepares everything before loading any agent.
 [tasks."services:prepare"]

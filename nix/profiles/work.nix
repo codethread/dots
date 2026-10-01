@@ -8,8 +8,6 @@
     ../features/common.nix
   ];
 
-  ct.claude-code.workMachine = true;
-
   home.packages = with pkgs; [
     # --- AWS / infra ---
     awscli2

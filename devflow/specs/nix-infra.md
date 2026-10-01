@@ -44,7 +44,7 @@ flake.nix (inputs, overlays, system configurations)
     └─ features/                     Reusable home-manager modules
         ├─ home-base.nix            Home Manager state version and baseline user PATH
         ├─ common.nix               Shared packages, activations, dotfile linking
-        └─ claude-code.nix           Claude Code settings.json generation
+        └─ pi.nix                    Pi package provisioning
 ```
 
 ### [SPEC-006-S2.2] System Configurations
@@ -121,6 +121,8 @@ Deliberately **not** shared via `hosts/darwin/common.nix` — each is tied to a 
 | `cc-notify` | `.mise/conf.d/cc-notify.toml` + profile overlay | dev, work | mise-owned LaunchAgent; mise-managed Bun, explicit preparation before apply |
 | `backup-notes` | `hosts/darwin/dev.nix` | dev | Auto-commits the notes vault every 15 min |
 | `high-cpu-watch` | `hosts/darwin/dev.nix` | dev | Alerts via `cc-notify` after 10 min above 95% CPU |
+
+Claude settings also live outside Nix: `.mise/conf.d/claude-code.toml` renders `templates/claude-settings.json.tera` with `mise -E dev run claude:apply` (or `work`). See [Claude settings](../../claude/README.md) for the apply workflow.
 
 cc-notify and Git maintenance have moved out of Nix; see [mise services](./mise-services.md). Nix only declares the Homebrew `mise` formula, keeping its executable at `/opt/homebrew/bin/mise`. `make system` does not apply mise services; use `mise -E dev run services:apply` (or `work`) separately. The remaining Nix-owned services retain their existing host declarations and activation hooks.
 

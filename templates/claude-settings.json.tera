@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "cleanupPeriodDays": 999,
+  "env": {
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "true",
+    "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
+    "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "1",
+    "CLAUDE_CODE_NO_FLICKER": "1",
+    "DISABLE_AUTOUPDATER": "1",
+    "DISABLE_ERROR_REPORTING": "1",
+    "DISABLE_FEEDBACK_COMMAND": "1",
+    "MANPAGER": "cat",
+    "SHELL": {{ exec(command="command -v bash") | json_encode }},
+    "TMPDIR": "/tmp/claude"
+  },
+  "includeCoAuthoredBy": false,
+  "includeGitInstructions": false,
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Edit(.claude)",
+      "Read(//tmp/claude/**)",
+      "Edit(//tmp/claude/**)",
+      "WebFetch",
+      "WebSearch",
+      "Skill",
+      "mcp__context7__*",
+      "mcp__claude_ai_Microsoft_365__*",
+      "mcp__atlassian__*"
+    ],
+    "deny": [
+      "Agent(Plan)",
+      "Agent(statusline-setup)",
+      "NotebookEdit",
+      "WaitForMcpServers",
+      "AskUserQuestion",
+      "EnterPlanMode",
+      "ExitPlanMode",
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "EnterWorktree",
+      "ExitWorktree",
+      "LSP",
+      "Workflow",
+      "ShareOnboardingGuide",
+      "DesignSync",
+      "Read(**/*.key)",
+      "Read(~/*.key)",
+      "Read(**/*.pem)",
+      "Read(~/*.pem)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/.env.local)",
+      "Read(**/.env.production)",
+      "Read(**/.git/hooks/**)",
+      "Read(**/id_rsa*)",
+      "Read(**/secrets/**)",
+      "Read(**/.netrc)",
+      "Read(~/.netrc)"
+    ],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "$DOTFILES",
+      "~/.local",
+      "~/.claude",
+      "~/dev",
+      "~/pb"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "microsoft365"
+  ],
+  "skillOverrides": {
+    "autofix-pr": "off",
+    "batch": "off",
+    "claude-api": "off",
+    "code-review": "off",
+    "deep-research": "off",
+    "fewer-permission-prompts": "off",
+    "init": "off",
+    "loop": "off",
+    "plan": "off"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | xargs git add -N 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  },
+  "disableWorkflows": true,
+  "respondToBashCommands": false,
+  "statusLine": {
+    "type": "command",
+    "command": "cc-statusline",
+    "padding": 0
+  },
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true,
+    "harness@agents": true,
+    "devflow@agents": false,
+    "coding@agents": true,
+{%- if vars.claude_enable_notify %}
+    "cc-notify@cc-notify-marketplace": true,
+{%- endif %}
+{%- if vars.claude_work_machine %}
+    "admin@local-work": true,
+    "backend@local-work": true,
+    "pb-prose@pb-claude": true,
+    "pb-news@pb-claude": true,
+    "pb-claude-harness-engineering@pb-claude": true
+{%- else %}
+    "claude-code-knowledge@claude-code-plugins": true,
+    "dev@claude-code-plugins": true,
+    "writing@agents": true
+{%- endif %}
+  },
+  "extraKnownMarketplaces": {
+    "agents": {
+      "source": {
+        "source": "directory",
+        "path": {{ (env.HOME ~ "/dev/projects/agents") | json_encode }}
+      }
+    },
+    "claude-code-plugins": {
+      "source": {
+        "source": "directory",
+        "path": {{ (env.HOME ~ "/dev/projects/claude-code-plugins") | json_encode }}
+      }
+    }{% if vars.claude_work_machine or vars.claude_enable_notify %},{% endif %}
+{%- if vars.claude_work_machine %}
+    "local-work": {
+      "source": {
+        "source": "directory",
+        "path": {{ (env.HOME ~ "/pb/adam.hall/local-work-claude") | json_encode }}
+      }
+    },
+    "pb-claude": {
+      "source": {
+        "source": "directory",
+        "path": {{ (env.HOME ~ "/pb/ai/tools/claude-plugins") | json_encode }}
+      }
+    }{% if vars.claude_enable_notify %},{% endif %}
+{%- endif %}
+{%- if vars.claude_enable_notify %}
+    "cc-notify-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "codethread/cc-notify"
+      }
+    }
+{%- endif %}
+  },
+  "outputStyle": "Proactive",
+  "spinnerTipsEnabled": false,
+  "ultracode": false,
+  "fastMode": false,
+  "promptSuggestionEnabled": false,
+  "autoUpdatesChannel": "latest",
+  "autoMemoryEnabled": false,
+  "skipDangerousModePermissionPrompt": true,
+  "disableAutoMode": "disable",
+  "theme": "auto",
+  "editorMode": "vim",
+  "verbose": false,
+  "preferredNotifChannel": "notifications_disabled",
+  "autoCompactEnabled": false,
+  "autoScrollEnabled": true,
+  "fileCheckpointingEnabled": false,
+  "showTurnDuration": true,
+  "terminalProgressBarEnabled": true,
+  "teammateMode": "in-process",
+  "useAutoModeDuringPlan": false
+}

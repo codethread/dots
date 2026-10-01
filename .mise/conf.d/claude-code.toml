@@ -1,0 +1,23 @@
+[vars]
+claude_work_machine = false
+claude_enable_notify = false
+
+[dotfiles."~/.claude/settings.json"]
+source = "../../templates/claude-settings.json.tera"
+mode = "template"
+
+[bootstrap.directories."/tmp/claude"]
+mode = "1777"
+
+[tasks."claude:apply"]
+description = "Render global Claude settings and prepare its temporary directory"
+shell = "/bin/bash -c"
+run = '''
+set -e
+mise bootstrap files apply --yes
+mise dot apply --yes "$HOME/.claude/settings.json"
+'''
+
+[tasks."claude:status"]
+description = "Show global Claude settings and temporary directory state"
+run = ["mise dot status", "mise bootstrap files status"]

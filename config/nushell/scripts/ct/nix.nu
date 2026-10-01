@@ -351,7 +351,7 @@ export def nix-smoke [
         )
     }
 
-    # Generated and Nix-managed files are regular files, not dotty symlinks.
+    # Generated configs are managed separately from dotty's asset symlinks.
     let codex_config = $xdg_config | path join "codex/config.toml"
     $checks = (
         $checks
@@ -363,7 +363,7 @@ export def nix-smoke [
         $checks
         | append (
             (_smoke-check
-                "config: claude settings (nix)"
+                "config: claude settings (mise)"
                 ($claude_settings | path exists)
                 $claude_settings
             )

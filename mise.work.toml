@@ -1,3 +1,4 @@
 [vars]
 service_profile = "work"
+claude_work_machine = true
 git_maintenance_repositories = "~/pb/app/deals-light-ui"

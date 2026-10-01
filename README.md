@@ -26,6 +26,17 @@ mise -E dev run services:status
 
 On an existing Nix installation, switch the updated Nix configuration **before** applying the mise agents so both managers never run the same service. See [mise services](devflow/specs/mise-services.md) for first-time setup, migration, logs, and restart commands. No shell activation is required.
 
+## Claude Code settings
+
+Mise renders global Claude settings from `templates/claude-settings.json.tera`, with profile-specific plugins selected by `mise.dev.toml` / `mise.work.toml`. Apply settings from this checkout:
+
+```nu
+mise -E dev run claude:apply
+mise -E dev run claude:status
+```
+
+Use `-E work` on a work machine. See [Claude settings](claude/README.md) for previews, plugin opt-ins, and ownership details. Applying settings does not apply services.
+
 ## Formatting
 
 Install the development dependencies with `pnpm install`, then format Markdown with `pnpm fmt`. Use `pnpm fmt:check` to check formatting without writing changes. The pre-commit hook runs Oxfmt directly on staged Markdown files.

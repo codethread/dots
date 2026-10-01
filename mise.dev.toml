@@ -1,3 +1,4 @@
 [vars]
 service_profile = "dev"
+claude_work_machine = false
 git_maintenance_repositories = "~/dev/projects/notes/vault"
