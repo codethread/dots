@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# :module: Install/update agent CLIs through their official installers.
+set -euo pipefail
+
+case "${1:-}" in
+  install|update) action=$1 ;;
+  -h|--help)
+    echo 'Usage: mise-llm install|update (via mise run llm:install or llm:update)'
+    exit 0
+    ;;
+  *) echo 'Expected install or update (see --help)' >&2; exit 2 ;;
+esac
+if [[ $# != 1 ]]; then
+  echo 'Expected exactly one action (see --help)' >&2
+  exit 2
+fi
+
+: "${DOTFILES:?Run through the llm:install or llm:update mise task}"
+source "$DOTFILES/config/env/base.sh"
+local_bin="$HOME/.local/bin"
+pi_bin="$PI_CODING_AGENT_DIR/bin/pi"
+node_bin=$(dirname "$(node -p 'process.execPath')")
+system_path="$node_bin:/usr/bin:/bin:/usr/sbin:/sbin"
+tmp=$(mktemp -d)
+trap 'rm -rf -- "$tmp"' EXIT
+
+# Vendor installers replace launchers. Refuse to overwrite custom launchers;
+# Pi is deliberately installed elsewhere so the pies wrapper stays untouched.
+check_launcher() {
+  local binary=$1 root=$2 target
+  if [[ -e "$binary" || -L "$binary" ]]; then
+    target=$(realpath "$binary")
+    case "$target" in
+      "$root/"*) ;;
+      *) echo "Refusing to replace custom launcher: $binary -> $target" >&2; exit 1 ;;
+    esac
+  fi
+}
+check_launcher "$local_bin/claude" "$HOME/.local/share/claude/versions"
+check_launcher "$local_bin/agent" "$HOME/.local/share/cursor-agent/versions"
+check_launcher "$local_bin/cursor-agent" "$HOME/.local/share/cursor-agent/versions"
+check_launcher "$local_bin/codex" "$CODEX_HOME/packages/standalone"
+check_launcher "$local_bin/codex-code-mode-host" "$CODEX_HOME/packages/standalone"
+
+run_installer() {
+  local name=$1 url=$2 installer_path=$3
+  echo "Installing $name with $url"
+  # Finish the download before executing it; a partial script must never run.
+  curl -fsSL "$url" -o "$tmp/$name.sh"
+  # Detach from /dev/tty to suppress vendor prompts. Scoped PATH keeps other
+  # installations from triggering migrations or shell-profile edits.
+  PATH="$installer_path" CODEX_NON_INTERACTIVE=1 node - "$tmp/$name.sh" <<'JS'
+const { spawn } = require('node:child_process');
+const child = spawn('/bin/bash', [process.argv[2]], { detached: true, stdio: 'inherit' });
+// The installer has no controlling terminal; forward cancellation to its group.
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, () => process.kill(-child.pid, signal));
+}
+child.on('error', error => { throw error; });
+child.on('exit', (code, signal) => process.exit(code ?? (signal === 'SIGINT' ? 130 : 1)));
+JS
+}
+
+if [[ ! -x "$local_bin/claude" ]]; then
+  run_installer claude https://claude.ai/install.sh "$local_bin:$system_path"
+elif [[ $action == update ]]; then
+  "$local_bin/claude" update
+fi
+
+if [[ ! -x "$local_bin/agent" ]]; then
+  run_installer cursor https://cursor.com/install "$local_bin:$system_path"
+elif [[ $action == update ]]; then
+  "$local_bin/agent" update
+fi
+
+# OpenAI documents rerunning the installer for standalone updates.
+if [[ ! -x "$local_bin/codex" || $action == update ]]; then
+  run_installer codex https://chatgpt.com/codex/install.sh "$local_bin:$system_path"
+fi
+
+if [[ ! -x "$pi_bin" ]]; then
+  run_installer pi https://pi.dev/install.sh "$PI_CODING_AGENT_DIR/bin:$system_path"
+fi
+if [[ $action == update ]]; then
+  # Explicit updates need network access, regardless of session defaults.
+  env -u PI_OFFLINE "$pi_bin" update --all
+fi
+
+for binary in "$local_bin/claude" "$local_bin/agent" "$local_bin/codex" "$pi_bin"; do
+  printf '\n%s\n' "$binary"
+  "$binary" --version
+done

@@ -39,7 +39,7 @@ flake.nix (system configurations)
     ├─ profiles/<name>.nix          Home Manager state-only imports
     └─ features/home-base.nix       State version and baseline user PATH
 
-config/mise/                       Global runtimes and agent CLIs (dotty-linked)
+config/mise/                       Global runtimes and versioned tools (dotty-linked)
 .mise/conf.d/                      Project-scoped mise workstation resources/tasks
 mise.<profile>.toml                Machine package, tool, and service overlays
 ```
@@ -61,13 +61,14 @@ Nix uses one `nixpkgs` input for the remaining Darwin system packages and servic
 - `config/mise/config.toml`: global tools; `.mise/conf.d/tools.toml` links the same declarations into this project before first bootstrap.
 - `.mise/conf.d/packages.toml` plus `mise.<profile>.toml`: Homebrew formulae and casks.
 - `config/mise/config.{dev,work}.toml`: profile-specific tools outside this checkout, mirrored from root overlays.
-- `packages:apply`: versioned tools, host packages, pinned Todoist build, Playwright CLI, and VS Code extensions.
+- `.mise/conf.d/llm.toml`: official Claude/Cursor/Codex/Pi installers and explicit updates.
+- `packages:apply`: versioned tools, host packages, missing agent CLIs, pinned Todoist build, Playwright CLI, and VS Code extensions.
 
 Homebrew itself installs mise; nix-darwin's Homebrew module remains disabled. Existing local agent wrappers/installations take precedence over mise shims intentionally.
 
 ### [SPEC-006-S2.4] Custom CLI Sources
 
-The `llm-agents`, `nixpkgs-master`, `nufmt`, and `todoist-src` flake inputs and overlays are removed. Mise supplies native Claude/Cursor releases and the Node distribution of Pi (the Bun binary previously lacked codemode worker assets). Pi installs `pi-nvim` and `@narumitw/pi-goal` directly from npm declarations in its settings.
+Mise tasks orchestrate the official Claude, Cursor, Codex, and Pi installers. Pi's managed installer uses Node and locked npm dependencies; Pi installs `pi-nvim` and `@narumitw/pi-goal` from its settings.
 
 `.mise/conf.d/todoist.toml` pins the codethread fork and builds its committed generated parser with mise Go. Nufmt is a pinned Git/Cargo tool. QMK uses PyPI; Vault and cargo-lambda use release binaries, avoiding unsupported/source-only Homebrew tap recipes.
 

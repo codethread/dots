@@ -177,6 +177,8 @@ if [ -n "${_VOLTA_TOOL_RECURSION+x}" ]; then
   done
 fi
 ct_path_append "$HOME/.local/bin"
+# Pi's official managed launcher follows local wrappers.
+ct_path_append "$PI_CODING_AGENT_DIR/bin"
 # Global defaults without interactive activation; local wrappers (notably Pi)
 # stay first. Project mise exec environments retain their selected tool paths.
 ct_path_append "${MISE_DATA_DIR:-$XDG_DATA_HOME/mise}/shims"

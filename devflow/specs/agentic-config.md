@@ -35,7 +35,7 @@ Four configuration layers compose at runtime:
 ```
 ┌─────────────────────────────────────────────────────┐
 │ Package layer                                        │
-│   macOS: Homebrew Codex/Node + ~/.local npm globals │
+│   Official agent installers via mise tasks         │
 │   Owns: agent CLI binaries                          │
 ├─────────────────────────────────────────────────────┤
 │                                                     │
@@ -64,7 +64,7 @@ Four configuration layers compose at runtime:
 └─────────────────────────────────────────────────────┘
 ```
 
-Settings merge order: mise globals → project settings → local overrides. Agent CLI packages are supplied separately by mise global tools and host package declarations. This spec covers the package layer plus layers 1 and 2 only.
+Settings merge order: mise globals → project settings → local overrides. Agent CLI packages are supplied separately by official installers orchestrated through mise tasks. This spec covers the package layer plus layers 1 and 2 only.
 
 ### [SPEC-001-S2.1] Build Pipeline
 
@@ -79,11 +79,11 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 
 ### [SPEC-001-S2.2] Package Provisioning
 
-- Mise declares Homebrew Node/Codex and the user-prefix Playwright CLI in `.mise/conf.d/packages.toml`.
-- Global mise tools provide Claude, Cursor (`cursor-agent` and `agent`), and `npm:@earendil-works/pi-coding-agent` with Node. They are available outside this checkout through `config/mise/` and shims.
-- Pi installs missing `npm:pi-nvim` and `npm:@narumitw/pi-goal` extensions from `pi/agent/settings.json`; use `pi update --extensions` to update them. The shared shell environment no longer forces offline mode.
+- Mise declares Homebrew Node and the user-prefix Playwright CLI in `.mise/conf.d/packages.toml`; global mise tools provide the default Node runtime.
+- `.mise/conf.d/llm.toml` orchestrates official Claude, Cursor (`cursor-agent` and `agent`), Codex, and Pi installers through `home/.local/bin/mise-llm`. `llm:install` installs only missing CLIs; `llm:update` updates them and Pi's npm extensions, stopping on failure.
+- Pi installs missing `npm:pi-nvim` and `npm:@narumitw/pi-goal` extensions from `pi/agent/settings.json`.
 
-`packages:apply` installs missing host packages without pruning or upgrading existing formulae. Use explicit mise package upgrades or `mise upgrade` for versioned tools. Pi's version is pinned in global tool config. `~/.local/bin` stays ahead of shims to preserve the custom Pi wrapper and existing native agent overrides. `nix-smoke` still checks that the binaries are present.
+`packages:apply` includes `llm:install`. `~/.local/bin` precedes `$PI_CODING_AGENT_DIR/bin` and mise shims, preserving the custom Pi wrapper. See the [mise cheat sheet](../../docs/mise.md#update-llm-tools) for install/update commands.
 
 - `config/dotty/dotty.toml` links the tracked `pi/` directory into `~/.pi/agent`
 - Most mutable Pi config now lives in `https://github.com/codethread/agents`; this repo keeps the `pi/agent.njk` template plus minimal bootstrap files and symlinks that make Pi consume the shared prompt/config layout
@@ -221,10 +221,11 @@ Direct `pi` invocation with shared repo-aware configuration:
 
 ### [SPEC-001-S4.9] Agent CLI Packages
 
-- `config/mise/config.toml`: native Claude/Cursor, Node-based Pi, TypeScript and its language server.
-- `.mise/conf.d/packages.toml`: Homebrew Codex/Node and user-prefix Playwright CLI.
+- `.mise/conf.d/llm.toml` and `home/.local/bin/mise-llm`: official agent CLI installation and updates.
+- `config/mise/config.toml`: runtimes, TypeScript and its language server.
+- `.mise/conf.d/packages.toml`: Homebrew Node, user-prefix Playwright CLI, and bootstrap's `llm:install` step.
 - `.mise/conf.d/tools.toml`: project link to the global tools file, so first bootstrap does not require installed global config.
-- `pi/agent/settings.json`: Pi-owned npm extension installation; no Nix tarballs or manually assembled dependency trees.
+- `pi/agent/settings.json`: Pi-owned npm extension declarations.
 
 ### [SPEC-001-S4.10] Nushell Wrappers (`config/nushell/scripts/ct/interactive/claude.nu`)
 
@@ -267,7 +268,7 @@ Disables Ctrl+A in Global context.
 
 - **Mise as settings source of truth.** `templates/claude-settings.json.tera` renders to a regular `~/.claude/settings.json`; profile overlays select work plugins and marketplaces. Applying settings no longer requires a Nix rebuild. Manual edits to the output are overwritten on apply; use project-local or local override settings for overrides.
 
-- **Native package ownership on macOS.** Mise declares host packages and global tools; Playwright is npm-managed in `~/.local`, and Pi uses its npm/Node distribution. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
+- **One owner per agent CLI.** Official vendor installers own Claude, Cursor, Codex, and Pi; mise tasks orchestrate install/update operations. Node remains mise-managed, Playwright is npm-managed in `~/.local`, and Pi uses its official locked Node/npm installation. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
 
 - **Dotty for asset linking, not Nix.** Agents, skills, commands, and rules are symlinked by dotty rather than Nix home-manager. This allows editing assets in dots and seeing changes immediately without a nix rebuild. Global settings are templated by mise separately from asset linking.
 

@@ -15,11 +15,12 @@ curl -fsSL https://raw.githubusercontent.com/codethread/dots/main/boot/boot.sh |
 
 ## Mise packages and services (macOS)
 
-Mise owns user CLI packages, language runtimes, agent CLIs, macOS host packages, cc-notify, and Git maintenance. Global tool defaults live in `config/mise/config.toml` and are linked by dotty; `.mise/conf.d/tools.toml` loads the same definitions in this checkout. `boot/boot.sh` installs Homebrew and mise (`brew install mise`), then applies packages with `mise -C "$DOTFILES" -E <mise-profile> run packages:apply` before the Nix switch and `workstation:setup` afterwards; `work-adamhall-boot` maps to the `work-boot` mise profile. Package lists live in `.mise/conf.d/packages.toml` plus `mise.{dev,work,personal,work-boot}.toml`, while `mise.toml` holds the service Bun pin and shared tasks. From this checkout, select `dev` or `work` explicitly:
+Mise owns user CLI packages, language runtimes, macOS host packages, cc-notify, and Git maintenance, and orchestrates official agent CLI installers. Global tool defaults live in `config/mise/config.toml` and are linked by dotty; `.mise/conf.d/tools.toml` loads the same definitions in this checkout. `boot/boot.sh` installs Homebrew and mise (`brew install mise`), then applies packages with `mise -C "$DOTFILES" -E <mise-profile> run packages:apply` before the Nix switch and `workstation:setup` afterwards; `work-adamhall-boot` maps to the `work-boot` mise profile. Package lists live in `.mise/conf.d/packages.toml` plus `mise.{dev,work,personal,work-boot}.toml`, while `mise.toml` holds the service Bun pin and shared tasks. From this checkout, select `dev` or `work` explicitly:
 
 ```nu
 mise -E dev run packages:apply
 mise -E dev run packages:status
+mise -E dev run llm:update       # Claude, Cursor Agent, Codex, Pi, and Pi npm extensions
 mise -E dev run workstation:apply # packages, repos, dotfiles, shell caches; no services
 mise -E dev bootstrap packages apply --dry-run
 
@@ -29,7 +30,7 @@ mise -E dev run services:apply
 mise -E dev run services:status
 ```
 
-`packages:apply` installs versioned tools and host packages, builds the pinned Todoist fork, then installs user-prefix `@playwright/cli` and VS Code extensions; the dry run previews host packages only. Applying packages never prunes unlisted packages or upgrades existing formulae, and `mise install` covers versioned tools only. Upgrade Homebrew formulae explicitly with `mise -E dev bootstrap packages upgrade --manager brew`.
+`packages:apply` installs versioned tools and host packages, runs `llm:install` for missing agent CLIs, builds the pinned Todoist fork, then installs user-prefix `@playwright/cli` and VS Code extensions; the dry run previews host packages only. Applying packages never prunes unlisted packages or upgrades existing formulae, and `mise install` covers versioned tools only. Upgrade Homebrew formulae explicitly with `mise -E dev bootstrap packages upgrade --manager brew`.
 
 On an existing Nix installation, switch the updated Nix configuration **before** applying the mise agents so both managers never run the same service. Nix no longer installs or upgrades Homebrew packages. See [mise services](devflow/specs/mise-services.md) for first-time setup, migration, logs, and restart commands; [docs/mise.md](docs/mise.md) has the full command cheat sheet. No shell activation is required.
 

@@ -67,7 +67,6 @@
 "brew:mise" = { os = "macos" }
 "brew:gum" = { os = "macos" }
 "brew:sderosiaux/tap/launchdeck" = { os = "macos" }
-"brew-cask:codex" = { os = "macos" }
 "brew-cask:kitty" = { os = "macos" }
 "brew-cask:ghostty" = { os = "macos" }
 "brew-cask:nikitabobko/tap/aerospace" = { os = "macos" }
@@ -88,10 +87,11 @@ vscode_extensions = "cunbidun.flash-vscode haphazarddev.oil-code vscodevim.vim d
 vscode_work_extensions = ""
 
 [tasks."packages:apply"]
-description = "Install tools, host packages, Todoist, Playwright CLI, and VS Code extensions (no services)"
+description = "Install tools, host packages, agent CLIs, Todoist, Playwright CLI, and VS Code extensions (no services)"
 run = [
   "mise install",
   "mise bootstrap packages apply --yes",
+  "mise run llm:install",
   "mise run packages:todoist",
   "mise run packages:npm",
   "mise run packages:vscode",

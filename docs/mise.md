@@ -26,7 +26,7 @@ mise -E dev run services:status
 # Preview host packages (host packages only; no npm or VS Code extras)
 mise -E dev bootstrap packages apply --dry-run
 
-# Install tools and host packages, then Todoist, Playwright CLI and VS Code extensions
+# Install tools, host packages and agent CLIs, then Todoist, Playwright CLI and VS Code extensions
 mise -E dev run packages:apply
 
 # Show host package installation state
@@ -35,7 +35,24 @@ mise -E dev run packages:status
 
 **Avoid bare `mise bootstrap` here**: use the dedicated tasks so service dependencies are prepared first. Package work belongs to `packages:apply`, not the service tasks.
 
-Host packages live in `.mise/conf.d/packages.toml` plus the active profile overlay: `mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, or `mise.work-boot.toml` (both work bootstrap usernames use `work-boot`). `packages:apply` installs versioned tools and those Homebrew formulae and casks, builds the pinned Todoist fork, then installs `@playwright/cli` with the Homebrew npm into `~/.local`, then the profile's VS Code extensions. `packages:status` reports host packages only. Applying packages never prunes unlisted packages or upgrades existing formulae; run `mise -E dev bootstrap packages upgrade --manager brew` to upgrade formulae explicitly.
+Host packages live in `.mise/conf.d/packages.toml` plus the active profile overlay: `mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, or `mise.work-boot.toml` (both work bootstrap usernames use `work-boot`). `packages:apply` installs versioned tools and those Homebrew formulae and casks, runs `llm:install` for missing agent CLIs, builds the pinned Todoist fork, then installs `@playwright/cli` with the Homebrew npm into `~/.local`, then the profile's VS Code extensions. `packages:status` reports host packages only. Applying packages never prunes unlisted packages or upgrades existing formulae; run `mise -E dev bootstrap packages upgrade --manager brew` to upgrade formulae explicitly.
+
+## Update LLM tools
+
+```nu
+# Install missing CLIs without upgrading existing installations
+mise -E dev run llm:install
+
+# Preview task dispatch without running any installer/updater
+mise -E dev run --dry-run llm:update
+
+# Update all four CLIs and Pi's npm extensions
+mise -E dev run llm:update
+```
+
+These tasks cover **Claude, Cursor Agent, Codex, Pi, and Pi's npm extensions**, using official installers and vendor update policies. `packages:apply` includes `llm:install`. Settings and the pies wrapper are preserved; runtimes, services, shared repositories, and other plugin marketplaces are outside this task's scope.
+
+Definitions live in `.mise/conf.d/llm.toml`, implemented by `home/.local/bin/mise-llm`. Updates run sequentially and stop on failure; resolve the error and rerun.
 
 ## User setup and Nix handoff
 
@@ -94,6 +111,6 @@ mise use --global node@24
 
 Useful distinction: **`use` changes configuration; `install` installs versioned tools only; `run` executes a task; `exec` executes an arbitrary command. Host packages are applied by `packages:apply`, not `mise install`.**
 
-No shell activation is needed. The shared environment adds mise shims after `~/.local/bin`, preserving user-owned overrides (including the custom Pi wrapper), with Homebrew before Nix profiles. `mise exec` preserves project-selected tool paths in child shells. Existing native Claude/Cursor installs under `~/.local/bin` remain deliberate overrides; `mise which claude` shows the managed executable.
+No shell activation is needed. The shared environment puts `~/.local/bin` first (including native CLIs and the custom Pi wrapper), then `$PI_CODING_AGENT_DIR/bin`, then mise shims, with Homebrew before Nix profiles. `mise exec` preserves project-selected tool paths in child shells. Agent CLIs are vendor-owned rather than mise versioned tools; use `llm:update`, not `mise upgrade`, for them.
 
-Apply packages before switching the reduced Nix configuration. `make link` exposes global tool defaults; open a fresh shell afterwards. Pi uses the npm/Node distribution, and its extensions install from npm names in `pi/agent/settings.json`. QMK uses PyPI because mise cannot evaluate its Homebrew tap; firmware setup remains an explicit `qmk setup` operation. Nufmt builds its previously pinned Git revision through Cargo. Work uses release binaries for Vault and cargo-lambda, avoiding source-only tap builds.
+Apply packages before switching the reduced Nix configuration. `make link` exposes global tool defaults; open a fresh shell afterwards. Pi's official managed installer uses Node and locked npm dependencies; its extensions install from npm names in `pi/agent/settings.json`. QMK uses PyPI because mise cannot evaluate its Homebrew tap; firmware setup remains an explicit `qmk setup` operation. Nufmt builds its previously pinned Git revision through Cargo. Work uses release binaries for Vault and cargo-lambda, avoiding source-only tap builds.

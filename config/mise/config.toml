@@ -13,10 +13,6 @@ pnpm = "latest"
 python = "3.11"
 uv = "latest"
 rust = "stable"
-claude = "latest"
-cursor-agent = { version = "latest", postinstall = 'ln -sf cursor-agent "$MISE_TOOL_INSTALL_PATH/dist-package/agent"' }
-# Use the Node package, not the Bun binary (codemode needs its worker assets).
-"npm:@earendil-works/pi-coding-agent" = "0.99.1"
 "npm:typescript" = "latest"
 "npm:typescript-language-server" = "latest"
 # No upstream release binary/formula; retain the revision previously in flake.lock.
