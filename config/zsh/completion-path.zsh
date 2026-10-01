@@ -1,4 +1,4 @@
-# Shared by interactive startup and switch-time completion generation.
+# Shared by interactive startup and mise shell:prepare.
 typeset -Ua fpath
 for ct_zsh_profile in \
   /nix/var/nix/profiles/default \

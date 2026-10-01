@@ -1,15 +1,12 @@
-# Internal Home Manager activation step, not a user-facing refresh command.
+# Invoked by mise shell:prepare, using the same Zsh as interactive startup.
 # Run as the user, without loading interactive plugins or prompt hooks.
 setopt ERR_EXIT PIPE_FAIL
 umask 077
 source "$DOTFILES/config/zsh/completion-path.zsh"
 
-# Scan the incoming Darwin system profile before /run/current-system switches.
-fpath=("${(@)fpath/#\/run\/current-system\/sw\//$1/}")
-
 autoload -Uz compaudit compinit
 if ! compaudit; then
-  print -u2 'zsh: refusing to cache insecure completions; fix the paths above and switch again.'
+  print -u2 'zsh: refusing to cache insecure completions; fix the paths above and run mise run shell:prepare again.'
   exit 1
 fi
 

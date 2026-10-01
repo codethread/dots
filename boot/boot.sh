@@ -168,7 +168,7 @@ if ! command -v brew >/dev/null 2>&1; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# Install host packages before Nix snapshots shell completions. Do not apply services.
+# Install user tools before dropping the old Nix packages. Do not apply services.
 if ! command -v mise >/dev/null 2>&1; then
   brew install mise || exit 1
 fi
@@ -182,10 +182,14 @@ mise -C "${DOTFILES}" -E "$MISE_PROFILE" run packages:apply || exit 1
 # run darwin-rebuild
 printf "${_cyan}( ◕ ◡ ◕ )${_reset} macOS: running darwin-rebuild (profile: %s)\n" "$NIX_PROFILE"
 if command -v darwin-rebuild >/dev/null 2>&1; then
-  sudo -H darwin-rebuild switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v
+  sudo -H darwin-rebuild switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v || exit 1
 else
-  sudo -H nix run nix-darwin/master#darwin-rebuild -- switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v
+  sudo -H nix run nix-darwin/master#darwin-rebuild -- switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v || exit 1
 fi
+
+# User setup no longer runs in Home Manager activation. Generate completions
+# after switching so the cache reflects the current system profile.
+mise -C "${DOTFILES}" -E "$MISE_PROFILE" run workstation:setup || exit 1
 
 #: }}}
 #: boot {{{

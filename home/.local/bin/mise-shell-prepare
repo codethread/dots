@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# :module: Generate user shell init files and completion caches through mise.
+set -euo pipefail
+
+case "${1:-}" in
+  -h|--help)
+    echo 'Usage: mise -E <profile> run shell:prepare (from the dotfiles repository)'
+    exit 0
+    ;;
+  '') ;;
+  *) echo "Unexpected argument: $1" >&2; exit 2 ;;
+esac
+
+: "${DOTFILES:?Run through the shell:prepare mise task}"
+source "$DOTFILES/config/env/base.sh"
+# New paths avoid the old Home Manager symlinks, which are removed on switch.
+cache="$HOME/.local/cache/dots/shell"
+mkdir -p "$cache"
+tmp=$(mktemp -d "$cache/.init.XXXXXXXX")
+trap 'rm -rf -- "$tmp"' EXIT
+
+/opt/homebrew/bin/atuin init nu > "$tmp/atuin.nu"
+/opt/homebrew/bin/carapace _carapace nushell > "$tmp/carapace.nu"
+SHELL_INIT_DIR="$tmp" nu -n -c '
+  for name in [atuin.nu carapace.nu] {
+    if not (nu-check --debug ($env.SHELL_INIT_DIR | path join $name)) { exit 1 }
+  }
+'
+mv -f "$tmp/atuin.nu" "$cache/atuin.nu"
+mv -f "$tmp/carapace.nu" "$cache/carapace.nu"
+zsh -f "$DOTFILES/config/zsh/cache-completions.zsh"

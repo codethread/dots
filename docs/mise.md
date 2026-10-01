@@ -37,6 +37,32 @@ mise -E dev run packages:status
 
 Host packages live in `.mise/conf.d/packages.toml` plus the active profile overlay: `mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, or `mise.work-boot.toml` (both work bootstrap usernames use `work-boot`). `packages:apply` installs versioned tools and those Homebrew formulae and casks, builds the pinned Todoist fork, then installs `@playwright/cli` with the Homebrew npm into `~/.local`, then the profile's VS Code extensions. `packages:status` reports host packages only. Applying packages never prunes unlisted packages or upgrades existing formulae; run `mise -E dev bootstrap packages upgrade --manager brew` to upgrade formulae explicitly.
 
+## User setup and Nix handoff
+
+User setup lives in `.mise/conf.d/workstation.toml`; Nix no longer clones repositories, links dotfiles, or generates shell init/completion caches.
+
+```nu
+# Existing machine: install replacements, drop old Nix ownership, then prepare
+mise -E dev run packages:apply
+make system
+mise -E dev run workstation:setup
+
+# Later user-environment changes (no Nix switch, no services)
+mise -E dev run workstation:apply
+
+# Individual phases / read-only previews
+mise -E dev bootstrap repos apply --dry-run --skip-dirty
+mise -E dev run repositories:apply
+mise -E dev run dotfiles:apply
+mise -E dev run shell:prepare
+```
+
+`boot/boot.sh` uses the same order on a new machine. `workstation:apply` runs packages then `workstation:setup` (repositories → dotfiles → shell caches). It does not apply Claude settings, services, or macOS system defaults. Run from a durable checkout.
+
+Repository apply requires GitHub SSH access for `agents`, Alfred, and images. Authentication and origin conflicts fail visibly; dirty checkouts are reported and skipped, and unpinned existing repos are not pulled. The Todoist fork and nix-direnv are pinned. Dotty refuses conflicting files rather than forcing replacement. `repositories:apply` also applies declared directories (including `/tmp/claude`) and the gitwatch link.
+
+Nushell init files now live under `~/.local/cache/dots/shell`, separate from the old Home Manager symlinks. Direnv loads the pinned vendor checkout through `config/direnv/lib/nix-direnv.sh`. Zsh completions are audited and compiled with the current Zsh; rerun `shell:prepare` after package upgrades or a Nix switch. Old generated init/plugin links are removed by the next Home Manager activation; no manual deletion is needed.
+
 ## General commands
 
 ```nu

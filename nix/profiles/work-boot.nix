@@ -1,6 +1,7 @@
 { ... }:
 
-# User tools live in mise; Nix retains the activation handoff until migrated.
+# User setup lives in mise. Retain Home Manager state for clean generation
+# transitions; do not add user packages or activations here.
 {
-  imports = [ ../features/common.nix ];
+  imports = [ ../features/home-base.nix ];
 }

@@ -17,7 +17,7 @@ Adapters may add shell-native state but must not duplicate the base contract:
 | Consumer | Adapter |
 | --- | --- |
 | Bash | `config/bash/env` sources the base, adds interactive state only for interactive shells, then optional `env.local` |
-| zsh | `config/zsh/.zshenv` sources the base; `.zshrc` adds interactive state and loads the switch-generated completion dump |
+| zsh | `config/zsh/.zshenv` sources the base; `.zshrc` adds interactive state and loads the mise-generated completion dump |
 | Nushell | `config/nushell/env.nu` imports the base plus interactive state only when `$nu.is-interactive`, converts PATH to a list, then adds typed/Nushell-only values |
 | terminal launch | `config/env/terminal-startup.sh` sources the base, then execs `$SHELL` as a login interactive shell |
 | tmux | `emit.sh --tmux` seeds the tmux global environment and default shell |
@@ -27,11 +27,11 @@ Nix/Home Manager and launchd may seed the minimum environment needed before a sh
 
 ## [SPEC-009-S3] PATH Contract
 
-The base builds PATH from user-local tool roots, Nix profiles, platform roots, system directories, explicit colon-separated `CT_PATH_EXTRA`, and inherited PATH without duplicates. Normally the declared base wins and inherited entries are a trailing fallback. Inside `nix develop` (`IN_NIX_SHELL`) or direnv (`DIRENV_DIR`), inherited project paths win so pinned toolchains survive a nested shell startup.
+The base builds PATH from user-local tool roots, Nix profiles, platform roots, system directories, explicit colon-separated `CT_PATH_EXTRA`, and inherited PATH without duplicates. Normally the declared base wins and inherited entries are a trailing fallback. Inside `mise exec` (`__MISE_DIFF`), `nix develop` (`IN_NIX_SHELL`), or direnv (`DIRENV_DIR`), inherited project paths win so pinned toolchains survive a nested shell startup.
 
 Known user/tool roots remain in PATH even before they exist. Installing into one of those roots therefore works in the current shell; stale nonexistent entries are harmless and intentionally tolerated.
 
-`~/.local/bin` remains first. Volta remains available for interactive Node work. On macOS, Homebrew Node is the stable fallback when a replaced HOME makes Volta unavailable.
+`~/.local/bin` remains first, preserving custom agent wrappers. Mise shims follow it, then Homebrew (including GNU coreutils), then other tool roots and Nix profiles. Volta-selected image paths are preserved when Volta launches a process; otherwise mise supplies the default Node. Global mise configuration is linked from `config/mise/`, separate from project-scoped workstation and service tasks.
 
 ## [SPEC-009-S3a] SHELL Contract
 
@@ -60,11 +60,13 @@ The tmux adapter evaluates the stable contract in a clean subprocess rather than
 
 ## Zsh completion lifecycle
 
-`nix/features/zsh-completions.nix` generates the completion cache during Home Manager activation, after packages and dotfile links are installed. On Darwin, apply mise packages before switching Nix so their completions are included; Nix no longer runs Homebrew Bundle or formula upgrades. The scan uses the incoming system profile because `/run/current-system` still points to the previous generation until Darwin activation finishes.
+`mise -E <profile> run shell:prepare` generates the completion cache after packages and dotfile links are installed. `boot/boot.sh` runs it after the Nix switch, so the scan reflects the current system rather than an incoming generation.
 
-`config/zsh/completion-path.zsh` is shared by activation and interactive startup. It includes Nix profiles, Zsh's built-in functions, and Homebrew completions. Activation audits those paths as the user, builds a fresh dump even if the number of completion files is unchanged, and atomically replaces each cache file under `$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION`. Darwin generates the sole cache with its login shell, macOS `/bin/zsh`. Stale dumps for other Zsh versions are removed after the new cache is published. An insecure path fails activation without replacing the previous cache.
+`config/zsh/completion-path.zsh` is shared by `config/zsh/cache-completions.zsh` and interactive startup. It includes Nix profiles, Zsh built-ins, and Homebrew completions. Preparation audits those paths as the user, builds a fresh dump even if the completion file count is unchanged, and atomically replaces each cache file under `$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION`. The generator uses `zsh` from PATH (currently the Nix-registered login shell). Stale dumps for other Zsh versions are removed after publication. Insecure paths fail preparation without replacing the old cache.
 
-Interactive shells use `compinit -C`: completion discovery and security checks happen at switch time, not at every launch. Completion files remain live on disk; the dump does not freeze their contents. After installing or changing completions outside Nix, run the normal system switch. There is no separate refresh command. If the versioned cache is missing, startup warns and uses audited, uncached completion initialization until the next activation.
+Interactive shells use `compinit -C`: completion discovery and security checks happen during explicit preparation, not on every launch. Completion files remain live on disk. Rerun `shell:prepare` after package upgrades or a Nix switch. Missing caches produce a warning and audited, uncached initialization.
+
+Nushell sources Atuin and Carapace init files generated into `~/.local/cache/dots/shell`, plus the repo-owned `config/nushell/direnv.nu` hook. These new paths avoid the old Home Manager-owned symlinks during handoff. Direnv automatically loads `config/direnv/lib/nix-direnv.sh`, which sources the mise-provisioned, pinned vendor checkout. Bash initializes its direnv hook only in interactive shells.
 
 Starship, fzf, and Atuin init scripts are cached separately by resolved executable path. Startup generates into temporary files and publishes the init script and path stamp only after the generator succeeds. A failed generator returns failure without sourcing partial output or replacing the previous cache, so the next launch retries. Empty init caches are regenerated as well.
 

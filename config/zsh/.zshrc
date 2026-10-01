@@ -91,11 +91,11 @@ eval "$(honeycomb shell-init zsh)"
 mkdir -p "$XDG_CACHE_HOME/zsh"
 autoload -Uz compinit bashcompinit
 if [[ -r "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION" ]]; then
-  # Audited and compiled during switch; deliberately no per-shell rescan.
+  # Audited and compiled by mise; deliberately no per-shell rescan.
   compinit -C -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
 else
-  print -u2 'zsh: completion cache missing; run make system to generate it.'
-  # Safe before the first switch or after cache deletion: audit, but do not
+  print -u2 'zsh: completion cache missing; run mise run shell:prepare from dots to generate it.'
+  # Safe before the first preparation or after cache deletion: audit, but do not
   # write a replacement cache or skip security checks on an unprepared path.
   compinit -D
 fi

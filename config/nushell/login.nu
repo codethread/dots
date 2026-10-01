@@ -20,14 +20,13 @@ def cdy [] {
     echo $env.PWD | pbcopy
 }
 
-const atuin = "~/.local/share/atuin/init.nu" | path expand
+const atuin = "~/.local/cache/dots/shell/atuin.nu" | path expand
 source (if ($atuin | path exists) { $atuin } else { null })
 
-const carapace = "~/.local/cache/carapace/init.nu" | path expand
+const carapace = "~/.local/cache/dots/shell/carapace.nu" | path expand
 source (if ($carapace | path exists) { $carapace } else { null })
 
-const direnv = "~/.local/cache/direnv/init.nu" | path expand
-source (if ($direnv | path exists) { $direnv } else { null })
+source direnv.nu
 
 const strand_completions = "/opt/homebrew/Library/Taps/codethread/homebrew-millstrand/integrations/nushell/strand-completions.nu" | path expand
 source (if ($strand_completions | path exists) { $strand_completions } else { null })
