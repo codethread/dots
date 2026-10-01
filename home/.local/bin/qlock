@@ -51,6 +51,11 @@ esac
 wait_max="" timeout_code=75 reason="" ticket=""
 while (($#)); do
   case "$1" in
+    -w | -E | --urgent | --ticket)
+      (($# >= 2)) && [[ -n $2 ]] || die "$1 requires a value (see qlock -h)"
+      ;;
+  esac
+  case "$1" in
     -h | --help) usage; exit 0 ;;
     -w) wait_max="$2"; shift 2 ;;
     -E) timeout_code="$2"; shift 2 ;;
