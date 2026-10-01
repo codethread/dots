@@ -10,3 +10,4 @@
 -g=!Cargo.lock
 -g=!*.lock.json
 -g=!bun.lockb
+-g=!.beads/issues.jsonl
