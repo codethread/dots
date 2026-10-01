@@ -1,6 +1,6 @@
 # Mise cheat sheet
 
-Mise handles **tool versions**, **tasks**, and **managed configuration**.
+Mise handles **tool versions**, **host packages**, **tasks**, and **managed configuration**.
 
 ## For this dotfiles repo
 
@@ -22,9 +22,20 @@ mise -E dev run services:apply
 
 # Check services
 mise -E dev run services:status
+
+# Preview host packages (host packages only; no npm or VS Code extras)
+mise -E dev bootstrap packages apply --dry-run
+
+# Install host packages, then Playwright CLI and VS Code extensions
+mise -E dev run packages:apply
+
+# Show host package installation state
+mise -E dev run packages:status
 ```
 
-**Avoid bare `mise bootstrap` here**: use the dedicated tasks so service dependencies are prepared first.
+**Avoid bare `mise bootstrap` here**: use the dedicated tasks so service dependencies are prepared first. Package work belongs to `packages:apply`, not the service tasks.
+
+Host packages live in `.mise/conf.d/packages.toml` plus the active profile overlay: `mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, or `mise.work-boot.toml` (both work bootstrap usernames use `work-boot`). `packages:apply` installs those Homebrew formulae and casks, then `@playwright/cli` with the Homebrew npm into `~/.local`, then the profile's VS Code extensions. `packages:status` reports host packages only. Applying packages never prunes unlisted packages or upgrades existing formulae; run `mise -E dev bootstrap packages upgrade --manager brew` to upgrade formulae explicitly.
 
 ## General commands
 
@@ -35,7 +46,7 @@ mise config
 # Show configured tools and their versions
 mise ls
 
-# Install tools declared in configuration
+# Install versioned tools declared in [tools] (not host packages)
 mise install
 
 # Run a command with mise-managed tools
@@ -55,6 +66,6 @@ mise use node@24
 mise use --global node@24
 ```
 
-Useful distinction: **`use` changes configuration; `install` installs it; `run` executes a task; `exec` executes an arbitrary command.**
+Useful distinction: **`use` changes configuration; `install` installs versioned tools only; `run` executes a task; `exec` executes an arbitrary command. Host packages are applied by `packages:apply`, not `mise install`.**
 
 No shell activation is needed for this repo’s tasks.

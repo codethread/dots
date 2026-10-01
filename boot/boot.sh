@@ -162,11 +162,22 @@ if ! command -v nix >/dev/null 2>&1; then
   fi
 fi
 
-# install Homebrew if not already present (required by nix-darwin homebrew module)
+# Install Homebrew to bootstrap the stable native mise executable.
 if ! command -v brew >/dev/null 2>&1; then
   printf "${_cyan}( ◕ ◡ ◕ )${_reset} Installing Homebrew\n"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
+
+# Install host packages before Nix snapshots shell completions. Do not apply services.
+if ! command -v mise >/dev/null 2>&1; then
+  brew install mise || exit 1
+fi
+MISE_PROFILE="$NIX_PROFILE"
+case "$MISE_PROFILE" in
+  work-adamhall-boot) MISE_PROFILE="work-boot" ;;
+esac
+mise trust "${DOTFILES}/mise.toml" || exit 1
+mise -C "${DOTFILES}" -E "$MISE_PROFILE" run packages:apply || exit 1
 
 # run darwin-rebuild
 printf "${_cyan}( ◕ ◡ ◕ )${_reset} macOS: running darwin-rebuild (profile: %s)\n" "$NIX_PROFILE"

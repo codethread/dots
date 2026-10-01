@@ -142,8 +142,6 @@ in
     };
   };
 
-  # Complete formula upgrades before Home Manager's postActivation hooks
-  # snapshot the installed Zsh completions.
   system.activationScripts.postActivation.text = lib.mkBefore ''
     /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${syncengineStateDir}
 
@@ -156,129 +154,13 @@ in
       echo "warning: could not write com.apple.universalaccess reduceMotion; set it in System Settings > Accessibility > Display" >&2
     fi
 
-    # nix-darwin's `upgrade` option upgrades both formulae and casks. Update
-    # formulae explicitly after the Bundle install so casks can self-update.
-    /usr/bin/sudo -u ${config.system.primaryUser} -H \
-      ${config.homebrew.prefix}/bin/brew upgrade --formula --no-ask
-
     /usr/bin/killall SystemUIServer >/dev/null 2>&1 || true
     /usr/bin/killall Finder >/dev/null 2>&1 || true
     /usr/bin/killall Dock >/dev/null 2>&1 || true
   '';
 
-  # --- Homebrew ---
-  # nix-darwin manages Homebrew for casks and App Store apps not in nixpkgs.
-  # Homebrew must be pre-installed: https://brew.sh
-  homebrew = {
-    enable = true;
-    onActivation = {
-      # Keep Bundle-managed npm CLIs in the user-owned location on PATH.
-      extraEnv.NPM_CONFIG_PREFIX = "${homeDir}/.local";
-      autoUpdate = true;
-      upgrade = false; # casks manage their own updates
-      cleanup = "uninstall"; # remove packages not listed here (use "zap" only when stable)
-    };
-    taps = [
-      {
-        name = "nikitabobko/tap";
-        trusted = true;
-      } # aerospace
-      {
-        name = "morantron/tmux-fingers";
-        trusted = true;
-      } # tmux-fingers
-      {
-        name = "codethread/wktree";
-        clone_target = "https://github.com/codethread/wktree";
-        trusted = true;
-      } # wktree
-      {
-        name = "BRO3886/tap";
-        trusted = true;
-      } # ical
-      {
-        name = "dicklesworthstone/tap";
-        trusted = true;
-      } # beads_rust
-      {
-        name = "sderosiaux/tap";
-        trusted = true;
-      } # launchdeck
-    ];
-    brews = [
-      "dicklesworthstone/tap/br" # beads rust
-      "dicklesworthstone/tap/bv" # Graph-aware Beads viewer
-      "morantron/tmux-fingers/tmux-fingers" # mouseless terminal interaction
-      "codethread/wktree/wktree" # Deterministic git worktree manager
-      "BRO3886/tap/ical" # native macOS Calendar CLI
-      "ical-buddy" # Get events and tasks from the macOS calendar database
-      "rsync" # Utility that provides fast incremental file transfer
-      "graphviz" # provides dot for diagraph
-      "imagemagick" # image maker
-      "node" # Runtime for user-owned global npm tools
-      "mise" # Stable native executable; owns cc-notify and Git maintenance LaunchAgents
-      "gum" # beautiful shell TUI helpers
-      "sderosiaux/tap/launchdeck" # launchd + Homebrew services TUI
-    ];
-    extraConfig = ''
-      npm "@playwright/cli"
-    '';
-    casks = [
-      "codex" # OpenAI coding agent CLI
-      "kitty" # GPU-based terminal emulator
-      "ghostty"
-      "aerospace" # AeroSpace is an i3-like tiling window manager for macOS
-      "alfred" # Application launcher and productivity software
-      "spotify" # Music streaming service
-      "todoist-app" # To-do list
-      "obsidian" # Knowledge base that works on top of a local folder of plain text Markdown files
-      "1password" # Password manager that keeps all passwords secure behind one password
-      "1password-cli" # Command-line interface for 1Password
-      "google-chrome"
-      "ungoogled-chromium" # Google Chromium, sans integration with Google
-      "visual-studio-code" # Open-source code editor
-      "zed" # Multiplayer code editor
-      "opensuperwhisper" # local voice ai, large footprint
-    ];
-
-    # Editor extensions are shared; work-only ones live in common-work.nix.
-    vscode = [
-      # vim
-      "cunbidun.flash-vscode"
-      "haphazarddev.oil-code"
-      "vscodevim.vim"
-
-      # linting
-      "dbaeumer.vscode-eslint"
-      "esbenp.prettier-vscode"
-      "biomejs.biome"
-
-      # quality of life
-      "davidsanders.search-under-cursor"
-      "usernamehw.commands"
-      "wraith13.unsaved-files-vscode"
-      "formulahendry.auto-close-tag"
-      "formulahendry.auto-rename-tag"
-
-      # theme and ui
-      "mvllow.rose-pine"
-      "jgclark.vscode-todo-highlight"
-      "kamikillerto.vscode-colorize"
-
-      # lang
-      "rust-lang.rust-analyzer"
-      "bradlc.vscode-tailwindcss"
-
-      # tools
-      "ms-playwright.playwright"
-      # "github.copilot-chat"
-    ];
-    # enable on boot load machine
-    # bug requires login on every switch
-    # masApps = {
-    #   "DaisyDisk" = 411643860;  # Disk space analyzer
-    # };
-  };
+  # Homebrew packages are owned by mise (.mise/conf.d/packages.toml and overlays).
+  # Leave nix-darwin Homebrew disabled: its Bundle cleanup must not remove them.
 
   # Touch ID for sudo, including inside tmux and screen.
   security.pam.services.sudo_local = {

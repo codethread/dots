@@ -10,8 +10,9 @@ The project mise configuration owns four user LaunchAgents: cc-notify and hourly
 - `mise.dev.toml`: notes vault maintenance and cc-notify.
 - `mise.work.toml`: deals-light-ui maintenance and cc-notify.
 - Personal and work-boot machines do not apply these services. Select `dev` or `work` explicitly; a missing overlay cannot render the required profile variables.
-- Nix declares the Homebrew `mise` formula; the stable service executable is `/opt/homebrew/bin/mise`, not a Nix-store path. This matches the repository's Apple Silicon hosts.
-- mise installs pinned Bun 1.4.2 for cc-notify. Other Nix-managed runtimes are unchanged.
+- mise also owns macOS host packages: `.mise/conf.d/packages.toml` plus the profile overlays (`mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, `mise.work-boot.toml`). `packages:apply` installs those packages, then user-prefix `@playwright/cli` and the profile's VS Code extensions; `packages:status` reports host state. Applying packages never prunes or upgrades; formula upgrades are explicit via `mise bootstrap packages upgrade --manager brew`.
+- `boot/boot.sh` installs Homebrew and then mise (`brew install mise`); the stable service executable is `/opt/homebrew/bin/mise`, not a Nix-store path. Nix no longer declares or upgrades Homebrew packages. This matches the repository's Apple Silicon hosts.
+- mise provides pinned Bun 1.4.2 through `[tools]` for cc-notify. Other Nix-managed runtimes are unchanged.
 - Git maintenance uses macOS `/usr/bin/git` (Command Line Tools required).
 
 mise discovers the `.mise/conf.d/*.toml` fragments automatically; no include directive or experimental setting is needed. Keep each complete agent declaration in one fragment: duplicate names replace the entire declaration, not individual fields. For these recognized project fragments, `config_root` remains the repository root, so moving declarations does not change generated executable paths. The root profile overlays still supply the shared variables.
@@ -20,7 +21,7 @@ Apply from the durable canonical checkout, not a disposable worktree: generated 
 
 ## First-time setup
 
-From the repository root, after Homebrew has installed mise:
+From the repository root, after `boot.sh` installed Homebrew and mise (`brew install mise`):
 
 ```nu
 mise trust
@@ -39,10 +40,12 @@ The `services:apply` task runs preparation first. Do **not** substitute bare `mi
 
 These are per-user agents: apply in a logged-in macOS GUI session, without sudo. They run while that user is logged in, not as boot-time system daemons.
 
+Host packages are separate from services: `boot.sh` applies them with `mise -C "$DOTFILES" -E <mise-profile> run packages:apply` before the Nix switch. Preview host package changes with `mise -E dev bootstrap packages apply --dry-run`; applying packages never prunes or upgrades existing packages, so upgrade formulae explicitly with `mise -E dev bootstrap packages upgrade --manager brew`.
+
 ## Moving an existing Nix installation
 
 1. Prepare the mise services and preview their definitions.
-2. Run `make system` with this updated checkout. It keeps mise installed and removes the old Nix-owned service definitions.
+2. Run `make system` with this updated checkout. It keeps the Homebrew-installed mise and removes the old Nix-owned service definitions.
 3. Run `mise -E dev run services:apply` (or `work`). The task refuses to apply while any old agent is still loaded.
 4. Check cc-notify's health and the three maintenance jobs.
 
@@ -123,4 +126,4 @@ Each job runs `git for-each-repo --keep-going maintenance run --schedule=<freque
 
 Deleting a declaration does not remove its installed agent. Remove the declaration, explicitly `launchctl bootout` its `gui/<uid>/dev.mise.<name>` target, and delete only its corresponding plist from `~/Library/LaunchAgents`.
 
-Validation: `mise -E dev tasks validate --errors-only`, `mise -E work tasks validate --errors-only`, `mise fmt --check`, Bash syntax checks, isolated temporary-repository maintenance checks, and `plutil -lint` on generated plists. After apply, check HTTP health, successful maintenance exit codes, no loaded old labels, and an unchanged second apply. Nix changes also require the normal flake build, `nrs-check`, and `nix-smoke` checks.
+Validation: `mise -E dev tasks validate --errors-only`, `mise -E work tasks validate --errors-only`, `mise fmt --check`, Bash syntax checks, isolated temporary-repository maintenance checks, and `plutil -lint` on generated plists. After apply, check HTTP health, successful maintenance exit codes, no loaded old labels, and an unchanged second apply. Nix changes also require the normal flake build and `nix-smoke` checks; `nrs-check` was removed with Nix-owned Homebrew, so validate package changes with `mise bootstrap packages apply --dry-run` and `mise run packages:status`.

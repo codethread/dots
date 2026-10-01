@@ -39,7 +39,7 @@ The base keeps the inherited `SHELL`, falling back to `zsh` when unset, and reso
 
 ## [SPEC-009-S3b] Mise Environment
 
-The base exports `MISE_ENV=work` when `CT_USER=work`, otherwise `MISE_ENV=dev`. An existing non-empty `MISE_ENV` is preserved. This default applies to all mise invocations inheriting the shared environment, so dots tasks no longer require `-E`; an explicit CLI `-E` still overrides the selection.
+The base selects mise's machine package profile: `personal` for `codethread`, `work` for `adamhall` with `$HOME/pb/adam.hall/workfiles`, `work-boot` for other work accounts, and `dev` otherwise. An existing non-empty `MISE_ENV` is preserved; an explicit CLI `-E` still overrides the selection. Personal and work-boot machines apply packages only, not the dev/work services.
 
 ## [SPEC-009-S4] Interfaces
 
@@ -60,7 +60,7 @@ The tmux adapter evaluates the stable contract in a clean subprocess rather than
 
 ## Zsh completion lifecycle
 
-`nix/features/zsh-completions.nix` generates the completion cache during Home Manager activation, after packages and dotfile links are installed. On Darwin, Homebrew Bundle and formula upgrades finish before Home Manager activates. The scan uses the incoming system profile because `/run/current-system` still points to the previous generation until Darwin activation finishes.
+`nix/features/zsh-completions.nix` generates the completion cache during Home Manager activation, after packages and dotfile links are installed. On Darwin, apply mise packages before switching Nix so their completions are included; Nix no longer runs Homebrew Bundle or formula upgrades. The scan uses the incoming system profile because `/run/current-system` still points to the previous generation until Darwin activation finishes.
 
 `config/zsh/completion-path.zsh` is shared by activation and interactive startup. It includes Nix profiles, Zsh's built-in functions, and Homebrew completions. Activation audits those paths as the user, builds a fresh dump even if the number of completion files is unchanged, and atomically replaces each cache file under `$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION`. Darwin generates the sole cache with its login shell, macOS `/bin/zsh`. Stale dumps for other Zsh versions are removed after the new cache is published. An insecure path fails activation without replacing the previous cache.
 

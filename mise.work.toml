@@ -2,3 +2,15 @@
 service_profile = "work"
 claude_work_machine = true
 git_maintenance_repositories = "~/pb/app/deals-light-ui"
+vscode_work_extensions = "rohit-gohri.format-code-action golang.go styled-components.vscode-styled-components stylelint.vscode-stylelint"
+
+[bootstrap.packages]
+"brew:podman" = { os = "macos" }
+"brew:podman-compose" = { os = "macos" }
+"brew:codethread/millstrand/millstrand" = { os = "macos" }
+"brew:cocoapods" = { os = "macos" }
+"brew-cask:terminal-browser" = { os = "macos" }
+"brew-cask:figma" = { os = "macos" }
+"brew-cask:licecap" = { os = "macos" }
+"brew-cask:obs" = { os = "macos" }
+"brew-cask:proxyman" = { os = "macos" }

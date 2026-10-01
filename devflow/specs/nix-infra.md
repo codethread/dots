@@ -3,7 +3,7 @@
 - Document ID: SPEC-006
 - Configuration identification: SPEC-006; migrated from `specs/nix-infra.md`; canonical path `devflow/specs/nix-infra.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-09-30
+- **Last Updated:** 2026-10-01
 
 ## [SPEC-006-S1] 1. Overview
 
@@ -35,8 +35,8 @@ Declarative system configuration and bootstrap infrastructure for personal macOS
 flake.nix (inputs, overlays, system configurations)
     │
     ├─ hosts/darwin/<machine>.nix    System-level: users, packages, services
-    │   ├─ common.nix               Shared defaults (casks, brews, macOS defaults)
-    │   └─ dev-tools.nix            Heavy dev-only extras (JVM, podman) — dev + work only
+    │   ├─ common.nix               Shared defaults (users, macOS defaults, services)
+    │   └─ dev-tools.nix            Heavy dev-only Nix extras (JVM) — dev + work only
     │
     ├─ profiles/<name>.nix           User-level: home-manager imports per role
     │   └─ imports features/*
@@ -64,7 +64,7 @@ Two nixpkgs inputs provide version flexibility:
 - `pkgs` ← `nixpkgs` (unstable) — default for most packages
 - `pkgsMaster` ← `nixpkgs-master` (bleeding edge) — for packages needing latest versions
 
-In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available, falling back to `pkgs`. TypeScript tooling and agent packages available through Nix use this channel. nix-darwin delegates native packages to Homebrew while user-managed npm tools use the shared npm prefix.
+In `features/common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available, falling back to `pkgs`. TypeScript tooling and agent packages available through Nix use this channel. Nix no longer declares Homebrew packages: the nix-darwin Homebrew module is disabled, and mise owns host packages plus the user-prefix npm tools.
 
 ### [SPEC-006-S2.4] Custom Overlays
 
@@ -72,7 +72,7 @@ Defined in `flake.nix`, applied to all system configs:
 
 - **todoistOverlay** — `buildGoModule` for `todoist-cli` from `codethread/todoist` fork
 
-Fast-moving agent CLIs are provided by the upstream `llm-agents` input rather than custom overlays. nix-darwin declares Homebrew's native Node and Codex packages, while npm owns Playwright CLI under `~/.local`.
+Fast-moving agent CLIs are provided by the upstream `llm-agents` input rather than custom overlays. Homebrew's native Node and Codex packages, Playwright CLI under `~/.local`, and VS Code extensions are declared by mise (`.mise/conf.d/packages.toml` plus the profile overlays).
 
 ### [SPEC-006-S2.5] Bootstrap Flow
 
@@ -80,10 +80,12 @@ Fast-moving agent CLIs are provided by the upstream `llm-agents` input rather th
 boot/boot.sh
 ├─ Parse flags: --profile, --branch
 ├─ Require macOS
-├─ Resolve profile (username-based)
+├─ Resolve Nix profile (username-based); map work-adamhall-boot to the mise work-boot profile
 ├─ Clone dots (SSH if ~/.ssh exists, else HTTPS)
 ├─ Set XDG environment variables
-├─ Install Lix (nix fork) if missing → Install Homebrew → darwin-rebuild switch
+├─ Install Lix (nix fork) if missing → Install Homebrew if missing
+├─ `brew install mise`
+├─ `mise -C "$DOTFILES" -E <mise-profile> run packages:apply` → darwin-rebuild switch
 └─ Post-rebuild: nu "boot machine"
     ├─ Check Full Disk Access
     ├─ Build bun binaries (oven/)
@@ -108,7 +110,7 @@ Activation includes these ordered steps:
 
 1. **userBootstrap** (after `writeBoundary`) — creates directory structure, clones vendor repos (nu_scripts, gitwatch, Alfred and images on macOS), sets git hooks path
 2. **dottyLink** (after `userBootstrap`) — symlinks dotfiles into place via dotty (see [dotty spec](./dotty.md))
-3. **zshCompletions** (after `dottyLink`, `linkGeneration`, and `installPackages`) — audits installed completion paths and generates a versioned, compiled Zsh completion dump. Darwin formula upgrades run before Home Manager activation so this includes the updated Homebrew completions.
+3. **zshCompletions** (after `dottyLink`, `linkGeneration`, and `installPackages`) — audits installed completion paths and generates a versioned, compiled Zsh completion dump. Nix activation does not install or upgrade Homebrew packages, so this reflects whatever mise has already applied.
 
 ### [SPEC-006-S2.10] Darwin launchd Services
 
@@ -124,7 +126,7 @@ Deliberately **not** shared via `hosts/darwin/common.nix` — each is tied to a 
 
 Claude settings also live outside Nix: `.mise/conf.d/claude-code.toml` renders `templates/claude-settings.json.tera` with `mise -E dev run claude:apply` (or `work`). See [Claude settings](../../claude/README.md) for the apply workflow.
 
-cc-notify and Git maintenance have moved out of Nix; see [mise services](./mise-services.md). Nix only declares the Homebrew `mise` formula, keeping its executable at `/opt/homebrew/bin/mise`. `make system` does not apply mise services; use `mise -E dev run services:apply` (or `work`) separately. The remaining Nix-owned services retain their existing host declarations and activation hooks.
+cc-notify and Git maintenance have moved out of Nix; see [mise services](./mise-services.md). Homebrew and mise are installed by `boot/boot.sh`, and mise owns host packages; `make system` neither installs nor upgrades Homebrew packages. `make system` does not apply mise services; use `mise -E dev run services:apply` (or `work`) separately. The remaining Nix-owned services retain their existing host declarations and activation hooks.
 
 ## [SPEC-006-S3] 3. Data Model
 
@@ -141,7 +143,7 @@ macOS profiles are resolved from username and, for work users, whether the priva
 | `codethread` |               n/a |                        n/a | `personal`           |
 | (other)      |               n/a |                        n/a | `dev`                |
 
-The `_resolve_profile` function handles the special case where explicit profile `work-boot` + username `adamhall` maps to `work-adamhall-boot`.
+The `_resolve_profile` function handles the special case where explicit profile `work-boot` + username `adamhall` maps to `work-adamhall-boot`. For mise, `work-adamhall-boot` maps back to the `work-boot` environment, so both work bootstrap usernames use `mise -E work-boot`.
 
 ### [SPEC-006-S3.2] Environment Variables (Set by All Configs)
 
@@ -171,13 +173,14 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 | `nrs [profile] [--update]` | Rebuild and switch system configuration, preferring the current dotfiles worktree when valid |
 | `nfu` | Update flake inputs for the current dotfiles worktree when valid |
 | `nrs-flake-host [profile]` | Resolve current machine's flake host name |
-| `nrs-check [profile]` | Validate homebrew taps/brews/casks (Darwin only) |
 | `nix-clean` | Delete all old generations + GC |
 | `nix-clean-older [days=14]` | Delete generations older than N days + GC |
 | `nix-packages [profile]` | List home-manager packages for a profile from the current flake path |
 | `nix-sys-packages [profile]` | List system-level packages for a profile from the current flake path |
 | `nix-smoke [profile] [--skip-flake]` | Health check: PATH, binaries (including `pi`), config symlinks (including `~/.pi/agent/settings.json`), flake eval against the current flake path |
 | `nix-outputs` | Show all flake outputs from the current flake path |
+
+`nrs-check` was removed with Nix-owned Homebrew. Validate package changes with `mise -E <profile> bootstrap packages apply --dry-run` and `mise -E <profile> run packages:status`.
 
 ### [SPEC-006-S4.3] Makefile Targets
 
@@ -202,9 +205,9 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 
 - **Lix over official Nix on macOS** — Lix is a community fork installed via `install.lix.systems/lix`. Used as the Nix implementation on Darwin.
 
-- **Homebrew alongside Nix on macOS** — Homebrew manages GUI casks and Mac App Store apps (via `mas`). Nix handles CLI tools. `nix-darwin` orchestrates both declaratively via `homebrew.casks` and `homebrew.masApps`.
+- **Homebrew packages owned by mise on macOS** — Homebrew is installed by `boot/boot.sh` to install mise; mise's built-in Homebrew package managers then use the shared prefix directly; nix-darwin's Homebrew module is disabled so its Bundle cleanup cannot remove mise-managed packages. mise declares formulae, casks, `@playwright/cli` (user prefix `~/.local`), and VS Code extensions in `.mise/conf.d/packages.toml` plus profile overlays. Applying packages neither prunes unlisted packages nor upgrades existing formulae; formula upgrades are explicit via `mise bootstrap packages upgrade --manager brew`.
 
-- **Shared-by-default profiles** — `dev`, `personal`, `work-boot`, and `work` all import `features/common.nix` unmodified. A package is only allowed to diverge when it is genuinely large (JVM toolchain, container runtime) or tied to specific hardware (`qmk`). Optimising a handful of megabytes out of a laptop is not worth two environments that silently drift; the same reasoning applies to the macOS host layer, where `hosts/darwin/common.nix` holds everything and `hosts/darwin/dev-tools.nix` holds only the heavy extras. Long-running services are the exception — they are per-machine by nature and are declared in the host module, never in `common.nix`.
+- **Shared-by-default profiles** — `dev`, `personal`, `work-boot`, and `work` all import `features/common.nix` unmodified. A package is only allowed to diverge when it is genuinely large (JVM toolchain, container runtime) or tied to specific hardware (`qmk`). Optimising a handful of megabytes out of a laptop is not worth two environments that silently drift; the same reasoning applies to the macOS host layer: `hosts/darwin/common.nix` holds shared Nix concerns, `.mise/conf.d/packages.toml` holds shared host packages, and the Nix dev-tools module and mise profile overlays hold the heavy extras. Long-running services are the exception — they are per-machine by nature and are declared in the host module, never in `common.nix`.
 
 - **Work boot profiles for username variants** — New work macOS machines may use `adam.hall` (dotted) or `adamhall`. Bootstrap supports both with minimal `work-boot` outputs. The full `work` output is intentionally single-user and only the current full-work username auto-promotes to it when workfiles exist; update `nix/flake.nix` and the rebuild wrapper's full-work username when the provisioned username changes.
 
@@ -231,4 +234,4 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 ### [SPEC-006-S6.2] Manual
 
 - **`nix-smoke [profile]`** — Comprehensive health check verifying: PATH entries present, required binaries on PATH (including `pi`), config symlinks valid (including `~/.pi/agent/settings.json`), flake evaluates without error. Returns structured table of pass/fail results.
-- **`nrs-check [profile]`** — Darwin-only. Validates all homebrew taps, brews, and casks resolve without error before running a rebuild.
+- **mise package checks** — `mise -E <profile> bootstrap packages apply --dry-run` previews host package changes and `mise -E <profile> run packages:status` reports installation state. The old Nix `nrs-check` brew validator was removed with Nix-owned Homebrew; `mise install` covers versioned tools only.

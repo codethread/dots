@@ -1,8 +1,4 @@
-[vars]
-service_profile = "dev"
-claude_work_machine = false
-git_maintenance_repositories = "~/dev/projects/notes/vault"
-
+# Both work bootstrap usernames use this package environment.
 [bootstrap.packages]
 "brew:podman" = { os = "macos" }
 "brew:podman-compose" = { os = "macos" }

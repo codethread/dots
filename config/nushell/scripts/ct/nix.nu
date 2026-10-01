@@ -189,55 +189,6 @@ export def nix-update-llm [] {
     nix flake update llm-agents --flake $flake
 }
 
-def _brew_config_attr [profile: string, attr: string] {
-    let flake = $"path:((_flake_path))"
-    ^nix eval $"($flake)#darwinConfigurations.($profile).config.homebrew.($attr)" --json
-    | from json
-    | get name
-}
-
-# Validate homebrew taps/brews/casks in the nix config resolve before rebuilding (no sudo needed)
-export def nrs-check [profile?: string] {
-    let p = _resolve_profile ($profile | default (_default_profile))
-    print $"Checking brew config for profile: ($p)"
-
-    let taps = (_brew_config_attr $p "taps")
-    let current_taps = (^brew tap | complete).stdout | lines
-    mut errors = []
-    let missing_taps = $taps | where {|t| $t not-in $current_taps }
-    for tap in $missing_taps {
-        print $"Tapping ($tap)..."
-        let result = do { brew tap $tap } | complete
-        if $result.exit_code != 0 {
-            $errors = ($errors | append $"tap failed: ($tap)")
-        }
-    }
-
-    let brews = (_brew_config_attr $p "brews")
-    let casks = (_brew_config_attr $p "casks")
-
-    for name in $brews {
-        let result = do { brew info --formula $name } | complete
-        if $result.exit_code != 0 {
-            $errors = ($errors | append $"brew formula not found: ($name)")
-        }
-    }
-    for name in $casks {
-        let result = do { brew info --cask $name } | complete
-        if $result.exit_code != 0 {
-            $errors = ($errors | append $"brew cask not found: ($name)")
-        }
-    }
-
-    if ($errors | is-empty) {
-        print $"All ($brews | length) brews and ($casks | length) casks validated OK"
-    } else {
-        print $"($errors | length) errors found:"
-        for e in $errors { print $"  ✗ ($e)" }
-        error make {msg: "brew config validation failed"}
-    }
-}
-
 # Show all flake outputs
 export def nix-outputs [] {
     ^nix flake show $"path:((_flake_path))"

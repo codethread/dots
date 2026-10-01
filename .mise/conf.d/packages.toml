@@ -1,0 +1,65 @@
+# Shared macOS host packages. Apply explicitly; never prune during bootstrap.
+[bootstrap.brew.taps]
+"codethread/wktree" = "https://github.com/codethread/wktree"
+"codethread/millstrand" = "https://github.com/codethread/millstrand"
+
+[bootstrap.packages]
+"brew:dicklesworthstone/tap/br" = { os = "macos" }
+"brew:dicklesworthstone/tap/bv" = { os = "macos" }
+"brew:morantron/tmux-fingers/tmux-fingers" = { os = "macos" }
+"brew:codethread/wktree/wktree" = { os = "macos" }
+"brew:BRO3886/tap/ical" = { os = "macos" }
+"brew:ical-buddy" = { os = "macos" }
+"brew:rsync" = { os = "macos" }
+"brew:graphviz" = { os = "macos" }
+"brew:imagemagick" = { os = "macos" }
+"brew:node" = { os = "macos" }
+"brew:mise" = { os = "macos" }
+"brew:gum" = { os = "macos" }
+"brew:sderosiaux/tap/launchdeck" = { os = "macos" }
+"brew-cask:codex" = { os = "macos" }
+"brew-cask:kitty" = { os = "macos" }
+"brew-cask:ghostty" = { os = "macos" }
+"brew-cask:nikitabobko/tap/aerospace" = { os = "macos" }
+"brew-cask:alfred" = { os = "macos" }
+"brew-cask:spotify" = { os = "macos" }
+"brew-cask:todoist-app" = { os = "macos" }
+"brew-cask:obsidian" = { os = "macos" }
+"brew-cask:1password" = { os = "macos" }
+"brew-cask:1password-cli" = { os = "macos" }
+"brew-cask:google-chrome" = { os = "macos" }
+"brew-cask:ungoogled-chromium" = { os = "macos" }
+"brew-cask:visual-studio-code" = { os = "macos" }
+"brew-cask:zed" = { os = "macos" }
+"brew-cask:opensuperwhisper" = { os = "macos" }
+
+[vars]
+vscode_extensions = "cunbidun.flash-vscode haphazarddev.oil-code vscodevim.vim dbaeumer.vscode-eslint esbenp.prettier-vscode biomejs.biome davidsanders.search-under-cursor usernamehw.commands wraith13.unsaved-files-vscode formulahendry.auto-close-tag formulahendry.auto-rename-tag mvllow.rose-pine jgclark.vscode-todo-highlight kamikillerto.vscode-colorize rust-lang.rust-analyzer bradlc.vscode-tailwindcss ms-playwright.playwright"
+vscode_work_extensions = ""
+
+[tasks."packages:apply"]
+description = "Install host packages, Playwright CLI, and VS Code extensions (no services)"
+run = [
+  "mise bootstrap packages apply --yes",
+  "mise run packages:npm",
+  "mise run packages:vscode",
+]
+
+[tasks."packages:status"]
+description = "Show host package installation state"
+run = "mise bootstrap packages status"
+
+[tasks."packages:npm"]
+description = "Install user-owned Playwright CLI with native Homebrew Node"
+env.NPM_CONFIG_PREFIX = "{{ env.HOME }}/.local"
+run = "/opt/homebrew/bin/node /opt/homebrew/bin/npm install --global @playwright/cli"
+
+[tasks."packages:vscode"]
+description = "Install shared and profile-specific VS Code extensions"
+shell = "/bin/bash -c"
+run = """
+set -euo pipefail
+for extension in {{ vars.vscode_extensions }} {{ vars.vscode_work_extensions }}; do
+  "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" --install-extension "$extension"
+done
+"""

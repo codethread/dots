@@ -1,0 +1,4 @@
+# Personal laptop: shared packages plus social apps, without heavy dev tools.
+[bootstrap.packages]
+"brew-cask:whatsapp" = { os = "macos" }
+"brew-cask:discord" = { os = "macos" }

@@ -2,8 +2,8 @@
 
 # Heavyweight dev-only system concerns, layered on top of the shared macOS host
 # config. Only things too large or too invasive to hand to a personal laptop
-# belong here — JVM toolchains and the container runtime. Everything else lives
-# in ./common.nix so dev, personal, and work stay in sync by default.
+# belong here — JVM toolchains. The container runtime is owned by mise's dev,
+# work, and work-boot package overlays. Shared system concerns live in ./common.nix.
 # Imported by: hosts/darwin/millstrand.nix
 
 {
@@ -16,13 +16,4 @@
   ];
 
   environment.variables.JAVA_HOME = "${pkgs.jdk.home}";
-
-  homebrew.brews = [
-    "podman" # Homebrew tracks Podman and its macOS machine integration more closely
-    "podman-compose" # Compose wrapper kept alongside Homebrew Podman
-  ];
-
-  homebrew.casks = [
-    "terminal-browser"
-  ];
 }

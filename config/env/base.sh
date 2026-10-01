@@ -61,11 +61,19 @@ case "$USER" in
 esac
 # Default mise's config environment from identity; preserve explicit overrides.
 if [ "$CT_USER" = work ]; then
-  MISE_ENV="${MISE_ENV:-work}"
+  if [ "$USER" = adamhall ] && [ -d "$HOME/pb/adam.hall/workfiles" ]; then
+    MISE_ENV="${MISE_ENV:-work}"
+  else
+    MISE_ENV="${MISE_ENV:-work-boot}"
+  fi
   KSM_WORK=true
   IS_WORK=true
 else
-  MISE_ENV="${MISE_ENV:-dev}"
+  if [ "$USER" = codethread ]; then
+    MISE_ENV="${MISE_ENV:-personal}"
+  else
+    MISE_ENV="${MISE_ENV:-dev}"
+  fi
   KSM_WORK=false
   IS_WORK=false
 fi
@@ -124,7 +132,6 @@ CLAUDE_CODE_DISABLE_BUNDLED_SKILLS="${CLAUDE_CODE_DISABLE_BUNDLED_SKILLS:-1}"
 
 if [ "$ct_os" = Darwin ]; then
   CT_BACKGROUNDS_DIR="${CT_BACKGROUNDS_DIR:-$HOME/sync/images/backgrounds}"
-  HOMEBREW_BUNDLE_FILE="${HOMEBREW_BUNDLE_FILE:-$HOME/.local/data/Brewfile.conf}"
   HOMEBREW_CELLAR="${HOMEBREW_CELLAR:-/opt/homebrew/Cellar}"
   HOMEBREW_PREFIX="${HOMEBREW_PREFIX:-/opt/homebrew}"
   HOMEBREW_REPOSITORY="${HOMEBREW_REPOSITORY:-/opt/homebrew}"

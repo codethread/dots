@@ -9,14 +9,15 @@ Architecture and design rationale are in [SPEC-006 nix-infra](devflow/specs/nix-
 
 ## Dual Channel Pattern
 
-Two nixpkgs channels: `pkgs` (unstable) and `pkgsMaster` (bleeding edge). In `common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available. Use `agentPkgSet.*` for fast-moving supporting packages from nixpkgs-master. On Darwin, nix-darwin declares Homebrew's native Node and Codex packages and Playwright is a user-managed npm tool under `~/.local`, while Claude, Cursor, and Pi come from `llm-agents`.
+Two nixpkgs channels: `pkgs` (unstable) and `pkgsMaster` (bleeding edge). In `common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available. Use `agentPkgSet.*` for fast-moving supporting packages from nixpkgs-master. On Darwin, the nix-darwin Homebrew module is disabled: `boot.sh` installs Homebrew and mise, and mise owns host packages (`.mise/conf.d/packages.toml` plus `mise.{dev,work,personal,work-boot}.toml`), while Claude, Cursor, and Pi come from `llm-agents`.
 
 ## Adding a New Package
 
 1. **Check nixpkgs first**: `nix search nixpkgs <name>` or `nix eval 'nixpkgs#<attr>'`
 2. If it is an agent CLI already provided by `llm-agents.nix` — add `agentPkgSet."llm-agents".<name>` in `features/common.nix`
 3. If it exists in nixpkgs — add to `features/common.nix` directly
-4. If not — create an overlay (see below)
+4. If it is a Homebrew formula or cask — do **not** add it to Nix; add it to `.mise/conf.d/packages.toml` or the relevant profile overlay and apply with `mise -E <profile> run packages:apply`
+5. Otherwise — create an overlay (see below)
 
 ## Adding an Overlay
 
@@ -45,7 +46,8 @@ nix build 'path:./nix#darwinConfigurations.<host>.system' --no-link
 
 A pre-commit hook in `.githooks/` enforces this automatically.
 
-- After modifying `homebrew.taps`, `homebrew.brews`, or `homebrew.casks`, run `nrs-check` to validate before rebuilding.
+- Homebrew packages are mise-owned, not Nix-owned. After changing `.mise/conf.d/packages.toml` or a profile overlay, preview with `mise -E <profile> bootstrap packages apply --dry-run` and inspect with `mise -E <profile> run packages:status`. The old `nrs-check` brew validator was removed with Nix-owned Homebrew.
+- A Nix switch does not install or upgrade Homebrew packages; upgrade formulae explicitly with `mise bootstrap packages upgrade --manager brew`.
 - Always run `nix-smoke` after Nix changes — verifies environment, binaries, config symlinks, and flake evaluation.
 
 ## Build Commands

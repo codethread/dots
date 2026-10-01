@@ -1,5 +1,5 @@
-# Homebrew utilities — packages are managed declaratively through nix-darwin.
-# These aliases are for maintenance tasks on the residual homebrew casks/brews.
+# Homebrew utilities — packages are managed declaratively through mise.
+# These aliases are for maintenance tasks on the shared Homebrew casks/brews.
 
 export def brewclean [] {
     brew cleanup
@@ -8,16 +8,33 @@ export def brewclean [] {
 
 export alias brewdeps = brew deps --graph --installed
 
-# Show what's installed via brew but not declared in nix-darwin configs
+# Show installed packages not declared in any mise machine profile.
 export def brewdrift [] {
-    let nix_dir = [$env.DOTFILES nix hosts darwin] | path join
-    let all_nix = glob ($nix_dir | path join "**/*.nix") | each { open $in } | str join "\n"
+    let root = $env.DOTFILES
+    let configs = (
+        (glob ($root | path join "mise*.toml"))
+        ++ (glob ($root | path join ".mise/conf.d/*.toml"))
+        | each { open $in }
+    )
+    let packages = $configs
+    | each { get -o bootstrap.packages | default {} | columns }
+    | flatten
+    let declared_brews = $packages
+    | where { $in | str starts-with "brew:" }
+    | each { $in | str replace "brew:" "" | split row "/" | last }
+    let declared_casks = $packages
+    | where { $in | str starts-with "brew-cask:" }
+    | each { $in | str replace "brew-cask:" "" | split row "/" | last }
+    let declared_vscode = $configs
+    | each {|cfg|
+        [
+            ($cfg | get -o vars.vscode_extensions | default "")
+            ($cfg | get -o vars.vscode_work_extensions | default "")
+        ] | str join " " | split row " " | where { $in != "" }
+    }
+    | flatten
 
-    let declared_brews = (extract-nix-list $all_nix "brews")
-    let declared_casks = (extract-nix-list $all_nix "casks")
-    let declared_vscode = (extract-nix-list $all_nix "vscode")
-
-    print $"(ansi cyan)## Brew drift — installed but not in nix configs(ansi reset)"
+    print $"(ansi cyan)## Brew drift — installed but not in mise configs(ansi reset)"
 
     print $"\n(ansi green)brews:(ansi reset)"
     let brew_drift = with-env { HOMEBREW_NO_AUTO_UPDATE: 1 } {
@@ -48,22 +65,11 @@ export def brewdrift [] {
     $ext_drift | each { print $"  ($in)" } | ignore
 }
 
-def extract-nix-list [content: string, key: string]: nothing -> list<string> {
-    $content
-    | split row $"($key) = ["
-    | skip 1
-    | each { $in | split row "]" | first }
-    | str join "\n"
-    | parse --regex '"([^"]+)"'
-    | get capture0
-    | uniq
-}
-
-# Nudge: direct package installs should go through nix
+# Nudge: direct package installs should go through mise declarations.
 export def "brew install" [...args] {
-    print $"(ansi yellow)packages are managed by nix-darwin — add to nix/ configs then run `make system`(ansi reset)"
+    print $"(ansi yellow)packages are managed by mise — add to .mise/conf.d/packages.toml or mise.<profile>.toml then run `mise -E <profile> run packages:apply`(ansi reset)"
 }
 
 export def "brew tap" [...args] {
-    print $"(ansi yellow)taps are managed by nix-darwin — add to nix/hosts/darwin/common.nix then run `make system`(ansi reset)"
+    print $"(ansi yellow)taps are managed by mise — use fully-qualified brew:owner/tap/formula entries; custom URLs belong in bootstrap.brew.taps(ansi reset)"
 }
