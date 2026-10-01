@@ -34,6 +34,10 @@ state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/tmux-codex-usage"
 previous_file="$state_dir/previous-percent"
 ttl="${CODEX_USAGE_TTL:-60}"
 
+# Socket of the in-flight usage probe, cleaned up by the EXIT/signal trap so a
+# killed invocation cannot leak its tmux server and socket file.
+usage_socket=""
+
 if ! [[ "$ttl" =~ ^[0-9]+$ ]]; then
   printf 'CODEX_USAGE_TTL must be a non-negative integer\n' >&2
   exit 2
@@ -60,11 +64,20 @@ stop_usage_server() {
   rm -f "${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/$1"
 }
 
+# Combined trap handler: tear down any in-flight probe server before releasing
+# the lock, so a kill mid-capture does not leak a tmux server/socket.
+cleanup() {
+  [[ -n "$usage_socket" ]] && stop_usage_server "$usage_socket"
+  usage_socket=""
+  rmdir "$lock_dir" 2>/dev/null || true
+}
+
 capture_percentage() {
   command -v codex >/dev/null 2>&1 || return 1
   command -v tmux >/dev/null 2>&1 || return 1
 
   local socket="codex-usage-${UID}-$$"
+  usage_socket="$socket"
   local output=""
   local work_dir="$state_dir/workdir"
   mkdir -p "$work_dir"
@@ -76,6 +89,7 @@ capture_percentage() {
     output=$(tmux -L "$socket" capture-pane -p -J -S -100 2>/dev/null) || break
     if [[ "$output" =~ weekly[[:space:]]+([0-9]+)%[[:space:]]+left ]]; then
       stop_usage_server "$socket"
+      usage_socket=""
       local percentage="${BASH_REMATCH[1]}"
       (( percentage >= 0 && percentage <= 100 )) || return 1
       printf '%s\n' "$percentage"
@@ -90,6 +104,7 @@ capture_percentage() {
   done
 
   stop_usage_server "$socket"
+  usage_socket=""
   return 1
 }
 
@@ -159,7 +174,7 @@ render() {
 
 if ! cache_is_fresh; then
   if mkdir "$lock_dir" 2>/dev/null; then
-    trap 'rmdir "$lock_dir" 2>/dev/null || true' EXIT
+    trap cleanup EXIT INT TERM HUP
     refresh_cache || true
   fi
 fi

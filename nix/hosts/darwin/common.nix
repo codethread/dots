@@ -213,6 +213,7 @@ in
       #   link = "overwrite";
       #   conflicts_with = [ "graphviz" ];
       # }
+      "beads"
       "dicklesworthstone/tap/br" # beads rust
       "dicklesworthstone/tap/bv" # Graph-aware Beads viewer
       "morantron/tmux-fingers/tmux-fingers" # mouseless terminal interaction
