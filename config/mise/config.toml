@@ -1,0 +1,23 @@
+min_version = "2026.9.15"
+
+# Global CLI defaults, linked by dotty. The project loads this same file through
+# .mise/conf.d/tools.toml, so tools are also available before the first link.
+# Keep service/bootstrap tasks project-local: they must not run in other repos.
+[tools]
+node = "24"
+bun = "1.4.2"
+go = "1.26"
+zig = "latest"
+deno = "latest"
+pnpm = "latest"
+python = "3.11"
+uv = "latest"
+rust = "stable"
+claude = "latest"
+cursor-agent = { version = "latest", postinstall = 'ln -sf cursor-agent "$MISE_TOOL_INSTALL_PATH/dist-package/agent"' }
+# Use the Node package, not the Bun binary (codemode needs its worker assets).
+"npm:@earendil-works/pi-coding-agent" = "0.99.1"
+"npm:typescript" = "latest"
+"npm:typescript-language-server" = "latest"
+# No upstream release binary/formula; retain the revision previously in flake.lock.
+"cargo:https://github.com/nushell/nufmt" = "rev:24023665d1c2661addb22dce384b53d4a839727f"

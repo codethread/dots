@@ -1,6 +1,6 @@
 # Mise cheat sheet
 
-Mise handles **tool versions**, **host packages**, **tasks**, and **managed configuration**.
+Mise handles **tool versions**, **host packages**, **tasks**, and **managed configuration**. Global tool defaults live in `config/mise/config.toml` (dotty links it into `~/.config/mise`); the project reads the same file through `.mise/conf.d/tools.toml`. Profile-only tools are mirrored in `config/mise/config.{dev,work}.toml`.
 
 ## For this dotfiles repo
 
@@ -26,7 +26,7 @@ mise -E dev run services:status
 # Preview host packages (host packages only; no npm or VS Code extras)
 mise -E dev bootstrap packages apply --dry-run
 
-# Install host packages, then Playwright CLI and VS Code extensions
+# Install tools and host packages, then Todoist, Playwright CLI and VS Code extensions
 mise -E dev run packages:apply
 
 # Show host package installation state
@@ -35,7 +35,7 @@ mise -E dev run packages:status
 
 **Avoid bare `mise bootstrap` here**: use the dedicated tasks so service dependencies are prepared first. Package work belongs to `packages:apply`, not the service tasks.
 
-Host packages live in `.mise/conf.d/packages.toml` plus the active profile overlay: `mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, or `mise.work-boot.toml` (both work bootstrap usernames use `work-boot`). `packages:apply` installs those Homebrew formulae and casks, then `@playwright/cli` with the Homebrew npm into `~/.local`, then the profile's VS Code extensions. `packages:status` reports host packages only. Applying packages never prunes unlisted packages or upgrades existing formulae; run `mise -E dev bootstrap packages upgrade --manager brew` to upgrade formulae explicitly.
+Host packages live in `.mise/conf.d/packages.toml` plus the active profile overlay: `mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, or `mise.work-boot.toml` (both work bootstrap usernames use `work-boot`). `packages:apply` installs versioned tools and those Homebrew formulae and casks, builds the pinned Todoist fork, then installs `@playwright/cli` with the Homebrew npm into `~/.local`, then the profile's VS Code extensions. `packages:status` reports host packages only. Applying packages never prunes unlisted packages or upgrades existing formulae; run `mise -E dev bootstrap packages upgrade --manager brew` to upgrade formulae explicitly.
 
 ## General commands
 
@@ -68,4 +68,6 @@ mise use --global node@24
 
 Useful distinction: **`use` changes configuration; `install` installs versioned tools only; `run` executes a task; `exec` executes an arbitrary command. Host packages are applied by `packages:apply`, not `mise install`.**
 
-No shell activation is needed for this repo’s tasks.
+No shell activation is needed. The shared environment adds mise shims after `~/.local/bin`, preserving user-owned overrides (including the custom Pi wrapper), with Homebrew before Nix profiles. `mise exec` preserves project-selected tool paths in child shells. Existing native Claude/Cursor installs under `~/.local/bin` remain deliberate overrides; `mise which claude` shows the managed executable.
+
+Apply packages before switching the reduced Nix configuration. `make link` exposes global tool defaults; open a fresh shell afterwards. Pi uses the npm/Node distribution, and its extensions install from npm names in `pi/agent/settings.json`. QMK uses PyPI because mise cannot evaluate its Homebrew tap; firmware setup remains an explicit `qmk setup` operation. Nufmt builds its previously pinned Git revision through Cargo. Work uses release binaries for Vault and cargo-lambda, avoiding source-only tap builds.

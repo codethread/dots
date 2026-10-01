@@ -156,7 +156,7 @@ fi
 
 ct_path=""
 ct_project_path_first=false
-if [ -n "${IN_NIX_SHELL:-}${DIRENV_DIR:-}" ]; then
+if [ -n "${IN_NIX_SHELL:-}${DIRENV_DIR:-}${__MISE_DIFF:-}" ]; then
   ct_project_path_first=true
   ct_path_append_list "$ct_inherited_path"
 fi
@@ -177,6 +177,14 @@ if [ -n "${_VOLTA_TOOL_RECURSION+x}" ]; then
   done
 fi
 ct_path_append "$HOME/.local/bin"
+# Global defaults without interactive activation; local wrappers (notably Pi)
+# stay first. Project mise exec environments retain their selected tool paths.
+ct_path_append "${MISE_DATA_DIR:-$XDG_DATA_HOME/mise}/shims"
+if [ "$ct_os" = Darwin ]; then
+  ct_path_append /opt/homebrew/opt/coreutils/libexec/gnubin
+  ct_path_append /opt/homebrew/bin
+  ct_path_append /opt/homebrew/sbin
+fi
 ct_path_append "$CARGO_BIN"
 ct_path_append "$VOLTA_HOME/bin"
 ct_path_append "$HOME/.bun/bin"
@@ -198,8 +206,6 @@ if [ "$ct_os" = Darwin ]; then
   ct_path_append "$ANDROID_HOME/emulator"
   ct_path_append /opt/homebrew/opt/ruby@3.1/bin
   ct_path_append /opt/homebrew/lib/ruby/gems/3.1.0/bin
-  ct_path_append /opt/homebrew/bin
-  ct_path_append /opt/homebrew/sbin
   ct_path_append "/Applications/kitty.app/Contents/MacOS"
   ct_path_append "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
   ct_path_append "/Applications/Cursor.app/Contents/Resources/app/bin"

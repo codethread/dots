@@ -1,31 +1,6 @@
-{ pkgs, ... }:
+{ ... }:
 
-# Work profile: common packages + work infra/cloud tools.
-# Used by: darwinConfigurations.work
-
+# User tools live in mise; Nix retains the activation handoff until migrated.
 {
-  imports = [
-    ../features/common.nix
-  ];
-
-  home.packages = with pkgs; [
-    # --- AWS / infra ---
-    awscli2
-    buf
-    vault
-    miller
-
-    # --- APIs / gRPC ---
-    grpcui
-    grpcurl
-
-    # --- Git forges ---
-    glab
-
-    # --- Rust / Lambda ---
-    cargo-lambda
-
-    # TODO: verify/add overlays for packages not yet in nixpkgs:
-    #   vault-token-helper — third-party, may need overlay
-  ];
+  imports = [ ../features/common.nix ];
 }

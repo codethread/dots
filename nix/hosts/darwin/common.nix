@@ -24,6 +24,10 @@ let
   syncengineStateDir = "${homeDir}/.local/state/com.codethread.syncengine";
   guiPath = lib.concatStringsSep ":" [
     "${homeDir}/.local/bin"
+    "${homeDir}/.local/share/mise/shims"
+    "/opt/homebrew/opt/coreutils/libexec/gnubin"
+    "/opt/homebrew/bin"
+    "/opt/homebrew/sbin"
     "${homeDir}/.local/share/cargo/bin"
     "${homeDir}/.volta/bin"
     "${homeDir}/.bun/bin"
@@ -31,8 +35,6 @@ let
     nixUserBin
     "/run/current-system/sw/bin"
     "/nix/var/nix/profiles/default/bin"
-    "/opt/homebrew/bin"
-    "/opt/homebrew/sbin"
     "/opt/podman/bin"
     "/usr/local/bin"
     "/usr/bin"

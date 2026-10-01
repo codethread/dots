@@ -1,20 +1,10 @@
 {
   pkgs,
-  pkgsMaster ? null,
-  config,
   lib,
   ...
 }:
 
 let
-  agentPkgSet = if pkgsMaster == null then pkgs else pkgsMaster;
-  llmAgents = agentPkgSet."llm-agents";
-  cursorAgent = llmAgents.cursor-agent;
-  cursorAgentCommand = pkgs.runCommand "cursor-agent-command" { } ''
-    mkdir -p "$out/bin"
-    ln -s ${lib.getExe cursorAgent} "$out/bin/agent"
-  '';
-
   # Package executable bindings
   atuinCmd = lib.getExe pkgs.atuin;
   carapaceCmd = lib.getExe pkgs.carapace;
@@ -77,7 +67,6 @@ in
 {
   imports = [
     ./home-base.nix
-    ./pi.nix
     ./zsh-completions.nix
   ];
 
@@ -184,82 +173,6 @@ in
         'use ct/dotty; dotty link --no-cache | ignore'
     fi
   '';
-
-  home.packages = with pkgs; [
-    # --- Agent tools ---
-    agentPkgSet.typescript
-    agentPkgSet.typescript-language-server
-    llmAgents.claude-code
-    cursorAgent
-    cursorAgentCommand
-
-    # --- Core ---
-    # Explicit rather than relying on the login shell / system git, so every
-    # profile (including lightweight laptops) gets the same versions. Darwin
-    # keeps its system OpenSSH for UseKeychain and 1Password IdentityAgent.
-    nushell
-    git
-
-    # --- Languages ---
-    go
-    zig
-    bun
-    deno
-    pnpm
-    rustup
-    python311
-    luarocks
-
-    # --- Shell ---
-    neovim
-    tmux
-    smug
-    antidote
-    atuin
-    starship
-    carapace
-    fzf
-    skim
-    zellij
-
-    # --- Utils ---
-    poppler-utils
-    resvg
-    coreutils
-    fswatch
-    entr
-    ffmpeg
-    fd
-    ripgrep
-    jq
-    yq
-    dasel
-    sd
-    tree
-    btop
-    dust
-    stylua
-    tree-sitter # CLI for nvim-treesitter; Neovim owns parser installation
-    wakatime-cli
-    prettierd
-    nixfmt
-    nufmt
-    just
-    uv
-    fx
-    tokei
-    grc
-    todoist-cli
-    taplo # toml parser
-    gh
-    git-lfs
-    lazygit
-    lazydocker
-    difftastic
-    yt-dlp
-    ast-grep
-    vivid
-  ];
 
   programs.direnv = {
     enable = true;

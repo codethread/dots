@@ -4,6 +4,56 @@
 "codethread/millstrand" = "https://github.com/codethread/millstrand"
 
 [bootstrap.packages]
+# Shared CLI packages formerly in nix/features/common.nix.
+# python-yq is the jq wrapper; tree-sitter-cli is the parser generator.
+"brew:nushell" = { os = "macos" }
+"brew:git" = { os = "macos" }
+"brew:luarocks" = { os = "macos" }
+"brew:neovim" = { os = "macos" }
+"brew:tmux" = { os = "macos" }
+"brew:smug" = { os = "macos" }
+"brew:antidote" = { os = "macos" }
+"brew:atuin" = { os = "macos" }
+"brew:starship" = { os = "macos" }
+"brew:carapace" = { os = "macos" }
+"brew:fzf" = { os = "macos" }
+"brew:sk" = { os = "macos" }
+"brew:zellij" = { os = "macos" }
+"brew:poppler" = { os = "macos" }
+"brew:resvg" = { os = "macos" }
+"brew:coreutils" = { os = "macos" }
+"brew:fswatch" = { os = "macos" }
+"brew:entr" = { os = "macos" }
+"brew:ffmpeg" = { os = "macos" }
+"brew:fd" = { os = "macos" }
+"brew:ripgrep" = { os = "macos" }
+"brew:jq" = { os = "macos" }
+"brew:python-yq" = { os = "macos" }
+"brew:dasel" = { os = "macos" }
+"brew:sd" = { os = "macos" }
+"brew:tree" = { os = "macos" }
+"brew:btop" = { os = "macos" }
+"brew:dust" = { os = "macos" }
+"brew:stylua" = { os = "macos" }
+"brew:tree-sitter-cli" = { os = "macos" }
+"brew:wakatime-cli" = { os = "macos" }
+"brew:prettierd" = { os = "macos" }
+"brew:nixfmt" = { os = "macos" }
+"brew:just" = { os = "macos" }
+"brew:fx" = { os = "macos" }
+"brew:tokei" = { os = "macos" }
+"brew:grc" = { os = "macos" }
+"brew:taplo" = { os = "macos" }
+"brew:gh" = { os = "macos" }
+"brew:git-lfs" = { os = "macos" }
+"brew:lazygit" = { os = "macos" }
+"brew:lazydocker" = { os = "macos" }
+"brew:difftastic" = { os = "macos" }
+"brew:yt-dlp" = { os = "macos" }
+"brew:ast-grep" = { os = "macos" }
+"brew:vivid" = { os = "macos" }
+"brew:direnv" = { os = "macos" }
+
 "brew:dicklesworthstone/tap/br" = { os = "macos" }
 "brew:dicklesworthstone/tap/bv" = { os = "macos" }
 "brew:morantron/tmux-fingers/tmux-fingers" = { os = "macos" }
@@ -38,9 +88,11 @@ vscode_extensions = "cunbidun.flash-vscode haphazarddev.oil-code vscodevim.vim d
 vscode_work_extensions = ""
 
 [tasks."packages:apply"]
-description = "Install host packages, Playwright CLI, and VS Code extensions (no services)"
+description = "Install tools, host packages, Todoist, Playwright CLI, and VS Code extensions (no services)"
 run = [
+  "mise install",
   "mise bootstrap packages apply --yes",
+  "mise run packages:todoist",
   "mise run packages:npm",
   "mise run packages:vscode",
 ]

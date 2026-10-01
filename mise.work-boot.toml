@@ -1,5 +1,6 @@
 # Both work bootstrap usernames use this package environment.
 [bootstrap.packages]
+"brew:glab" = { os = "macos" }
 "brew:podman" = { os = "macos" }
 "brew:podman-compose" = { os = "macos" }
 "brew:codethread/millstrand/millstrand" = { os = "macos" }

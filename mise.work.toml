@@ -5,6 +5,12 @@ git_maintenance_repositories = "~/pb/app/deals-light-ui"
 vscode_work_extensions = "rohit-gohri.format-code-action golang.go styled-components.vscode-styled-components stylelint.vscode-stylelint"
 
 [bootstrap.packages]
+"brew:awscli" = { os = "macos" }
+"brew:buf" = { os = "macos" }
+"brew:miller" = { os = "macos" }
+"brew:grpcui" = { os = "macos" }
+"brew:grpcurl" = { os = "macos" }
+"brew:glab" = { os = "macos" }
 "brew:podman" = { os = "macos" }
 "brew:podman-compose" = { os = "macos" }
 "brew:codethread/millstrand/millstrand" = { os = "macos" }
@@ -14,3 +20,8 @@ vscode_work_extensions = "rohit-gohri.format-code-action golang.go styled-compon
 "brew-cask:licecap" = { os = "macos" }
 "brew-cask:obs" = { os = "macos" }
 "brew-cask:proxyman" = { os = "macos" }
+
+# Also declared globally in config/mise/config.work.toml for use outside dots.
+[tools]
+vault = "latest"
+"github:cargo-lambda/cargo-lambda" = "latest"

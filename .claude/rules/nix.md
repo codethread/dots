@@ -7,34 +7,17 @@ paths:
 
 Architecture and design rationale are in [SPEC-006 nix-infra](devflow/specs/nix-infra.md). This file covers operational how-tos.
 
-## Dual Channel Pattern
+## Package Ownership
 
-Two nixpkgs channels: `pkgs` (unstable) and `pkgsMaster` (bleeding edge). In `common.nix`, `agentPkgSet` resolves to `pkgsMaster` when available. Use `agentPkgSet.*` for fast-moving supporting packages from nixpkgs-master. On Darwin, the nix-darwin Homebrew module is disabled: `boot.sh` installs Homebrew and mise, and mise owns host packages (`.mise/conf.d/packages.toml` plus `mise.{dev,work,personal,work-boot}.toml`), while Claude, Cursor, and Pi come from `llm-agents`.
+Mise owns user CLI packages, runtimes, agent CLIs, and Homebrew applications:
 
-## Adding a New Package
+- `config/mise/config.toml` declares global versioned tools; `.mise/conf.d/tools.toml` links the same file into the project.
+- `.mise/conf.d/packages.toml` and `mise.{dev,work,personal,work-boot}.toml` declare host packages.
+- `config/mise/config.{dev,work}.toml` mirrors profile-specific `[tools]` for use outside the checkout.
+- Pi installs its own npm extensions from `pi/agent/settings.json`.
+- `.mise/conf.d/todoist.toml` builds the pinned codethread fork.
 
-1. **Check nixpkgs first**: `nix search nixpkgs <name>` or `nix eval 'nixpkgs#<attr>'`
-2. If it is an agent CLI already provided by `llm-agents.nix` — add `agentPkgSet."llm-agents".<name>` in `features/common.nix`
-3. If it exists in nixpkgs — add to `features/common.nix` directly
-4. If it is a Homebrew formula or cask — do **not** add it to Nix; add it to `.mise/conf.d/packages.toml` or the relevant profile overlay and apply with `mise -E <profile> run packages:apply`
-5. Otherwise — create an overlay (see below)
-
-## Adding an Overlay
-
-1. Add a `flake = false` input in `flake.nix` inputs
-2. Add the input name to the `outputs` function args
-3. Define the overlay in the `let` block using the appropriate builder
-4. Add to all overlay lists: `{ nixpkgs.overlays = [ ... newOverlay ]; }`
-5. Reference the package in `features/common.nix`
-
-### Hash Discovery
-
-Use an empty string `""` for the initial hash (`vendorHash`, `npmDepsHash`, etc.). Build will fail and print the correct hash — copy it in.
-
-### Common buildNpmPackage Flags
-
-- `dontNpmBuild = true` — package has no build script
-- `env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"` — skip postinstall browser downloads
+Load the mise skill before adding packages. Use `mise -E <profile> run packages:apply`; do not add user packages or agent overlays back to Nix. The flake now uses one nixpkgs channel. Remaining Darwin system packages, defaults, login shell, and Nix-owned services stay in `nix/hosts/darwin/` until separately migrated.
 
 ## Validation
 

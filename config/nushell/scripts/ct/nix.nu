@@ -184,11 +184,6 @@ export def nix-sys-packages [profile?: string] {
     ^nix eval $attr --apply "map (p: p.name)" --json | from json | sort | uniq
 }
 
-export def nix-update-llm [] {
-    let flake = $"path:((_flake_path))"
-    nix flake update llm-agents --flake $flake
-}
-
 # Show all flake outputs
 export def nix-outputs [] {
     ^nix flake show $"path:((_flake_path))"

@@ -109,7 +109,7 @@ bindkey "^X^E" edit-command-line
 #: }}}
 #: init {{{
 
-source "$XDG_STATE_HOME/home-manager/gcroots/current-home/home-path/share/antidote/antidote.zsh"
+source "$HOMEBREW_PREFIX/opt/antidote/share/antidote/antidote.zsh"
 
 cache_zsh_init() {
   local name="$1"

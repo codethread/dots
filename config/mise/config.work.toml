@@ -1,0 +1,4 @@
+# Keep aligned with the [tools] section of mise.work.toml.
+[tools]
+vault = "latest"
+"github:cargo-lambda/cargo-lambda" = "latest"

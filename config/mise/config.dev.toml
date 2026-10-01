@@ -1,0 +1,3 @@
+# Keep aligned with the [tools] section of mise.dev.toml.
+[tools]
+"pypi:qmk" = "1.2.0"

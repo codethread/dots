@@ -10,15 +10,6 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-master.url = "github:nixos/nixpkgs";
-    llm-agents.url = "github:numtide/llm-agents.nix";
-    nufmt.url = "github:nushell/nufmt";
-
-    todoist-src = {
-      url = "github:codethread/todoist/codethread";
-      flake = false;
-    };
-
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -34,42 +25,15 @@
     {
       self,
       nixpkgs,
-      nixpkgs-master,
-      llm-agents,
-      nufmt,
-      todoist-src,
       nix-darwin,
       home-manager,
       ...
     }:
     let
-      llmAgentsOverlay = final: prev: {
-        "llm-agents" = llm-agents.packages.${final.system};
-      };
-      nufmtOverlay = final: prev: {
-        nufmt = nufmt.packages.${final.system}.default;
-      };
-
-      todoistOverlay = final: prev: {
-        todoist-cli = final.buildGoModule {
-          pname = "todoist";
-          version = "0-unstable";
-          src = todoist-src;
-          vendorHash = "sha256-eVB5k/Z5Z6SsPqySPm4xZIh07c9xbijImRk8zdvY6tA=";
-          nativeBuildInputs = [ final.gotools ];
-          preBuild = ''
-            goyacc -o filter_parser.go filter_parser.y
-          '';
-        };
-      };
-
       # Each host picks a profile from nix/profiles/ and binds it to one user.
-      hmFor = username: profile: pkgsMaster: {
+      hmFor = username: profile: {
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
-        home-manager.extraSpecialArgs = {
-          inherit pkgsMaster;
-        };
         home-manager.users = {
           "${username}" = import profile;
         };
@@ -87,35 +51,14 @@
         hostModule: username: profile:
         nix-darwin.lib.darwinSystem {
           system = "aarch64-darwin"; # Intel Mac: x86_64-darwin
-          specialArgs = {
-            pkgsMaster = pkgsMasterFor "aarch64-darwin";
-          };
           modules = [
-            {
-              nixpkgs.overlays = [
-                llmAgentsOverlay
-                nufmtOverlay
-                todoistOverlay
-              ];
-            }
             (darwinUser username)
             hostModule
             home-manager.darwinModules.home-manager
-            (hmFor username profile (pkgsMasterFor "aarch64-darwin"))
+            (hmFor username profile)
           ];
         };
 
-      pkgsMasterFor =
-        system:
-        import nixpkgs-master {
-          inherit system;
-          overlays = [
-            llmAgentsOverlay
-            nufmtOverlay
-          ];
-          config.allowUnfree = true;
-          config.allowUnsupportedSystem = true;
-        };
     in
     {
       devShells =
