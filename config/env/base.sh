@@ -100,7 +100,6 @@ fi
 PI_CODING_AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
 # TODO: likely want this in the cli wrapper so it's only interactive and on demand
 # PI_CACHE_RETENTION="${PI_CACHE_RETENTION:-long}"
-PI_OFFLINE="${PI_OFFLINE:-1}"
 PI_SKIP_VERSION_CHECK="${PI_SKIP_VERSION_CHECK:-1}"
 
 PDX_DATA_DIR="${PDX_DATA_DIR:-$HOME/.pdx}"
