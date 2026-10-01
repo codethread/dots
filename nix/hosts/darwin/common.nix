@@ -200,6 +200,10 @@ in
         name = "dicklesworthstone/tap";
         trusted = true;
       } # beads_rust
+      {
+        name = "sderosiaux/tap";
+        trusted = true;
+      } # launchdeck
     ];
     brews = [
       # {
@@ -221,6 +225,7 @@ in
       "node" # Runtime for user-owned global npm tools
       "mise" # Stable native executable; owns cc-notify and Git maintenance LaunchAgents
       "gum" # beautiful shell TUI helpers
+      "sderosiaux/tap/launchdeck" # launchd + Homebrew services TUI
     ];
     extraConfig = ''
       npm "@playwright/cli"
