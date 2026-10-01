@@ -2,7 +2,7 @@
 
 ## Scope and ownership
 
-The project mise configuration owns four user LaunchAgents: cc-notify and hourly/daily/weekly Git maintenance. macOS launchd supervises them; mise renders and applies their definitions. This is deliberately project-scoped, with no shell activation, global mise config, or extra supervisor.
+The project mise configuration owns four user LaunchAgents: cc-notify and hourly/daily/weekly Git maintenance. macOS launchd supervises them; mise renders and applies their definitions. Service declarations are deliberately project-scoped: they require no shell activation or extra supervisor and are not part of the global mise tool configuration.
 
 - `mise.toml`: pinned tools and shared prepare/apply/status tasks.
 - `.mise/conf.d/cc-notify.toml`: foreground cc-notify task and its LaunchAgent.
@@ -10,9 +10,9 @@ The project mise configuration owns four user LaunchAgents: cc-notify and hourly
 - `mise.dev.toml`: notes vault maintenance and cc-notify.
 - `mise.work.toml`: deals-light-ui maintenance and cc-notify.
 - Personal and work-boot machines do not apply these services. Select `dev` or `work` explicitly; a missing overlay cannot render the required profile variables.
-- mise also owns macOS host packages: `.mise/conf.d/packages.toml` plus the profile overlays (`mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, `mise.work-boot.toml`). `packages:apply` installs those packages, then user-prefix `@playwright/cli` and the profile's VS Code extensions; `packages:status` reports host state. Applying packages never prunes or upgrades; formula upgrades are explicit via `mise bootstrap packages upgrade --manager brew`.
+- mise also owns macOS host packages: `.mise/conf.d/packages.toml` plus the profile overlays (`mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, `mise.work-boot.toml`). `packages:apply` installs versioned tools and those packages, builds the pinned Todoist fork, then installs user-prefix `@playwright/cli` and the profile's VS Code extensions; `packages:status` reports host state. Applying packages never prunes or upgrades; formula upgrades are explicit via `mise bootstrap packages upgrade --manager brew`.
 - `boot/boot.sh` installs Homebrew and then mise (`brew install mise`); the stable service executable is `/opt/homebrew/bin/mise`, not a Nix-store path. Nix no longer declares or upgrades Homebrew packages. This matches the repository's Apple Silicon hosts.
-- mise provides pinned Bun 1.4.2 through `[tools]` for cc-notify. Other Nix-managed runtimes are unchanged.
+- mise provides pinned Bun 1.4.2 through `[tools]` for cc-notify. Other user runtimes are also mise-owned through `config/mise/`; remaining Darwin system packages are separate.
 - Git maintenance uses macOS `/usr/bin/git` (Command Line Tools required).
 
 mise discovers the `.mise/conf.d/*.toml` fragments automatically; no include directive or experimental setting is needed. Keep each complete agent declaration in one fragment: duplicate names replace the entire declaration, not individual fields. For these recognized project fragments, `config_root` remains the repository root, so moving declarations does not change generated executable paths. The root profile overlays still supply the shared variables.

@@ -44,10 +44,7 @@ run = '"{{ config_root }}/home/.local/bin/mise-shell-prepare"'
 
 [tasks."workstation:apply"]
 description = "Apply packages, repositories, dotfiles, and shell caches (no services or system switch)"
-run = [
-  "mise run packages:apply",
-  "mise run workstation:setup",
-]
+run = ["mise run packages:apply", "mise run workstation:setup"]
 
 [tasks."workstation:setup"]
 description = "Apply user setup after packages are installed (no services or system switch)"

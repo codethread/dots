@@ -3,7 +3,7 @@
 - Document ID: SPEC-003
 - Configuration identification: SPEC-003; migrated from `specs/dotty.md`; canonical path `devflow/specs/dotty.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-04-04
+- **Last Updated:** 2026-10-01
 
 ## [SPEC-003-S1] 1. Overview
 
@@ -23,7 +23,7 @@ General-purpose dotfile symlink manager written in Nushell. Takes a TOML configu
 ### [SPEC-003-S1.3] Non-Goals
 
 - Managing application-specific config generation (that's each tool's concern; e.g. mise renders `templates/claude-settings.json.tera` to `~/.claude/settings.json`)
-- Package installation or system configuration (that's Nix)
+- Package installation or system configuration (mise owns user packages; Nix retains the macOS system layer)
 - Text template rendering or variable substitution in linked files
 - Structured formats other than TOML (the merge architecture may add formats later)
 
@@ -154,7 +154,7 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 | System | Command | When | Notes |
 | --- | --- | --- | --- |
 | **Makefile** (`make link`) | `DOTFILES=$(ROOT) dotty link --no-cache <repo>/config/dotty/dotty.toml` | Manual rebuild | Exports `DOTFILES` as the current checkout root for worktree support |
-| **Nix activation** (`dottyLink`) | `dotty link --no-cache` | Every `*-rebuild switch` | Runs after `userBootstrap` phase. Exports `DOTFILES`, `XDG_*` vars. Explicit `PATH` with git, coreutils, findutils, gnugrep, gnused, nushell, bash. Skips gracefully if `$DOTFILES` directory missing. |
+| **Mise** (`dotfiles:apply`) | `dotty link --no-cache <repo>/config/dotty/dotty.toml` | `workstation:setup` / explicit task | Runs after repository preparation. Exports `DOTFILES` as the active checkout, passes its manifest explicitly, and fails on real-file conflicts. No Nix activation dependency. |
 | **Neovim** | `dotty link`, `dotty format`, `dotty is-cwd` | Editor events | Auto-links on `BufWritePost`/`BufFilePost`/`VimLeavePre`. Detects dotfiles project via `is-cwd` on git root. |
 
 ### [SPEC-003-S4.3] Worktree / Feature-Branch Support
@@ -165,7 +165,7 @@ The Makefile `link` target enables testing dotty from any checkout:
 2. The Makefile exports `DOTFILES=$(ROOT)` before invoking Nushell
 3. `dotty link --no-cache` receives the checkout's tracked `config/dotty/dotty.toml` directly
 
-The Nix activation hook exports `DOTFILES` as `$HOME/dev/dots` (the canonical clone path).
+The mise task also exports the active checkout as `DOTFILES` and passes its manifest explicitly, so it works before `~/.config/dotty` exists and does not read another checkout's manifest. Apply user setup from a durable checkout.
 
 ## [SPEC-003-S5] 5. Design Decisions
 
@@ -175,7 +175,7 @@ The Nix activation hook exports `DOTFILES` as `$HOME/dev/dots` (the canonical cl
 
 - **Per-project caches** — each project gets its own cache file rather than a single global cache. This allows independent invalidation and makes directory-mode transitions clean (file entries are replaced by a single `"."` entry).
 
-- **`--no-cache` as default for automation** — all non-interactive invocations (Makefile and Nix activation) use `--no-cache`. Only the Neovim integration uses cached mode for speed. This ensures automation is always correct at the cost of re-scanning.
+- **`--no-cache` as default for automation** — all non-interactive invocations (Makefile and mise) use `--no-cache`. Only the Neovim integration uses cached mode for speed. This ensures automation is always correct at the cost of re-scanning.
 
 - **git-ignore awareness** — dotty uses git's own ignore machinery (`git ls-files`, `git check-ignore`) rather than reimplementing glob exclusion. Files that git ignores are never linked, preventing accidental exposure of build artifacts or secrets.
 

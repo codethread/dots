@@ -3,18 +3,18 @@
 - Document ID: SPEC-001
 - Configuration identification: SPEC-001; migrated from `specs/agentic-config.md`; canonical path `devflow/specs/agentic-config.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-09-30
+- **Last Updated:** 2026-10-01
 
 ## [SPEC-001-S1] 1. Overview
 
 ### [SPEC-001-S1.1] Purpose
 
-Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related agent CLIs. Manages package provisioning, settings generation, hook compilation, asset symlinks, plugin wiring, and shell wrappers — with `make system`, `make link`, and `make build` provisioning packages/assets/tools, and `mise -E dev run claude:apply` (or `work`) applying global Claude settings.
+Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related agent CLIs. Manages package provisioning, settings generation, hook compilation, asset symlinks, plugin wiring, and shell wrappers — with mise `packages:apply`, `make link`, and `make build` provisioning packages/assets/tools, and `mise -E dev run claude:apply` (or `work`) applying global Claude settings.
 
 ### [SPEC-001-S1.2] Goals
 
 - Single source of truth for global Claude settings in `templates/claude-settings.json.tera`, rendered by mise
-- On macOS, nix-darwin declares Homebrew's native Codex CLI and Playwright CLI uses a user-writable npm prefix, while Claude and Pi come from `llm-agents`
+- Mise provisions native Codex/Claude/Cursor CLIs, Node-based Pi, and Playwright CLI; Pi owns its npm extensions
 - All agent assets (agents, skills, commands, rules) version-controlled and symlinked into place via dotty
 - Type-safe hook contracts shared across TypeScript and Bash implementations
 - Context-aware shell wrappers that inject environment-specific prompts
@@ -64,12 +64,12 @@ Four configuration layers compose at runtime:
 └─────────────────────────────────────────────────────┘
 ```
 
-Settings merge order: mise globals → project settings → local overrides. Agent CLI packages are supplied separately by the flake package layer. This spec covers the package layer plus layers 1 and 2 only.
+Settings merge order: mise globals → project settings → local overrides. Agent CLI packages are supplied separately by mise global tools and host package declarations. This spec covers the package layer plus layers 1 and 2 only.
 
 ### [SPEC-001-S2.1] Build Pipeline
 
 ```
-make system  →  nix rebuild  →  agent CLI packages provisioned
+mise -E dev run packages:apply → agent CLI packages provisioned
 mise -E dev run claude:apply → ~/.claude/settings.json rendered + /tmp/claude prepared
 make link    →  dotty link   →  claude/ assets symlinked to ~/.claude/
 make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
@@ -79,10 +79,11 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 
 ### [SPEC-001-S2.2] Package Provisioning
 
-- nix-darwin declares Homebrew's native Node and Codex packages on macOS; Playwright CLI uses an npm-managed installation and update path under `~/.local`
-- Claude and Pi are provided by `llm-agents` and updated with `nrs --update`
+- Mise declares Homebrew Node/Codex and the user-prefix Playwright CLI in `.mise/conf.d/packages.toml`.
+- Global mise tools provide Claude, Cursor (`cursor-agent` and `agent`), and `npm:@earendil-works/pi-coding-agent` with Node. They are available outside this checkout through `config/mise/` and shims.
+- Pi installs missing `npm:pi-nvim` and `npm:@narumitw/pi-goal` extensions from `pi/agent/settings.json`; use `pi update --extensions` to update them. The shared shell environment no longer forces offline mode.
 
-`make system` installs the declared Homebrew cask when Codex is missing. Homebrew upgrades remain intentional because `homebrew.onActivation.upgrade` is disabled; use `brew upgrade --cask codex` to update it. The npm-managed tools install and update through their upstream commands. `nix-smoke` still requires their binaries, so a missing install remains visible.
+`packages:apply` installs missing host packages without pruning or upgrading existing formulae. Use explicit mise package upgrades or `mise upgrade` for versioned tools. Pi's version is pinned in global tool config. `~/.local/bin` stays ahead of shims to preserve the custom Pi wrapper and existing native agent overrides. `nix-smoke` still checks that the binaries are present.
 
 - `config/dotty/dotty.toml` links the tracked `pi/` directory into `~/.pi/agent`
 - Most mutable Pi config now lives in `https://github.com/codethread/agents`; this repo keeps the `pi/agent.njk` template plus minimal bootstrap files and symlinks that make Pi consume the shared prompt/config layout
@@ -218,11 +219,12 @@ Direct `pi` invocation with shared repo-aware configuration:
 - `config.toml`: model gpt-5.4, personality pragmatic, effort high. Profiles: fast-review (gpt-5.3-codex, medium), deep-review (gpt-5.4, high). 15 trusted project paths. Falls back to CLAUDE.md for project docs.
 - `AGENTS.md`: global instruction for conciseness
 
-### [SPEC-001-S4.9] Agent CLI Packages (`nix/flake.nix`, `nix/features/common.nix`)
+### [SPEC-001-S4.9] Agent CLI Packages
 
-- Source: `llm-agents.nix` overlay
-- Installed CLIs: `claude-code` and `pi` from `llm-agents`; `codex` is a Homebrew cask
-- `pkgsMaster` remains the preferred source for fast-moving supporting packages like Node.js and TypeScript
+- `config/mise/config.toml`: native Claude/Cursor, Node-based Pi, TypeScript and its language server.
+- `.mise/conf.d/packages.toml`: Homebrew Codex/Node and user-prefix Playwright CLI.
+- `.mise/conf.d/tools.toml`: project link to the global tools file, so first bootstrap does not require installed global config.
+- `pi/agent/settings.json`: Pi-owned npm extension installation; no Nix tarballs or manually assembled dependency trees.
 
 ### [SPEC-001-S4.10] Nushell Wrappers (`config/nushell/scripts/ct/interactive/claude.nu`)
 
@@ -265,7 +267,7 @@ Disables Ctrl+A in Global context.
 
 - **Mise as settings source of truth.** `templates/claude-settings.json.tera` renders to a regular `~/.claude/settings.json`; profile overlays select work plugins and marketplaces. Applying settings no longer requires a Nix rebuild. Manual edits to the output are overwritten on apply; use project-local or local override settings for overrides.
 
-- **Native package ownership on macOS.** nix-darwin declares Homebrew's native Node and Codex packages, while Playwright is npm-managed in `~/.local` and Claude and Pi come from `llm-agents`. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
+- **Native package ownership on macOS.** Mise declares host packages and global tools; Playwright is npm-managed in `~/.local`, and Pi uses its npm/Node distribution. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
 
 - **Dotty for asset linking, not Nix.** Agents, skills, commands, and rules are symlinked by dotty rather than Nix home-manager. This allows editing assets in dots and seeing changes immediately without a nix rebuild. Global settings are templated by mise separately from asset linking.
 

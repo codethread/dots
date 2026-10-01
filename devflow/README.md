@@ -10,7 +10,7 @@ Persistent domain specifications. Organized by system area, not feature chronolo
 
 | Spec | Code | Purpose |
 | --- | --- | --- |
-| [SPEC-001 agentic-config](./specs/agentic-config.md) | `nix/flake.nix`, `nix/features/common.nix`, `templates/claude-settings.json.tera`, `.mise/conf.d/claude-code.toml`, `claude/`, `pi/`, `config/codex/`, `config/nushell/scripts/ct/interactive/{claude,pi}.nu`, `home/.local/bin/cl`, `oven/bin/cc-hook--*.ts`, `oven/shared/claude-hooks.ts`, `home/.local/bin/cc-hook--*` | Claude Code, Codex, and Pi global configuration: package provisioning, settings, hooks, agents, skills, plugins, wrappers (Note: much of the reusable Pi configuration has moved to the `agents` project repository) |
+| [SPEC-001 agentic-config](./specs/agentic-config.md) | `config/mise/`, `.mise/conf.d/packages.toml`, `templates/claude-settings.json.tera`, `.mise/conf.d/claude-code.toml`, `claude/`, `pi/`, `config/codex/`, `config/nushell/scripts/ct/interactive/{claude,pi}.nu`, `home/.local/bin/cl`, `oven/bin/cc-hook--*.ts`, `oven/shared/claude-hooks.ts`, `home/.local/bin/cc-hook--*` | Claude Code, Codex, and Pi global configuration: package provisioning, settings, hooks, agents, skills, plugins, wrappers (Note: much of the reusable Pi configuration has moved to the `agents` project repository) |
 
 ## Infrastructure
 
@@ -19,7 +19,7 @@ Persistent domain specifications. Organized by system area, not feature chronolo
 | [Mise services](./specs/mise-services.md) | `mise.toml`, `.mise/conf.d/*.toml`, `mise.{dev,work}.toml`, `home/.local/bin/{git-maintenance,mise-services-prepare}` | macOS LaunchAgents for cc-notify and Git maintenance |
 | [SPEC-006 nix-infra](./specs/nix-infra.md) | `nix/`, `boot/`, `config/nushell/scripts/ct/nix.nu`, `.githooks/pre-commit` | Declarative system configuration and bootstrap for macOS machines |
 | [SPEC-009 shell-environment](./specs/shell-environment.md) | `config/env/`, `config/{bash,zsh,nushell}/`, `config/tmux/tmux.conf`, `boot/boot.sh` | Shared Bash-authored environment and PATH contract with shell adapters |
-| [SPEC-003 dotty](./specs/dotty.md) | `config/nushell/scripts/ct/dotty/`, `config/dotty/dotty.toml`, `config/nvim/lua/codethread/dotty.lua`, `Makefile`, `nix/features/common.nix` | General-purpose dotfile symlink manager: TOML-driven file and directory linking with caching and conflict resolution |
+| [SPEC-003 dotty](./specs/dotty.md) | `config/nushell/scripts/ct/dotty/`, `config/dotty/dotty.toml`, `config/nvim/lua/codethread/dotty.lua`, `Makefile`, `.mise/conf.d/workstation.toml` | General-purpose dotfile symlink manager: TOML-driven file and directory linking with caching and conflict resolution |
 | [SPEC-007 theming](./specs/theming.md) | `oven/bin/theme.ts`, `config/kitty/kitty.conf`, `config/kitty/themes/`, `config/nushell/config.nu`, `config/nushell/scripts/ct/{themes,ls-colors}.nu`, `config/nvim/lua/codethread/theme.lua`, `config/nvim/lua/plugins/ui.lua` | Shared light/dark and theme-family control across macOS, Kitty, Nushell, and Neovim; Nix and other apps still future work |
 | [SPEC-005 kitty-notifications](./specs/kitty-notifications.md) | `config/kitty/kitty.conf`, `config/kitty/notifications.py` | Kitty notification filtering for agent CLIs |
 | [SPEC-004 git-worktrees](./specs/git-worktrees.md) | `config/ct-worktrees/trees.toml`, `config/nushell/config.nu`, `config/nushell/env.nu`, `/Users/adamhall/dev/projects/wktree` | Personal worktree workflow integration; implementation contract lives in the external `wktree` repo |
