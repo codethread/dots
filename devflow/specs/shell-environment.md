@@ -2,7 +2,7 @@
 
 - Document ID: SPEC-009
 - **Status:** Implemented
-- **Last Updated:** 2026-09-30
+- **Last Updated:** 2026-10-01
 
 ## [SPEC-009-S1] Purpose
 
@@ -36,6 +36,10 @@ Known user/tool roots remain in PATH even before they exist. Installing into one
 ## [SPEC-009-S3a] SHELL Contract
 
 The base keeps the inherited `SHELL`, falling back to `zsh` when unset, and resolves it against the final PATH to an absolute executable path. Callers that deliberately set `SHELL`, such as agent CLIs, therefore keep their choice. If resolution fails, the base warns on stderr, leaves `SHELL` unchanged, and returns non-zero after restoring the caller's shell options. `emit.sh --tmux` passes the caller's `SHELL` into its clean subprocess and uses the resolved value as tmux's `default-shell`.
+
+## [SPEC-009-S3b] Mise Environment
+
+The base exports `MISE_ENV=work` when `CT_USER=work`, otherwise `MISE_ENV=dev`. An existing non-empty `MISE_ENV` is preserved. This default applies to all mise invocations inheriting the shared environment, so dots tasks no longer require `-E`; an explicit CLI `-E` still overrides the selection.
 
 ## [SPEC-009-S4] Interfaces
 

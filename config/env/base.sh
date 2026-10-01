@@ -59,10 +59,13 @@ case "$USER" in
   adam.hall|adamhall) CT_USER="${CT_USER:-work}" ;;
   *) CT_USER="${CT_USER:-home}" ;;
 esac
+# Default mise's config environment from identity; preserve explicit overrides.
 if [ "$CT_USER" = work ]; then
+  MISE_ENV="${MISE_ENV:-work}"
   KSM_WORK=true
   IS_WORK=true
 else
+  MISE_ENV="${MISE_ENV:-dev}"
   KSM_WORK=false
   IS_WORK=false
 fi
