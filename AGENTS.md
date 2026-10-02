@@ -2,7 +2,7 @@
 
 ## Bootstrap Flow
 
-New machine → `boot/boot.sh`. Existing user environment → `mise -E <profile> run workstation:apply` (packages, repos, dotfiles, shell caches; no services). Remaining macOS system config → `make system`, then `mise -E <profile> run shell:prepare`. Optional local tool rebuild → `make build`.
+New machine → `boot/boot.sh`. Existing machine → `make` (Nix system switch, then the main `mise run boot` task). `make boot` applies the user environment, builds Oven, renders Claude settings, and applies services without a system switch. The shell selects the machine's mise profile via `MISE_ENV`. Optional local tool rebuild → `make build`.
 
 For the initial Nix-to-mise handoff: `packages:apply` → `make system` → `workstation:setup`. Global tools live in `config/mise/`; project tasks and machine resources live in `.mise/conf.d/` and the root profile overlays. See `docs/mise.md`.
 
@@ -21,11 +21,12 @@ cc-notify and Git maintenance are owned separately by `.mise/conf.d/*.toml`, wit
 
 ### Makefile (Root)
 
-```bash
-make         # Run link then build (default) - quiet output, errors only
+```nu
+make         # System switch, then main mise boot task (sequential)
+make boot    # Apply all mise-managed user setup, tools, settings, and services
 make link    # Link dotfiles via dotty
 make build   # Install/check/build oven tools through `mise -C oven run verify`
-make system  # Rebuild nix-darwin (override with `PROFILE=work`, etc)
+make system  # Rebuild nix-darwin (explicit profile: make system work)
 ```
 
 ## Tool Development Workflow

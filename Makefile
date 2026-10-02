@@ -1,11 +1,17 @@
-.PHONY: all link build system
+.PHONY: all boot link build system
+# Finish the system switch before mise prepares shells and loads services.
+.NOTPARALLEL: all
 
 ROOT := $(abspath $(CURDIR))
 NU := DOTFILES="$(ROOT)" nu -n -I "$(ROOT)/config/nushell/scripts"
 
-all: link build system
+all: system boot
 
 ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+
+boot:
+	@printf '%s\n' '==> boot'
+	@mise -C "$(ROOT)" run boot
 
 link:
 	@printf '%s\n' '==> link'

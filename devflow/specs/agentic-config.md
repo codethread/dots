@@ -3,7 +3,7 @@
 - Document ID: SPEC-001
 - Configuration identification: SPEC-001; migrated from `specs/agentic-config.md`; canonical path `devflow/specs/agentic-config.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-10-01
+- **Last Updated:** 2026-10-02
 
 ## [SPEC-001-S1] 1. Overview
 
@@ -75,7 +75,7 @@ make link    →  dotty link   →  claude/ assets symlinked to ~/.claude/
 make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
 ```
 
-`make` (default target `all`) runs `link`, `build`, then `system` (nix rebuild).
+`make` (default target `all`) runs `system` (Nix rebuild), then `boot` (the main mise task). Boot applies packages and workstation setup, verifies/builds Oven, renders Claude settings, then prepares and applies the profile's services.
 
 ### [SPEC-001-S2.2] Package Provisioning
 

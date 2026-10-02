@@ -4,6 +4,16 @@ min_version = "2026.9.15"
 [tools]
 bun = "1.4.2"
 
+[tasks.boot]
+description = "Apply the user environment, build Oven, render settings, and start services"
+alias = "default"
+run = [
+  "mise run workstation:apply",
+  'mise -C "{{ config_root }}/oven" run verify',
+  "mise run claude:apply",
+  "mise run {% if vars.service_profile is defined %}services:apply{% else %}syncengine:apply{% endif %}",
+]
+
 # Native services and Claude settings declarations live in .mise/conf.d/*.toml.
 # Do not use a bare `mise bootstrap`: its LaunchAgents phase precedes tools.
 # services:apply explicitly prepares everything before loading any agent.

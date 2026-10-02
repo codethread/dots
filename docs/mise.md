@@ -4,7 +4,9 @@ Mise handles **tool versions**, **host packages**, **tasks**, and **managed conf
 
 ## For this dotfiles repo
 
-Run from the dots checkout. Replace `dev` with `work` on your work machine.
+Normal use: run `make` from the dots checkout. It switches the remaining Nix system layer, then runs `mise run boot`: packages and workstation setup → Oven verification/build → Claude settings → services. `make boot` (or `mise run`) runs just the mise side, using the shell's `MISE_ENV` profile. Dev/work apply all services; personal/work-boot apply syncengine only. Run from a durable checkout with the existing repository access and service credentials configured.
+
+The individual commands below are for targeted changes and diagnostics. Replace `dev` with `work` on your work machine.
 
 ```nu
 # Discover available tasks

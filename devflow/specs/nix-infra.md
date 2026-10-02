@@ -186,7 +186,8 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 | `make system` | Rebuild nix system via local `ct/nix.nu` from the current checkout             |
 | `make link`   | Symlink dotfiles from the current checkout via `dotty link --no-cache`         |
 | `make build`  | Install/check/build `oven/` tools via `mise -C oven run verify` (no Nix shell) |
-| `make all`    | `link` → `build` → `system`                                                    |
+| `make boot`   | Run `mise run boot`: workstation setup, Oven build, Claude settings, services  |
+| `make all`    | `system` → `boot`, serialized even with `make -j`                              |
 
 ### [SPEC-006-S4.4] Git Pre-Commit Hook
 
