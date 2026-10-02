@@ -10,7 +10,6 @@
 [bootstrap.repos]
 "~/dev/vendor/nu_scripts" = { url = "https://github.com/nushell/nu_scripts.git" }
 "~/dev/vendor/gitwatch" = { url = "https://github.com/gitwatch/gitwatch.git" }
-"~/dev/projects/agents" = { url = "git@github.com:codethread/agents.git" }
 "~/sync/Alfred" = { url = "git@github.com:codethread/alfred.git" }
 "~/sync/images" = { url = "git@github.com:codethread/images.git" }
 "~/dev/vendor/nix-direnv" = { url = "https://github.com/nix-community/nix-direnv.git", ref = "3.2.0" }
@@ -43,13 +42,15 @@ env.DOTFILES = "{{ config_root }}"
 run = '"{{ config_root }}/home/.local/bin/mise-shell-prepare"'
 
 [tasks."workstation:apply"]
-description = "Apply packages, repositories, dotfiles, and shell caches (no services or system switch)"
+description = "Apply packages, update/install supporting repos, link dotfiles, and prepare shell caches (no services or system switch)"
 run = ["mise run packages:apply", "mise run workstation:setup"]
 
 [tasks."workstation:setup"]
 description = "Apply user setup after packages are installed (no services or system switch)"
 run = [
   "mise run repositories:apply",
+  "mise run hive:update",
+  "mise run agents:update",
   "mise run dotfiles:apply",
   "mise run shell:prepare",
 ]

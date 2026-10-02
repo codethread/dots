@@ -12,6 +12,6 @@ Pi owns extension installation: `settings.json` declares `npm:pi-nvim` and `npm:
 
 Use `mise run llm:install` to install missing agent CLIs and `mise run llm:update` to update them and Pi's extensions. See the [mise cheat sheet](../../docs/mise.md#update-llm-tools).
 
-Pi's official managed launcher lives at `$PI_CODING_AGENT_DIR/bin/pi` (default `~/.pi/agent/bin/pi`), after `~/.local/bin` on PATH so the pies wrapper stays in control.
+Pi's official managed launcher lives at `$PI_CODING_AGENT_DIR/bin/pi` (default `~/.pi/agent/bin/pi`), after `~/.local/bin` on PATH so the pies wrapper stays in control. `mise run agents:update` updates the shared checkout, installs its dependencies, and links the `pi`/`pies` wrappers; workstation setup includes this task. It does not restart a running Pies daemon.
 
 Architecture: [SPEC-001 agentic-config](../../devflow/specs/agentic-config.md).

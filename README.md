@@ -21,7 +21,9 @@ Mise owns user CLI packages, language runtimes, macOS host packages, syncengine,
 mise -E dev run packages:apply
 mise -E dev run packages:status
 mise -E dev run llm:update       # Claude, Cursor Agent, Codex, Pi, and Pi npm extensions
-mise -E dev run workstation:apply # packages, repos, dotfiles, shell caches; no services
+mise -E dev run workstation:apply # packages, repo tooling, dotfiles, shell caches; no services
+mise -E dev run hive:update       # update Hive and install Honeycomb
+mise -E dev run agents:update     # update agents, install dependencies, link pi/pies
 mise -E dev bootstrap packages apply --dry-run
 
 mise -E dev tasks
@@ -31,6 +33,8 @@ mise -E dev run services:status
 ```
 
 `packages:apply` installs versioned tools and host packages, runs `llm:install` for missing agent CLIs, builds the pinned Todoist fork, then installs user-prefix `@playwright/cli` and VS Code extensions; the dry run previews host packages only. Applying packages never prunes unlisted packages or upgrades existing formulae, and `mise install` covers versioned tools only. Upgrade Homebrew formulae explicitly with `mise -E dev bootstrap packages upgrade --manager brew`.
+
+`workstation:apply` also updates Hive and agents and installs their tooling. These tasks fast-forward the current branch and fail on dirty checkouts; other unpinned repositories remain clone-only. See [supporting repositories](docs/mise.md#update-supporting-repositories) for individual commands and requirements.
 
 For syncengine alone on any macOS profile, use `mise -E <profile> run syncengine:apply` and `syncengine:status`; personal/work-boot machines use these instead of the full services tasks. Run `packages:apply` and `repositories:apply` first to provision gitwatch and its dependencies.
 

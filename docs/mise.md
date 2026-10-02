@@ -84,11 +84,31 @@ mise -E dev run dotfiles:apply
 mise -E dev run shell:prepare
 ```
 
-`boot/boot.sh` uses the same order on a new machine. `workstation:apply` runs packages then `workstation:setup` (repositories → dotfiles → shell caches). It does not apply Claude settings, services, or macOS system defaults. Run from a durable checkout.
+`boot/boot.sh` uses the same order on a new machine. `workstation:apply` runs packages then `workstation:setup` (repositories → Hive update/install → agents update/install → dotfiles → shell caches). It does not apply Claude settings, services, or macOS system defaults. Run from a durable checkout.
 
-Repository apply requires GitHub SSH access for `agents`, Alfred, and images. Authentication and origin conflicts fail visibly; dirty checkouts are reported and skipped, and unpinned existing repos are not pulled. The Todoist fork and nix-direnv are pinned. Dotty refuses conflicting files rather than forcing replacement. `repositories:apply` also applies declared directories (including `/tmp/claude`) and the gitwatch link.
+Repository apply requires GitHub SSH access for Hive, `agents`, Alfred, and images. Authentication and origin conflicts fail visibly; dirty checkouts are reported and skipped, and unpinned existing repos are not pulled by `repositories:apply` itself. The separate Hive and agents tasks below pull and install their tooling, and fail on dirty checkouts. The Todoist fork and nix-direnv are pinned. Dotty refuses conflicting files rather than forcing replacement. `repositories:apply` also applies declared directories (including `/tmp/claude`) and the gitwatch link.
 
 Nushell init files now live under `~/.local/cache/dots/shell`, separate from the old Home Manager symlinks. Direnv loads the pinned vendor checkout through `config/direnv/lib/nix-direnv.sh`. Zsh startup and completion preparation both use macOS `/bin/zsh`, not a Zsh found on PATH. Homebrew and Nix package completions remain available alongside its built-ins. Rerun `shell:prepare` after macOS/package upgrades or a Nix switch. The next `make system` removes the extra Nix Zsh and its global startup files; preparation already works before that switch. Old generated init/plugin links are removed by the next Home Manager activation; no manual deletion is needed.
+
+## Update supporting repositories
+
+```nu
+# Run from anywhere; use -E work on a work machine
+mise -C ~/dev/dots -E dev run hive:update
+mise -C ~/dev/dots -E dev run agents:update
+
+# Preview Git operations without fetching or installing
+mise -C ~/dev/dots -E dev bootstrap repos update ~/dev/projects/hive ~/dev/projects/agents --dry-run
+```
+
+Both tasks are included in `workstation:setup` and `workstation:apply` on every profile. They clone missing checkouts, fast-forward existing ones, then install from the committed dependency lockfile:
+
+- `hive:update` runs `bun install --frozen-lockfile` and Honeycomb's build, generating `~/.local/bin/honeycomb`.
+- `agents:update` runs `pnpm install --frozen-lockfile` and `pnpm run link:pi`, linking `~/.local/bin/pi` and `~/.local/bin/pies`. Pi's repo-owned settings already reference the local agents package, so no `pi install` or settings rewrite is needed. Plugin marketplace registration is unchanged, and this task does not restart a running Pies daemon.
+
+Definitions live in `.mise/conf.d/hive.toml` and `.mise/conf.d/agents.toml`. Run `packages:apply` first on a new machine for Git, Bun, Node, pnpm, `br` (used by Hive's install hook), and the real Pi CLI. GitHub SSH access is required.
+
+Updates follow each checkout's **current branch**, not a forced `main` checkout. Keep these repos on an attached branch: mise warns and skips updating a detached HEAD. Dirty checkouts, origin conflicts, or divergent history stop the task before installation; commit or stash your changes and resolve conflicts before rerunning. There is no forced reset, automatic push, or background sync—run the tasks on each machine after pushing changes upstream.
 
 ## General commands
 
