@@ -30,6 +30,11 @@ alias pil="pi --provider openai-codex --model gpt-5.6-luna      --thinking xhigh
 alias pif="pi --provider deepseek     --model deepseek-flash    --thinking max    --tools ${(j:,:)pi_core_tools}"
 alias pio="pi --provider anthropic    --model claude-opus-5-5   --thinking high   --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
 
+# Copy the current directory to the clipboard.
+cdy() {
+  print -r -- "$PWD" | pbcopy
+}
+
 # Change to the current repository's root.
 cdd() {
   local root

@@ -9,7 +9,7 @@ Architecture and design rationale are in [SPEC-006 nix-infra](devflow/specs/nix-
 
 ## Package Ownership
 
-Mise owns user CLI packages, runtimes, agent CLIs, and Homebrew applications:
+Mise owns user CLI packages, runtimes, agent CLIs, fonts, and Homebrew applications:
 
 - `config/mise/config.toml` declares global versioned tools; `.mise/conf.d/tools.toml` links the same file into the project.
 - `.mise/conf.d/packages.toml` and `mise.{dev,work,personal,work-boot}.toml` declare host packages.

@@ -72,6 +72,12 @@
 "brew:mise" = { os = "macos" }
 "brew:gum" = { os = "macos" }
 "brew:sderosiaux/tap/launchdeck" = { os = "macos" }
+
+# Shared fonts formerly in nix/hosts/darwin/common.nix (unpatched families + symbols).
+"brew-cask:font-fira-code" = { os = "macos" }
+"brew-cask:font-victor-mono" = { os = "macos" }
+"brew-cask:font-symbols-only-nerd-font" = { os = "macos" }
+
 "brew-cask:kitty" = { os = "macos" }
 "brew-cask:ghostty" = { os = "macos" }
 "brew-cask:nikitabobko/tap/aerospace" = { os = "macos" }

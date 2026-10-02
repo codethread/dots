@@ -34,7 +34,7 @@ Declarative macOS system configuration alongside mise-owned user tooling and wor
 ```
 flake.nix (system configurations, user bindings, Home Manager state and PATH)
     └─ hosts/darwin/<machine>.nix    System packages, defaults, services
-        └─ common.nix               Shared macOS defaults, terminfo, and Nix completions
+        └─ common.nix               Shared macOS defaults, Nix settings, and sudo policy
 
 config/mise/                       Global runtimes and versioned tools (dotty-linked)
 .mise/conf.d/                      Project-scoped mise workstation resources/tasks
@@ -53,7 +53,7 @@ mise.<profile>.toml                Machine package, tool, and service overlays
 
 ### [SPEC-006-S2.3] Package Ownership
 
-Nix uses one `nixpkgs` input for the remaining Darwin system packages and services. Mise owns user CLI tools, runtimes, and host applications:
+Nix uses one `nixpkgs` input for the remaining Darwin system packages and services. Mise owns user CLI tools, runtimes, fonts, and host applications:
 
 - `config/mise/config.toml`: global tools, including Java 21, clj-kondo, and pinned Graph-Easy; `.mise/conf.d/tools.toml` links the same declarations into this project before first bootstrap.
 - `.mise/conf.d/packages.toml` plus `mise.<profile>.toml`: Homebrew formulae and casks.
@@ -61,7 +61,7 @@ Nix uses one `nixpkgs` input for the remaining Darwin system packages and servic
 - `.mise/conf.d/llm.toml`: official Claude/Cursor/Codex/Pi installers and explicit updates.
 - `packages:apply`: versioned tools, host packages, missing agent CLIs, pinned Todoist build, Playwright CLI, and VS Code extensions.
 
-Homebrew itself installs mise; nix-darwin's Homebrew module remains disabled. Shared host packages include agent-browser, pngpaste, yazi, flock, and the Clojure CLI. Bitwarden CLI is limited to the work and work-boot mise overlays. Nix retains kitty/ncurses terminfo for activation/sudo contexts and Nix CLI completions. Existing local agent wrappers/installations take precedence over mise shims intentionally.
+Homebrew itself installs mise; nix-darwin's Homebrew module remains disabled. Shared host packages include agent-browser, pngpaste, yazi, flock, and the Clojure CLI. Bitwarden CLI is limited to the work and work-boot mise overlays. Shared fonts (Fira Code, Victor Mono, and Symbols Nerd Font) are mise-owned Homebrew casks installed into `~/Library/Fonts`. The common Darwin module no longer declares fonts, kitty/ncurses terminfo packages, or Nix CLI completions. Existing local agent wrappers/installations take precedence over mise shims intentionally.
 
 ### [SPEC-006-S2.4] Custom CLI Sources
 
@@ -144,7 +144,7 @@ The `_resolve_profile` function handles the special case where explicit profile 
 
 ### [SPEC-006-S3.2] Environment Variables (Set by All Configs)
 
-Portable shell environment ownership lives in `config/env/base.sh`; see [SPEC-009](./shell-environment.md). Mise supplies user packages; Nix/Home Manager retains system packages and pre-shell session seeds. The configured login shell is macOS `/bin/zsh`; nix-darwin's Zsh module is disabled so it installs neither another Zsh nor global Zsh startup files. Nix CLI completions remain installed separately. Bash, zsh, Nushell, tmux, bootstrap, and containers consume the shared contract rather than maintaining independent PATH/environment lists.
+Portable shell environment ownership lives in `config/env/base.sh`; see [SPEC-009](./shell-environment.md). Mise supplies user packages; Nix/Home Manager retains system packages and pre-shell session seeds. The configured login shell is macOS `/bin/zsh`; nix-darwin's Zsh module is disabled so it installs neither another Zsh nor global Zsh startup files. The former shared terminfo packages and Nix CLI completions are no longer declared. Bash, zsh, Nushell, tmux, bootstrap, and containers consume the shared contract rather than maintaining independent PATH/environment lists.
 
 | Variable            | Value                                                                           |
 | ------------------- | ------------------------------------------------------------------------------- |
@@ -204,7 +204,7 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 
 - **Homebrew packages owned by mise on macOS** — Homebrew is installed by `boot/boot.sh` to install mise; mise's built-in Homebrew package managers then use the shared prefix directly; nix-darwin's Homebrew module is disabled so its Bundle cleanup cannot remove mise-managed packages. mise declares formulae, casks, `@playwright/cli` (user prefix `~/.local`), and VS Code extensions in `.mise/conf.d/packages.toml` plus profile overlays. Applying packages neither prunes unlisted packages nor upgrades existing formulae; formula upgrades are explicit via `mise bootstrap packages upgrade --manager brew`.
 
-- **Shared-by-default profiles** — User tools and applications are shared through mise's common files. Profile overlays add hardware-specific QMK or work infrastructure tools. The Nix flake binds each host directly to its user and defines the shared Home Manager state version and baseline PATH inline; terminfo, Nix completions, and host-specific services remain in Darwin host modules. Mise owns JVM tooling as well as other user tools.
+- **Shared-by-default profiles** — User tools and applications are shared through mise's common files. Profile overlays add hardware-specific QMK or work infrastructure tools. The Nix flake binds each host directly to its user and defines the shared Home Manager state version and baseline PATH inline; macOS defaults, Nix settings, and host-specific packages/services remain in Darwin host modules. Mise owns JVM tooling as well as other user tools.
 
 - **Work boot profiles for username variants** — New work macOS machines may use `adam.hall` (dotted) or `adamhall`. All work outputs share `hosts/darwin/work.nix`; its `boot = true` parameter omits full-work packages and adds the bootstrap handoff message. Bootstrap supports both usernames with minimal work boot outputs. The full `work` output is intentionally single-user and only the current full-work username auto-promotes to it when workfiles exist; update `nix/flake.nix` and the rebuild wrapper's full-work username when the provisioned username changes.
 

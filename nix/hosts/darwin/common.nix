@@ -1,5 +1,4 @@
 {
-  pkgs,
   config,
   lib,
   ...
@@ -24,21 +23,7 @@ in
   };
   nixpkgs.config.allowUnfree = true;
 
-  # Make xterm-kitty/tmux-256color terminfo available to nix-darwin activation
-  # and sudo contexts while keeping kitty's native TERM=xterm-kitty.
-  # enableAllTerminfo pulls in termite which fails to build on current Apple SDK.
-  environment.systemPackages = with pkgs; [
-    kitty.terminfo # xterm-kitty
-    ncurses # tmux-256color
-    nix-zsh-completions
-  ];
-  # User CLI packages and JVM tooling are owned by mise.
-
-  fonts.packages = with pkgs; [
-    fira-code
-    victor-mono
-    nerd-fonts.symbols-only
-  ];
+  # User CLI packages, JVM tooling, and fonts are owned by mise.
 
   # Keyboard repeat: lower values are faster on macOS.
   system.defaults.NSGlobalDomain = {
@@ -89,9 +74,8 @@ in
 
   # macOS supplies /bin/zsh; dotfiles own startup and mise owns its cache.
   # nix-darwin enables Zsh by default, installing a second binary and global
-  # startup files. Keep only completions for the Nix-owned CLI.
+  # startup files.
   programs.zsh.enable = false;
-  environment.pathsToLink = [ "/share/zsh" ];
 
   # syncengine is owned by mise (.mise/conf.d/syncengine.toml).
   system.activationScripts.postActivation.text = lib.mkBefore ''
