@@ -1,0 +1,78 @@
+# User macOS preferences formerly in nix/hosts/darwin/common.nix.
+# Screenshot location is applied from $HOME in macos:apply; mise does not
+# template string values in [bootstrap.macos.defaults].
+# Apply with `mise run macos:apply`; do not use bare `mise bootstrap`.
+
+[bootstrap.macos.dock]
+autohide = true
+mru_spaces = false
+orientation = "left"
+tilesize = 50
+
+[bootstrap.macos.finder]
+preferred_view_style = "list"
+show_all_files = true
+show_extensions_warning = false
+show_status_bar = true
+sort_folders_first = true
+
+[bootstrap.macos.keyboard]
+initial_key_repeat = 12
+key_repeat = 2
+press_and_hold = false
+
+[bootstrap.macos.defaults.NSGlobalDomain]
+AppleShowAllExtensions = true
+AppleShowScrollBars = "WhenScrolling"
+NSAutomaticWindowAnimationsEnabled = false
+NSNavPanelExpandedStateForSaveMode = true
+
+[bootstrap.macos.defaults."com.apple.dock"]
+"expose-animation-duration" = 0.0
+"expose-group-apps" = true
+"static-only" = true
+
+[bootstrap.macos.defaults."com.apple.finder"]
+FXDefaultSearchScope = "SCcf"
+ShowExternalHardDrivesOnDesktop = true
+ShowHardDrivesOnDesktop = false
+ShowRecentTags = false
+ShowRemovableMediaOnDesktop = true
+"_FXShowPosixPathInTitle" = false
+
+[bootstrap.macos.defaults."com.apple.spaces"]
+"spans-displays" = false
+
+[bootstrap.macos.defaults."com.apple.universalaccess"]
+reduceMotion = true
+
+[tasks."macos:apply"]
+description = "Apply user macOS defaults and relaunch Dock, Finder, and SystemUIServer"
+shell = "/bin/bash -c"
+run = '''
+set -euo pipefail
+[ "$(uname -s)" = Darwin ] || { echo 'macos defaults require macOS' >&2; exit 1; }
+mise bootstrap macos defaults apply --yes
+# mise does not template [bootstrap.macos.defaults] string values.
+/usr/bin/defaults write com.apple.screencapture location "$HOME/Pictures"
+/usr/bin/killall SystemUIServer >/dev/null 2>&1 || true
+/usr/bin/killall Finder >/dev/null 2>&1 || true
+/usr/bin/killall Dock >/dev/null 2>&1 || true
+'''
+
+[tasks."macos:status"]
+description = "Show whether user macOS defaults match the mise declarations"
+shell = "/bin/bash -c"
+run = '''
+set -euo pipefail
+[ "$(uname -s)" = Darwin ] || { echo 'macos defaults require macOS' >&2; exit 1; }
+mise bootstrap macos defaults status
+expected="$HOME/Pictures"
+actual="$(/usr/bin/defaults read com.apple.screencapture location 2>/dev/null || true)"
+if [ "$actual" = "$expected" ]; then
+  printf 'com.apple.screencapture    location                            %s  %s  set\n' "$expected" "$actual"
+else
+  printf 'com.apple.screencapture    location                            %s  %s  differs\n' "$expected" "${actual:-unset}" >&2
+  exit 1
+fi
+'''

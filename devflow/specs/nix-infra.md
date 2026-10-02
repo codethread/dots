@@ -33,8 +33,8 @@ Declarative macOS system configuration alongside mise-owned user tooling and wor
 
 ```
 flake.nix (system configurations and user bindings)
-    └─ hosts/darwin/<machine>.nix    System packages, defaults, services
-        └─ common.nix               Shared macOS defaults, Nix settings, and sudo policy
+    └─ hosts/darwin/<machine>.nix    System packages, Nix settings, services
+        └─ common.nix               Shared Nix settings, login shell, and sudo policy
 
 config/mise/                       Global runtimes and versioned tools (dotty-linked)
 .mise/conf.d/                      Project-scoped mise workstation resources/tasks
@@ -83,7 +83,8 @@ boot/boot.sh
 ├─ `mise -C "$DOTFILES" -E <mise-profile> run packages:apply` → darwin-rebuild switch
 ├─ `mise -C "$DOTFILES" -E <mise-profile> run workstation:setup`
 │   ├─ repositories/directories → dotty links
-│   └─ Nushell init + audited Zsh completion cache
+│   ├─ Nushell init + audited Zsh completion cache
+│   └─ macOS user defaults (`macos:apply`)
 └─ Post-rebuild: nu "boot machine"
     ├─ Check Full Disk Access
     ├─ Build bun binaries (oven/)
@@ -104,7 +105,7 @@ make system [<profile>]
 
 ### [SPEC-006-S2.7] User Setup Handoff
 
-`workstation:apply` explicitly runs `packages:apply` then `workstation:setup`. Setup runs repositories/directories → dotfiles → shell preparation, without services or system changes. Authentication and origin conflicts fail visibly; dirty repositories are reported and skipped. Existing unpinned repositories are not pulled.
+`workstation:apply` explicitly runs `packages:apply` then `workstation:setup`. Setup runs managed files/directories and repositories → Hive/agents → dotfiles → shell preparation → macOS user defaults, without service lifecycle changes or a Nix switch. On dev, the managed-file phase also applies the root-owned SSH restrictions and may request sudo; Remote Login remains manual. Authentication and origin conflicts fail visibly; dirty repositories are reported and skipped. Existing unpinned repositories are not pulled. User Dock, Finder, keyboard, screenshot, Spaces, and reduce-motion preferences live in `.mise/conf.d/macos-defaults.toml`; apply relaunches Dock, Finder, and SystemUIServer. Nix no longer writes those defaults.
 
 Home Manager is removed from the flake. Mise owns user setup and `config/env/base.sh` provides the baseline PATH. Nushell init files live at `~/.local/cache/dots/shell`. Direnv loads a pinned mise-provisioned nix-direnv checkout through the repo-owned `config/direnv/lib/nix-direnv.sh`.
 
@@ -120,6 +121,8 @@ Mise owns the shared syncengine agent, the dev/work cc-notify and Git maintenanc
 | `git-maintenance-{hourly,daily,weekly}` | `.mise/conf.d/git-maintenance.toml` + profile overlay | dev, work | mise-owned LaunchAgents; filtered repository list, private state config |
 | `cc-notify` | `.mise/conf.d/cc-notify.toml` + profile overlay | dev, work | mise-owned LaunchAgent; mise-managed Bun, explicit preparation before apply |
 | `backup-notes` | `mise.dev.toml` | dev | mise-owned RunAtLoad agent; auto-commits and syncs the notes vault every 15 min |
+
+Dev's SSH restrictions also live outside Nix: `mise.dev.toml` manages `/etc/ssh/sshd_config.d/090-dots.conf` as `root:wheel`, mode `0644`, with public-key-only authentication and `AllowUsers ct`. Apply the managed file before switching away from the old Nix restrictions. Remote Login is enabled/disabled manually in System Settings → General → Sharing; neither mise nor the dev Nix host changes that toggle. See [dev SSH server](../../docs/mise.md#dev-ssh-server) for the handoff and validation commands.
 
 Claude settings also live outside Nix: `.mise/conf.d/claude-code.toml` renders `templates/claude-settings.json.tera` with `mise -E dev run claude:apply` (or `work`). See [Claude settings](../../claude/README.md) for the apply workflow.
 
@@ -204,7 +207,7 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 
 - **Homebrew packages owned by mise on macOS** — Homebrew is installed by `boot/boot.sh` to install mise; mise's built-in Homebrew package managers then use the shared prefix directly; nix-darwin's Homebrew module is disabled so its Bundle cleanup cannot remove mise-managed packages. mise declares formulae, casks, `@playwright/cli` (user prefix `~/.local`), and VS Code extensions in `.mise/conf.d/packages.toml` plus profile overlays. Applying packages neither prunes unlisted packages nor upgrades existing formulae; formula upgrades are explicit via `mise bootstrap packages upgrade --manager brew`.
 
-- **Shared-by-default profiles** — User tools and applications are shared through mise's common files. Profile overlays add hardware-specific QMK or work infrastructure tools. The Nix flake binds each host directly to its user; macOS defaults, Nix settings, and host-specific packages/services remain in Darwin host modules. Home Manager is not used. Mise owns JVM tooling as well as other user tools, and the shared shell environment owns PATH.
+- **Shared-by-default profiles** — User tools and applications are shared through mise's common files. Profile overlays add hardware-specific QMK or work infrastructure tools. The Nix flake binds each host directly to its user; Nix settings, login shell, sudo PAM, and host-specific services remain in Darwin host modules. User macOS defaults are mise-owned. Home Manager is not used. Mise owns JVM tooling as well as other user tools, and the shared shell environment owns PATH.
 
 - **Work boot profiles for username variants** — New work macOS machines may use `adam.hall` (dotted) or `adamhall`. All work outputs share `hosts/darwin/work.nix`; its `boot = true` parameter adds the bootstrap handoff message, while full-work packages live in the mise `work` overlay. Bootstrap supports both usernames with minimal work boot outputs. The full `work` output is intentionally single-user and only the current full-work username auto-promotes to it when workfiles exist; update `nix/flake.nix` and the rebuild wrapper's full-work username when the provisioned username changes.
 
@@ -232,3 +235,4 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 
 - **`nix-smoke [profile]`** — Comprehensive health check verifying: PATH entries present, required binaries on PATH (including `pi`), config symlinks valid (including `~/.pi/agent/settings.json`), flake evaluates without error. Returns structured table of pass/fail results.
 - **mise package checks** — `mise -E <profile> bootstrap packages apply --dry-run` previews host package changes and `mise -E <profile> run packages:status` reports installation state. The old Nix `nrs-check` brew validator was removed with Nix-owned Homebrew; `mise install` covers versioned tools only. All four mise overlays are previewed separately; Nix builds use `--no-link` and never switch the live system during validation.
+- **mise macOS defaults** — `mise bootstrap macos defaults apply --dry-run` and `mise run macos:status` check user preference drift. Declarations live in `.mise/conf.d/macos-defaults.toml`.

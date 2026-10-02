@@ -19,6 +19,11 @@ mise -E dev dot diff ~/.claude/settings.json
 mise -E dev run claude:apply
 mise -E dev run claude:status
 
+# Preview/apply user macOS defaults (Dock, Finder, keyboard, Screenshots, Spaces)
+mise -E dev bootstrap macos defaults apply --dry-run
+mise -E dev run macos:apply
+mise -E dev run macos:status
+
 # Prepare dependencies, then apply services
 mise -E dev run services:apply
 
@@ -84,17 +89,43 @@ mise -E dev bootstrap repos apply --dry-run --skip-dirty
 mise -E dev run repositories:apply
 mise -E dev run dotfiles:apply
 mise -E dev run shell:prepare
+mise -E dev bootstrap macos defaults apply --dry-run
+mise -E dev run macos:apply
+mise -E dev run macos:status
 ```
 
-`boot/boot.sh` uses the same order on a new machine. `workstation:apply` runs packages then `workstation:setup` (repositories → Hive update/install → agents update/install → dotfiles → shell caches). It does not apply Claude settings, services, or macOS system defaults. Run from a durable checkout.
+`boot/boot.sh` uses the same order on a new machine. `workstation:apply` runs packages then `workstation:setup` (repositories → Hive update/install → agents update/install → dotfiles → shell caches → macOS user defaults). It does not apply Claude settings or services. User Dock/Finder/keyboard defaults are mise-owned (`.mise/conf.d/macos-defaults.toml`); applying them relaunches Dock, Finder, and SystemUIServer. Run from a durable checkout.
 
-Repository apply requires GitHub SSH access for Hive, `agents`, Alfred, and images. Authentication and origin conflicts fail visibly; dirty checkouts are reported and skipped, and unpinned existing repos are not pulled by `repositories:apply` itself. The separate Hive and agents tasks below pull and install their tooling, and fail on dirty checkouts. The Todoist fork and nix-direnv are pinned. Dotty refuses conflicting files rather than forcing replacement. `repositories:apply` also applies declared directories (including `/tmp/claude`) and the gitwatch link.
+Repository apply requires GitHub SSH access for Hive, `agents`, Alfred, and images. Authentication and origin conflicts fail visibly; dirty checkouts are reported and skipped, and unpinned existing repos are not pulled by `repositories:apply` itself. The separate Hive and agents tasks below pull and install their tooling, and fail on dirty checkouts. The Todoist fork and nix-direnv are pinned. Dotty refuses conflicting files rather than forcing replacement. `repositories:apply` also applies declared files/directories (including `/tmp/claude` and dev's root-owned SSH configuration) and the gitwatch link. Managed-file application can request sudo on dev; `claude:apply` uses the same file phase.
 
 Nushell init files live under `~/.local/cache/dots/shell`. Direnv loads the pinned vendor checkout through `config/direnv/lib/nix-direnv.sh`. Zsh startup and completion preparation both use macOS `/bin/zsh`, not a Zsh found on PATH. Homebrew and Nix package completions remain available alongside its built-ins. Rerun `shell:prepare` after macOS/package upgrades or a Nix switch.
 
+### Dev SSH server
+
+`mise.dev.toml` manages `/etc/ssh/sshd_config.d/090-dots.conf` as `root:wheel`, mode `0644`. It preserves public-key-only authentication, disables password/keyboard-interactive and root login, and allows only `ct`. This applies only to the dev profile; outgoing SSH and GitHub access are unaffected.
+
+**Remote Login is manual:** use **System Settings → General → Sharing → Remote Login**. Neither mise nor the dev Nix configuration enables or disables it; removing Nix's declaration leaves the existing macOS setting unchanged. Apply and validate the restrictions before enabling Remote Login.
+
+For an existing dev machine, apply the replacement **before** switching away from the old Nix restrictions:
+
+```nu
+# Preview/apply all declared managed files and directories; may request sudo
+mise -E dev bootstrap files apply --dry-run
+mise -E dev bootstrap files apply
+
+# Validate the SSH server configuration and inspect its effective restrictions
+sudo /usr/sbin/sshd -t
+sudo /usr/sbin/sshd -T | lines | where { |line| $line =~ '^(pubkeyauthentication|passwordauthentication|kbdinteractiveauthentication|permitrootlogin|allowusers) ' }
+
+# Retire Nix's restrictions without changing the Remote Login toggle
+make system dev
+```
+
+The normal dev workstation setup reapplies the managed file. No Remote Login toggle or daemon restart task is installed.
+
 ### Retiring Home Manager on existing machines
 
-Home Manager is no longer part of the flake. Mise owns user setup; `config/env/base.sh` owns the baseline PATH, including `~/.local/bin`. nix-darwin still owns system settings and dev's SSH server.
+Home Manager is no longer part of the flake. Mise owns user setup and user macOS defaults; `config/env/base.sh` owns the baseline PATH, including `~/.local/bin`. nix-darwin still owns Nix daemon settings, the login shell, and sudo Touch ID, while mise owns dev's SSH restrictions and Remote Login is manually controlled.
 
 Before upgrading a machine that still has the old Home Manager-managed shell/plugin links, apply the minimal-HM revision `5d48d30795ae553dcee821474444af6cdea982b3` using `packages:apply` → `make system` → `workstation:setup` with that machine's profile. Its HM activation unlinks the old managed files. Then return to the current checkout and run `make`. Removing the HM module alone does **not** perform that cleanup.
 

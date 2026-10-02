@@ -1,18 +1,5 @@
-{ ... }:
-
 {
-  imports = [
-    ./common.nix
-  ];
+  imports = [ ./common.nix ];
 
-  services.openssh = {
-    enable = true;
-    extraConfig = ''
-      PubkeyAuthentication yes
-      PasswordAuthentication no
-      KbdInteractiveAuthentication no
-      PermitRootLogin no
-      AllowUsers ct
-    '';
-  };
+  # SSH restrictions are mise-owned; Remote Login stays manual in System Settings.
 }

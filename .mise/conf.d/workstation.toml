@@ -19,7 +19,7 @@ source = "~/dev/vendor/gitwatch/gitwatch.sh"
 mode = "symlink"
 
 [tasks."repositories:apply"]
-description = "Create user directories and clone missing repos (private repos require SSH access)"
+description = "Apply managed files/directories and clone missing repos (private repos require SSH access)"
 run = [
   "mise bootstrap files apply --yes",
   "mise bootstrap repos apply --skip-dirty --yes",
@@ -42,7 +42,7 @@ env.DOTFILES = "{{ config_root }}"
 run = '"{{ config_root }}/home/.local/bin/mise-shell-prepare"'
 
 [tasks."workstation:apply"]
-description = "Apply packages, update/install supporting repos, link dotfiles, and prepare shell caches (no services or system switch)"
+description = "Apply packages, update/install supporting repos, link dotfiles, prepare shell caches, and apply macOS user defaults (no services or system switch)"
 run = ["mise run packages:apply", "mise run workstation:setup"]
 
 [tasks."workstation:setup"]
@@ -53,4 +53,5 @@ run = [
   "mise run agents:update",
   "mise run dotfiles:apply",
   "mise run shell:prepare",
+  "mise run macos:apply",
 ]

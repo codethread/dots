@@ -9,6 +9,19 @@ git_maintenance_repositories = "~/dev/projects/notes/vault"
 "brew:podman-compose" = { os = "macos" }
 "brew-cask:terminal-browser" = { os = "macos" }
 
+# Configure Apple's SSH server; Remote Login stays manual in System Settings.
+[bootstrap.files."/etc/ssh/sshd_config.d/090-dots.conf"]
+owner = "root"
+group = "wheel"
+mode = "0644"
+content = '''
+PubkeyAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+AllowUsers ct
+'''
+
 # Also declared globally in config/mise/config.dev.toml for use outside dots.
 [tools]
 "pypi:qmk" = "1.2.0"

@@ -17,7 +17,7 @@ Mise owns user CLI packages, runtimes, agent CLIs, fonts, and Homebrew applicati
 - Pi installs its own npm extensions from `pi/agent/settings.json`.
 - `.mise/conf.d/todoist.toml` builds the pinned codethread fork.
 
-Load the mise skill before adding packages. Use `mise -E <profile> run packages:apply`; do not add user packages or agent overlays back to Nix. The flake now uses one nixpkgs channel. Remaining Darwin system packages, defaults, login shell, and Nix-owned services stay in `nix/hosts/darwin/` until separately migrated.
+Load the mise skill before adding packages. Use `mise -E <profile> run packages:apply`; do not add user packages or agent overlays back to Nix. The flake now uses one nixpkgs channel. Remaining Darwin login shell, sudo PAM, Nix daemon settings, and Nix-owned services stay in `nix/hosts/darwin/` until separately migrated. User macOS defaults belong in `.mise/conf.d/macos-defaults.toml`.
 
 ## Validation
 
