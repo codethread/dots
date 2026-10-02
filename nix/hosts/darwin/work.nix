@@ -3,7 +3,6 @@
 }:
 {
   config,
-  pkgs,
   lib,
   ...
 }:
@@ -11,14 +10,7 @@
 {
   imports = [ ./common.nix ];
 
-  environment.systemPackages = lib.optionals (!boot) (
-    with pkgs;
-    [
-      pandoc
-      jira-cli-go
-    ]
-  );
-
+  # Full-work packages (pandoc, jira-cli) are owned by mise.work.toml.
   system.activationScripts.workBootMessage = lib.mkIf boot {
     text = ''
       home="/Users/${config.system.primaryUser}"
