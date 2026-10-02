@@ -32,11 +32,9 @@ Declarative macOS system configuration alongside mise-owned user tooling and wor
 ### [SPEC-006-S2.1] Layer Hierarchy
 
 ```
-flake.nix (system configurations)
-    ├─ hosts/darwin/<machine>.nix    System packages, defaults, users, services
-    │   └─ common.nix               Shared macOS system configuration and JVM tooling
-    ├─ profiles/<name>.nix          Home Manager state-only imports
-    └─ features/home-base.nix       State version and baseline user PATH
+flake.nix (system configurations, user bindings, Home Manager state and PATH)
+    └─ hosts/darwin/<machine>.nix    System packages, defaults, services
+        └─ common.nix               Shared macOS system configuration and JVM tooling
 
 config/mise/                       Global runtimes and versioned tools (dotty-linked)
 .mise/conf.d/                      Project-scoped mise workstation resources/tasks
@@ -45,13 +43,13 @@ mise.<profile>.toml                Machine package, tool, and service overlays
 
 ### [SPEC-006-S2.2] System Configurations
 
-| Name | Flake Output | Arch | User | Host Module | Profile |
-| --- | --- | --- | --- | --- | --- |
-| dev | `darwinConfigurations.dev` | aarch64-darwin | `ct` | `hosts/darwin/dev.nix` | `profiles/dev.nix` |
-| personal | `darwinConfigurations.personal` | aarch64-darwin | `codethread` | `hosts/darwin/personal.nix` | `profiles/personal.nix` |
-| work-boot | `darwinConfigurations.work-boot` | aarch64-darwin | `adam.hall` | `hosts/darwin/work-boot.nix` | `profiles/work-boot.nix` |
-| work-adamhall-boot | `darwinConfigurations.work-adamhall-boot` | aarch64-darwin | `adamhall` | `hosts/darwin/work-boot.nix` | `profiles/work-boot.nix` |
-| work | `darwinConfigurations.work` | aarch64-darwin | `adamhall` | `hosts/darwin/work-adamhall.nix` | `profiles/work.nix` |
+| Name | Flake Output | Arch | User | Host Module |
+| --- | --- | --- | --- | --- |
+| dev | `darwinConfigurations.dev` | aarch64-darwin | `ct` | `hosts/darwin/dev.nix` |
+| personal | `darwinConfigurations.personal` | aarch64-darwin | `codethread` | `hosts/darwin/personal.nix` |
+| work-boot | `darwinConfigurations.work-boot` | aarch64-darwin | `adam.hall` | `hosts/darwin/work.nix` (`boot = true`) |
+| work-adamhall-boot | `darwinConfigurations.work-adamhall-boot` | aarch64-darwin | `adamhall` | `hosts/darwin/work.nix` (`boot = true`) |
+| work | `darwinConfigurations.work` | aarch64-darwin | `adamhall` | `hosts/darwin/work.nix` |
 
 ### [SPEC-006-S2.3] Package Ownership
 
@@ -207,9 +205,9 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 
 - **Homebrew packages owned by mise on macOS** — Homebrew is installed by `boot/boot.sh` to install mise; mise's built-in Homebrew package managers then use the shared prefix directly; nix-darwin's Homebrew module is disabled so its Bundle cleanup cannot remove mise-managed packages. mise declares formulae, casks, `@playwright/cli` (user prefix `~/.local`), and VS Code extensions in `.mise/conf.d/packages.toml` plus profile overlays. Applying packages neither prunes unlisted packages nor upgrades existing formulae; formula upgrades are explicit via `mise bootstrap packages upgrade --manager brew`.
 
-- **Shared-by-default profiles** — User tools and applications are shared through mise's common files. Profile overlays add hardware-specific QMK or work infrastructure tools. Nix profiles import only `features/home-base.nix`; remaining heavyweight JVM packages and host-specific services still live in Darwin host modules.
+- **Shared-by-default profiles** — User tools and applications are shared through mise's common files. Profile overlays add hardware-specific QMK or work infrastructure tools. The Nix flake binds each host directly to its user and defines the shared Home Manager state version and baseline PATH inline; remaining heavyweight JVM packages and host-specific services still live in Darwin host modules.
 
-- **Work boot profiles for username variants** — New work macOS machines may use `adam.hall` (dotted) or `adamhall`. Bootstrap supports both with minimal `work-boot` outputs. The full `work` output is intentionally single-user and only the current full-work username auto-promotes to it when workfiles exist; update `nix/flake.nix` and the rebuild wrapper's full-work username when the provisioned username changes.
+- **Work boot profiles for username variants** — New work macOS machines may use `adam.hall` (dotted) or `adamhall`. All work outputs share `hosts/darwin/work.nix`; its `boot = true` parameter omits full-work packages and adds the bootstrap handoff message. Bootstrap supports both usernames with minimal work boot outputs. The full `work` output is intentionally single-user and only the current full-work username auto-promotes to it when workfiles exist; update `nix/flake.nix` and the rebuild wrapper's full-work username when the provisioned username changes.
 
 - **Explicit mise service preparation** — cc-notify checkout/dependencies/credentials and Git maintenance registration are prepared by `mise -E dev run services:prepare` (or `work`), not Nix activation. Missing SSH access or credentials fails that explicit task before agents start. Shared syncengine preparation checks gitwatch and Homebrew dependencies and creates its log directory. Personal and work-boot profiles use `syncengine:apply` without installing cc-notify or Git maintenance.
 

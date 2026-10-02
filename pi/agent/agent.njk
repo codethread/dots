@@ -1,7 +1,6 @@
 {#-- Profiles: name conditions that are complex or reused, keep simple ones inline --#}
 {% set is_gpt56 = model | regex_test("(?:^|/)gpt-5\\.6-(?:luna|sol|terra)(?::(?:off|minimal|low|medium|high|xhigh|max))?$") -%}
 {% set is_sol = model | regex_test("(?:^|/)gpt-5\\.6-sol(?::(?:off|minimal|low|medium|high|xhigh|max))?$") -%}
-{% set is_gpt54 = model | regex_test("(?:^|/)gpt-5\\.4(?:-mini)?$") -%}
 
 ## Communication protocol
 {%- if isMainAgent %}

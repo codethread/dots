@@ -1,7 +1,5 @@
 ## Communication protocol
 
-When the user asks for shell code to run themselves, provide working `nushell` examples not bash
-
 ## Tool execution
 
 - Run full test/check/quality suites through `qlock` on `/tmp/millstrand-test.lock`; read `qlock -h` first. Focused tests do not require the lock.
@@ -15,7 +13,6 @@ When the user asks for shell code to run themselves, provide working `nushell` e
 
 ## Git, Worktrees and Repo Discovery
 
-- Investigate unexpected state (unfamiliar files, branches, lock files) before deleting or overwriting
 - clone external repos with `clone --help`;
 - use `wktree -h` instead of raw git worktree commands when operating on git branches or worktrees.
-- vendored repos go to `~/dev/vendor` for discovery/study, personal repos go to `~/dev/projects`
+    - vendored repos go to `~/dev/vendor` for discovery/study, personal repos go to `~/dev/projects`

@@ -30,12 +30,18 @@
       ...
     }:
     let
-      # Each host picks a profile from nix/profiles/ and binds it to one user.
-      hmFor = username: profile: {
+      # User setup lives in mise. Keep Home Manager state for clean generation
+      # transitions; do not add user packages or activations here.
+      hmFor = username: {
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
         home-manager.users = {
-          "${username}" = import profile;
+          "${username}" =
+            { config, ... }:
+            {
+              home.stateVersion = "24.11";
+              home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
+            };
         };
       };
 
@@ -48,14 +54,14 @@
       };
 
       darwinFor =
-        hostModule: username: profile:
+        hostModule: username:
         nix-darwin.lib.darwinSystem {
           system = "aarch64-darwin"; # Intel Mac: x86_64-darwin
           modules = [
             (darwinUser username)
             hostModule
             home-manager.darwinModules.home-manager
-            (hmFor username profile)
+            (hmFor username)
           ];
         };
 
@@ -77,26 +83,22 @@
 
       # macOS (personal dev machine) — darwin-rebuild switch --flake .#dev
       # Hostname must match: scutil --get LocalHostName
-      darwinConfigurations.dev = darwinFor ./hosts/darwin/dev.nix "ct" ./profiles/dev.nix;
+      darwinConfigurations.dev = darwinFor ./hosts/darwin/dev.nix "ct";
 
       # macOS (personal laptop) — darwin-rebuild switch --flake .#personal
-      darwinConfigurations.personal =
-        darwinFor ./hosts/darwin/personal.nix "codethread"
-          ./profiles/personal.nix;
+      darwinConfigurations.personal = darwinFor ./hosts/darwin/personal.nix "codethread";
 
       # macOS (work boot, dotted username) — darwin-rebuild switch --flake .#work-boot
-      darwinConfigurations.work-boot =
-        darwinFor ./hosts/darwin/work-boot.nix "adam.hall"
-          ./profiles/work-boot.nix;
+      darwinConfigurations.work-boot = darwinFor (import ./hosts/darwin/work.nix {
+        boot = true;
+      }) "adam.hall";
 
       # macOS (work boot, short username) — darwin-rebuild switch --flake .#work-adamhall-boot
-      darwinConfigurations.work-adamhall-boot =
-        darwinFor ./hosts/darwin/work-boot.nix "adamhall"
-          ./profiles/work-boot.nix;
+      darwinConfigurations.work-adamhall-boot = darwinFor (import ./hosts/darwin/work.nix {
+        boot = true;
+      }) "adamhall";
 
       # macOS (full work, current username) — darwin-rebuild switch --flake .#work
-      darwinConfigurations.work =
-        darwinFor ./hosts/darwin/work-adamhall.nix "adamhall"
-          ./profiles/work.nix;
+      darwinConfigurations.work = darwinFor (import ./hosts/darwin/work.nix { }) "adamhall";
     };
 }
