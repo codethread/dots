@@ -23,7 +23,7 @@ Adapters may add shell-native state but must not duplicate the base contract:
 | tmux | `emit.sh --tmux` seeds the tmux global environment and default shell |
 | machine bootstrap | `boot/boot.sh` sets bootstrap-specific XDG roots, then sources the base |
 
-Nix/Home Manager and launchd may seed the minimum environment needed before a shell exists. Those platform declarations are adapters, not a second shell environment authority.
+nix-darwin and launchd may seed the minimum environment needed before a shell exists. Those platform declarations are adapters, not a second shell environment authority.
 
 ## [SPEC-009-S3] PATH Contract
 
@@ -66,7 +66,7 @@ The tmux adapter evaluates the stable contract in a clean subprocess rather than
 
 Interactive shells use `compinit -C`: completion discovery and security checks happen during explicit preparation, not on every launch. Completion files remain live on disk. Rerun `shell:prepare` after macOS/package upgrades or a Nix switch. Missing caches produce a warning and audited, uncached initialization.
 
-Nushell sources Atuin and Carapace init files generated into `~/.local/cache/dots/shell`, plus the repo-owned `config/nushell/direnv.nu` hook. These new paths avoid the old Home Manager-owned symlinks during handoff. Direnv automatically loads `config/direnv/lib/nix-direnv.sh`, which sources the mise-provisioned, pinned vendor checkout. Bash initializes its direnv hook only in interactive shells.
+Nushell sources Atuin and Carapace init files generated into `~/.local/cache/dots/shell`, plus the repo-owned `config/nushell/direnv.nu` hook. Direnv automatically loads `config/direnv/lib/nix-direnv.sh`, which sources the mise-provisioned, pinned vendor checkout. Bash initializes its direnv hook only in interactive shells.
 
 Starship, fzf, and Atuin init scripts are cached separately by resolved executable path. Startup generates into temporary files and publishes the init script and path stamp only after the generator succeeds. A failed generator returns failure without sourcing partial output or replacing the previous cache, so the next launch retries. Empty init caches are regenerated as well.
 

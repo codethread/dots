@@ -58,16 +58,6 @@ def _flake_ref [profile: string] {
     $"path:((_flake_path))#($profile)"
 }
 
-def _hm_user_for_profile [profile: string] {
-    match $profile {
-        dev => "ct"
-        work => "adamhall"
-        "work-boot" => "adam.hall"
-        "work-adamhall-boot" => "adamhall"
-        _ => "codethread"
-    }
-}
-
 def _smoke-check [check: string, ok: bool, detail: string] {
     {
         check: $check
@@ -168,14 +158,6 @@ export def nix-clean-older [days: int = 14] {
     sudo nix-collect-garbage --delete-older-than $"($days)d"
 }
 
-# List home-manager packages for a profile
-export def nix-packages [profile?: string] {
-    let p = _resolve_profile ($profile | default (_default_profile))
-    let flake = $"path:((_flake_path))"
-    let attr = $"($flake)#darwinConfigurations.($p).config.home-manager.users.($env.USER).home.packages"
-    ^nix eval $attr --apply "map (p: p.name)" --json | from json | sort | uniq
-}
-
 # List system-level packages for a profile
 export def nix-sys-packages [profile?: string] {
     let p = _resolve_profile ($profile | default (_default_profile))
@@ -196,7 +178,6 @@ export def nix-smoke [
 ] {
     let p = _resolve_profile ($profile | default (_default_profile))
     let flake = $"path:((_flake_path))"
-    let hm_user = (_hm_user_for_profile $p)
     let dotfiles = $env.DOTFILES? | default ($env.HOME | path join "dev" "dots")
     let xdg_config = $env.XDG_CONFIG_HOME? | default ($env.HOME | path join ".config")
 
@@ -317,12 +298,11 @@ export def nix-smoke [
     )
 
     if not $skip_flake {
-        let home_attr = $"($flake)#darwinConfigurations.($p).config.home-manager.users.($hm_user).home.packages"
         let sys_attr = $"($flake)#darwinConfigurations.($p).config.environment.systemPackages"
-        $checks = ($checks ++ [
-			(_nix_eval_check "flake eval: home packages" $home_attr)
-			(_nix_eval_check "flake eval: system packages" $sys_attr)
-		])
+        $checks = (
+            $checks
+            | append (_nix_eval_check "flake eval: system packages" $sys_attr)
+        )
     }
 
     let report = (

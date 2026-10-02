@@ -68,7 +68,7 @@ Definitions live in `.mise/conf.d/llm.toml`, implemented by `home/.local/bin/mis
 
 ## User setup and Nix handoff
 
-User setup lives in `.mise/conf.d/workstation.toml`; Nix no longer clones repositories, links dotfiles, or generates shell init/completion caches.
+User setup lives in `.mise/conf.d/workstation.toml`; Nix no longer clones repositories, links dotfiles, or generates shell init/completion caches. Machines with old Home Manager-managed links must complete the [HM retirement handoff](#retiring-home-manager-on-existing-machines) before switching the current flake.
 
 ```nu
 # Existing machine: install replacements, drop old Nix ownership, then prepare
@@ -90,7 +90,22 @@ mise -E dev run shell:prepare
 
 Repository apply requires GitHub SSH access for Hive, `agents`, Alfred, and images. Authentication and origin conflicts fail visibly; dirty checkouts are reported and skipped, and unpinned existing repos are not pulled by `repositories:apply` itself. The separate Hive and agents tasks below pull and install their tooling, and fail on dirty checkouts. The Todoist fork and nix-direnv are pinned. Dotty refuses conflicting files rather than forcing replacement. `repositories:apply` also applies declared directories (including `/tmp/claude`) and the gitwatch link.
 
-Nushell init files now live under `~/.local/cache/dots/shell`, separate from the old Home Manager symlinks. Direnv loads the pinned vendor checkout through `config/direnv/lib/nix-direnv.sh`. Zsh startup and completion preparation both use macOS `/bin/zsh`, not a Zsh found on PATH. Homebrew and Nix package completions remain available alongside its built-ins. Rerun `shell:prepare` after macOS/package upgrades or a Nix switch. The next `make system` removes the extra Nix Zsh and its global startup files; preparation already works before that switch. Old generated init/plugin links are removed by the next Home Manager activation; no manual deletion is needed.
+Nushell init files live under `~/.local/cache/dots/shell`. Direnv loads the pinned vendor checkout through `config/direnv/lib/nix-direnv.sh`. Zsh startup and completion preparation both use macOS `/bin/zsh`, not a Zsh found on PATH. Homebrew and Nix package completions remain available alongside its built-ins. Rerun `shell:prepare` after macOS/package upgrades or a Nix switch.
+
+### Retiring Home Manager on existing machines
+
+Home Manager is no longer part of the flake. Mise owns user setup; `config/env/base.sh` owns the baseline PATH, including `~/.local/bin`. nix-darwin still owns system settings and dev's SSH server.
+
+Before upgrading a machine that still has the old Home Manager-managed shell/plugin links, apply the minimal-HM revision `5d48d30795ae553dcee821474444af6cdea982b3` using `packages:apply` → `make system` → `workstation:setup` with that machine's profile. Its HM activation unlinks the old managed files. Then return to the current checkout and run `make`. Removing the HM module alone does **not** perform that cleanup.
+
+After switching to an HM-free generation, the minimal configuration can leave these default links behind:
+
+- `~/.cache/.keep`
+- `~/.local/state/.keep`
+- `~/Applications/Home Manager Apps`
+- `~/Library/Fonts/.home-manager-fonts-version`
+
+Inspect their targets and unlink only links into `home-manager-files` in the Nix store; leave real files, directories, and fonts alone. The old `~/.local/state/home-manager/gcroots/current-home` symlink can also be removed after the switch. Do not delete generic Nix profiles: they are independent of Home Manager. Fresh machines need no HM handoff or cleanup.
 
 ## Update supporting repositories
 

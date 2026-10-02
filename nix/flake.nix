@@ -14,11 +14,6 @@
       url = "github:nix-darwin/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -26,25 +21,9 @@
       self,
       nixpkgs,
       nix-darwin,
-      home-manager,
       ...
     }:
     let
-      # User setup lives in mise. Keep Home Manager state for clean generation
-      # transitions; do not add user packages or activations here.
-      hmFor = username: {
-        home-manager.useGlobalPkgs = true;
-        home-manager.useUserPackages = true;
-        home-manager.users = {
-          "${username}" =
-            { config, ... }:
-            {
-              home.stateVersion = "24.11";
-              home.sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
-            };
-        };
-      };
-
       darwinUser = username: { ... }: {
         system.primaryUser = username;
         users.users.${username} = {
@@ -60,8 +39,6 @@
           modules = [
             (darwinUser username)
             hostModule
-            home-manager.darwinModules.home-manager
-            (hmFor username)
           ];
         };
 

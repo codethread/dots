@@ -187,8 +187,8 @@ else
   sudo -H nix run nix-darwin/master#darwin-rebuild -- switch --flake "path:${DOTFILES}/nix#${NIX_PROFILE}" --show-trace -L -v || exit 1
 fi
 
-# User setup no longer runs in Home Manager activation. Generate completions
-# after switching so the cache reflects the current system profile.
+# Mise owns user setup. Generate completions after switching so the cache
+# reflects the current system profile.
 mise -C "${DOTFILES}" -E "$MISE_PROFILE" run workstation:setup || exit 1
 
 #: }}}

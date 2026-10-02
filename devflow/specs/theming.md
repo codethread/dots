@@ -3,7 +3,7 @@
 - Document ID: SPEC-007
 - Configuration identification: SPEC-007; migrated from `specs/theming.md`; canonical path `devflow/specs/theming.md`.
 - **Status:** Partially Implemented
-- **Last Updated:** 2026-09-20
+- **Last Updated:** 2026-10-02
 
 ## [SPEC-007-S1] 1. Overview
 
@@ -26,7 +26,7 @@ The system is intentionally narrow for now. Nix and Linux desktop theming are no
 
 ### [SPEC-007-S1.3] Non-Goals
 
-- Full Nix/Home Manager generation of themes. This is intended, but not implemented yet.
+- Declarative provisioning of theme state or assets.
 - Linux desktop theme switching.
 - Per-application theme tables by default. Most terminal apps should inherit from Kitty, Nushell, and `LS_COLORS`.
 - Dynamic reload inside already-running Neovim instances.
@@ -224,17 +224,6 @@ Neovim reads state at startup. A running instance needs restart or manual reload
 | LazyGit               | Partially aligned | Small config adjustment to prefer terminal defaults |
 
 ## [SPEC-007-S6] 6. Not Yet Implemented
-
-### [SPEC-007-S6.1] Nix / Home Manager
-
-Nix currently provisions packages but does not own or generate this theme state.
-
-Planned direction:
-
-- Model theme family and mode as Home Manager options or profile-level values.
-- Generate initial `$XDG_STATE_HOME/color-theme*` files during activation.
-- Generate or install app theme assets where possible.
-- Keep imperative `theme` switching for day-to-day toggles.
 
 ### [SPEC-007-S6.3] Other Applications
 

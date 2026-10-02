@@ -13,7 +13,7 @@ esac
 
 : "${DOTFILES:?Run through the shell:prepare mise task}"
 source "$DOTFILES/config/env/base.sh"
-# New paths avoid the old Home Manager symlinks, which are removed on switch.
+# Generated init files are mise-owned, separate from dotty-linked configs.
 cache="$HOME/.local/cache/dots/shell"
 mkdir -p "$cache"
 tmp=$(mktemp -d "$cache/.init.XXXXXXXX")

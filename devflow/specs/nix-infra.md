@@ -32,7 +32,7 @@ Declarative macOS system configuration alongside mise-owned user tooling and wor
 ### [SPEC-006-S2.1] Layer Hierarchy
 
 ```
-flake.nix (system configurations, user bindings, Home Manager state and PATH)
+flake.nix (system configurations and user bindings)
     └─ hosts/darwin/<machine>.nix    System packages, defaults, services
         └─ common.nix               Shared macOS defaults, Nix settings, and sudo policy
 
@@ -106,9 +106,9 @@ make system [<profile>]
 
 `workstation:apply` explicitly runs `packages:apply` then `workstation:setup`. Setup runs repositories/directories → dotfiles → shell preparation, without services or system changes. Authentication and origin conflicts fail visibly; dirty repositories are reported and skipped. Existing unpinned repositories are not pulled.
 
-Home Manager now retains only state metadata and baseline PATH. Keeping its activation lets the next system switch unlink the old generated shell and Pi package symlinks. New Nushell init files live at `~/.local/cache/dots/shell`, so user setup can be verified before that switch without replacing Nix-owned files. Direnv loads a pinned mise-provisioned nix-direnv checkout through the repo-owned `config/direnv/lib/nix-direnv.sh`.
+Home Manager is removed from the flake. Mise owns user setup and `config/env/base.sh` provides the baseline PATH. Nushell init files live at `~/.local/cache/dots/shell`. Direnv loads a pinned mise-provisioned nix-direnv checkout through the repo-owned `config/direnv/lib/nix-direnv.sh`.
 
-For the initial handoff, run `packages:apply` → `make system` → `workstation:setup`. Afterwards, use `workstation:apply` for user-environment changes and rerun `shell:prepare` after a Nix switch or package upgrade. See [mise commands](../../docs/mise.md).
+Machines still using the old HM-managed shell and Pi links must first switch through the minimal-HM revision so its activation unlinks them. Removing the module does not run its cleanup. See [retiring Home Manager](../../docs/mise.md#retiring-home-manager-on-existing-machines) for the handoff revision and residual-link cleanup. Fresh machines run `packages:apply` → `make system` → `workstation:setup` directly. Afterwards, use `workstation:apply` for user-environment changes and rerun `shell:prepare` after a Nix switch or package upgrade.
 
 ### [SPEC-006-S2.10] Darwin launchd Services
 
@@ -144,7 +144,7 @@ The `_resolve_profile` function handles the special case where explicit profile 
 
 ### [SPEC-006-S3.2] Environment Variables (Set by All Configs)
 
-Portable shell environment ownership lives in `config/env/base.sh`; see [SPEC-009](./shell-environment.md). Mise supplies user packages; Nix/Home Manager retains system packages and pre-shell session seeds. The configured login shell is macOS `/bin/zsh`; nix-darwin's Zsh module is disabled so it installs neither another Zsh nor global Zsh startup files. The former shared terminfo packages and Nix CLI completions are no longer declared. Bash, zsh, Nushell, tmux, bootstrap, and containers consume the shared contract rather than maintaining independent PATH/environment lists.
+Portable shell environment ownership lives in `config/env/base.sh`; see [SPEC-009](./shell-environment.md). Mise supplies user packages; nix-darwin retains system packages and pre-shell session seeds. The configured login shell is macOS `/bin/zsh`; nix-darwin's Zsh module is disabled so it installs neither another Zsh nor global Zsh startup files. The former shared terminfo packages and Nix CLI completions are no longer declared. Bash, zsh, Nushell, tmux, bootstrap, and containers consume the shared contract rather than maintaining independent PATH/environment lists.
 
 | Variable            | Value                                                                           |
 | ------------------- | ------------------------------------------------------------------------------- |
@@ -172,7 +172,6 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 | `nrs-flake-host [profile]` | Resolve current machine's flake host name |
 | `nix-clean` | Delete all old generations + GC |
 | `nix-clean-older [days=14]` | Delete generations older than N days + GC |
-| `nix-packages [profile]` | List home-manager packages for a profile from the current flake path |
 | `nix-sys-packages [profile]` | List system-level packages for a profile from the current flake path |
 | `nix-smoke [profile] [--skip-flake]` | Health check: PATH, binaries (including `pi`), config symlinks (including `~/.pi/agent/settings.json`), flake eval against the current flake path |
 | `nix-outputs` | Show all flake outputs from the current flake path |
@@ -205,7 +204,7 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 
 - **Homebrew packages owned by mise on macOS** — Homebrew is installed by `boot/boot.sh` to install mise; mise's built-in Homebrew package managers then use the shared prefix directly; nix-darwin's Homebrew module is disabled so its Bundle cleanup cannot remove mise-managed packages. mise declares formulae, casks, `@playwright/cli` (user prefix `~/.local`), and VS Code extensions in `.mise/conf.d/packages.toml` plus profile overlays. Applying packages neither prunes unlisted packages nor upgrades existing formulae; formula upgrades are explicit via `mise bootstrap packages upgrade --manager brew`.
 
-- **Shared-by-default profiles** — User tools and applications are shared through mise's common files. Profile overlays add hardware-specific QMK or work infrastructure tools. The Nix flake binds each host directly to its user and defines the shared Home Manager state version and baseline PATH inline; macOS defaults, Nix settings, and host-specific packages/services remain in Darwin host modules. Mise owns JVM tooling as well as other user tools.
+- **Shared-by-default profiles** — User tools and applications are shared through mise's common files. Profile overlays add hardware-specific QMK or work infrastructure tools. The Nix flake binds each host directly to its user; macOS defaults, Nix settings, and host-specific packages/services remain in Darwin host modules. Home Manager is not used. Mise owns JVM tooling as well as other user tools, and the shared shell environment owns PATH.
 
 - **Work boot profiles for username variants** — New work macOS machines may use `adam.hall` (dotted) or `adamhall`. All work outputs share `hosts/darwin/work.nix`; its `boot = true` parameter omits full-work packages and adds the bootstrap handoff message. Bootstrap supports both usernames with minimal work boot outputs. The full `work` output is intentionally single-user and only the current full-work username auto-promotes to it when workfiles exist; update `nix/flake.nix` and the rebuild wrapper's full-work username when the provisioned username changes.
 
