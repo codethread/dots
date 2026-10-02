@@ -2,7 +2,7 @@
 
 - Document ID: SPEC-009
 - **Status:** Implemented
-- **Last Updated:** 2026-10-01
+- **Last Updated:** 2026-10-02
 
 ## [SPEC-009-S1] Purpose
 
@@ -35,7 +35,7 @@ Known user/tool roots remain in PATH even before they exist. Installing into one
 
 ## [SPEC-009-S3a] SHELL Contract
 
-The base keeps the inherited `SHELL`, falling back to `zsh` when unset, and resolves it against the final PATH to an absolute executable path. Callers that deliberately set `SHELL`, such as agent CLIs, therefore keep their choice. If resolution fails, the base warns on stderr, leaves `SHELL` unchanged, and returns non-zero after restoring the caller's shell options. `emit.sh --tmux` passes the caller's `SHELL` into its clean subprocess and uses the resolved value as tmux's `default-shell`.
+On macOS, the base uses `/bin/zsh` when `SHELL` is unset or names Zsh, including inherited Nix/Homebrew Zsh paths. macOS supplies the only managed Zsh; PATH order must not select a different version. Explicit choices of other shells, such as `/bin/bash` from an agent CLI, are preserved. Elsewhere the default is `zsh` from PATH. The selected shell is resolved to an absolute executable path. If resolution fails, the base warns on stderr, leaves `SHELL` unchanged, and returns non-zero after restoring the caller's shell options. `emit.sh --tmux` passes the caller's `SHELL` into its clean subprocess and uses the resolved value as tmux's `default-shell`.
 
 ## [SPEC-009-S3b] Mise Environment
 
@@ -62,9 +62,9 @@ The tmux adapter evaluates the stable contract in a clean subprocess rather than
 
 `mise -E <profile> run shell:prepare` generates the completion cache after packages and dotfile links are installed. `boot/boot.sh` runs it after the Nix switch, so the scan reflects the current system rather than an incoming generation.
 
-`config/zsh/completion-path.zsh` is shared by `config/zsh/cache-completions.zsh` and interactive startup. It includes Nix profiles, Zsh built-ins, and Homebrew completions. Preparation audits those paths as the user, builds a fresh dump even if the completion file count is unchanged, and atomically replaces each cache file under `$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION`. The generator uses `zsh` from PATH (currently the Nix-registered login shell). Stale dumps for other Zsh versions are removed after publication. Insecure paths fail preparation without replacing the old cache.
+`config/zsh/completion-path.zsh` is shared by `config/zsh/cache-completions.zsh` and interactive startup. It keeps the running Zsh's built-in function directories and adds Homebrew and Nix package site/vendor completions, not another Zsh installation's versioned functions. Preparation explicitly uses macOS `/bin/zsh`, matching terminal/tmux startup even before the old Nix Zsh package is removed by a system switch. It audits those paths as the user, builds a fresh dump even if the completion file count is unchanged, and atomically replaces each cache file under `$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION`. Stale dumps for other Zsh versions are removed after publication. Insecure paths fail preparation without replacing the old cache.
 
-Interactive shells use `compinit -C`: completion discovery and security checks happen during explicit preparation, not on every launch. Completion files remain live on disk. Rerun `shell:prepare` after package upgrades or a Nix switch. Missing caches produce a warning and audited, uncached initialization.
+Interactive shells use `compinit -C`: completion discovery and security checks happen during explicit preparation, not on every launch. Completion files remain live on disk. Rerun `shell:prepare` after macOS/package upgrades or a Nix switch. Missing caches produce a warning and audited, uncached initialization.
 
 Nushell sources Atuin and Carapace init files generated into `~/.local/cache/dots/shell`, plus the repo-owned `config/nushell/direnv.nu` hook. These new paths avoid the old Home Manager-owned symlinks during handoff. Direnv automatically loads `config/direnv/lib/nix-direnv.sh`, which sources the mise-provisioned, pinned vendor checkout. Bash initializes its direnv hook only in interactive shells.
 

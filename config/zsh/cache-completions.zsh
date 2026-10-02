@@ -33,4 +33,4 @@ for stale in "$cache"/zcompdump-*(N); do
   [[ "$stale" == "$cache/$dump" || "$stale" == "$cache/$dump.zwc" ]] || rm -f -- "$stale"
 done
 
-print 'zsh: rebuilt and compiled completion cache (including Homebrew when present).'
+print -r -- "zsh $ZSH_VERSION: rebuilt and compiled $cache/$dump (including Homebrew when present)."

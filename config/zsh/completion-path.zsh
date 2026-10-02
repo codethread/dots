@@ -1,4 +1,5 @@
-# Shared by interactive startup and mise shell:prepare.
+# Shared by interactive startup and mise shell:prepare. Keep this Zsh's native
+# function directories; packages contribute only site/vendor completions.
 typeset -Ua fpath
 for ct_zsh_profile in \
   /nix/var/nix/profiles/default \
@@ -8,7 +9,6 @@ for ct_zsh_profile in \
   "$HOME/.nix-profile"; do
   fpath=(
     "$ct_zsh_profile/share/zsh/site-functions"
-    "$ct_zsh_profile/share/zsh/$ZSH_VERSION/functions"
     "$ct_zsh_profile/share/zsh/vendor-completions"
     $fpath
   )

@@ -39,11 +39,11 @@
         };
       };
 
-      darwinUser = username: { pkgs, ... }: {
+      darwinUser = username: { ... }: {
         system.primaryUser = username;
         users.users.${username} = {
           home = "/Users/${username}";
-          shell = pkgs.zsh;
+          shell = "/bin/zsh";
         };
       };
 

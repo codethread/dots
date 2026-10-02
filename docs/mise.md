@@ -78,7 +78,7 @@ mise -E dev run shell:prepare
 
 Repository apply requires GitHub SSH access for `agents`, Alfred, and images. Authentication and origin conflicts fail visibly; dirty checkouts are reported and skipped, and unpinned existing repos are not pulled. The Todoist fork and nix-direnv are pinned. Dotty refuses conflicting files rather than forcing replacement. `repositories:apply` also applies declared directories (including `/tmp/claude`) and the gitwatch link.
 
-Nushell init files now live under `~/.local/cache/dots/shell`, separate from the old Home Manager symlinks. Direnv loads the pinned vendor checkout through `config/direnv/lib/nix-direnv.sh`. Zsh completions are audited and compiled with the current Zsh; rerun `shell:prepare` after package upgrades or a Nix switch. Old generated init/plugin links are removed by the next Home Manager activation; no manual deletion is needed.
+Nushell init files now live under `~/.local/cache/dots/shell`, separate from the old Home Manager symlinks. Direnv loads the pinned vendor checkout through `config/direnv/lib/nix-direnv.sh`. Zsh startup and completion preparation both use macOS `/bin/zsh`, not a Zsh found on PATH. Homebrew and Nix package completions remain available alongside its built-ins. Rerun `shell:prepare` after macOS/package upgrades or a Nix switch. The next `make system` removes the extra Nix Zsh and its global startup files; preparation already works before that switch. Old generated init/plugin links are removed by the next Home Manager activation; no manual deletion is needed.
 
 ## General commands
 

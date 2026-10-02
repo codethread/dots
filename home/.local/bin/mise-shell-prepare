@@ -28,4 +28,5 @@ SHELL_INIT_DIR="$tmp" nu -n -c '
 '
 mv -f "$tmp/atuin.nu" "$cache/atuin.nu"
 mv -f "$tmp/carapace.nu" "$cache/carapace.nu"
-zsh -f "$DOTFILES/config/zsh/cache-completions.zsh"
+# Use macOS Zsh even while an old Nix generation still precedes it on PATH.
+/bin/zsh -f "$DOTFILES/config/zsh/cache-completions.zsh"

@@ -66,6 +66,7 @@ in
     agent-browser
     kitty.terminfo # xterm-kitty
     ncurses # tmux-256color
+    nix-zsh-completions
     pngpaste
     volta
     yazi
@@ -127,9 +128,11 @@ in
     };
   };
 
-  # --- Shell ---
-  # Register the Nix-managed Zsh as a valid login shell.
-  environment.shells = [ pkgs.zsh ];
+  # macOS supplies /bin/zsh; dotfiles own startup and mise owns its cache.
+  # nix-darwin enables Zsh by default, installing a second binary and global
+  # startup files. Keep only completions for the Nix-owned CLI.
+  programs.zsh.enable = false;
+  environment.pathsToLink = [ "/share/zsh" ];
 
   launchd.user.agents.syncengine = {
     serviceConfig = {

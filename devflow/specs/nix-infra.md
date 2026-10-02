@@ -3,7 +3,7 @@
 - Document ID: SPEC-006
 - Configuration identification: SPEC-006; migrated from `specs/nix-infra.md`; canonical path `devflow/specs/nix-infra.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-10-01
+- **Last Updated:** 2026-10-02
 
 ## [SPEC-006-S1] 1. Overview
 
@@ -148,20 +148,20 @@ The `_resolve_profile` function handles the special case where explicit profile 
 
 ### [SPEC-006-S3.2] Environment Variables (Set by All Configs)
 
-Portable shell environment ownership lives in `config/env/base.sh`; see [SPEC-009](./shell-environment.md). Mise supplies user packages; Nix/Home Manager retains login shell registration, system packages, and pre-shell session seeds. Bash, zsh, Nushell, tmux, bootstrap, and containers consume the shared contract rather than maintaining independent PATH/environment lists.
+Portable shell environment ownership lives in `config/env/base.sh`; see [SPEC-009](./shell-environment.md). Mise supplies user packages; Nix/Home Manager retains system packages and pre-shell session seeds. The configured login shell is macOS `/bin/zsh`; nix-darwin's Zsh module is disabled so it installs neither another Zsh nor global Zsh startup files. Nix CLI completions remain installed separately. Bash, zsh, Nushell, tmux, bootstrap, and containers consume the shared contract rather than maintaining independent PATH/environment lists.
 
-| Variable            | Value                                                                     |
-| ------------------- | ------------------------------------------------------------------------- |
-| `DOTFILES`          | `~/dev/dots` by default                                                   |
-| `EDITOR`            | `nvim`                                                                    |
-| `SHELL`             | Inherited shell resolved to an executable (Nix-registered Zsh by default) |
-| `XDG_CONFIG_HOME`   | `~/.config` (macOS: `~/dev/dots/config` during bootstrap)                 |
-| `XDG_DATA_HOME`     | `~/.local/share`                                                          |
-| `XDG_STATE_HOME`    | `~/.local/state`                                                          |
-| `XDG_CACHE_HOME`    | `~/.local/cache`                                                          |
-| `CODEX_HOME`        | `~/.config/codex`                                                         |
-| `VOLTA_HOME`        | `~/.volta`                                                                |
-| `NPM_CONFIG_PREFIX` | `~/.local`                                                                |
+| Variable            | Value                                                                       |
+| ------------------- | --------------------------------------------------------------------------- |
+| `DOTFILES`          | `~/dev/dots` by default                                                     |
+| `EDITOR`            | `nvim`                                                                      |
+| `SHELL`             | macOS `/bin/zsh` for default/inherited Zsh; explicit other shells preserved |
+| `XDG_CONFIG_HOME`   | `~/.config` (macOS: `~/dev/dots/config` during bootstrap)                   |
+| `XDG_DATA_HOME`     | `~/.local/share`                                                            |
+| `XDG_STATE_HOME`    | `~/.local/state`                                                            |
+| `XDG_CACHE_HOME`    | `~/.local/cache`                                                            |
+| `CODEX_HOME`        | `~/.config/codex`                                                           |
+| `VOLTA_HOME`        | `~/.volta`                                                                  |
+| `NPM_CONFIG_PREFIX` | `~/.local`                                                                  |
 
 For interactive shells and Nix-managed environments, `DOTFILES` remains the canonical clone path. Rebuild helpers (`nrs`, `nfu`, related flake queries) additionally detect the current git worktree root and use it when invoked from a valid dotfiles checkout. The root `Makefile` also overrides `DOTFILES` to the current checkout so `make link` / `make system` operate on the active worktree.
 

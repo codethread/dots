@@ -228,6 +228,11 @@ if [ "$ct_project_path_first" = false ]; then
 fi
 PATH=$ct_path
 ct_shell_candidate=${ct_inherited_shell:-zsh}
+# macOS owns Zsh. Normalize inherited Nix/Homebrew paths as well as the default
+# so terminals and tmux agree with shell:prepare, regardless of PATH order.
+if [ "$ct_os" = Darwin ] && [ "${ct_shell_candidate##*/}" = zsh ]; then
+  ct_shell_candidate=/bin/zsh
+fi
 ct_shell_resolution_failed=false
 if ct_resolved_shell=$(command -v "$ct_shell_candidate") &&
   [ "${ct_resolved_shell#/}" != "$ct_resolved_shell" ] &&
