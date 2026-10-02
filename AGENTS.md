@@ -63,6 +63,8 @@ Build tools in order of increasing complexity
 
 ### Script Evolution Path
 
+Bash must stay simple and self-explanatory. Do not add standalone Bash test suites or harnesses. If logic needs tests, it is too complex for Bash here: move it into `oven/` and test it there. Verify shell changes with syntax checks and direct smoke checks instead.
+
 Start simple → Graduate as needed:
 
 1. Try as nushell alias first
