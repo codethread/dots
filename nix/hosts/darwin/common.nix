@@ -73,7 +73,14 @@ in
     bitwarden-cli
     graphEasy
     flock
+    # JVM toolchains, formerly dev-tools.nix. The container runtime is owned by
+    # mise's dev, work, and work-boot package overlays.
+    clojure
+    clj-kondo
+    jdk
   ];
+
+  environment.variables.JAVA_HOME = "${pkgs.jdk.home}";
 
   fonts.packages = with pkgs; [
     fira-code

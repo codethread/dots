@@ -34,8 +34,7 @@ Declarative macOS system configuration alongside mise-owned user tooling and wor
 ```
 flake.nix (system configurations)
     ├─ hosts/darwin/<machine>.nix    System packages, defaults, users, services
-    │   ├─ common.nix               Shared macOS system configuration
-    │   └─ dev-tools.nix            JVM tooling
+    │   └─ common.nix               Shared macOS system configuration and JVM tooling
     ├─ profiles/<name>.nix          Home Manager state-only imports
     └─ features/home-base.nix       State version and baseline user PATH
 

@@ -101,7 +101,7 @@ let
 in
 {
   imports = [
-    ./millstrand.nix
+    ./common.nix
   ];
 
   services.openssh = {
