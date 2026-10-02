@@ -114,11 +114,11 @@ For the initial handoff, run `packages:apply` → `make system` → `workstation
 
 ### [SPEC-006-S2.10] Darwin launchd Services
 
-Deliberately **not** shared via `hosts/darwin/common.nix` — each is tied to a repo, a workload, or a machine's role. Declared in the host module that wants it.
+Mise owns the shared syncengine agent and the dev/work cc-notify and Git maintenance agents. Remaining Nix-owned services are tied to a workload or machine role and declared in the host module that wants them.
 
 | Service | Declared in | Applies to | Notes |
 | --- | --- | --- | --- |
-| `syncengine` | `hosts/darwin/common.nix` | all macOS | The one exception; keeps `~/.local/bin/syncengine` running everywhere |
+| `syncengine` | `.mise/conf.d/syncengine.toml` | all macOS | mise-owned RunAtLoad agent; shared by dev/work services, standalone `syncengine:apply` on any profile |
 | `git-maintenance-{hourly,daily,weekly}` | `.mise/conf.d/git-maintenance.toml` + profile overlay | dev, work | mise-owned LaunchAgents; filtered repository list, private state config |
 | `cc-notify` | `.mise/conf.d/cc-notify.toml` + profile overlay | dev, work | mise-owned LaunchAgent; mise-managed Bun, explicit preparation before apply |
 | `backup-notes` | `hosts/darwin/dev.nix` | dev | Auto-commits the notes vault every 15 min |
@@ -126,7 +126,7 @@ Deliberately **not** shared via `hosts/darwin/common.nix` — each is tied to a 
 
 Claude settings also live outside Nix: `.mise/conf.d/claude-code.toml` renders `templates/claude-settings.json.tera` with `mise -E dev run claude:apply` (or `work`). See [Claude settings](../../claude/README.md) for the apply workflow.
 
-cc-notify and Git maintenance have moved out of Nix; see [mise services](./mise-services.md). Homebrew and mise are installed by `boot/boot.sh`, and mise owns host packages; `make system` neither installs nor upgrades Homebrew packages. `make system` does not apply mise services; use `mise -E dev run services:apply` (or `work`) separately. The remaining Nix-owned services retain their existing host declarations and activation hooks.
+Syncengine, cc-notify, and Git maintenance have moved out of Nix; see [mise services](./mise-services.md). Homebrew and mise are installed by `boot/boot.sh`, and mise owns host packages; `make system` neither installs nor upgrades Homebrew packages. `make system` does not apply mise services; use `mise -E dev run services:apply` (or `work`) separately, or `mise -E <profile> run syncengine:apply` for syncengine alone. The remaining Nix-owned services retain their existing host declarations and activation hooks.
 
 ## [SPEC-006-S3] 3. Data Model
 
@@ -211,7 +211,7 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 
 - **Work boot profiles for username variants** — New work macOS machines may use `adam.hall` (dotted) or `adamhall`. Bootstrap supports both with minimal `work-boot` outputs. The full `work` output is intentionally single-user and only the current full-work username auto-promotes to it when workfiles exist; update `nix/flake.nix` and the rebuild wrapper's full-work username when the provisioned username changes.
 
-- **Explicit mise service preparation** — cc-notify checkout/dependencies/credentials and Git maintenance registration are prepared by `mise -E dev run services:prepare` (or `work`), not Nix activation. Missing SSH access or credentials fails that explicit task before agents start. Services are not installed on personal or work-boot profiles.
+- **Explicit mise service preparation** — cc-notify checkout/dependencies/credentials and Git maintenance registration are prepared by `mise -E dev run services:prepare` (or `work`), not Nix activation. Missing SSH access or credentials fails that explicit task before agents start. Shared syncengine preparation checks gitwatch and Homebrew dependencies and creates its log directory. Personal and work-boot profiles use `syncengine:apply` without installing cc-notify or Git maintenance.
 
 - **Neovim-managed Tree-sitter parsers** — `nvim-treesitter` installs the configured language list into Neovim's writable data directory (`stdpath('data')/site`); Lazy runs `:TSUpdate` when the plugin changes. Mise supplies Homebrew Neovim and `tree-sitter-cli`, not grammars or queries. Compilation uses the macOS Command Line Tools C compiler. On first launch, let parser installation finish, then reopen buffers for highlighting; additional languages can be installed with `:TSInstall <language>`.
 

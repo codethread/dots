@@ -20,28 +20,6 @@ let
   };
 
   homeDir = config.users.users.${config.system.primaryUser}.home;
-  nixUserBin = "/etc/profiles/per-user/${config.system.primaryUser}/bin";
-  syncengineStateDir = "${homeDir}/.local/state/com.codethread.syncengine";
-  guiPath = lib.concatStringsSep ":" [
-    "${homeDir}/.local/bin"
-    "${homeDir}/.local/share/mise/shims"
-    "/opt/homebrew/opt/coreutils/libexec/gnubin"
-    "/opt/homebrew/bin"
-    "/opt/homebrew/sbin"
-    "${homeDir}/.local/share/cargo/bin"
-    "${homeDir}/.volta/bin"
-    "${homeDir}/.bun/bin"
-    "${homeDir}/.local/share/nvim/mason/bin"
-    nixUserBin
-    "/run/current-system/sw/bin"
-    "/nix/var/nix/profiles/default/bin"
-    "/opt/podman/bin"
-    "/usr/local/bin"
-    "/usr/bin"
-    "/bin"
-    "/usr/sbin"
-    "/sbin"
-  ];
 in
 {
   nix.settings = {
@@ -141,22 +119,8 @@ in
   programs.zsh.enable = false;
   environment.pathsToLink = [ "/share/zsh" ];
 
-  launchd.user.agents.syncengine = {
-    serviceConfig = {
-      Label = "com.codethread.syncengine";
-      ProgramArguments = [ "${homeDir}/.local/bin/syncengine" ];
-      RunAtLoad = true;
-      StandardOutPath = "${syncengineStateDir}/std.log";
-      StandardErrorPath = "${syncengineStateDir}/std.log";
-      EnvironmentVariables = {
-        PATH = guiPath;
-      };
-    };
-  };
-
+  # syncengine is owned by mise (.mise/conf.d/syncengine.toml).
   system.activationScripts.postActivation.text = lib.mkBefore ''
-    /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${syncengineStateDir}
-
     # Best-effort: this domain may be protected on some macOS versions. Keep it
     # out of system.defaults.CustomUserPreferences so a rejected write does not
     # abort the full system activation.

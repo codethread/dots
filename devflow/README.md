@@ -16,7 +16,7 @@ Persistent domain specifications. Organized by system area, not feature chronolo
 
 | Spec | Code | Purpose |
 | --- | --- | --- |
-| [Mise services](./specs/mise-services.md) | `mise.toml`, `.mise/conf.d/*.toml`, `mise.{dev,work}.toml`, `home/.local/bin/{git-maintenance,mise-services-prepare}` | macOS LaunchAgents for cc-notify and Git maintenance |
+| [Mise services](./specs/mise-services.md) | `mise.toml`, `.mise/conf.d/*.toml`, `mise.{dev,work}.toml`, `home/.local/bin/{git-maintenance,mise-services-prepare}` | macOS LaunchAgents for syncengine, cc-notify, and Git maintenance |
 | [SPEC-006 nix-infra](./specs/nix-infra.md) | `nix/`, `boot/`, `config/nushell/scripts/ct/nix.nu`, `.githooks/pre-commit` | Declarative system configuration and bootstrap for macOS machines |
 | [SPEC-009 shell-environment](./specs/shell-environment.md) | `config/env/`, `config/{bash,zsh,nushell}/`, `config/tmux/tmux.conf`, `boot/boot.sh` | Shared Bash-authored environment and PATH contract with shell adapters |
 | [SPEC-003 dotty](./specs/dotty.md) | `config/nushell/scripts/ct/dotty/`, `config/dotty/dotty.toml`, `config/nvim/lua/codethread/dotty.lua`, `Makefile`, `.mise/conf.d/workstation.toml` | General-purpose dotfile symlink manager: TOML-driven file and directory linking with caching and conflict resolution |

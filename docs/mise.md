@@ -23,6 +23,10 @@ mise -E dev run services:apply
 # Check services
 mise -E dev run services:status
 
+# Syncengine alone (also available on personal/work-boot)
+mise -E personal run syncengine:apply
+mise -E personal run syncengine:status
+
 # Preview host packages (host packages only; no npm or VS Code extras)
 mise -E dev bootstrap packages apply --dry-run
 
@@ -33,7 +37,7 @@ mise -E dev run packages:apply
 mise -E dev run packages:status
 ```
 
-**Avoid bare `mise bootstrap` here**: use the dedicated tasks so service dependencies are prepared first. Package work belongs to `packages:apply`, not the service tasks.
+**Avoid bare `mise bootstrap` here**: use the dedicated tasks so service dependencies are prepared first. Package work belongs to `packages:apply`, not the service tasks. Syncengine requires `packages:apply` and `repositories:apply` first (gitwatch link, Git, fswatch, coreutils). Switch the updated Nix configuration and wait for the old syncengine watchers to exit before applying its mise replacement. The full dev/work services workflow includes syncengine; `syncengine:apply` scopes application to syncengine without cc-notify credentials or Git-maintenance registration.
 
 Host packages live in `.mise/conf.d/packages.toml` plus the active profile overlay: `mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, or `mise.work-boot.toml` (both work bootstrap usernames use `work-boot`). `packages:apply` installs versioned tools and those Homebrew formulae and casks, runs `llm:install` for missing agent CLIs, builds the pinned Todoist fork, then installs `@playwright/cli` with the Homebrew npm into `~/.local`, then the profile's VS Code extensions. `packages:status` reports host packages only. Applying packages never prunes unlisted packages or upgrades existing formulae; run `mise -E dev bootstrap packages upgrade --manager brew` to upgrade formulae explicitly.
 
