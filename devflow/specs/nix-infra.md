@@ -55,7 +55,7 @@ mise.<profile>.toml                Machine package, tool, and service overlays
 
 Nix uses one `nixpkgs` input for the remaining Darwin system packages and services. Mise owns user CLI tools, runtimes, fonts, and host applications:
 
-- `config/mise/config.toml`: global tools, including Java 21, clj-kondo, and pinned Graph-Easy; `.mise/conf.d/tools.toml` links the same declarations into this project before first bootstrap.
+- `config/mise/config.toml`: global tools, including Java 21, clj-kondo, and mermaid-ascii; `.mise/conf.d/tools.toml` links the same declarations into this project before first bootstrap.
 - `.mise/conf.d/packages.toml` plus `mise.<profile>.toml`: Homebrew formulae and casks.
 - `config/mise/config.{dev,work}.toml`: profile-specific tools outside this checkout, mirrored from root overlays.
 - `.mise/conf.d/llm.toml`: official Claude/Cursor/Codex/Pi installers and explicit updates.
@@ -67,7 +67,7 @@ Homebrew itself installs mise; nix-darwin's Homebrew module remains disabled. Sh
 
 Mise tasks orchestrate the official Claude, Cursor, Codex, and Pi installers. Pi's managed installer uses Node and locked npm dependencies; Pi installs `pi-nvim` and `@narumitw/pi-goal` from its settings.
 
-`.mise/conf.d/todoist.toml` pins the codethread fork and builds its committed generated parser with mise Go. Nufmt is a pinned Git/Cargo tool. QMK uses PyPI; Vault and cargo-lambda use release binaries, avoiding unsupported/source-only Homebrew tap recipes. Graph-Easy 0.76 uses its checksum-pinned CPAN source archive through mise's HTTP backend; a launcher exposes the bundled pure-Perl library to macOS Perl, without CPAN installation or global `PERL5LIB`. Devflow's `show` command consumes it to render task dependency DAGs.
+`.mise/conf.d/todoist.toml` pins the codethread fork and builds its committed generated parser with mise Go. Nufmt is a pinned Git/Cargo tool. QMK uses PyPI; Vault and cargo-lambda use release binaries, avoiding unsupported/source-only Homebrew tap recipes. mermaid-ascii is the Devflow `show` DAG renderer: a standalone aqua/GitHub release binary, replacing the former checksum-pinned Graph-Easy CPAN archive and macOS Perl launcher.
 
 ### [SPEC-006-S2.5] Bootstrap Flow
 

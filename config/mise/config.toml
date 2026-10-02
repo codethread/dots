@@ -21,23 +21,5 @@ rust = "stable"
 # No upstream release binary/formula; retain the revision previously in flake.lock.
 "cargo:https://github.com/nushell/nufmt" = "rev:24023665d1c2661addb22dce384b53d4a839727f"
 
-# Devflow's terminal DAG renderer. Pure Perl: no build or CPAN dependencies needed.
-# Keep the same release and checksum as the former Nix derivation.
-[tools."http:graph-easy"]
-version = "0.76"
-os = ["macos"]
-url = "https://cpan.metacpan.org/authors/id/S/SH/SHLOMIF/Graph-Easy-0.76.tar.gz"
-checksum = "sha256:d4a2c10aebef663b598ea37f3aa3e3b752acf1fbbb961232c3dbe1155008d1fa"
-strip_components = 1
-bin_path = "bin"
-postinstall = '''
-set -eu
-mv "$MISE_TOOL_INSTALL_PATH/bin/graph-easy" "$MISE_TOOL_INSTALL_PATH/graph-easy.pl"
-cat > "$MISE_TOOL_INSTALL_PATH/bin/graph-easy" <<'SH'
-#!/bin/bash
-set -euo pipefail
-root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-exec /usr/bin/perl -I "$root/lib" "$root/graph-easy.pl" "$@"
-SH
-chmod +x "$MISE_TOOL_INSTALL_PATH/bin/graph-easy"
-'''
+# Devflow's terminal DAG renderer. Aqua/GitHub release binary; no Perl or CPAN.
+mermaid-ascii = "latest"
