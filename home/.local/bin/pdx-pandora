@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SESSION="pdx--pandora"
-PDX=(volta run --node 24 pdx)
+PDX=(mise exec node@24 -- pdx)
 NUSHELL_ENV="$HOME/.config/nushell/env.nu"
 PANDORA_ENV_VARS=(PDX_DATA_DIR PITHOS_DB PDX_USER_DATA_DIR)
 
@@ -12,7 +12,7 @@ usage() {
 Usage: pdx-pandora [-h|--help]
 
 If the pdx daemon is running, switch to the Pandora tmux session.
-Otherwise start pdx with Node 24 via Volta, then switch to Pandora.
+Otherwise start pdx with Node 24 via mise, then switch to Pandora.
 USAGE
 }
 

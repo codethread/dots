@@ -93,7 +93,6 @@ export def hide-all [closure: closure] {
         FZF
         GOBIN
         GOPATH
-        VOLTA
         HUSKY
     ]
 

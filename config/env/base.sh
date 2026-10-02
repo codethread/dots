@@ -44,7 +44,6 @@ EDITOR="${EDITOR:-nvim}"
 ct_inherited_shell="${SHELL:-}"
 
 ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}"
-VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
 NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-$HOME/.local}"
 CARGO_HOME="${CARGO_HOME:-$XDG_DATA_HOME/cargo}"
 CARGO_BIN="${CARGO_BIN:-$CARGO_HOME/bin}"
@@ -113,8 +112,9 @@ GOPATH="${GOPATH:-$HOME/go}"
 RUSTUP_HOME="${RUSTUP_HOME:-$XDG_DATA_HOME/rustup}"
 PYTHONDONTWRITEBYTECODE="${PYTHONDONTWRITEBYTECODE:-1}"
 PIP_REQUIRE_VIRTUALENV="${PIP_REQUIRE_VIRTUALENV:-false}"
-VOLTA_FEATURE_PNPM="${VOLTA_FEATURE_PNPM:-1}"
 LSP_USE_PLISTS="${LSP_USE_PLISTS:-true}"
+# mise maintains this major-version symlink. exec/run override it for projects.
+JAVA_HOME="${JAVA_HOME:-${MISE_DATA_DIR:-$XDG_DATA_HOME/mise}/installs/java/temurin-21}"
 
 # Gas City CLI: don't report usage metrics from work machines.
 if [ "$CT_USER" = work ]; then
@@ -136,12 +136,6 @@ if [ "$ct_os" = Darwin ]; then
   HOMEBREW_REPOSITORY="${HOMEBREW_REPOSITORY:-/opt/homebrew}"
   ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 
-  if [ -d /opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home ]; then
-    JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home}"
-  else
-    JAVA_HOME="${JAVA_HOME:-/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home}"
-  fi
-
   if [ -d /Applications/kitty.app/Contents/Resources/man ]; then
     case ":${MANPATH:-}:" in
       *:/Applications/kitty.app/Contents/Resources/man:*) ;;
@@ -160,22 +154,6 @@ if [ -n "${IN_NIX_SHELL:-}${DIRENV_DIR:-}${__MISE_DIFF:-}" ]; then
   ct_project_path_first=true
   ct_path_append_list "$ct_inherited_path"
 fi
-# Volta launches tools with a selected image directory in PATH and sets
-# _VOLTA_TOOL_RECURSION. Preserve those directories before adding Volta's shim:
-# rebuilding PATH with only the shim makes it fall back to the system Node
-# instead of the project-pinned toolchain.
-if [ -n "${_VOLTA_TOOL_RECURSION+x}" ]; then
-  ct_remaining=$ct_inherited_path
-  while [ -n "$ct_remaining" ]; do
-    case "$ct_remaining" in
-      *:*) ct_dir=${ct_remaining%%:*}; ct_remaining=${ct_remaining#*:} ;;
-      *) ct_dir=$ct_remaining; ct_remaining= ;;
-    esac
-    case "$ct_dir" in
-      "$VOLTA_HOME"/tools/image/*/*/bin) ct_path_append "$ct_dir" ;;
-    esac
-  done
-fi
 ct_path_append "$HOME/.local/bin"
 # Pi's official managed launcher follows local wrappers.
 ct_path_append "$PI_CODING_AGENT_DIR/bin"
@@ -188,7 +166,6 @@ if [ "$ct_os" = Darwin ]; then
   ct_path_append /opt/homebrew/sbin
 fi
 ct_path_append "$CARGO_BIN"
-ct_path_append "$VOLTA_HOME/bin"
 ct_path_append "$HOME/.bun/bin"
 ct_path_append "$HOME/.luarocks/bin"
 ct_path_append "$GOBIN"
@@ -203,7 +180,6 @@ ct_path_append /nix/var/nix/profiles/default/bin
 ct_path_append /opt/podman/bin
 
 if [ "$ct_os" = Darwin ]; then
-  ct_path_append "$JAVA_HOME/bin"
   ct_path_append "$ANDROID_HOME/platform-tools"
   ct_path_append "$ANDROID_HOME/emulator"
   ct_path_append /opt/homebrew/opt/ruby@3.1/bin

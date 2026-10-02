@@ -85,9 +85,6 @@ enabled-reasoning-efforts = [
 ]
 followUpQueueMode = "queue"
 
-[shell_environment_policy.filters]
-_VOLTA_TOOL_RECURSION = "exclude"
-
 [[skills.config]]
 path = "~/.config/.codex/skills/.system/imagegen/SKILL.md"
 enabled = false

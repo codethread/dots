@@ -1,7 +1,6 @@
 # Shared macOS host packages. Apply explicitly; never prune during bootstrap.
 [bootstrap.brew.taps]
 "codethread/wktree" = "https://github.com/codethread/wktree"
-"codethread/millstrand" = "https://github.com/codethread/millstrand"
 
 [bootstrap.packages]
 # Shared CLI packages formerly in nix/features/common.nix.
@@ -53,6 +52,12 @@
 "brew:ast-grep" = { os = "macos" }
 "brew:vivid" = { os = "macos" }
 "brew:direnv" = { os = "macos" }
+# Remaining user tools formerly in nix/hosts/darwin/common.nix.
+"brew:agent-browser" = { os = "macos" }
+"brew:pngpaste" = { os = "macos" }
+"brew:yazi" = { os = "macos" }
+"brew:flock" = { os = "macos" }
+"brew:clojure" = { os = "macos" }
 
 "brew:dicklesworthstone/tap/br" = { os = "macos" }
 "brew:dicklesworthstone/tap/bv" = { os = "macos" }

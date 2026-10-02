@@ -7,7 +7,6 @@ git_maintenance_repositories = "~/dev/projects/notes/vault"
 "brew:dos2unix" = { os = "macos" }
 "brew:podman" = { os = "macos" }
 "brew:podman-compose" = { os = "macos" }
-"brew:codethread/millstrand/millstrand" = { os = "macos" }
 "brew-cask:terminal-browser" = { os = "macos" }
 
 # Also declared globally in config/mise/config.dev.toml for use outside dots.

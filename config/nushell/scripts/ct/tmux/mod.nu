@@ -11,7 +11,7 @@ export def finger-other-pane [] {
     # list of 'watch' process, and if these are present, I likely want to grab
     # a url from one of these
     let pss = [
-        volta-shim
+        node
         cargo-watch
     ]
 

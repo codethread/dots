@@ -6,19 +6,6 @@
 }:
 
 let
-  graphEasy = pkgs.perlPackages.buildPerlPackage {
-    pname = "Graph-Easy";
-    version = "0.76";
-    src = pkgs.fetchurl {
-      url = "mirror://cpan/authors/id/S/SH/SHLOMIF/Graph-Easy-0.76.tar.gz";
-      hash = "sha256-1KLBCuvvZjtZjqN/OqPjt1Ks8fu7lhIyw9vhFVAI0fo=";
-    };
-    propagatedBuildInputs = with pkgs.perlPackages; [
-      Graph
-    ];
-    meta.mainProgram = "graph-easy";
-  };
-
   homeDir = config.users.users.${config.system.primaryUser}.home;
 in
 {
@@ -41,24 +28,11 @@ in
   # and sudo contexts while keeping kitty's native TERM=xterm-kitty.
   # enableAllTerminfo pulls in termite which fails to build on current Apple SDK.
   environment.systemPackages = with pkgs; [
-    agent-browser
     kitty.terminfo # xterm-kitty
     ncurses # tmux-256color
     nix-zsh-completions
-    pngpaste
-    volta
-    yazi
-    bitwarden-cli
-    graphEasy
-    flock
-    # JVM toolchains, formerly dev-tools.nix. The container runtime is owned by
-    # mise's dev, work, and work-boot package overlays.
-    clojure
-    clj-kondo
-    jdk
   ];
-
-  environment.variables.JAVA_HOME = "${pkgs.jdk.home}";
+  # User CLI packages and JVM tooling are owned by mise.
 
   fonts.packages = with pkgs; [
     fira-code

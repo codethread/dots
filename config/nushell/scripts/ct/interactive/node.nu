@@ -56,11 +56,6 @@ export def yarn-workspaces [] {
 # work
 ##############################################
 
-export def nvm [] {
-    volta pin node@14
-    volta pin yarn@1.22.4
-}
-
 export def react-native-clean [] {
     git pull
     gclean
