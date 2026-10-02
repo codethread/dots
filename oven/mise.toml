@@ -1,0 +1,19 @@
+min_version = "2026.9.15"
+
+# Runtimes only: Biome and TypeScript are installed from bun.lock.
+[tools]
+bun = "1.4.2"
+node = "24.21.0"
+
+# Require Oven's lock without imposing locked mode on inherited workstation tools.
+[tool_config]
+locked = true
+
+[tasks.install]
+description = "Install Oven dependencies from bun.lock"
+run = "bun install --frozen-lockfile"
+
+[tasks.verify]
+description = "Test, typecheck, fix, build wrappers, and sync Oven docs"
+depends = ["install"]
+run = "bun run verify"

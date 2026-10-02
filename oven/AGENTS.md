@@ -6,19 +6,23 @@ The build process generates thin bash wrapper scripts that `exec bun run <source
 
 - Outputs to `~/.local/bin` for system-wide PATH availability
 - entrypoints are declared in `oven/bin/manifest.json`
-- during development run code with `bun run ./bin/<entry path>`
+- during development run code with `mise exec -- bun run ./bin/<entry path>`
+- `mise.toml` / `mise.lock` pin Bun and Node; `bun.lock` supplies Biome and TypeScript
+- Git is a host prerequisite; no Nix shell or activation is needed
 
 ### Commands
 
-```bash
+```nu
 cd oven
-bun run fmt      # Format code
-bun run lint     # Lint code
-bun run check    # Check formatting and linting
-bun run fix      # Fix issues (quiet by default)
-bun run build    # Build executables to ~/.local/bin (quiet by default, use -v for verbose)
-bun run sync-docs   # Update documentation (quiet by default, use -v for verbose)
-bun run ./bin/<entry path>  # Test before building
+mise run install                # Install pinned runtimes and frozen dependencies
+mise exec -- bun run fmt        # Format code
+mise exec -- bun run lint       # Lint code
+mise exec -- bun run check      # Check formatting and linting
+mise exec -- bun run fix        # Fix issues (quiet by default)
+mise exec -- bun run build      # Build wrappers to ~/.local/bin (use -v for verbose)
+mise exec -- bun run sync-docs  # Update documentation (use -v for verbose)
+mise run verify                 # Install, test, typecheck, fix, build, and sync docs
+mise exec -- bun run ./bin/<entry path>  # Test before building
 ```
 
 ## Package structure
@@ -67,7 +71,7 @@ existing domains:
 - **Formatter**: (`bun fmt`) Biome with 100-character line width, no bracket spacing
 - **Linter**: (`bun check`) Biome with recommended rules, allows `any` types and non-null assertions
 - **Types**: (`bun run typecheck`) Typescript via `tsc`, relatively strict
-- IMPORTANT: when work is complete run `bun run verify` to validate all checks, build the binaries and update the docs
+- IMPORTANT: when work is complete run `mise run verify` (or root `make build`) to install frozen dependencies, validate all checks, build the wrappers and update the docs. Run full suites through `qlock` on `/tmp/millstrand-test.lock`.
 
 ### Best Practices
 

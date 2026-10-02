@@ -9,34 +9,42 @@ Bun workspace for managing TypeScript/JavaScript executables. Entrypoints listed
 - `tests/` - Tests for `bin` files, following rails convention of `bin/myBin.ts` -> `tests/myBin.test.ts`
 - `scripts/` - Build and utility scripts
 
-## Commands
+## Tooling and commands
 
-```bash
-# Enter the project shell via Nix (pins bun/biome/typescript for this repo)
-nix develop
+Mise manages Bun and Node through `mise.toml` and `mise.lock`, with locked downloads for macOS and Linux (arm64/x64). Biome and TypeScript come from `package.json` / `bun.lock`, not global tools. Git must be available on PATH (provided by the workstation's host packages). Nix and shell activation are not required.
 
-# Format and lint all code with Biome
-bun run fix
+Run from `oven/`:
 
-# Check type definitions are correct
-bun run typecheck
+```nu
+# Review and trust this project's configuration once
+mise trust mise.toml
+
+# Install the pinned runtimes and frozen project dependencies
+mise run install
+
+# Format and lint all code with the project-local Biome
+mise exec -- bun run fix
+
+# Check type definitions with the project-local TypeScript
+mise exec -- bun run typecheck
 
 # Build all executables to ~/.local/bin
-bun run build
+mise exec -- bun run build
 
-# Run the full verification and build process
-bun run verify
-
-# One-shot run without opening an interactive shell
-nix develop --command bun run verify
+# Install dependencies, test, typecheck, fix, build, and sync docs
+mise run verify
 ```
+
+From the repository root, `make build` runs the same `mise -C oven run verify` workflow. The generated wrappers still execute `bun` from PATH; workstation setup provides the mise-managed runtime. Keep this checkout available because wrappers point to its source files.
+
+To update runtimes, edit their exact versions in `mise.toml`, run `mise lock --platform linux-arm64,linux-x64,macos-arm64,macos-x64`, then `mise run verify`. Review and commit both mise files together. Oven's strict lock policy applies only to its runtimes, not inherited workstation tools.
 
 ## Adding New Tools
 
 1. Create a `.ts` entrypoint in `bin/` or a nested folder under `bin/`
 2. Add it to `bin/manifest.json` with explicit `{ "bin": "tool-name", "entry": "path/to/main.ts" }`
-3. Run `bun run fmt` to format the code
-4. Run `bun run build` to create the executable
+3. Run `mise exec -- bun run fmt` to format the code
+4. Run `mise exec -- bun run build` to create the executable
 
 ## Tools Included
 

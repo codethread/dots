@@ -181,12 +181,12 @@ For interactive shells and Nix-managed environments, `DOTFILES` remains the cano
 
 ### [SPEC-006-S4.3] Makefile Targets
 
-| Target        | Action                                                                             |
-| ------------- | ---------------------------------------------------------------------------------- |
-| `make system` | Rebuild nix system via local `ct/nix.nu` from the current checkout                 |
-| `make link`   | Symlink dotfiles from the current checkout via `dotty link --no-cache`             |
-| `make build`  | Build `oven/` tools from the current checkout via `nix develop` + `bun run verify` |
-| `make all`    | `link` → `build` → `system`                                                        |
+| Target        | Action                                                                         |
+| ------------- | ------------------------------------------------------------------------------ |
+| `make system` | Rebuild nix system via local `ct/nix.nu` from the current checkout             |
+| `make link`   | Symlink dotfiles from the current checkout via `dotty link --no-cache`         |
+| `make build`  | Install/check/build `oven/` tools via `mise -C oven run verify` (no Nix shell) |
+| `make all`    | `link` → `build` → `system`                                                    |
 
 ### [SPEC-006-S4.4] Git Pre-Commit Hook
 

@@ -24,7 +24,7 @@ cc-notify and Git maintenance are owned separately by `.mise/conf.d/*.toml`, wit
 ```bash
 make         # Run link then build (default) - quiet output, errors only
 make link    # Link dotfiles via dotty
-make build   # Build oven executables through `nix develop`
+make build   # Install/check/build oven tools through `mise -C oven run verify`
 make system  # Rebuild nix-darwin (override with `PROFILE=work`, etc)
 ```
 
@@ -72,7 +72,7 @@ Start simple → Graduate as needed:
 3. Create bash script in `home/.local/bin/` for standalone tools
     - `make link` to add script to PATH
 4. Migrate to `oven/` when exceeding 200 lines or needing TypeScript
-    - Build with `make build` (or `bun run build` inside `oven/`) to create executable
+    - Build with `make build` (or `mise exec -- bun run build` inside `oven/`) to create executable
 
 ## Claude Code integrations
 
