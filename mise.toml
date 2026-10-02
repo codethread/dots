@@ -14,6 +14,7 @@ env.GIT_MAINTENANCE_REPOSITORIES = "{{ vars.git_maintenance_repositories }}"
 run = [
   '"{{ config_root }}/home/.local/bin/mise-services-prepare"',
   '"{{ config_root }}/home/.local/bin/git-maintenance" register',
+  'if [ "{{ vars.service_profile }}" = dev ]; then /bin/mkdir -p "$HOME/.local/state/com.codethread.backup-notes"; fi',
 ]
 
 [tasks."services:apply"]
@@ -21,7 +22,7 @@ description = "Prepare then apply LaunchAgents; select -E dev or -E work"
 depends = ["services:prepare"]
 shell = "/bin/bash -c"
 run = '''
-for label in com.codethread.syncengine com.codethread.cc-notify com.codethread.git-maintenance.hourly com.codethread.git-maintenance.daily com.codethread.git-maintenance.weekly; do
+for label in com.codethread.backup-notes com.codethread.syncengine com.codethread.cc-notify com.codethread.git-maintenance.hourly com.codethread.git-maintenance.daily com.codethread.git-maintenance.weekly; do
   if /bin/launchctl print "gui/$(/usr/bin/id -u)/$label" >/dev/null 2>&1; then
     echo "Old Nix agent still loaded: $label. Switch the updated Nix configuration before applying mise services." >&2
     exit 1

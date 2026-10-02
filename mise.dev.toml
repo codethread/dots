@@ -13,3 +13,52 @@ git_maintenance_repositories = "~/dev/projects/notes/vault"
 # Also declared globally in config/mise/config.dev.toml for use outside dots.
 [tools]
 "pypi:qmk" = "1.2.0"
+
+[bootstrap.macos.launchd.agents.backup-notes]
+program = "/bin/bash"
+args = [
+  "-c",
+  '''
+set -Eeuo pipefail
+
+sentinel="$HOME/.local/state/com.codethread.backup-notes/failure-notified"
+
+notify_failure() {
+  local exit_code="$?"
+  trap - ERR
+
+  if [ ! -e "$sentinel" ]; then
+    {
+      echo "backup-notes failed with exit code $exit_code."
+      echo
+      echo "Repository: $HOME/dev/projects/notes/vault"
+      echo
+      /usr/bin/git -C "$HOME/dev/projects/notes/vault" status --short --branch || true
+    } | "$HOME/.local/bin/cc-notify" "Notes git backup failed" || true
+    : > "$sentinel"
+  fi
+
+  exit "$exit_code"
+}
+
+trap notify_failure ERR
+
+cd "$HOME/dev/projects/notes/vault"
+
+/usr/bin/git add -A
+if ! /usr/bin/git diff --cached --quiet; then
+  /usr/bin/git commit -m "auto: $(/bin/date -u +%Y-%m-%dT%H:%M:%SZ)"
+fi
+
+/usr/bin/git pull --rebase
+/usr/bin/git push
+
+/bin/rm -f "$sentinel"
+''',
+]
+run_at_load = true
+start_interval = 900
+# Keep the old state directory so notification suppression survives the handoff.
+environment = { HOME = "{{ env.HOME }}", PATH = "/usr/bin:/bin:/usr/sbin:/sbin" }
+stdout_path = "~/.local/state/com.codethread.backup-notes/std.log"
+stderr_path = "~/.local/state/com.codethread.backup-notes/std.log"

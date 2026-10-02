@@ -2,13 +2,13 @@
 
 ## Scope and ownership
 
-The project mise configuration owns five user LaunchAgents: syncengine, cc-notify, and hourly/daily/weekly Git maintenance. macOS launchd supervises them; mise renders and applies their definitions. Service declarations are deliberately project-scoped: they require no shell activation or extra supervisor and are not part of the global mise tool configuration.
+The project mise configuration owns five shared dev/work user LaunchAgents: syncengine, cc-notify, and hourly/daily/weekly Git maintenance, plus a dev-only backup-notes agent. macOS launchd supervises them; mise renders and applies their definitions. Service declarations are deliberately project-scoped: they require no shell activation or extra supervisor and are not part of the global mise tool configuration.
 
 - `mise.toml`: pinned tools and shared prepare/apply/status tasks.
 - `.mise/conf.d/cc-notify.toml`: foreground cc-notify task and its LaunchAgent.
 - `.mise/conf.d/git-maintenance.toml`: hourly/daily/weekly maintenance LaunchAgents.
 - `.mise/conf.d/syncengine.toml`: syncengine LaunchAgent, inline Bash watcher, and standalone prepare/apply/status tasks, available on every macOS profile. There is no separate syncengine executable.
-- `mise.dev.toml`: notes vault maintenance and cc-notify, alongside shared syncengine.
+- `mise.dev.toml`: backup-notes with its inline Bash runner, notes vault maintenance and cc-notify, alongside shared syncengine.
 - `mise.work.toml`: deals-light-ui maintenance and cc-notify, alongside shared syncengine.
 - Personal and work-boot machines apply only syncengine using `syncengine:apply`. The full `services:*` workflow requires `dev` or `work` explicitly; a missing overlay cannot render the other services' required profile variables.
 - mise also owns macOS host packages: `.mise/conf.d/packages.toml` plus the profile overlays (`mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, `mise.work-boot.toml`). `packages:apply` installs versioned tools and those packages, builds the pinned Todoist fork, then installs user-prefix `@playwright/cli` and the profile's VS Code extensions; `packages:status` reports host state. Applying packages never prunes or upgrades; formula upgrades are explicit via `mise bootstrap packages upgrade --manager brew`.
@@ -63,7 +63,7 @@ Host packages are separate from services: `boot.sh` applies them with `mise -C "
 2. Run `make system` with this updated checkout. It keeps the Homebrew-installed mise and removes the old Nix-owned service definitions.
 3. Confirm the old syncengine process and its gitwatch/fswatch children have exited before starting the replacement; launchd shutdown is asynchronous.
 4. Run `mise -E dev run services:apply` (or `work`), or `mise -E <profile> run syncengine:apply` for syncengine alone. Both paths refuse to apply while the old Nix syncengine agent is still loaded.
-5. Check syncengine's watcher processes and logs; for the full service set also check cc-notify's health and the three maintenance jobs.
+5. Check syncengine's watcher processes and logs; for the full service set also check cc-notify's health and the three maintenance jobs. On dev, also confirm `com.codethread.backup-notes` is unloaded before applying its replacement, `dev.mise.backup-notes`; `services:apply` refuses to proceed while the old label is loaded.
 
 The old Nix job references the removed standalone syncengine script. Complete this handoff before the next login/restart; an already-running old process is not replaced by editing the repository. Its obsolete `~/.local/bin/syncengine` symlink can be removed after the handoff.
 
@@ -72,6 +72,7 @@ When a system switch must wait for sudo authentication, the user jobs can be cut
 ```nu
 let domain = $"gui/(id -u | str trim)"
 for label in [
+    com.codethread.backup-notes # dev only
     com.codethread.syncengine
     com.codethread.cc-notify
     com.codethread.git-maintenance.hourly
@@ -128,6 +129,7 @@ Logs retain the existing locations:
 
 - cc-notify stdout/stderr: `~/.local/state/com.codethread.cc-notify/std.log`; application JSONL: cc-notify checkout `.logs/cc-notify.jsonl`.
 - Git maintenance: `~/.local/state/com.codethread.git-maintenance/{hourly,daily,weekly}.log`.
+- Backup-notes (dev): `~/.local/state/com.codethread.backup-notes/std.log`.
 - Syncengine: `~/.local/state/com.codethread.syncengine/std.log` and per-target `<name>.log` files (`notes.log` for iCloud Notes).
 
 Syncengine runs `/bin/bash -c` with the watcher body embedded in its generated plist; it does not invoke mise or a repository script at runtime. It still runs `gitwatch -r origin -R` for each entry in `~/sync` and for the iCloud Notes directory when present. It starts at login/load without KeepAlive, matching the old Nix policy. Its explicit PATH uses user scripts, Homebrew/coreutils, and macOS tools, with no Nix-store or Nix-profile paths. Git/SSH configuration and credentials remain user-owned. Logs are created before launchd opens stdout/stderr.
@@ -135,6 +137,12 @@ Syncengine runs `/bin/bash -c` with the watcher body embedded in its generated p
 Inspect `launchctl print $"($domain)/dev.mise.syncengine"`, its child gitwatch/fswatch processes, and per-target logs; a loaded parent alone does not prove all watchers are healthy. Do not edit real repositories merely to test syncing: it commits and pushes automatically. Changing the inline watcher changes the plist, so `syncengine:apply` reloads it. After changing gitwatch alone, boot out `dev.mise.syncengine`, wait for its children to exit, then run `syncengine:apply`. An unchanged second apply should retain its PID.
 
 The cc-notify job invokes a foreground mise task with the application's working directory, so Bun and Effect load its existing `.env`. `keep_alive = true` matches the previous unconditional restart policy. Login jobs do not depend on interactive shell PATH setup.
+
+## Notes backup policy (dev only)
+
+`backup-notes` runs at login/load and every 900 seconds. Its inline `/bin/bash` runner uses macOS Git and date, stages all vault changes, commits only when needed with a UTC timestamp, then pulls with rebase and pushes. Git/SSH configuration and credentials remain user-owned; applying the agent immediately runs a real backup.
+
+`services:prepare` creates its state/log directory before launchd opens the log. Failures notify through `~/.local/bin/cc-notify` once per failure streak; the existing `failure-notified` sentinel is retained across migration and cleared after a successful push. Editing the runner changes the plist, so the next apply reloads it. Check `launchctl print` for `dev.mise.backup-notes`, its last exit code, and the log; idle between backups is normal. Do not run it against the real vault merely to validate the migration.
 
 ## Git maintenance policy
 

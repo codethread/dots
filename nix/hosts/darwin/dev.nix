@@ -7,9 +7,6 @@
 
 let
   homeDir = config.users.users.${config.system.primaryUser}.home;
-  git = lib.getExe pkgs.git;
-  date = lib.getExe' pkgs.coreutils "date";
-  backupNotesStateDir = "${homeDir}/.local/state/com.codethread.backup-notes";
   highCpuStateDir = "${homeDir}/.local/state/com.codethread.high-cpu-watch";
   highCpuWatchScript = pkgs.writeShellScript "high-cpu-watch" ''
     set -Eeuo pipefail
@@ -61,43 +58,6 @@ let
       fi
     done < "$state_file"
   '';
-  backupNotesScript = pkgs.writeShellScript "backup-notes" ''
-    set -Eeuo pipefail
-
-    sentinel="${backupNotesStateDir}/failure-notified"
-
-    notify_failure() {
-      local exit_code="$?"
-      trap - ERR
-
-      if [ ! -e "$sentinel" ]; then
-        {
-          echo "backup-notes failed with exit code $exit_code."
-          echo
-          echo "Repository: ${homeDir}/dev/projects/notes/vault"
-          echo
-          ${git} -C "${homeDir}/dev/projects/notes/vault" status --short --branch || true
-        } | "${homeDir}/.local/bin/cc-notify" "Notes git backup failed" || true
-        : > "$sentinel"
-      fi
-
-      exit "$exit_code"
-    }
-
-    trap notify_failure ERR
-
-    cd "${homeDir}/dev/projects/notes/vault"
-
-    ${git} add -A
-    if ! ${git} diff --cached --quiet; then
-      ${git} commit -m "auto: $(${date} -u +%Y-%m-%dT%H:%M:%SZ)"
-    fi
-
-    ${git} pull --rebase
-    ${git} push
-
-    rm -f "$sentinel"
-  '';
 in
 {
   imports = [
@@ -116,17 +76,6 @@ in
   };
 
   launchd.user.agents = {
-    backup-notes = {
-      serviceConfig = {
-        Label = "com.codethread.backup-notes";
-        ProgramArguments = [ "${backupNotesScript}" ];
-        RunAtLoad = true;
-        StartInterval = 900;
-        StandardOutPath = "${backupNotesStateDir}/std.log";
-        StandardErrorPath = "${backupNotesStateDir}/std.log";
-      };
-    };
-
     high-cpu-watch = {
       serviceConfig = {
         Label = "com.codethread.high-cpu-watch";
@@ -140,7 +89,6 @@ in
   };
 
   system.activationScripts.postActivation.text = lib.mkAfter ''
-    /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${backupNotesStateDir}
     /usr/bin/install -d -o ${config.system.primaryUser} -g staff ${highCpuStateDir}
   '';
 }

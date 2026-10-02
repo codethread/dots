@@ -15,7 +15,7 @@ curl -fsSL https://raw.githubusercontent.com/codethread/dots/main/boot/boot.sh |
 
 ## Mise packages and services (macOS)
 
-Mise owns user CLI packages, language runtimes, macOS host packages, syncengine, cc-notify, and Git maintenance, and orchestrates official agent CLI installers. Global tool defaults live in `config/mise/config.toml` and are linked by dotty; `.mise/conf.d/tools.toml` loads the same definitions in this checkout. `boot/boot.sh` installs Homebrew and mise (`brew install mise`), then applies packages with `mise -C "$DOTFILES" -E <mise-profile> run packages:apply` before the Nix switch and `workstation:setup` afterwards; `work-adamhall-boot` maps to the `work-boot` mise profile. Package lists live in `.mise/conf.d/packages.toml` plus `mise.{dev,work,personal,work-boot}.toml`, while `mise.toml` holds the service Bun pin and shared tasks. From this checkout, select `dev` or `work` explicitly:
+Mise owns user CLI packages, language runtimes, macOS host packages, syncengine, cc-notify, Git maintenance, and dev's notes backup, and orchestrates official agent CLI installers. Global tool defaults live in `config/mise/config.toml` and are linked by dotty; `.mise/conf.d/tools.toml` loads the same definitions in this checkout. `boot/boot.sh` installs Homebrew and mise (`brew install mise`), then applies packages with `mise -C "$DOTFILES" -E <mise-profile> run packages:apply` before the Nix switch and `workstation:setup` afterwards; `work-adamhall-boot` maps to the `work-boot` mise profile. Package lists live in `.mise/conf.d/packages.toml` plus `mise.{dev,work,personal,work-boot}.toml`, while `mise.toml` holds the service Bun pin and shared tasks. From this checkout, select `dev` or `work` explicitly:
 
 ```nu
 mise -E dev run packages:apply

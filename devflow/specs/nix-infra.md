@@ -112,19 +112,19 @@ For the initial handoff, run `packages:apply` → `make system` → `workstation
 
 ### [SPEC-006-S2.10] Darwin launchd Services
 
-Mise owns the shared syncengine agent and the dev/work cc-notify and Git maintenance agents. Remaining Nix-owned services are tied to a workload or machine role and declared in the host module that wants them.
+Mise owns the shared syncengine agent, the dev/work cc-notify and Git maintenance agents, and dev's backup-notes agent. Remaining Nix-owned services are tied to a workload or machine role and declared in the host module that wants them.
 
 | Service | Declared in | Applies to | Notes |
 | --- | --- | --- | --- |
 | `syncengine` | `.mise/conf.d/syncengine.toml` | all macOS | mise-owned RunAtLoad agent; shared by dev/work services, standalone `syncengine:apply` on any profile |
 | `git-maintenance-{hourly,daily,weekly}` | `.mise/conf.d/git-maintenance.toml` + profile overlay | dev, work | mise-owned LaunchAgents; filtered repository list, private state config |
 | `cc-notify` | `.mise/conf.d/cc-notify.toml` + profile overlay | dev, work | mise-owned LaunchAgent; mise-managed Bun, explicit preparation before apply |
-| `backup-notes` | `hosts/darwin/dev.nix` | dev | Auto-commits the notes vault every 15 min |
+| `backup-notes` | `mise.dev.toml` | dev | mise-owned RunAtLoad agent; auto-commits and syncs the notes vault every 15 min |
 | `high-cpu-watch` | `hosts/darwin/dev.nix` | dev | Alerts via `cc-notify` after 10 min above 95% CPU |
 
 Claude settings also live outside Nix: `.mise/conf.d/claude-code.toml` renders `templates/claude-settings.json.tera` with `mise -E dev run claude:apply` (or `work`). See [Claude settings](../../claude/README.md) for the apply workflow.
 
-Syncengine, cc-notify, and Git maintenance have moved out of Nix; see [mise services](./mise-services.md). Homebrew and mise are installed by `boot/boot.sh`, and mise owns host packages; `make system` neither installs nor upgrades Homebrew packages. `make system` does not apply mise services; use `mise -E dev run services:apply` (or `work`) separately, or `mise -E <profile> run syncengine:apply` for syncengine alone. The remaining Nix-owned services retain their existing host declarations and activation hooks.
+Syncengine, cc-notify, Git maintenance, and backup-notes have moved out of Nix; see [mise services](./mise-services.md). Homebrew and mise are installed by `boot/boot.sh`, and mise owns host packages; `make system` neither installs nor upgrades Homebrew packages. `make system` does not apply mise services; use `mise -E dev run services:apply` (or `work`) separately, or `mise -E <profile> run syncengine:apply` for syncengine alone. The remaining Nix-owned services retain their existing host declarations and activation hooks.
 
 ## [SPEC-006-S3] 3. Data Model
 
