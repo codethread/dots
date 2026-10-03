@@ -148,19 +148,13 @@ fi
 
 # PATH -----------------------------------------------------------------------
 
+# Construct the host baseline at login, before mise activation. Child shells
+# inherit their parent's PATH instead of sourcing this file again.
 ct_path=""
-ct_project_path_first=false
-# A nested `mise exec` owns project toolchain paths; keep its inherited PATH
-# first until interactive activation refreshes it.
-if [ -n "${__MISE_DIFF:-}" ]; then
-  ct_project_path_first=true
-  ct_path_append_list "$ct_inherited_path"
-fi
 ct_path_append "$HOME/.local/bin"
 # Pi's official managed launcher follows local wrappers.
 ct_path_append "$PI_CODING_AGENT_DIR/bin"
-# Global defaults without interactive activation; local wrappers (notably Pi)
-# stay first. Project mise exec environments retain their selected tool paths.
+# Global defaults without interactive activation; local wrappers stay first.
 ct_path_append "${MISE_DATA_DIR:-$XDG_DATA_HOME/mise}/shims"
 if [ "$ct_os" = Darwin ]; then
   ct_path_append /opt/homebrew/opt/coreutils/libexec/gnubin
@@ -196,9 +190,7 @@ ct_path_append /sbin
 if [ -n "${CT_PATH_EXTRA:-}" ]; then
   ct_path_append_list "$CT_PATH_EXTRA"
 fi
-if [ "$ct_project_path_first" = false ]; then
-  ct_path_append_list "$ct_inherited_path"
-fi
+ct_path_append_list "$ct_inherited_path"
 PATH=$ct_path
 ct_shell_candidate=${ct_inherited_shell:-zsh}
 # macOS owns Zsh. Normalize inherited Homebrew or other Zsh paths as well as
@@ -217,7 +209,7 @@ else
   ct_shell_resolution_failed=true
 fi
 
-unset ct_dir ct_inherited_path ct_inherited_shell ct_os ct_path ct_project_path_first ct_remaining
+unset ct_dir ct_inherited_path ct_inherited_shell ct_os ct_path ct_remaining
 unset ct_resolved_shell ct_shell_candidate
 
 unset -f ct_path_append ct_path_append_list 2>/dev/null || true

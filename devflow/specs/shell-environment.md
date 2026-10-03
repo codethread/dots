@@ -2,32 +2,36 @@
 
 - Document ID: SPEC-009
 - **Status:** Implemented
-- **Last Updated:** 2026-10-02
+- **Last Updated:** 2026-10-03
 
 ## [SPEC-009-S1] Purpose
 
-Provide one stable environment and PATH contract for human shells, agent CLIs, tmux, machine bootstrap, and development containers. Zsh is the default interactive shell and Nushell remains available; neither owns portable process environment configuration.
+Provide one stable environment and PATH contract for login shells, human shells, agent CLIs, tmux, machine bootstrap, and development containers. On macOS, a fresh terminal uses the default login shell to construct the host baseline; on Linux, non-login terminals inherit it from the login session. Non-login child shells preserve the environment they inherit; Zsh is the default interactive shell and Nushell remains available.
 
 ## [SPEC-009-S2] Ownership
 
-`config/env/base.sh` is the sole authority for portable scalar environment variables and baseline PATH ordering. `config/env/interactive.sh` separately owns human-facing editor, history, pager, prompt cache, completion, and fuzzy-finder environment. Both are Bash-authored and intentionally source-compatible with zsh and POSIX sh.
+`config/env/base.sh` is the sole authority for portable scalar environment variables and the baseline PATH. It is intentionally sourced only by login profiles, machine bootstrap, or an explicitly clean tmux adapter. `config/env/interactive.sh` separately owns human-facing editor, history, pager, prompt cache, completion, and fuzzy-finder environment. Both are Bash-authored and intentionally source-compatible with zsh and POSIX sh.
 
 Adapters may add shell-native state but must not duplicate the base contract:
 
 | Consumer | Adapter |
 | --- | --- |
-| Bash | `config/bash/env` sources the base, adds interactive state only for interactive shells, then optional `env.local` |
-| zsh | `config/zsh/.zshenv` sources the base; `.zshrc` adds interactive state and loads the mise-generated completion dump |
-| Nushell | `config/nushell/env.nu` imports the base plus interactive state only when `$nu.is-interactive`, converts PATH to a list, then adds typed/Nushell-only values |
-| terminal launch | `config/env/terminal-startup.sh` sources the base, then execs `$SHELL` as a login interactive shell |
-| tmux | `emit.sh --tmux` seeds the tmux global environment and default shell |
+| Bash login | `/etc/profile` runs first; `home/.bash_profile` sources the base, then `.bashrc`; `config/bash/env` adds interactive state and optional `env.local` only |
+| zsh discovery/login | `home/.zshenv` sets only `ZDOTDIR`; after `/etc/zprofile`, `config/zsh/.zprofile` sources the base; `.zshrc` adds interactive state and mise activation |
+| Bash/Zsh non-login children | Inherit the caller's environment and PATH; no adapter sources the base again |
+| Nushell | `config/nushell/env.nu` preserves inherited state for noninteractive shells; interactive shells import `emit.sh --print0 --interactive`, convert PATH to a list, then add typed/Nushell-only values |
+| terminal launch | Kitty and Ghostty use their default shell launch behavior (login on macOS); no custom shell or startup-command wrapper is configured |
+| tmux | `emit.sh --tmux` runs the base in a clean subprocess, streams the result into the tmux global environment, and sets `default-shell` from the streamed `SHELL` |
 | machine bootstrap | `boot/boot.sh` sets bootstrap-specific XDG roots, then sources the base |
+| Carapace bridge | The isolated Bash rcfile loads saved completion wrappers and inherits the caller's environment; it does not source the base |
 
 The macOS login environment and launchd may seed the minimum environment needed before a shell exists. Those platform declarations are adapters, not a second shell environment authority.
 
 ## [SPEC-009-S3] PATH Contract
 
-The base builds PATH from user-local tool roots, platform roots, system directories, explicit colon-separated `CT_PATH_EXTRA`, and inherited PATH without duplicates. Normally the declared base wins and inherited entries are a trailing fallback. Inside `mise exec` (`__MISE_DIFF`), inherited project paths win so pinned toolchains survive a nested shell startup.
+The base constructs a login/bootstrap baseline from user-local tool roots, platform roots, system directories, explicit colon-separated `CT_PATH_EXTRA`, and inherited PATH without duplicates. The declared baseline wins and inherited entries are a trailing fallback. The base does not inspect mise's internal state.
+
+A non-login child does not reconstruct this baseline. Its inherited PATH, including paths selected by `mise exec` or an interactive mise activation, remains in place. Starting a new login shell is therefore an explicit environment rebuild; use a non-login child when a nested command must preserve the current project environment.
 
 Known user/tool roots remain in PATH even before they exist. Installing into one of those roots therefore works in the current shell; stale nonexistent entries are harmless and intentionally tolerated.
 
@@ -47,43 +51,56 @@ Mise replaces direnv as the prompt-time project environment. `config/nushell/dir
 
 - Interactive Bash (`config/bash/env`) and Zsh (`config/zsh/.zshrc`) evaluate the native `mise activate` hook; noninteractive shells do not.
 - Nushell regenerates `mise.nu` on every **interactive** `env.nu` startup (`mise activate nu | save --force`), before `config.nu` imports it. Noninteractive Nushell never generates or imports the module.
-- Mise shims remain the noninteractive baseline; scripts and agents use `mise exec -- <command>` or `mise run <task>` for project-selected tools.
+- Mise shims remain the baseline for a process without an already-initialized project environment. Scripts and agents inherit their parent environment when one exists and use `mise exec -- <command>` or `mise run <task>` for project-selected tools.
+- Automation that starts from a clean environment must initialize the base **before** invoking mise, rather than sourcing it after `mise exec` or relying on a login child to rebuild a project path:
+
+    ```bash
+    . "$DOTFILES/config/env/base.sh"
+    exec mise exec -- <command>
+    ```
+
 - Projects declare tools and environment in their own `mise.toml` (`[tools]`, `[env]`, `_.file`, `_.path`); Nushell workflows use `mise trust`, `mise install`, and `mise exec`. `.envrc` files are not sourced automatically, and external projects are not rewritten.
 
 ## [SPEC-009-S4] Interfaces
 
 ```bash
-source ~/.config/env/base.sh                 # Bash/zsh/process environment
-/bin/sh ~/.config/env/emit.sh --print0       # NUL-delimited KEY=VALUE contract
+source ~/.config/env/base.sh                 # explicit login/bootstrap baseline
+/bin/sh ~/.config/env/emit.sh --print0       # serialize the inherited environment
 /bin/sh ~/.config/env/emit.sh --print0 --interactive # plus interactive env
-/bin/sh ~/.config/env/emit.sh --tmux         # seed current tmux server
+/bin/sh ~/.config/env/emit.sh --tmux         # clean baseline into tmux
 ```
 
-The tmux adapter evaluates the stable contract in a clean subprocess rather than copying its caller's interactive environment. Transient client state remains tmux's `update-environment` responsibility; each new interactive shell constructs its own interactive additions. The adapter continues after an individual value exceeds tmux's command limit, but emits a warning naming the rejected variable. Shell/Nushell export is unaffected.
+`--print0` serializes the current inherited environment; it does not source the base. `--interactive` additionally sources `interactive.sh`, which is how interactive Nushell imports human-facing state without rebuilding PATH. NUL delimiters preserve spaces and shell syntax in values.
 
-`--print0` is machine-facing: NUL delimiters preserve spaces and shell syntax in values. The base enables export-all only while loading, then restores the caller's setting. Both machine interfaces share one stream which excludes only shell bookkeeping/internal `ct_*` variables. Nushell imports the complete stream, then converts boolean conditions and PATH into native types. New base variables therefore propagate without a manifest.
+The tmux adapter evaluates the stable contract in a clean subprocess rather than copying its caller's interactive environment. It explicitly sources the base before emitting the stream, and takes both `SHELL` and `default-shell` from that stream. Transient client state remains tmux's `update-environment` responsibility; each new interactive shell constructs its own interactive additions. The adapter continues after an individual value exceeds tmux's command limit, but emits a warning naming the rejected variable. Shell/Nushell export is unaffected.
+
+The base enables export-all only while loading, then restores the caller's setting. Both machine interfaces share one stream which excludes shell bookkeeping/internal `ct_*` variables. Nushell imports the complete interactive stream, then converts boolean conditions and PATH into native types. New base variables therefore propagate without a manifest.
 
 ## [SPEC-009-S5] Local and Secret State
 
-`config/bash/env.local` is an optional, unmanaged machine-local override loaded after the base. It must not be generated from Nushell or used as a portable env snapshot. Transient values such as SSH agent sockets remain inherited from the launching client and are not part of the stable manifest.
+`config/bash/env.local` is an optional, unmanaged machine-local override loaded by `config/bash/env` after interactive setup. It must not be generated from Nushell or used as a portable env snapshot. Transient values such as SSH agent sockets remain inherited from the launching client and are not part of the stable manifest.
 
 ## Zsh completion lifecycle
 
-`mise -E <profile> run shell:prepare` generates the completion cache after packages and dotfile links are installed. `boot/boot.sh` runs it as part of `mise run boot`, so the scan reflects the current system.
+`mise -E <profile> run shell:prepare` generates the completion cache after packages and dotfile links are installed. `boot/boot.sh` runs it as part of `mise run boot`, so the scan reflects the current system. The helper inherits the environment supplied by its caller; it does not source the base itself.
 
 `config/zsh/completion-path.zsh` is shared by `config/zsh/cache-completions.zsh` and interactive startup. It keeps the running Zsh's built-in function directories and adds Homebrew site completions, not another Zsh installation's versioned functions. Preparation explicitly uses macOS `/bin/zsh`, matching terminal/tmux startup. It audits those paths as the user, builds a fresh dump even if the completion file count is unchanged, and atomically replaces each cache file under `$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION`. Stale dumps for other Zsh versions are removed after publication. Insecure paths fail preparation without replacing the old cache.
 
 Interactive shells use `compinit -C`: completion discovery and security checks happen during explicit preparation, not on every launch. Completion files remain live on disk. Rerun `shell:prepare` after macOS/package upgrades. Missing caches produce a warning and audited, uncached initialization.
 
-Nushell sources Atuin and Carapace init files generated into `~/.local/cache/dots/shell`, and imports the mise activation module generated at interactive startup ([SPEC-009-S3c]). Interactive Bash and Zsh evaluate the native mise hook.
+Nushell sources Atuin and Carapace init files generated into `~/.local/cache/dots/shell`, and imports the mise activation module generated at interactive startup ([SPEC-009-S3c]). Interactive Bash and Zsh evaluate the native mise hook. The `mise-llm` helper, `mise-shell-prepare`, and Carapace bridge all preserve the environment supplied by their caller rather than sourcing the base.
 
 Starship, fzf, and Atuin init scripts are cached separately by resolved executable path. Startup generates into temporary files and publishes the init script and path stamp only after the generator succeeds. A failed generator returns failure without sourcing partial output or replacing the previous cache, so the next launch retries. Empty init caches are regenerated as well.
 
 ## [SPEC-009-S6] Validation
 
-```bash
-bash -n config/env/base.sh config/env/emit.sh config/env/terminal-startup.sh
-zsh -n config/env/base.sh config/env/interactive.sh config/zsh/.zshenv
+```nu
+for file in [config/env/base.sh config/env/emit.sh config/env/interactive.sh config/bash/env home/.bash_profile home/.bashrc] {
+    bash -n $file
+}
+for file in [config/env/base.sh config/env/interactive.sh home/.zshenv config/zsh/.zprofile config/zsh/.zshrc] {
+    zsh -n $file
+}
 nu -c 'nu-check --debug /abs/path/config/nushell/env.nu'
 nu --config config/nushell/config.nu --env-config config/nushell/env.nu -c 'print ok'
 tmux source-file -n config/tmux/tmux.conf

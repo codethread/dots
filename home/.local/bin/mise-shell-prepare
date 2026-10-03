@@ -12,7 +12,6 @@ case "${1:-}" in
 esac
 
 : "${DOTFILES:?Run through the shell:prepare mise task}"
-source "$DOTFILES/config/env/base.sh"
 # Generated init files are mise-owned, separate from dotty-linked configs.
 cache="$HOME/.local/cache/dots/shell"
 mkdir -p "$cache"

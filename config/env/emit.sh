@@ -1,8 +1,6 @@
 #!/bin/sh
 # Machine adapters for the shared environment contract.
 
-. "${DOTFILES:-$HOME/dev/dots}/config/env/base.sh" || exit 1
-
 ct_env_stream0() {
   # Bash provides NUL-delimited read support missing from portable sh.
   /usr/bin/env -0 | bash -c '
@@ -18,6 +16,7 @@ ct_env_stream0() {
 
 case "${1:-}" in
   --print0)
+    # Nushell inherits the login environment; only add interactive state here.
     if [ "${2:-}" = --interactive ]; then
       . "$DOTFILES/config/env/interactive.sh"
     elif [ -n "${2:-}" ]; then
@@ -30,10 +29,13 @@ case "${1:-}" in
     /usr/bin/env -i \
       HOME="$HOME" \
       USER="$USER" \
-      DOTFILES="$DOTFILES" \
-      SHELL="$SHELL" \
+      DOTFILES="${DOTFILES:-$HOME/dev/dots}" \
+      SHELL="${SHELL:-}" \
       PATH=/usr/bin:/bin:/usr/sbin:/sbin \
-      /bin/sh "$DOTFILES/config/env/emit.sh" --print0 | bash -c '
+      /bin/sh -c '
+        . "$DOTFILES/config/env/base.sh" || exit 1
+        exec /bin/sh "$DOTFILES/config/env/emit.sh" --print0
+      ' | bash -c '
       while IFS= read -r -d "" entry; do
         key=${entry%%=*}
         value=${entry#*=}
@@ -44,9 +46,11 @@ case "${1:-}" in
         if ! tmux set-environment -g "$key" "$value"; then
           printf "warning: tmux could not import environment variable: %s\n" "$key" >&2
         fi
+        if [[ $key == SHELL ]]; then
+          tmux set-option -g default-shell "$value"
+        fi
       done
     '
-    tmux set-option -g default-shell "$SHELL"
     ;;
   *)
     printf 'usage: %s {--print0 [--interactive]|--tmux}\n' "$0" >&2

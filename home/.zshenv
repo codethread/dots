@@ -1,6 +1,3 @@
+# Discovery only: login environment belongs in .zprofile, not every zsh.
 ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}"
 export ZDOTDIR
-
-if [[ -f "$ZDOTDIR/.zshenv" ]]; then
-  source "$ZDOTDIR/.zshenv"
-fi

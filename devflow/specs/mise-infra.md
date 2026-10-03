@@ -149,7 +149,7 @@ Only the current full-work username (`adamhall`) auto-promotes to `work` once wo
 Automated/local validation:
 
 - `bash -n boot/boot.sh config/env/base.sh config/env/emit.sh`
-- `zsh -n config/env/base.sh config/env/interactive.sh config/zsh/.zshenv`
+- `zsh -n config/zsh/.zprofile` and syntax checks for `home/.zshenv`, `config/env/base.sh`, and `config/env/interactive.sh`
 - `nu -c 'nu-check --debug /abs/path/config/nushell/env.nu'` and a real config load
 - `mise -E <profile> tasks validate --errors-only` for dev/work/personal/work-boot
 - `mise -E dev bootstrap packages apply --dry-run` and `mise -E dev run packages:status`

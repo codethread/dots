@@ -16,7 +16,6 @@ if [[ $# != 1 ]]; then
 fi
 
 : "${DOTFILES:?Run through the llm:install or llm:update mise task}"
-source "$DOTFILES/config/env/base.sh"
 local_bin="$HOME/.local/bin"
 pi_bin="$PI_CODING_AGENT_DIR/bin/pi"
 node_bin=$(dirname "$(node -p 'process.execPath')")

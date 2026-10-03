@@ -1,6 +1,4 @@
-source "${HOME}/.config/env/base.sh"
-
-# Bash adds only interactive/local state over the shared environment.
+# Bash adds only interactive/local state over the inherited login environment.
 if [[ $- == *i* ]]; then
   source "$DOTFILES/config/env/interactive.sh"
   mkdir -p "$XDG_STATE_HOME/bash" 2>/dev/null

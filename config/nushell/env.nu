@@ -1,22 +1,17 @@
-# Stable scalar environment and PATH come from the shared Bash contract.
-$env.DOTFILES = ($env.DOTFILES? | default ($nu.home-dir | path join "dev/dots"))
-let env_emitter = $env.DOTFILES | path join "config/env/emit.sh"
-
-let base_args = if $nu.is-interactive {
-    [$env_emitter "--print0" "--interactive"]
-} else {
-    [$env_emitter "--print0"]
+# Inherit the login environment, including any mise-selected project PATH.
+# Only human-facing additions need importing for an interactive child shell.
+if $nu.is-interactive {
+    let env_emitter = $env.DOTFILES | path join "config/env/emit.sh"
+    let imported = (
+        ^/bin/sh $env_emitter --print0 --interactive
+        | split row (char nul)
+        | compact --empty
+        | parse --regex '^(?<key>[^=]+)=(?<value>.*)$'
+        | reduce --fold {} {|row, vars| $vars | upsert $row.key $row.value }
+    )
+    load-env $imported
+    $env.PATH = ($env.PATH | split row (char esep))
 }
-
-let imported = (
-    ^/bin/sh ...$base_args
-    | split row (char nul)
-    | compact --empty
-    | parse --regex '^(?<key>[^=]+)=(?<value>.*)$'
-    | reduce --fold {} {|row, vars| $vars | upsert $row.key $row.value }
-)
-load-env $imported
-$env.PATH = ($env.PATH | split row (char esep))
 
 # Preserve Nushell-native types for conditions and conversions.
 $env.IS_WORK = $env.IS_WORK == "true"
@@ -37,7 +32,6 @@ $env.NU_LIB_DIRS = [
     ($nu.home-dir | path join "dev/vendor/nu_scripts/sourced")
 ]
 $env.NU_PLUGIN_DIRS = [$env.CARGO_BIN]
-$env.PATH = ($env.PATH | uniq)
 
 # mise activation is a generated module. Regenerate it for each interactive
 # startup so the baked environment reflects this session; noninteractive
