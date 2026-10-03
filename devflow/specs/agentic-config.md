@@ -75,7 +75,7 @@ make link    →  dotty link   →  claude/ assets symlinked to ~/.claude/
 make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
 ```
 
-`make` (default target `all`) runs `system` (Nix rebuild), then `boot` (the main mise task). Boot applies packages and workstation setup, verifies/builds Oven, renders Claude settings, then prepares and applies the profile's services.
+`make` (default target `all`) runs `boot`, the main mise task. Boot applies packages and workstation setup (including `system:apply`), verifies/builds Oven, renders Claude settings, then prepares and applies the profile's services.
 
 ### [SPEC-001-S2.2] Package Provisioning
 
@@ -147,7 +147,7 @@ Mise owns `~/.claude/settings.json` as a rendered regular file via `.mise/conf.d
 
 **Global hook:** `PostToolUse[Write]` runs inline `git add -N` for new files. Status line uses `cc-statusline`.
 
-**Environment:** Keeps the previous environment variables, including `TMPDIR=/tmp/claude`, disabled auto-updater/feedback/error reporting/auto-memory/terminal titles, project PWD maintenance, and `MANPAGER=cat`. `SHELL` resolves Bash from PATH at render time rather than retaining a Nix store path.
+**Environment:** Keeps the previous environment variables, including `TMPDIR=/tmp/claude`, disabled auto-updater/feedback/error reporting/auto-memory/terminal titles, project PWD maintenance, and `MANPAGER=cat`. `SHELL` resolves Bash from PATH at render time rather than retaining a fixed system path.
 
 **Plugins & Marketplaces:**
 
@@ -266,11 +266,11 @@ Disables Ctrl+A in Global context.
 
 ## [SPEC-001-S5] 5. Design Decisions
 
-- **Mise as settings source of truth.** `templates/claude-settings.json.tera` renders to a regular `~/.claude/settings.json`; profile overlays select work plugins and marketplaces. Applying settings no longer requires a Nix rebuild. Manual edits to the output are overwritten on apply; use project-local or local override settings for overrides.
+- **Mise as settings source of truth.** `templates/claude-settings.json.tera` renders to a regular `~/.claude/settings.json`; profile overlays select work plugins and marketplaces. Applying settings requires no system-layer change. Manual edits to the output are overwritten on apply; use project-local or local override settings for overrides.
 
 - **One owner per agent CLI.** Official vendor installers own Claude, Cursor, Codex, and Pi; mise tasks orchestrate install/update operations. Node remains mise-managed, Playwright is npm-managed in `~/.local`, and Pi uses its official locked Node/npm installation. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
 
-- **Dotty for asset linking, not Nix.** Agents, skills, commands, and rules are symlinked by dotty rather than Nix. This allows editing assets in dots and seeing changes immediately without a nix rebuild. Global settings are templated by mise separately from asset linking.
+- **Dotty for asset linking.** Agents, skills, commands, and rules are symlinked by dotty, so edits in dots are visible immediately without a system apply. Global settings are templated by mise separately from asset linking.
 
 - **x-agents/ prefix convention.** Disabled agents live in `claude/x-agents/` — the prefix keeps them out of Claude's discovery path while keeping them version-controlled for re-enablement.
 

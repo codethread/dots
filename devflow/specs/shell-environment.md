@@ -23,23 +23,32 @@ Adapters may add shell-native state but must not duplicate the base contract:
 | tmux | `emit.sh --tmux` seeds the tmux global environment and default shell |
 | machine bootstrap | `boot/boot.sh` sets bootstrap-specific XDG roots, then sources the base |
 
-nix-darwin and launchd may seed the minimum environment needed before a shell exists. Those platform declarations are adapters, not a second shell environment authority.
+The macOS login environment and launchd may seed the minimum environment needed before a shell exists. Those platform declarations are adapters, not a second shell environment authority.
 
 ## [SPEC-009-S3] PATH Contract
 
-The base builds PATH from user-local tool roots, Nix profiles, platform roots, system directories, explicit colon-separated `CT_PATH_EXTRA`, and inherited PATH without duplicates. Normally the declared base wins and inherited entries are a trailing fallback. Inside `mise exec` (`__MISE_DIFF`), `nix develop` (`IN_NIX_SHELL`), or direnv (`DIRENV_DIR`), inherited project paths win so pinned toolchains survive a nested shell startup.
+The base builds PATH from user-local tool roots, platform roots, system directories, explicit colon-separated `CT_PATH_EXTRA`, and inherited PATH without duplicates. Normally the declared base wins and inherited entries are a trailing fallback. Inside `mise exec` (`__MISE_DIFF`), inherited project paths win so pinned toolchains survive a nested shell startup.
 
 Known user/tool roots remain in PATH even before they exist. Installing into one of those roots therefore works in the current shell; stale nonexistent entries are harmless and intentionally tolerated.
 
-`~/.local/bin` remains first, preserving custom agent wrappers and native CLIs. `$PI_CODING_AGENT_DIR/bin` follows for Pi's official managed launcher, then mise shims, then Homebrew (including GNU coreutils), then other tool roots and Nix profiles. mise supplies the default Node. Global mise configuration is linked from `config/mise/`, separate from project-scoped workstation and service tasks. `JAVA_HOME` defaults to mise's stable `installs/java/temurin-21` symlink; explicit values are preserved, and `mise exec`/tasks supply the selected project JDK. Java binaries are selected through mise shims rather than an extra JDK PATH entry.
+`~/.local/bin` remains first, preserving custom agent wrappers and native CLIs. `$PI_CODING_AGENT_DIR/bin` follows for Pi's official managed launcher, then mise shims, then Homebrew (including GNU coreutils), then other tool roots. mise supplies the default Node. Global mise configuration is linked from `config/mise/`, separate from project-scoped workstation and service tasks. `JAVA_HOME` defaults to mise's stable `installs/java/temurin-21` symlink; explicit values are preserved, and `mise exec`/tasks supply the selected project JDK. Java binaries are selected through mise shims rather than an extra JDK PATH entry.
 
 ## [SPEC-009-S3a] SHELL Contract
 
-On macOS, the base uses `/bin/zsh` when `SHELL` is unset or names Zsh, including inherited Nix/Homebrew Zsh paths. macOS supplies the only managed Zsh; PATH order must not select a different version. Explicit choices of other shells, such as `/bin/bash` from an agent CLI, are preserved. Elsewhere the default is `zsh` from PATH. The selected shell is resolved to an absolute executable path. If resolution fails, the base warns on stderr, leaves `SHELL` unchanged, and returns non-zero after restoring the caller's shell options. `emit.sh --tmux` passes the caller's `SHELL` into its clean subprocess and uses the resolved value as tmux's `default-shell`.
+On macOS, the base uses `/bin/zsh` when `SHELL` is unset or names Zsh, including inherited Homebrew or other Zsh paths. macOS supplies the only managed Zsh; PATH order must not select a different version. Explicit choices of other shells, such as `/bin/bash` from an agent CLI, are preserved. Elsewhere the default is `zsh` from PATH. The selected shell is resolved to an absolute executable path. If resolution fails, the base warns on stderr, leaves `SHELL` unchanged, and returns non-zero after restoring the caller's shell options. `emit.sh --tmux` passes the caller's `SHELL` into its clean subprocess and uses the resolved value as tmux's `default-shell`.
 
 ## [SPEC-009-S3b] Mise Environment
 
 The base selects mise's machine package profile: `personal` for `codethread`, `work` for `adamhall` with `$HOME/pb/adam.hall/workfiles`, `work-boot` for other work accounts, and `dev` otherwise. An existing non-empty `MISE_ENV` is preserved; an explicit CLI `-E` still overrides the selection. Personal and work-boot machines apply packages only, not the dev/work services.
+
+### [SPEC-009-S3c] Native mise Activation
+
+Mise replaces direnv as the prompt-time project environment. `config/nushell/direnv.nu` and `config/direnv/` were removed:
+
+- Interactive Bash (`config/bash/env`) and Zsh (`config/zsh/.zshrc`) evaluate the native `mise activate` hook; noninteractive shells do not.
+- Nushell regenerates `mise.nu` on every **interactive** `env.nu` startup (`mise activate nu | save --force`), before `config.nu` imports it. Noninteractive Nushell never generates or imports the module.
+- Mise shims remain the noninteractive baseline; scripts and agents use `mise exec -- <command>` or `mise run <task>` for project-selected tools.
+- Projects declare tools and environment in their own `mise.toml` (`[tools]`, `[env]`, `_.file`, `_.path`); Nushell workflows use `mise trust`, `mise install`, and `mise exec`. `.envrc` files are not sourced automatically, and external projects are not rewritten.
 
 ## [SPEC-009-S4] Interfaces
 
@@ -60,13 +69,13 @@ The tmux adapter evaluates the stable contract in a clean subprocess rather than
 
 ## Zsh completion lifecycle
 
-`mise -E <profile> run shell:prepare` generates the completion cache after packages and dotfile links are installed. `boot/boot.sh` runs it after the Nix switch, so the scan reflects the current system rather than an incoming generation.
+`mise -E <profile> run shell:prepare` generates the completion cache after packages and dotfile links are installed. `boot/boot.sh` runs it as part of `mise run boot`, so the scan reflects the current system.
 
-`config/zsh/completion-path.zsh` is shared by `config/zsh/cache-completions.zsh` and interactive startup. It keeps the running Zsh's built-in function directories and adds Homebrew and Nix package site/vendor completions, not another Zsh installation's versioned functions. Preparation explicitly uses macOS `/bin/zsh`, matching terminal/tmux startup even before the old Nix Zsh package is removed by a system switch. It audits those paths as the user, builds a fresh dump even if the completion file count is unchanged, and atomically replaces each cache file under `$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION`. Stale dumps for other Zsh versions are removed after publication. Insecure paths fail preparation without replacing the old cache.
+`config/zsh/completion-path.zsh` is shared by `config/zsh/cache-completions.zsh` and interactive startup. It keeps the running Zsh's built-in function directories and adds Homebrew site completions, not another Zsh installation's versioned functions. Preparation explicitly uses macOS `/bin/zsh`, matching terminal/tmux startup. It audits those paths as the user, builds a fresh dump even if the completion file count is unchanged, and atomically replaces each cache file under `$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION`. Stale dumps for other Zsh versions are removed after publication. Insecure paths fail preparation without replacing the old cache.
 
-Interactive shells use `compinit -C`: completion discovery and security checks happen during explicit preparation, not on every launch. Completion files remain live on disk. Rerun `shell:prepare` after macOS/package upgrades or a Nix switch. Missing caches produce a warning and audited, uncached initialization.
+Interactive shells use `compinit -C`: completion discovery and security checks happen during explicit preparation, not on every launch. Completion files remain live on disk. Rerun `shell:prepare` after macOS/package upgrades. Missing caches produce a warning and audited, uncached initialization.
 
-Nushell sources Atuin and Carapace init files generated into `~/.local/cache/dots/shell`, plus the repo-owned `config/nushell/direnv.nu` hook. Direnv automatically loads `config/direnv/lib/nix-direnv.sh`, which sources the mise-provisioned, pinned vendor checkout. Bash initializes its direnv hook only in interactive shells.
+Nushell sources Atuin and Carapace init files generated into `~/.local/cache/dots/shell`, and imports the mise activation module generated at interactive startup ([SPEC-009-S3c]). Interactive Bash and Zsh evaluate the native mise hook.
 
 Starship, fzf, and Atuin init scripts are cached separately by resolved executable path. Startup generates into temporary files and publishes the init script and path stamp only after the generator succeeds. A failed generator returns failure without sourcing partial output or replacing the previous cache, so the next launch retries. Empty init caches are regenerated as well.
 

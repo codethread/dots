@@ -14,7 +14,6 @@ use ct/editor.nu *
 use ct/terminal.nu *
 use ct/onepassword.nu *
 use ct/system.nu *
-use ct/nix.nu *
 use ct/search.nu *
 use ct/purge.nu
 
@@ -59,6 +58,10 @@ $env.config.highlight_resolved_externals = true
 $env.config.keybindings ++= $keybindings
 $env.config.menus ++= $menus
 $env.config.hooks = (hooks)
+
+# Import mise's generated activation module after config hooks exist so it can
+# register its PWD and pre-prompt hooks. Interactive only; env.nu generates it.
+use (if $nu.is-interactive { ($nu.default-config-dir | path join mise.nu) } else { null })
 
 if $nu.is-interactive {
     $env.STARSHIP_SHELL = "nu"

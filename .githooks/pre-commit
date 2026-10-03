@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# :module: flush/stage Beads JSONL, format staged files, and verify staged nix/ changes
+# :module: Flush/stage Beads JSONL and format staged Markdown and Nushell files.
 
 set -euo pipefail
 
@@ -69,34 +69,6 @@ collect_staged_files '*.nu' nu_files
 if [ ${#nu_files[@]} -gt 0 ]; then
   ensure_no_unstaged_changes nufmt "${nu_files[@]}"
 
-  if command -v nufmt >/dev/null 2>&1; then
-    nufmt "${nu_files[@]}"
-  else
-    nix run github:nushell/nufmt -- "${nu_files[@]}"
-  fi
+  mise -C "${ROOT}" exec -- nufmt "${nu_files[@]}"
   git add -- "${nu_files[@]}"
-fi
-
-nix_files=()
-collect_staged_files '*.nix' nix_files
-
-if [ ${#nix_files[@]} -gt 0 ]; then
-  ensure_no_unstaged_changes nixfmt "${nix_files[@]}"
-  nix develop "${ROOT}/nix" --command nixfmt "${nix_files[@]}"
-  git add -- "${nix_files[@]}"
-fi
-
-if ! git diff --cached --name-only | grep -q '^nix/'; then
-  exit 0
-fi
-
-FLAKE="path:${ROOT}/nix"
-SCRIPTS="${ROOT}/config/nushell/scripts"
-
-host=$(nu -I "$SCRIPTS" -c 'use ct/nix.nu [nrs-flake-host]; nrs-flake-host')
-
-if ! output=$(nix build "${FLAKE}#darwinConfigurations.${host}.system" --no-link 2>&1); then
-  echo "nix build failed:"
-  echo "$output"
-  exit 1
 fi

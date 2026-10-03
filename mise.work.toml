@@ -6,7 +6,7 @@ vscode_work_extensions = "rohit-gohri.format-code-action golang.go styled-compon
 
 [bootstrap.packages]
 "brew:pandoc" = { os = "macos" }
-"brew:jira-cli" = { os = "macos" } # nixpkgs: jira-cli-go
+"brew:jira-cli" = { os = "macos" }
 "brew:bitwarden-cli" = { os = "macos" }
 "brew:awscli" = { os = "macos" }
 "brew:buf" = { os = "macos" }

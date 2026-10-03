@@ -34,7 +34,7 @@ shell = "/bin/bash -c"
 run = '''
 for label in com.codethread.backup-notes com.codethread.syncengine com.codethread.cc-notify com.codethread.git-maintenance.hourly com.codethread.git-maintenance.daily com.codethread.git-maintenance.weekly; do
   if /bin/launchctl print "gui/$(/usr/bin/id -u)/$label" >/dev/null 2>&1; then
-    echo "Old Nix agent still loaded: $label. Switch the updated Nix configuration before applying mise services." >&2
+    echo "Old Nix agent still loaded: $label. Retire nix-darwin before applying mise services; see docs/mise.md#retiring-nix." >&2
     exit 1
   fi
 done

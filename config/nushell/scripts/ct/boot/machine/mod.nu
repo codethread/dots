@@ -2,7 +2,7 @@ use ct/macos.nu [macos_has_full_disk_access]
 use ct/editor.nu [nvim-sync]
 use log.nu
 
-# Post-nix-rebuild tasks — system rebuild is handled by boot.sh or `make system`
+# Extra first-boot checks after mise has applied the workstation.
 export def main [] {
     if (sys host).name != "Darwin" {
         error make {msg: "boot machine supports macOS only"}

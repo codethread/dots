@@ -9,7 +9,7 @@
 
 ### [SPEC-008-S1.1] Purpose
 
-This system defines how this dotfiles repo can be tested and developed from multiple git worktrees concurrently without changing the host user's active configuration or another agent's workspace. It establishes an isolation contract around `$DOTFILES`, XDG directories, tool state directories, and application-specific entry points so a worktree can validate Neovim, Nushell, tmux, dotty, Nix helpers, and agent tooling in a disposable environment.
+This system defines how this dotfiles repo can be tested and developed from multiple git worktrees concurrently without changing the host user's active configuration or another agent's workspace. It establishes an isolation contract around `$DOTFILES`, XDG directories, tool state directories, and application-specific entry points so a worktree can validate Neovim, Nushell, tmux, dotty, and agent tooling in a disposable environment.
 
 ### [SPEC-008-S1.2] Goals
 
@@ -19,11 +19,11 @@ This system defines how this dotfiles repo can be tested and developed from mult
 - Support both source-from-worktree tests and link/copy-to-temp tests.
 - Provide concrete smoke tests for high-risk tools: dotty, Nushell config, Neovim config, tmux sessions, and agent/CLI integration.
 - Fail loudly when a test would touch the real home directory or canonical dotfiles clone unexpectedly.
-- Keep full system rebuild/switch operations explicitly outside normal concurrent test runs.
+- Keep full host system-layer applies (`system:apply`) and service loads explicitly outside normal concurrent test runs.
 
 ### [SPEC-008-S1.3] Non-Goals
 
-- Running multiple real `darwin-rebuild switch` operations concurrently against the host.
+- Running multiple real host system applies or service loads concurrently against the host.
 - Proving visual correctness of terminal/editor UI beyond smoke-testable startup and command execution.
 - Virtualizing OS services, launch agents, global keybindings, GUI app preferences, or package-manager state.
 - Making all third-party tools perfectly hermetic if they ignore XDG or explicit state flags.
@@ -32,7 +32,7 @@ This system defines how this dotfiles repo can be tested and developed from mult
 ## [SPEC-008-S2] 2. Design Decisions
 
 - **Decision:** `$DOTFILES` is the authoritative source checkout for all worktree tests.
-    - **Rationale:** The repo already uses `$DOTFILES` in dotty config, Nushell module paths, tmux sessions, Nix helpers, and Makefile commands. Enforcing it as the first-class root lets a worktree be tested without rewriting config files.
+    - **Rationale:** The repo already uses `$DOTFILES` in dotty config, Nushell module paths, tmux sessions, and Makefile commands. Enforcing it as the first-class root lets a worktree be tested without rewriting config files.
 
 - **Decision:** Test isolation is environment-based first, symlink-based second.
     - **Rationale:** Many tools already respect `HOME` and XDG variables. A temp-home harness avoids touching the real user profile; dotty symlinks can then be tested inside that temp home when integration coverage needs the linked layout.
@@ -49,8 +49,8 @@ This system defines how this dotfiles repo can be tested and developed from mult
 - **Decision:** Shared caches that influence startup behavior must be redirected, not merely cleaned afterward.
     - **Rationale:** Concurrent agents can observe each other's partial writes if they share `~/.local/share`, `~/.cache`, plugin directories, histories, tmux sockets, or compiled outputs. Isolation must happen before process start.
 
-- **Decision:** Nix evaluation can be worktree-concurrent; activation remains host-serialized and opt-in.
-    - **Rationale:** `nix flake check`, `nix build`, and `nix eval` can safely target `path:$DOTFILES/nix`. System switch commands mutate global host state and must not be part of default worktree tests.
+- **Decision:** Host system-layer changes remain host-serialized and opt-in.
+    - **Rationale:** `system:apply` writes the login shell and `/etc/pam.d/sudo_local`, and service apply loads launchd agents; those mutate global host state and must not be part of default worktree tests.
 
 - **Decision:** Test commands should be grouped by risk level.
     - **Rationale:** Unit/import checks can run constantly. Integration tests that launch tmux, Neovim, or agent CLIs are heavier. Host-mutating checks require explicit manual confirmation.
@@ -151,7 +151,7 @@ fail loudly on host-path writes or command failure
 | `source` | Run tool directly against files in `$DOTFILES` using explicit config flags | Low |
 | `linked` | Run `dotty link` into isolated `HOME`/XDG, then run tool as installed | Low |
 | `copied` | Copy selected config subtree into temp XDG before running tool | Low |
-| `host` | Real system activation or app preference changes | High; manual opt-in only |
+| `host` | Real `system:apply`, service apply, or app preference changes | High; manual opt-in only |
 
 ### [SPEC-008-S4.3] Result artifacts
 
@@ -216,7 +216,7 @@ Behavior:
 | tmux | `tmux -S <sandbox>/tmux.sock -f $DOTFILES/config/tmux/tmux.conf new-session -d -s dots-test -c $DOTFILES` then list/kill session |
 | dotty | `dotty link --no-cache $DOTFILES/config/dotty/test-dotty.toml` under sandbox HOME/XDG, then verify symlink targets stay under `$DOTFILES` |
 | oven | `cd $DOTFILES/oven && bun test` with cache/temp vars redirected |
-| Nix | `nix flake check path:$DOTFILES/nix` or focused `nix eval`; no switch by default |
+| Mise | `mise -C $DOTFILES -E dev tasks validate --errors-only` and `mise -C $DOTFILES -E dev config`; never run `system:apply` or service tasks |
 
 ## [SPEC-008-S6] 6. Implementation Phases
 
@@ -245,7 +245,7 @@ Behavior:
 ### [SPEC-008-S6.4] Phase 4: Integration hardening (ongoing)
 
 - [ ] Add optional agent config smoke tests for Claude/Codex/Pi without live config mutation.
-- [ ] Add focused Nix evaluation checks that prefer the current worktree and do not switch the host.
+- [ ] Add focused mise task/config validation that prefers the current worktree and never runs host-mutating applies.
 - [ ] Add CI-compatible or pre-commit-compatible subsets if useful.
 - [ ] Add regression tests whenever a tool gains new writable state.
 
@@ -269,4 +269,4 @@ Behavior:
 - Should `ct test worktree` run Neovim plugin installation/update steps, or only validate startup with existing dependencies?
 - Should sandbox leak detection be strict enough to fail on any absolute real-home path in logs, or only on writes/symlinks?
 - Should worktree post-create hooks automatically run `make test-worktree`, or leave tests explicit to avoid expensive branch creation?
-- Should Nix checks be part of the default safe suite, or a separate `make test-nix-worktree` due to runtime cost?
+- Should mise task/config validation be part of the default safe suite, or stay a focused pre-commit check?

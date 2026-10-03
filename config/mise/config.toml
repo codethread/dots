@@ -5,7 +5,7 @@ min_version = "2026.9.15"
 # Keep service/bootstrap tasks project-local: they must not run in other repos.
 [tools]
 node = "24"
-# Preserve the Nix JDK's Java 21 major; projects can select their own vendor/version.
+# Default JDK; projects can select their own vendor/version.
 java = "temurin-21"
 clj-kondo = "latest"
 bun = "1.4.2"
@@ -18,7 +18,7 @@ uv = "latest"
 rust = "stable"
 "npm:typescript" = "latest"
 "npm:typescript-language-server" = "latest"
-# No upstream release binary/formula; retain the revision previously in flake.lock.
+# No upstream release binary/formula; build the pinned source revision.
 "cargo:https://github.com/nushell/nufmt" = "rev:24023665d1c2661addb22dce384b53d4a839727f"
 
 # Devflow's terminal DAG renderer. Aqua/GitHub release binary; no Perl or CPAN.

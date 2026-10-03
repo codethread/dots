@@ -4,7 +4,7 @@ source "${HOME}/.config/env/base.sh"
 if [[ $- == *i* ]]; then
   source "$DOTFILES/config/env/interactive.sh"
   mkdir -p "$XDG_STATE_HOME/bash" 2>/dev/null
-  eval "$(direnv hook bash)"
+  eval "$(mise activate bash)"
 fi
 
 if [[ -f "$XDG_CONFIG_HOME/bash/env.local" ]]; then

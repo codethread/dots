@@ -23,7 +23,7 @@ General-purpose dotfile symlink manager written in Nushell. Takes a TOML configu
 ### [SPEC-003-S1.3] Non-Goals
 
 - Managing application-specific config generation (that's each tool's concern; e.g. mise renders `templates/claude-settings.json.tera` to `~/.claude/settings.json`)
-- Package installation or system configuration (mise owns user packages; Nix retains the macOS system layer)
+- Package installation or system configuration (mise owns user packages and the minimal macOS system layer, `system:apply`)
 - Text template rendering or variable substitution in linked files
 - Structured formats other than TOML (the merge architecture may add formats later)
 
@@ -154,7 +154,7 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 | System | Command | When | Notes |
 | --- | --- | --- | --- |
 | **Makefile** (`make link`) | `DOTFILES=$(ROOT) dotty link --no-cache <repo>/config/dotty/dotty.toml` | Manual rebuild | Exports `DOTFILES` as the current checkout root for worktree support |
-| **Mise** (`dotfiles:apply`) | `dotty link --no-cache <repo>/config/dotty/dotty.toml` | `workstation:setup` / explicit task | Runs after repository preparation. Exports `DOTFILES` as the active checkout, passes its manifest explicitly, and fails on real-file conflicts. No Nix activation dependency. |
+| **Mise** (`dotfiles:apply`) | `dotty link --no-cache <repo>/config/dotty/dotty.toml` | `workstation:setup` / explicit task | Runs after repository preparation. Exports `DOTFILES` as the active checkout, passes its manifest explicitly, and fails on real-file conflicts. No activation or system-layer dependency. |
 | **Neovim** | `dotty link`, `dotty format`, `dotty is-cwd` | Editor events | Auto-links on `BufWritePost`/`BufFilePost`/`VimLeavePre`. Detects dotfiles project via `is-cwd` on git root. |
 
 ### [SPEC-003-S4.3] Worktree / Feature-Branch Support
@@ -189,7 +189,7 @@ The mise task also exports the active checkout as `DOTFILES` and passes its mani
 
 ### [SPEC-003-S6.2] Manual
 
-- **`nix-smoke`** — verifies config symlinks are valid (checks that expected symlinks in `~/.config` point to real files).
+- **`mise -E <profile> run dotfiles:apply`** — verifies expected symlinks in `~/.config` are created and real-file conflicts fail visibly.
 - **`dotty prune`** — finds and removes broken symlinks (useful after file deletions).
 
 ## [SPEC-003-S7] 7. Open Questions

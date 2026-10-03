@@ -6,6 +6,10 @@
 source "$DOTFILES/config/env/interactive.sh"
 source "$HOME/.privates.sh"
 
+# mise project activation for interactive shells; bash uses the same standard
+# hook in config/bash/env. Noninteractive shells use shims or `mise exec`.
+eval "$(mise activate zsh)"
+
 #: }}}
 #: history {{{
 

@@ -13,7 +13,7 @@ Shared light/dark and theme-family control for the interactive desktop and termi
 
 Most terminal applications are expected to follow the active theme through the combined terminal palette, shell color config, and `LS_COLORS`. Neovim is the main app with explicit extra theme integration; LazyGit has a small adjustment to prefer terminal defaults. Additional app-specific handling should be added only when inheritance is not enough.
 
-The system is intentionally narrow for now. Nix and Linux desktop theming are not yet controlled by this flow.
+The system is intentionally narrow for now. Linux desktop theming is not controlled by this flow.
 
 ### [SPEC-007-S1.2] Goals
 
@@ -238,8 +238,8 @@ Known areas outside the current shared flow:
 
 ## [SPEC-007-S7] 7. Design Decisions
 
-- **Tiny state contract** - plain files under `$XDG_STATE_HOME` are easy for Bash, Nushell, Lua, and future Nix activation scripts to share.
-- **Imperative runtime switcher** - day/night switching should not require a Nix rebuild.
+- **Tiny state contract** - plain files under `$XDG_STATE_HOME` are easy for Bash, Nushell, Lua, and future system activation scripts to share.
+- **Imperative runtime switcher** - day/night switching should not require a system-layer apply.
 - **Generated terminal theme configs** - active Kitty and Ghostty theme files under `$XDG_CONFIG_HOME` keep startup simple while allowing live reload. They are stored outside the repo to avoid git churn on every theme switch.
 - **Family and mode are separate** - toggling light/dark preserves the user's preferred family.
 - **Neovim owns plugin-specific details** - external state picks family/mode; `codethread.theme` translates that into plugin options and custom highlight palettes.
@@ -250,5 +250,5 @@ Known areas outside the current shared flow:
 - Should `theme` be the long-term cross-platform switcher, or should Linux/macOS implementations split behind a common interface?
 - Should Nushell prompt/table colors become family-specific, or is light/dark enough?
 - Should active Neovim instances get a command/autocmd for runtime theme reload?
-- Should wallpapers eventually be provisioned by Nix from the synced images project?
+- Should wallpapers eventually be provisioned automatically from the synced images project?
 - Should `vivid generate` output be cached under `$XDG_STATE_HOME` to avoid shell-start cost?

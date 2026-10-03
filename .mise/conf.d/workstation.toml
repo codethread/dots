@@ -1,5 +1,4 @@
-# User setup previously performed by Home Manager activation. Keep each phase
-# explicit so this never loads services or requires a Nix rebuild.
+# Workstation setup. Keep phases explicit so this never loads services.
 [bootstrap.directories]
 "~/dev/vendor" = {}
 "~/dev/learn" = {}
@@ -12,7 +11,6 @@
 "~/dev/vendor/gitwatch" = { url = "https://github.com/gitwatch/gitwatch.git" }
 "~/sync/Alfred" = { url = "git@github.com:codethread/alfred.git" }
 "~/sync/images" = { url = "git@github.com:codethread/images.git" }
-"~/dev/vendor/nix-direnv" = { url = "https://github.com/nix-community/nix-direnv.git", ref = "3.2.0" }
 
 [dotfiles."~/.local/bin/gitwatch"]
 source = "~/dev/vendor/gitwatch/gitwatch.sh"
@@ -42,12 +40,13 @@ env.DOTFILES = "{{ config_root }}"
 run = '"{{ config_root }}/home/.local/bin/mise-shell-prepare"'
 
 [tasks."workstation:apply"]
-description = "Apply packages, update/install supporting repos, link dotfiles, prepare shell caches, and apply macOS user defaults (no services or system switch)"
+description = "Apply packages, update/install supporting repos, link dotfiles, prepare shell caches, and apply macOS user defaults (no services)"
 run = ["mise run packages:apply", "mise run workstation:setup"]
 
 [tasks."workstation:setup"]
-description = "Apply user setup after packages are installed (no services or system switch)"
+description = "Apply user setup after packages are installed (no services)"
 run = [
+  "mise run system:apply",
   "mise run repositories:apply",
   "mise run hive:update",
   "mise run agents:update",

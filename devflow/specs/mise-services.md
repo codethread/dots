@@ -12,8 +12,8 @@ The project mise configuration owns five shared dev/work user LaunchAgents: sync
 - `mise.work.toml`: deals-light-ui maintenance and cc-notify, alongside shared syncengine.
 - Personal and work-boot machines apply only syncengine using `syncengine:apply`. The full `services:*` workflow requires `dev` or `work` explicitly; a missing overlay cannot render the other services' required profile variables.
 - mise also owns macOS host packages: `.mise/conf.d/packages.toml` plus the profile overlays (`mise.dev.toml`, `mise.work.toml`, `mise.personal.toml`, `mise.work-boot.toml`). `packages:apply` installs versioned tools and those packages, builds the pinned Todoist fork, then installs user-prefix `@playwright/cli` and the profile's VS Code extensions; `packages:status` reports host state. Applying packages never prunes or upgrades; formula upgrades are explicit via `mise bootstrap packages upgrade --manager brew`.
-- `boot/boot.sh` installs Homebrew and then mise (`brew install mise`); the stable service executable is `/opt/homebrew/bin/mise`, not a Nix-store path. Nix no longer declares or upgrades Homebrew packages. This matches the repository's Apple Silicon hosts.
-- mise provides pinned Bun 1.4.2 through `[tools]` for cc-notify. Other user runtimes are also mise-owned through `config/mise/`; remaining Darwin system packages are separate.
+- `boot/boot.sh` installs Homebrew and then mise (`brew install mise`); the stable service executable is `/opt/homebrew/bin/mise`, not a Nix-store path. Mise declares host packages installed into the Homebrew prefix; nix-darwin is retired. This matches the repository's Apple Silicon hosts.
+- mise provides pinned Bun 1.4.2 through `[tools]` for cc-notify. Other user runtimes are also mise-owned through `config/mise/`; the login shell and sudo configuration live in `.mise/conf.d/macos-system.toml`.
 - Git maintenance uses macOS `/usr/bin/git` (Command Line Tools required).
 
 mise discovers the `.mise/conf.d/*.toml` fragments automatically; no include directive or experimental setting is needed. Keep each complete agent declaration in one fragment: duplicate names replace the entire declaration, not individual fields. For these recognized project fragments, `config_root` remains the repository root, so moving declarations does not change generated executable paths. The root profile overlays still supply the shared variables.
@@ -55,19 +55,19 @@ Replace `personal` with the intended profile. The standalone apply/status tasks 
 
 These are per-user agents: apply in a logged-in macOS GUI session, without sudo. They run while that user is logged in, not as boot-time system daemons.
 
-Host packages are separate from services: `boot.sh` applies them with `mise -C "$DOTFILES" -E <mise-profile> run packages:apply` before the Nix switch. Preview host package changes with `mise -E dev bootstrap packages apply --dry-run`; applying packages never prunes or upgrades existing packages, so upgrade formulae explicitly with `mise -E dev bootstrap packages upgrade --manager brew`.
+Host packages are separate from services: `boot.sh` applies them with `mise -C "$DOTFILES" -E <mise-profile> run packages:apply` at the start of `mise run boot`. Preview host package changes with `mise -E dev bootstrap packages apply --dry-run`; applying packages never prunes or upgrades existing packages, so upgrade formulae explicitly with `mise -E dev bootstrap packages upgrade --manager brew`.
 
 ## Moving an existing Nix installation
 
 1. Prepare the mise services and preview their definitions.
-2. Run `make system` with this updated checkout. It keeps the Homebrew-installed mise and removes the old Nix-owned service definitions.
+2. Retire nix-darwin following [Retiring Nix](../../docs/mise.md#retiring-nix). The nix-darwin uninstaller removes its old service definitions without removing the Homebrew-installed mise; `system:apply` then establishes the replacement login shell and sudo configuration.
 3. Confirm the old syncengine process and its gitwatch/fswatch children have exited before starting the replacement; launchd shutdown is asynchronous.
 4. Run `mise -E dev run services:apply` (or `work`), or `mise -E <profile> run syncengine:apply` for syncengine alone. Both paths refuse to apply while the old Nix syncengine agent is still loaded.
 5. Check syncengine's watcher processes and logs; for the full service set also check cc-notify's health and the three maintenance jobs. On dev, also confirm `com.codethread.backup-notes` is unloaded before applying its replacement, `dev.mise.backup-notes`; `services:apply` refuses to proceed while the old label is loaded.
 
 The old Nix job references the removed standalone syncengine script. Complete this handoff before the next login/restart; an already-running old process is not replaced by editing the repository. Its obsolete `~/.local/bin/syncengine` symlink can be removed after the handoff.
 
-When a system switch must wait for sudo authentication, the user jobs can be cut over separately after successful preparation. Disable **and** unload the old labels, preserving their plist files until the next Nix switch:
+When retirement must wait for sudo authentication, the user jobs can be cut over separately after successful preparation. Disable **and** unload the old labels, preserving their plist files until retirement removes them:
 
 ```nu
 let domain = $"gui/(id -u | str trim)"
@@ -89,7 +89,7 @@ for label in [
 
 Then run `mise -E dev run services:apply`. For a syncengine-only cutover, disable/unload only `com.codethread.syncengine`, wait for its children to exit, and run `mise -E <profile> run syncengine:apply`.
 
-The disabled state persists across login/reboot. Still run `make system` afterwards to retire the old system generation's ownership; rebuilding an old configuration can re-enable its agents. Do not remove the old plist files before that switch: the old generation could notice missing files and recreate/re-enable them on activation.
+The disabled state persists across login/reboot. Complete [Retiring Nix](../../docs/mise.md#retiring-nix) afterwards to remove the old system generation and its definitions; while nix-darwin remains installed, rebuilding an old configuration can re-enable its agents. Do not remove the old plist files first: the old generation could notice missing files and recreate or re-enable them on activation.
 
 ## Operation
 
@@ -160,4 +160,4 @@ Each job runs `git for-each-repo --keep-going maintenance run --schedule=<freque
 
 Deleting a declaration does not remove its installed agent. Remove the declaration, explicitly `launchctl bootout` its `gui/<uid>/dev.mise.<name>` target, and delete only its corresponding plist from `~/Library/LaunchAgents`.
 
-Validation: `mise -E <profile> tasks validate --errors-only` for dev/work/personal/work-boot, `mise fmt --check`, Bash syntax checks, isolated temporary-repository maintenance checks, syncengine preparation and old-agent refusal checks, and `plutil -lint` on generated plists. After apply, check HTTP health, successful maintenance exit codes, no loaded old labels, and an unchanged second apply. Nix changes also require the normal flake build and `nix-smoke` checks; `nrs-check` was removed with Nix-owned Homebrew, so validate package changes with `mise bootstrap packages apply --dry-run` and `mise run packages:status`.
+Validation: `mise -E <profile> tasks validate --errors-only` for dev/work/personal/work-boot, `mise fmt --check`, Bash syntax checks, isolated temporary-repository maintenance checks, syncengine preparation and old-agent refusal checks, and `plutil -lint` on generated plists. After apply, check HTTP health, successful maintenance exit codes, no loaded old labels, and an unchanged second apply. Validate package changes with `mise bootstrap packages apply --dry-run` and `mise run packages:status`.

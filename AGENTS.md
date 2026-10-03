@@ -2,9 +2,9 @@
 
 ## Bootstrap Flow
 
-New machine → `boot/boot.sh`. Existing machine → `make` (Nix system switch, then the main `mise run boot` task). `make boot` applies the user environment, builds Oven, renders Claude settings, and applies services without a system switch. The shell selects the machine's mise profile via `MISE_ENV`. Optional local tool rebuild → `make build`.
+New machine → `boot/boot.sh`, which installs Homebrew and mise, clones dots, runs `mise run boot`, then checks Full Disk Access, builds Oven, and syncs Neovim plugins. Existing machine → `make` (`make boot` and `make all` are the same path): it applies the user environment, builds Oven, renders Claude settings, and applies services. The shell selects the machine's mise profile via `MISE_ENV`, and `boot.sh -p` sets it explicitly. Optional local tool rebuild → `make build`. The previous Nix system switch is gone: there is no `make system`, `nrs`, or `nfu`.
 
-For the initial Nix-to-mise handoff: `packages:apply` → `make system` → `workstation:setup`. Global tools live in `config/mise/`; project tasks and machine resources live in `.mise/conf.d/` and the root profile overlays. See `docs/mise.md`.
+Global tools live in `config/mise/`; project tasks and machine resources live in `.mise/conf.d/` and the root profile overlays. See `docs/mise.md`, including the one-time [Nix retirement](docs/mise.md#retiring-nix) runbook for machines that predate the migration.
 
 cc-notify and Git maintenance are owned separately by `.mise/conf.d/*.toml`, with tools/shared tasks in root `mise.toml` and explicit `dev`/`work` overlays. Load the mise skill before changing them; use `mise -E dev run services:apply` (or `work`), not bare `mise bootstrap`, so preparation finishes before agents load. See `devflow/specs/mise-services.md` for migration and verification. Apply from a durable checkout: generated agents reference its absolute path.
 
@@ -16,17 +16,15 @@ cc-notify and Git maintenance are owned separately by `.mise/conf.d/*.toml`, wit
 - **home/** - Files that belong in home directory. Go here for home-specific scripts and configs.
 - **oven/** - TypeScript/Bun workspace for CLI tools. Go here for active development.
 - **devflow/** - Planning workspace. Root specs live in `devflow/specs/`; RFCs in `devflow/rfcs/`; active feature work in `devflow/feat/`.
-- **nix/** - nix-darwin system configuration for macOS.
 - **pdx/** - pandoras-box configs (pithos) for personal machines
 
 ### Makefile (Root)
 
 ```nu
-make         # System switch, then main mise boot task (sequential)
-make boot    # Apply all mise-managed user setup, tools, settings, and services
+make         # Apply user environment, tools, settings, and services (same as `make boot`)
+make boot    # Explicit boot target
 make link    # Link dotfiles via dotty
 make build   # Install/check/build oven tools through `mise -C oven run verify`
-make system  # Rebuild nix-darwin (explicit profile: make system work)
 ```
 
 ## Tool Development Workflow
@@ -81,15 +79,17 @@ This repo defines Claude Code configurations such as commands and agents at `cla
 
 ## Verification
 
-### Nix
+### Mise
 
-When checking flake builds, avoid leaving repo-local `result` symlinks. Use `--no-link` for `nix build` commands, for example:
+Validate the mise configuration and task graph without applying host changes:
 
 ```bash
-nix build path:./nix#darwinConfigurations.dev.system --no-link
+mise -E dev tasks validate --errors-only
+mise -E dev bootstrap packages apply --dry-run
+mise -E dev run system:status
 ```
 
-`nrs` / `make system` switch the system and do not need a `result` link.
+`system:apply` is host-mutating (login shell and `/etc/pam.d/sudo_local`) and requires nix-darwin ownership to be retired first (before uninstalling the Nix store).
 
 ### Nushell
 

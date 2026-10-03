@@ -1,4 +1,4 @@
-# User macOS preferences formerly in nix/hosts/darwin/common.nix.
+# Shared user macOS preferences.
 # Screenshot location is applied from $HOME in macos:apply; mise does not
 # template string values in [bootstrap.macos.defaults].
 # Apply with `mise run macos:apply`; do not use bare `mise bootstrap`.

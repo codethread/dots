@@ -150,7 +150,9 @@ fi
 
 ct_path=""
 ct_project_path_first=false
-if [ -n "${IN_NIX_SHELL:-}${DIRENV_DIR:-}${__MISE_DIFF:-}" ]; then
+# A nested `mise exec` owns project toolchain paths; keep its inherited PATH
+# first until interactive activation refreshes it.
+if [ -n "${__MISE_DIFF:-}" ]; then
   ct_project_path_first=true
   ct_path_append_list "$ct_inherited_path"
 fi
@@ -172,11 +174,6 @@ ct_path_append "$GOBIN"
 ct_path_append "$HOME/.linkerd2/bin"
 ct_path_append "$HOME/.emacs.d/bin"
 ct_path_append "$XDG_CONFIG_HOME/skein/bin"
-ct_path_append "$HOME/.nix-profile/bin"
-ct_path_append "$XDG_STATE_HOME/nix/profile/bin"
-ct_path_append "/etc/profiles/per-user/$USER/bin"
-ct_path_append /run/current-system/sw/bin
-ct_path_append /nix/var/nix/profiles/default/bin
 ct_path_append /opt/podman/bin
 
 if [ "$ct_os" = Darwin ]; then
@@ -204,8 +201,9 @@ if [ "$ct_project_path_first" = false ]; then
 fi
 PATH=$ct_path
 ct_shell_candidate=${ct_inherited_shell:-zsh}
-# macOS owns Zsh. Normalize inherited Nix/Homebrew paths as well as the default
-# so terminals and tmux agree with shell:prepare, regardless of PATH order.
+# macOS owns Zsh. Normalize inherited Homebrew or other Zsh paths as well as
+# the default so terminals and tmux agree with shell:prepare, regardless of
+# PATH order.
 if [ "$ct_os" = Darwin ] && [ "${ct_shell_candidate##*/}" = zsh ]; then
   ct_shell_candidate=/bin/zsh
 fi

@@ -3,9 +3,11 @@
 "codethread/wktree" = "https://github.com/codethread/wktree"
 
 [bootstrap.packages]
-# Shared CLI packages formerly in nix/features/common.nix.
+# Shared CLI packages.
 # python-yq is the jq wrapper; tree-sitter-cli is the parser generator.
 "brew:nushell" = { os = "macos" }
+# Scripts such as qlock require Bash 5+; macOS ships Bash 3.2.
+"brew:bash" = { os = "macos" }
 "brew:git" = { os = "macos" }
 "brew:luarocks" = { os = "macos" }
 "brew:neovim" = { os = "macos" }
@@ -37,7 +39,6 @@
 "brew:tree-sitter-cli" = { os = "macos" }
 "brew:wakatime-cli" = { os = "macos" }
 "brew:prettierd" = { os = "macos" }
-"brew:nixfmt" = { os = "macos" }
 "brew:just" = { os = "macos" }
 "brew:fx" = { os = "macos" }
 "brew:tokei" = { os = "macos" }
@@ -51,8 +52,8 @@
 "brew:yt-dlp" = { os = "macos" }
 "brew:ast-grep" = { os = "macos" }
 "brew:vivid" = { os = "macos" }
-"brew:direnv" = { os = "macos" }
-# Remaining user tools formerly in nix/hosts/darwin/common.nix.
+"brew:pam-reattach" = { os = "macos" }
+# Shared desktop and shell tools.
 "brew:agent-browser" = { os = "macos" }
 "brew:pngpaste" = { os = "macos" }
 "brew:yazi" = { os = "macos" }
@@ -73,7 +74,7 @@
 "brew:gum" = { os = "macos" }
 "brew:sderosiaux/tap/launchdeck" = { os = "macos" }
 
-# Shared fonts formerly in nix/hosts/darwin/common.nix (unpatched families + symbols).
+# Shared fonts (unpatched families + symbols).
 "brew-cask:font-fira-code" = { os = "macos" }
 "brew-cask:font-victor-mono" = { os = "macos" }
 "brew-cask:font-symbols-only-nerd-font" = { os = "macos" }
