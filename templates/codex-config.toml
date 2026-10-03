@@ -3,8 +3,8 @@ cli_auth_credentials_store = "file"
 sandbox_mode = "danger-full-access"
 approval_policy = "never"
 personality = "pragmatic"
-model_reasoning_effort = "low"
-model = "gpt-6.1-sol"
+model_reasoning_effort = "xhigh"
+model = "gpt-6-astra"
 approvals_reviewer = "user"
 service_tier = "default"
 
@@ -71,7 +71,7 @@ enabled = true
 enabled = true
 
 [desktop]
-conversationDetailMode = "STEPS_PROSE"
+conversationDetailMode = "STEPS_COMMANDS"
 ambient-suggestions-enabled = false
 mac-menu-bar-enabled = true
 show-context-window-usage = true
