@@ -4,7 +4,7 @@
   "quietStartup": true,
   "showHardwareCursor": true,
   "editorPaddingX": 1,
-  "defaultProvider": "openai",
+  "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.6-luna",
   "defaultThinkingLevel": "high",
   "enabledModels": [
@@ -13,6 +13,9 @@
     "openai-codex/gpt-5.6-terra",
     "openai-codex/gpt-5.6-luna",
     "deepseek/deepseek-flash"
+  ],
+  "defaultTools": [
+    "+mcp"
   ],
   "packages": [
     {
@@ -25,7 +28,9 @@
       "source": "../../pb/adam.hall/local-work-claude/plugins/backend"
     },
     "npm:pi-nvim",
-    "npm:@narumitw/pi-goal"
+    "npm:@narumitw/pi-goal",
+    "npm:@narumitw/pi-btw",
+    "npm:@narumitw/pi-typesafe-compact"
   ],
   "hideThinkingBlock": true,
   "treeFilterMode": "no-tools",
