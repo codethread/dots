@@ -89,6 +89,8 @@ for n in {0..9}; do
   alias "cd$n=cd \"\$(tmux-session --print $n)\""
 done
 
+alias hc='honeycomb'
+
 #: }}}
 #: completion {{{
 
