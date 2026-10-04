@@ -1,7 +1,7 @@
 ---
 name: mise
 description: >-
-    Design, implement, or review mise configurations for development tools, environments, tasks, workstation bootstrap, Homebrew packages, dotfiles, macOS LaunchAgents, macOS/Linux profile layering, and container/CI usage. Use when adopting mise, replacing parts of Nix/Home Manager or a dotfile linker, or debugging mise.toml.
+    Design, implement, or review mise configurations for development tools, environments, tasks, workstation bootstrap, Homebrew packages, dotfiles, macOS LaunchAgents, macOS/Linux profile layering, and container/CI usage. Use when adopting mise or debugging mise.toml.
 ---
 
 # mise
@@ -11,7 +11,7 @@ Use mise as two related systems:
 - `[tools]`, `[env]`, and `[tasks]` define project or user development environments.
 - `mise bootstrap` converges workstation resources such as packages, files, repositories, dotfiles, shell setup, services, and macOS settings.
 
-Do not imply that mise provides Nix's derivation graph, transactional generations, or complete operating-system management.
+Do not imply that mise provides transactional rollback or complete operating-system management.
 
 ## Start from the required surface
 

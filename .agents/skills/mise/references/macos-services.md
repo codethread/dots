@@ -1,6 +1,6 @@
 # macOS service deployment with mise
 
-Use this reference when replacing nix-darwin jobs or deploying macOS user services. Verified with Homebrew mise 2026.9.15 in September 2026; consult current [launchd](https://mise.jdx.dev/bootstrap/launchd.html), [services](https://mise.jdx.dev/bootstrap/services.html), and [bootstrap order](https://mise.jdx.dev/bootstrap.html#how-it-runs) docs before assuming the same behavior in another version.
+Use this reference when deploying macOS user services. Verified with Homebrew mise 2026.9.15 in September 2026; consult current [launchd](https://mise.jdx.dev/bootstrap/launchd.html), [services](https://mise.jdx.dev/bootstrap/services.html), and [bootstrap order](https://mise.jdx.dev/bootstrap.html#how-it-runs) docs before assuming the same behavior in another version.
 
 ## Choose the declaration
 
@@ -32,7 +32,7 @@ A task containing that command can still install `[tools]` before the dry run be
 
 ## Executables, config, and working directory
 
-LaunchAgents inherit launchd's minimal environment, not shell activation. Use a durable executable path, explicit HOME/PATH where needed, and `mise exec` or a foreground task for mise-managed tools. Homebrew's stable mise symlink can survive later Nix removal; a versioned Cellar binary or `/nix/store` path cannot be assumed durable across cleanup. Use the host's actual installation prefix.
+LaunchAgents inherit launchd's minimal environment, not shell activation. Use a durable executable path, explicit HOME/PATH where needed, and `mise exec` or a foreground task for mise-managed tools. Use Homebrew's stable mise symlink rather than a versioned Cellar binary. Use the host's actual installation prefix.
 
 A service launched with `mise -C <dotfiles> -E <profile> run <task>` can load tools from the dotfiles project while the task's `dir` selects the application checkout. This was verified with Bun and an app-local `.env`. Plain `mise -C <dotfiles> exec` changes the child's working directory too; do not assume a plist `working_directory` overrides it.
 
@@ -42,7 +42,7 @@ Path fields such as `program`, `working_directory`, and log paths expand `~/`. `
 
 ## Hand off ownership and verify lifecycle
 
-Nix, Git's own scheduler, and mise use different labels: applying mise does not stop earlier jobs. Inspect live labels and plists before switching. Refuse an apply that would leave two copies active. Prefer switching the updated Nix configuration first; user-domain disable/bootout is a scoped alternative when authorized, not permission to alter unrelated system services.
+Git's own scheduler and mise use different labels: applying mise does not stop earlier jobs. Inspect live labels and plists before switching. Refuse an apply that would leave two copies active. Prefer handing off from the previous owner first; user-domain disable/bootout is a scoped alternative when authorized, not permission to alter unrelated system services.
 
 Deleting a mise declaration does not prune its installed job. Remove explicitly, or use `state = "absent"` with the generic user-service API. Treat cleanup separately from applying new definitions.
 
@@ -58,8 +58,8 @@ Use observable bounded readiness checks for automation, not an arbitrary sleep o
 
 ## Native tool boundaries
 
-A macOS-only runner can use `/usr/bin/git` and `/bin/bash` instead of carrying Nix executables across the migration; first verify the required flags against the installed versions. Preserve workload-specific policy such as filtered repository lists and private Git configuration rather than assuming `git maintenance start` is equivalent.
+A macOS-only runner can use `/usr/bin/git` and `/bin/bash`; first verify the required flags against the installed versions. Preserve workload-specific policy such as filtered repository lists and private Git configuration rather than assuming `git maintenance start` is equivalent.
 
-For manual Git-maintenance validation, use disposable repositories with a committed, packed object. Native Git's daily incremental repack can fail on an empty repository with "no pack files to index"; distinguish a poor fixture from a migration regression.
+For manual Git-maintenance validation, use disposable repositories with a committed, packed object. Native Git's daily incremental repack can fail on an empty repository with "no pack files to index"; distinguish a poor fixture from a regression.
 
 An installed Homebrew cask can still fail `brew info` when its tap is untrusted. Report that separately from mise failures; do not broaden tap trust just to make an unrelated verification command pass.

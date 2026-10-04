@@ -15,7 +15,7 @@ esac
 [ "$#" -eq 1 ] || { usage >&2; exit 2; }
 : "${GIT_MAINTENANCE_REPOSITORIES:?Set the repository list through a mise profile}"
 
-# Use macOS Git, not an executable inside the Nix store or an interactive PATH.
+# Use macOS Git, not an executable selected from an interactive PATH.
 git=/usr/bin/git
 state_dir="$HOME/.local/state/com.codethread.git-maintenance"
 config="$state_dir/config"

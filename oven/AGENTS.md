@@ -8,7 +8,7 @@ The build process generates thin bash wrapper scripts that `exec bun run <source
 - entrypoints are declared in `oven/bin/manifest.json`
 - during development run code with `mise exec -- bun run ./bin/<entry path>`
 - `mise.toml` / `mise.lock` pin Bun and Node; `bun.lock` supplies Biome and TypeScript
-- Git is a host prerequisite; no Nix shell or activation is needed
+- Git is a host prerequisite
 
 ### Commands
 

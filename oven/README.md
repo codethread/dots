@@ -11,7 +11,7 @@ Bun workspace for managing TypeScript/JavaScript executables. Entrypoints listed
 
 ## Tooling and commands
 
-Mise manages Bun and Node through `mise.toml` and `mise.lock`, with locked downloads for macOS and Linux (arm64/x64). Biome and TypeScript come from `package.json` / `bun.lock`, not global tools. Git must be available on PATH (provided by the workstation's host packages). Nix and shell activation are not required.
+Mise manages Bun and Node through `mise.toml` and `mise.lock`, with locked downloads for macOS and Linux (arm64/x64). Biome and TypeScript come from `package.json` / `bun.lock`, not global tools. Git must be available on PATH (provided by the workstation's host packages).
 
 Run from `oven/`:
 
