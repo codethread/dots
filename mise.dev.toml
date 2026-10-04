@@ -22,9 +22,7 @@ PermitRootLogin no
 AllowUsers ct
 '''
 
-# Also declared globally in config/mise/config.dev.toml for use outside dots.
-[tools]
-"pypi:qmk" = "1.2.0"
+[bootstrap.directories."~/.local/state/com.codethread.backup-notes"]
 
 [bootstrap.macos.launchd.agents.backup-notes]
 program = "/bin/bash"
@@ -70,7 +68,6 @@ fi
 ]
 run_at_load = true
 start_interval = 900
-# Keep the old state directory so notification suppression survives the handoff.
 environment = { HOME = "{{ env.HOME }}", PATH = "/usr/bin:/bin:/usr/sbin:/sbin" }
 stdout_path = "~/.local/state/com.codethread.backup-notes/std.log"
 stderr_path = "~/.local/state/com.codethread.backup-notes/std.log"

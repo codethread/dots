@@ -1,4 +1,4 @@
-# Invoked by mise shell:prepare, using the same Zsh as interactive startup.
+# Invoked by boot/shell.sh, using the same Zsh as interactive startup.
 # Run as the user, without loading interactive plugins or prompt hooks.
 setopt ERR_EXIT PIPE_FAIL
 umask 077
@@ -6,7 +6,7 @@ source "$DOTFILES/config/zsh/completion-path.zsh"
 
 autoload -Uz compaudit compinit
 if ! compaudit; then
-  print -u2 'zsh: refusing to cache insecure completions; fix the paths above and run mise run shell:prepare again.'
+  print -u2 'zsh: refusing to cache insecure completions; fix the paths above and run mise bootstrap again.'
   exit 1
 fi
 

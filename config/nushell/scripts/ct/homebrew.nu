@@ -67,7 +67,7 @@ export def brewdrift [] {
 
 # Nudge: direct package installs should go through mise declarations.
 export def "brew install" [...args] {
-    print $"(ansi yellow)packages are managed by mise — add to .mise/conf.d/packages.toml or mise.<profile>.toml then run `mise -E <profile> run packages:apply`(ansi reset)"
+    print $"(ansi yellow)packages are managed by mise — add to .mise/conf.d/packages.toml or mise.<profile>.toml then run `mise -E <profile> bootstrap packages apply`(ansi reset)"
 }
 
 export def "brew tap" [...args] {

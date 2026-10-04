@@ -1,3 +1,33 @@
+# Shared dev/work services, loaded through the two profile fragment symlinks.
+[bootstrap.repos."~/dev/projects/cc-notify"]
+url = "git@github.com:codethread/cc-notify.git"
+
+[bootstrap.directories]
+"~/.local/state/com.codethread.cc-notify" = {}
+"~/.local/state/com.codethread.git-maintenance" = {}
+
+[bootstrap.macos.launchd.agents.cc-notify]
+program = "/opt/homebrew/bin/mise"
+args = [
+  "-C",
+  "{{ config_root }}",
+  "-E",
+  "{{ vars.service_profile }}",
+  "exec",
+  "--",
+  "bun",
+  "run",
+  "--cwd",
+  "{{ env.HOME }}/dev/projects/cc-notify",
+  "src/main.ts",
+]
+working_directory = "~/dev/projects/cc-notify"
+run_at_load = true
+keep_alive = true
+environment = { HOME = "{{ env.HOME }}", PATH = "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
+stdout_path = "~/.local/state/com.codethread.cc-notify/std.log"
+stderr_path = "~/.local/state/com.codethread.cc-notify/std.log"
+
 [bootstrap.macos.launchd.agents.git-maintenance-hourly]
 program = "{{ config_root }}/home/.local/bin/git-maintenance"
 args = ["hourly"]

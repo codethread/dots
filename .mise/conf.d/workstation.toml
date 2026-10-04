@@ -1,56 +1,30 @@
-# Workstation setup. Keep phases explicit so this never loads services.
+# Workstation setup.
 [bootstrap.directories]
 "~/dev/vendor" = {}
 "~/dev/learn" = {}
 "~/dev/projects" = {}
 "~/.local/cache/docs" = {}
 "~/.local/bin" = {}
+"/tmp/claude" = { mode = "1777" }
 
 [bootstrap.repos]
 "~/dev/vendor/nu_scripts" = { url = "https://github.com/nushell/nu_scripts.git" }
 "~/dev/vendor/gitwatch" = { url = "https://github.com/gitwatch/gitwatch.git" }
 "~/sync/Alfred" = { url = "git@github.com:codethread/alfred.git" }
 "~/sync/images" = { url = "git@github.com:codethread/images.git" }
+# Pi's repo-owned settings already load this checkout as a local package.
+"~/dev/projects/agents" = { url = "git@github.com:codethread/agents.git" }
+"~/dev/projects/hive" = { url = "git@github.com:codethread/hive.git" }
 
 [dotfiles."~/.local/bin/gitwatch"]
 source = "~/dev/vendor/gitwatch/gitwatch.sh"
 mode = "symlink"
 
-[tasks."repositories:apply"]
-description = "Apply managed files/directories and clone missing repos (private repos require SSH access)"
-run = [
-  "mise bootstrap files apply --yes",
-  "mise bootstrap repos apply --skip-dirty --yes",
-  'mise dot apply --yes "{{ env.HOME }}/.local/bin/gitwatch"',
-]
+[dotfiles."~/.claude/settings.json"]
+source = "../../templates/claude-settings.json.tera"
+mode = "template"
 
-[tasks."dotfiles:apply"]
-description = "Link repo-owned assets with dotty, without overwriting conflicts"
-env.DOTFILES = "{{ config_root }}"
-shell = "/bin/bash -c"
-run = '''
-set -euo pipefail
-nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --no-cache ($env.DOTFILES | path join "config/dotty/dotty.toml") | ignore'
-git -C "$DOTFILES" config core.hooksPath .githooks
-'''
-
-[tasks."shell:prepare"]
-description = "Generate Nushell init and audit/compile Zsh completions"
-env.DOTFILES = "{{ config_root }}"
-run = '"{{ config_root }}/home/.local/bin/mise-shell-prepare"'
-
-[tasks."workstation:apply"]
-description = "Apply packages, update/install supporting repos, link dotfiles, prepare shell caches, and apply macOS user defaults (no services)"
-run = ["mise run packages:apply", "mise run workstation:setup"]
-
-[tasks."workstation:setup"]
-description = "Apply user setup after packages are installed (no services)"
-run = [
-  "mise run system:apply",
-  "mise run repositories:apply",
-  "mise run hive:update",
-  "mise run agents:update",
-  "mise run dotfiles:apply",
-  "mise run shell:prepare",
-  "mise run macos:apply",
-]
+[vars]
+git_maintenance_repositories = ""
+claude_work_machine = false
+claude_enable_notify = false

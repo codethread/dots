@@ -19,7 +19,7 @@ This system defines how this dotfiles repo can be tested and developed from mult
 - Support both source-from-worktree tests and link/copy-to-temp tests.
 - Provide concrete smoke tests for high-risk tools: dotty, Nushell config, Neovim config, tmux sessions, and agent/CLI integration.
 - Fail loudly when a test would touch the real home directory or canonical dotfiles clone unexpectedly.
-- Keep full host system-layer applies (`system:apply`) and service loads explicitly outside normal concurrent test runs.
+- Keep full host system-layer applies (`mise bootstrap`) and service loads explicitly outside normal concurrent test runs.
 
 ### [SPEC-008-S1.3] Non-Goals
 
@@ -50,7 +50,7 @@ This system defines how this dotfiles repo can be tested and developed from mult
     - **Rationale:** Concurrent agents can observe each other's partial writes if they share `~/.local/share`, `~/.cache`, plugin directories, histories, tmux sockets, or compiled outputs. Isolation must happen before process start.
 
 - **Decision:** Host system-layer changes remain host-serialized and opt-in.
-    - **Rationale:** `system:apply` writes the login shell and `/etc/pam.d/sudo_local`, and service apply loads launchd agents; those mutate global host state and must not be part of default worktree tests.
+    - **Rationale:** `mise bootstrap` writes the login shell and `/etc/pam.d/sudo_local`, and service apply loads launchd agents; those mutate global host state and must not be part of default worktree tests.
 
 - **Decision:** Test commands should be grouped by risk level.
     - **Rationale:** Unit/import checks can run constantly. Integration tests that launch tmux, Neovim, or agent CLIs are heavier. Host-mutating checks require explicit manual confirmation.
@@ -151,7 +151,7 @@ fail loudly on host-path writes or command failure
 | `source` | Run tool directly against files in `$DOTFILES` using explicit config flags | Low |
 | `linked` | Run `dotty link` into isolated `HOME`/XDG, then run tool as installed | Low |
 | `copied` | Copy selected config subtree into temp XDG before running tool | Low |
-| `host` | Real `system:apply`, service apply, or app preference changes | High; manual opt-in only |
+| `host` | Real `mise bootstrap`, service apply, or app preference changes | High; manual opt-in only |
 
 ### [SPEC-008-S4.3] Result artifacts
 
@@ -216,7 +216,7 @@ Behavior:
 | tmux | `tmux -S <sandbox>/tmux.sock -f $DOTFILES/config/tmux/tmux.conf new-session -d -s dots-test -c $DOTFILES` then list/kill session |
 | dotty | `dotty link --no-cache $DOTFILES/config/dotty/test-dotty.toml` under sandbox HOME/XDG, then verify symlink targets stay under `$DOTFILES` |
 | oven | `cd $DOTFILES/oven && bun test` with cache/temp vars redirected |
-| Mise | `mise -C $DOTFILES -E dev tasks validate --errors-only` and `mise -C $DOTFILES -E dev config`; never run `system:apply` or service tasks |
+| Mise | `mise -C $DOTFILES -E dev tasks validate --errors-only` and `mise -C $DOTFILES -E dev config`; never run bootstrap or native apply commands against the real host |
 
 ## [SPEC-008-S6] 6. Implementation Phases
 

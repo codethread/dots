@@ -4,6 +4,7 @@ claude_work_machine = true
 git_maintenance_repositories = "~/pb/app/deals-light-ui"
 vscode_work_extensions = "rohit-gohri.format-code-action golang.go styled-components.vscode-styled-components stylelint.vscode-stylelint"
 
+# All work machines use the complete work package set.
 [bootstrap.packages]
 "brew:pandoc" = { os = "macos" }
 "brew:jira-cli" = { os = "macos" }
@@ -22,8 +23,3 @@ vscode_work_extensions = "rohit-gohri.format-code-action golang.go styled-compon
 "brew-cask:licecap" = { os = "macos" }
 "brew-cask:obs" = { os = "macos" }
 "brew-cask:proxyman" = { os = "macos" }
-
-# Also declared globally in config/mise/config.work.toml for use outside dots.
-[tools]
-vault = "latest"
-"github:cargo-lambda/cargo-lambda" = "latest"

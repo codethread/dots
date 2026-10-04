@@ -5,7 +5,7 @@ set -euo pipefail
 case "${1:-}" in
   install|update) action=$1 ;;
   -h|--help)
-    echo 'Usage: mise-llm install|update (via mise run llm:install or llm:update)'
+    echo 'Usage: mise-llm install|update (via mise bootstrap or mise run llm:update)'
     exit 0
     ;;
   *) echo 'Expected install or update (see --help)' >&2; exit 2 ;;
@@ -15,7 +15,7 @@ if [[ $# != 1 ]]; then
   exit 2
 fi
 
-: "${DOTFILES:?Run through the llm:install or llm:update mise task}"
+: "${DOTFILES:?Run through mise bootstrap or mise run llm:update}"
 local_bin="$HOME/.local/bin"
 pi_bin="$PI_CODING_AGENT_DIR/bin/pi"
 node_bin=$(dirname "$(node -p 'process.execPath')")

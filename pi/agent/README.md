@@ -10,8 +10,8 @@ Pi uses native MCP support. Keep `pi-mcp-adapter` out of `settings.json`: it dis
 
 Pi owns extension installation: `settings.json` declares `npm:pi-nvim` and `npm:@narumitw/pi-goal`, installed with their dependencies on startup.
 
-Use `mise run llm:install` to install missing agent CLIs and `mise run llm:update` to update them and Pi's extensions. See the [mise cheat sheet](../../docs/mise.md#update-llm-tools).
+Agent CLIs are installed by `boot/setup.sh` during `mise bootstrap`; use `mise run llm:update` to update them and Pi's extensions. The update task lives in [mise.toml](../../mise.toml).
 
-Pi's official managed launcher lives at `$PI_CODING_AGENT_DIR/bin/pi` (default `~/.pi/agent/bin/pi`), after `~/.local/bin` on PATH so the pies wrapper stays in control. `mise run agents:update` updates the shared checkout, installs its dependencies, and links the `pi`/`pies` wrappers; workstation setup includes this task. It does not restart a running Pies daemon.
+Pi's official managed launcher lives at `$PI_CODING_AGENT_DIR/bin/pi` (default `~/.pi/agent/bin/pi`), after `~/.local/bin` on PATH so the pies wrapper stays in control. `mise bootstrap --update` updates declared repositories, then setup builds and links the `pi`/`pies` wrappers. Plain `mise bootstrap` does not pull current branches. It does not restart a running Pies daemon.
 
 Architecture: [SPEC-001 agentic-config](../../devflow/specs/agentic-config.md).

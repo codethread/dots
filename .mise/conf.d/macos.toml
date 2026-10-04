@@ -1,8 +1,21 @@
-# Shared user macOS preferences.
-# Screenshot location is applied from $HOME in macos:apply; mise does not
-# template string values in [bootstrap.macos.defaults].
-# Apply with `mise run macos:apply`; do not use bare `mise bootstrap`.
+# Apple-supported sudo extension point (macOS 14+). Leave /etc/pam.d/sudo alone.
+# https://support.apple.com/en-us/109030
+# https://github.com/fabianishere/pam_reattach
+[bootstrap.user]
+login_shell = "/bin/zsh"
 
+[bootstrap.files."/etc/pam.d/sudo_local"]
+owner = "root"
+group = "wheel"
+mode = "0644"
+# Do not replace symlinks owned by another configuration manager.
+content = '''
+# Managed by dots/mise; optional reattach enables Touch ID inside tmux/screen.
+auth       optional       /opt/homebrew/lib/pam/pam_reattach.so
+auth       sufficient     pam_tid.so
+'''
+
+# Shared user macOS preferences.
 [bootstrap.macos.dock]
 autohide = true
 mru_spaces = false
@@ -46,33 +59,12 @@ ShowRemovableMediaOnDesktop = true
 [bootstrap.macos.defaults."com.apple.universalaccess"]
 reduceMotion = true
 
-[tasks."macos:apply"]
-description = "Apply user macOS defaults and relaunch Dock, Finder, and SystemUIServer"
-shell = "/bin/bash -c"
-run = '''
-set -euo pipefail
-[ "$(uname -s)" = Darwin ] || { echo 'macos defaults require macOS' >&2; exit 1; }
-mise bootstrap macos defaults apply --yes
-# mise does not template [bootstrap.macos.defaults] string values.
+# Defaults values are literal; use the hook for the user's screenshot path.
+[bootstrap.hooks]
+post-defaults = """
+set -e
 /usr/bin/defaults write com.apple.screencapture location "$HOME/Pictures"
 /usr/bin/killall SystemUIServer >/dev/null 2>&1 || true
 /usr/bin/killall Finder >/dev/null 2>&1 || true
 /usr/bin/killall Dock >/dev/null 2>&1 || true
-'''
-
-[tasks."macos:status"]
-description = "Show whether user macOS defaults match the mise declarations"
-shell = "/bin/bash -c"
-run = '''
-set -euo pipefail
-[ "$(uname -s)" = Darwin ] || { echo 'macos defaults require macOS' >&2; exit 1; }
-mise bootstrap macos defaults status
-expected="$HOME/Pictures"
-actual="$(/usr/bin/defaults read com.apple.screencapture location 2>/dev/null || true)"
-if [ "$actual" = "$expected" ]; then
-  printf 'com.apple.screencapture    location                            %s  %s  set\n' "$expected" "$actual"
-else
-  printf 'com.apple.screencapture    location                            %s  %s  differs\n' "$expected" "${actual:-unset}" >&2
-  exit 1
-fi
-'''
+"""

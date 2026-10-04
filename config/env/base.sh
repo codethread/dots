@@ -60,11 +60,7 @@ case "$USER" in
 esac
 # Default mise's config environment from identity; preserve explicit overrides.
 if [ "$CT_USER" = work ]; then
-  if [ "$USER" = adamhall ] && [ -d "$HOME/pb/adam.hall/workfiles" ]; then
-    MISE_ENV="${MISE_ENV:-work}"
-  else
-    MISE_ENV="${MISE_ENV:-work-boot}"
-  fi
+  MISE_ENV="${MISE_ENV:-work}"
   KSM_WORK=true
   IS_WORK=true
 else
@@ -194,7 +190,7 @@ ct_path_append_list "$ct_inherited_path"
 PATH=$ct_path
 ct_shell_candidate=${ct_inherited_shell:-zsh}
 # macOS owns Zsh. Normalize inherited Homebrew or other Zsh paths as well as
-# the default so terminals and tmux agree with shell:prepare, regardless of
+# the default so terminals and tmux agree with boot/shell.sh, regardless of
 # PATH order.
 if [ "$ct_os" = Darwin ] && [ "${ct_shell_candidate##*/}" = zsh ]; then
   ct_shell_candidate=/bin/zsh

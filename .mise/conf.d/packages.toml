@@ -69,7 +69,6 @@
 "brew:rsync" = { os = "macos" }
 "brew:graphviz" = { os = "macos" }
 "brew:imagemagick" = { os = "macos" }
-"brew:node" = { os = "macos" }
 "brew:mise" = { os = "macos" }
 "brew:gum" = { os = "macos" }
 "brew:sderosiaux/tap/launchdeck" = { os = "macos" }
@@ -98,32 +97,7 @@
 vscode_extensions = "cunbidun.flash-vscode haphazarddev.oil-code vscodevim.vim dbaeumer.vscode-eslint esbenp.prettier-vscode biomejs.biome davidsanders.search-under-cursor usernamehw.commands wraith13.unsaved-files-vscode formulahendry.auto-close-tag formulahendry.auto-rename-tag mvllow.rose-pine jgclark.vscode-todo-highlight kamikillerto.vscode-colorize rust-lang.rust-analyzer bradlc.vscode-tailwindcss ms-playwright.playwright"
 vscode_work_extensions = ""
 
-[tasks."packages:apply"]
-description = "Install tools, host packages, agent CLIs, Todoist, Playwright CLI, and VS Code extensions (no services)"
-run = [
-  "mise install",
-  "mise bootstrap packages apply --yes",
-  "mise run llm:install",
-  "mise run packages:todoist",
-  "mise run packages:npm",
-  "mise run packages:vscode",
-]
-
-[tasks."packages:status"]
-description = "Show host package installation state"
-run = "mise bootstrap packages status"
-
-[tasks."packages:npm"]
-description = "Install user-owned Playwright CLI with native Homebrew Node"
-env.NPM_CONFIG_PREFIX = "{{ env.HOME }}/.local"
-run = "/opt/homebrew/bin/node /opt/homebrew/bin/npm install --global @playwright/cli"
-
-[tasks."packages:vscode"]
-description = "Install shared and profile-specific VS Code extensions"
-shell = "/bin/bash -c"
-run = """
-set -euo pipefail
-for extension in {{ vars.vscode_extensions }} {{ vars.vscode_work_extensions }}; do
-  "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" --install-extension "$extension"
-done
-"""
+# Preserve the API-compatible codethread fork, not Homebrew's upstream CLI.
+[bootstrap.repos."~/dev/vendor/todoist"]
+url = "https://github.com/codethread/todoist.git"
+ref = "5d1c6df1a86729b193840d988fb38fa654b93bb9"

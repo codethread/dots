@@ -1,46 +1,19 @@
 min_version = "2026.9.15"
 
-# Mise-managed services and Claude settings are project-scoped; no activation needed.
-[tools]
-bun = "1.4.2"
-
-[tasks.boot]
-description = "Apply the user environment, build Oven, render settings, and start services"
-alias = "default"
-run = [
-  "mise run workstation:apply",
-  'mise -C "{{ config_root }}/oven" run verify',
-  "mise run claude:apply",
-  "mise run {% if vars.service_profile is defined %}services:apply{% else %}syncengine:apply{% endif %}",
-]
-
-# Native services and Claude settings declarations live in .mise/conf.d/*.toml.
-# Do not use a bare `mise bootstrap`: its LaunchAgents phase precedes tools.
-# services:apply explicitly prepares everything before loading any agent.
-[tasks."services:prepare"]
-description = "Prepare dependencies, credentials, logs, and filtered Git registrations"
-depends = ["syncengine:prepare"]
-env.GIT_MAINTENANCE_REPOSITORIES = "{{ vars.git_maintenance_repositories }}"
-run = [
-  '"{{ config_root }}/home/.local/bin/mise-services-prepare"',
-  '"{{ config_root }}/home/.local/bin/git-maintenance" register',
-  'if [ "{{ vars.service_profile }}" = dev ]; then /bin/mkdir -p "$HOME/.local/state/com.codethread.backup-notes"; fi',
-]
-
-[tasks."services:apply"]
-description = "Prepare then apply LaunchAgents; select -E dev or -E work"
-depends = ["services:prepare"]
-shell = "/bin/bash -c"
-run = '''
-for label in com.codethread.backup-notes com.codethread.syncengine com.codethread.cc-notify com.codethread.git-maintenance.hourly com.codethread.git-maintenance.daily com.codethread.git-maintenance.weekly; do
-  if /bin/launchctl print "gui/$(/usr/bin/id -u)/$label" >/dev/null 2>&1; then
-    echo "Old Nix agent still loaded: $label. Retire nix-darwin before applying mise services; see docs/mise.md#retiring-nix." >&2
-    exit 1
-  fi
-done
-mise bootstrap macos launchd-agents apply --yes
+# Resources are grouped in .mise/conf.d/; machine differences live in the overlays.
+# Native bootstrap owns convergence. Hooks handle only repo-specific setup.
+[bootstrap.hooks]
+# Raw LaunchAgents load before mise's normal tools phase, so install tools early.
+post-packages = ["mise install", '"{{ config_root }}/boot/check-system.sh"']
+post-repos = '''
+DOTFILES="{{ config_root }}" \
+VSCODE_EXTENSIONS="{{ vars.vscode_extensions }} {{ vars.vscode_work_extensions }}" \
+GIT_MAINTENANCE_REPOSITORIES="{{ vars.git_maintenance_repositories }}" \
+SYNCENGINE_PATH="{{ vars.syncengine_path }}" \
+mise exec -- "{{ config_root }}/boot/setup.sh"
 '''
 
-[tasks."services:status"]
-description = "Show LaunchAgent definitions and whether they are loaded"
-run = "mise bootstrap macos launchd-agents status"
+[tasks."llm:update"]
+description = "Update Claude, Cursor Agent, Codex, Pi, and Pi npm extensions"
+env.DOTFILES = "{{ config_root }}"
+run = '"{{ config_root }}/home/.local/bin/mise-llm" update'

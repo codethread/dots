@@ -7,7 +7,7 @@ PROFILE=""
 GIT_BRANCH="main"
 
 usage() {
-  echo 'Usage: boot.sh [-p|--profile <dev|personal|work|work-boot>] [-b|--branch <name>]'
+  echo 'Usage: boot.sh [-p|--profile <dev|personal|work>] [-b|--branch <name>]'
   echo ''
   echo '  -p, --profile  Mise profile (default: shared shell identity / MISE_ENV)'
   echo '  -b, --branch   Git branch to clone (default: main)'
@@ -33,7 +33,7 @@ while [ $# -gt 0 ]; do
 done
 
 case "$PROFILE" in
-  ''|dev|personal|work|work-boot) ;;
+  ''|dev|personal|work) ;;
   *) echo "Unknown mise profile: $PROFILE" >&2; exit 1 ;;
 esac
 if [ "$(uname -s)" != Darwin ] || [ "$(uname -m)" != arm64 ]; then
@@ -76,7 +76,7 @@ export XDG_CACHE_HOME="$HOME/.local/cache"
 if [ -n "$PROFILE" ]; then export MISE_ENV="$PROFILE"; fi
 source "$DOTFILES/config/env/base.sh"
 case "$MISE_ENV" in
-  dev|personal|work|work-boot) ;;
+  dev|personal|work) ;;
   *) echo "Unknown mise profile: $MISE_ENV" >&2; exit 1 ;;
 esac
 mkdir -p "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$XDG_CACHE_HOME"
@@ -84,7 +84,7 @@ mkdir -p "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$XDG_CACHE_HOME"
 echo "Setting up workstation (profile: $MISE_ENV, branch: $GIT_BRANCH)"
 echo 'If this script fails it can be rerun.'
 /opt/homebrew/bin/mise trust "$DOTFILES/mise.toml"
-/opt/homebrew/bin/mise -C "$DOTFILES" -E "$MISE_ENV" run boot
+/opt/homebrew/bin/mise -C "$DOTFILES" -E "$MISE_ENV" bootstrap
 
 # Optional first-boot integration checks and editor plugin setup.
 nu \
@@ -92,7 +92,4 @@ nu \
   --config "$DOTFILES/config/nushell/config.nu" \
   --commands 'boot machine'
 
-if [ "$MISE_ENV" = work-boot ]; then
-  echo "Next: install workfiles at $HOME/pb/adam.hall/workfiles, then run mise -E work run boot."
-fi
 echo 'Complete. Open a new shell.'

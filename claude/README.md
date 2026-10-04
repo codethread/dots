@@ -8,20 +8,18 @@ Custom directories (those not carrying Claude Code significance like `agents/` o
 
 ## Settings Source of Truth
 
-The global `~/.claude/settings.json` is a **regular file rendered by mise** from `templates/claude-settings.json.tera`. Edit the template, then apply it; edits to the generated file are overwritten on the next apply. The resource and tasks live in `.mise/conf.d/claude-code.toml`. The `.claude/settings.json` in this repo is project-local settings (for this repo only) and `.claude/settings.local.json` is the local override.
+The global `~/.claude/settings.json` is a **regular file rendered by mise** from `templates/claude-settings.json.tera`. Edit the template, then apply it; edits to the generated file are overwritten on the next apply. The resource lives in `.mise/conf.d/workstation.toml`. The `.claude/settings.json` in this repo is project-local settings (for this repo only) and `.claude/settings.local.json` is the local override.
 
 ### Apply
 
 From the dots checkout (mise 2026.9.15 or newer):
 
 ```nu
-mise -E dev dot diff ~/.claude/settings.json
-mise -E dev bootstrap files apply --dry-run
-mise -E dev run claude:apply
-mise -E dev run claude:status
+mise dot apply ~/.claude/settings.json
+mise dot status
 ```
 
-Use `-E work` for work-only marketplaces/plugins. Without an overlay, the personal/dev plugin set is used. `claude:apply` also creates `/tmp/claude` with mode `1777`; rerun it if the temporary directory is removed. Bash is resolved from PATH when rendering instead of embedding a Nix store path.
+Use `-E work` for work-only marketplaces/plugins. Without an overlay, the personal/dev plugin set is used. `/tmp/claude` is declared in `.mise/conf.d/workstation.toml` and prepared by the native files phase, not `mise dot apply`. Bash is resolved from PATH when rendering.
 
 Other Claude assets remain managed by dotty; project-local settings and local overrides are untouched.
 
@@ -33,14 +31,14 @@ iOS push notifications via Pushover, triggered by Claude Code hooks.
 - **API**: `POST /notify`, `POST /activity`, `GET /toggle`, `GET /health`
 - **Gated by**: mise variable `claude_enable_notify` (defaults to `false`, as before)
 
-To enable the plugin, add this to the checkout's untracked `mise.local.toml`, then rerun `claude:apply`:
+To enable the plugin, add this to the checkout's untracked `mise.local.toml`, then rerun `mise dot apply ~/.claude/settings.json`:
 
 ```toml
 [vars]
 claude_enable_notify = true
 ```
 
-The plugin opt-in is independent of daemon ownership. Prepare/apply the daemon with `mise -E dev run services:apply` (or `work`); see [mise services](../devflow/specs/mise-services.md).
+The plugin opt-in is independent of daemon ownership. Prepare/apply the daemon with `mise bootstrap`; see [mise services](../devflow/specs/mise-services.md).
 
 ## Agents
 

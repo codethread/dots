@@ -1,3 +1,3 @@
-# Keep aligned with the [tools] section of mise.dev.toml.
+# Shared by global mise and the matching project conf.d symlink.
 [tools]
 "pypi:qmk" = "1.2.0"

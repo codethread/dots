@@ -35,7 +35,7 @@ A non-login child does not reconstruct this baseline. Its inherited PATH, includ
 
 Known user/tool roots remain in PATH even before they exist. Installing into one of those roots therefore works in the current shell; stale nonexistent entries are harmless and intentionally tolerated.
 
-`~/.local/bin` remains first, preserving custom agent wrappers and native CLIs. `$PI_CODING_AGENT_DIR/bin` follows for Pi's official managed launcher, then mise shims, then Homebrew (including GNU coreutils), then other tool roots. mise supplies the default Node. Global mise configuration is linked from `config/mise/`, separate from project-scoped workstation and service tasks. `JAVA_HOME` defaults to mise's stable `installs/java/temurin-21` symlink; explicit values are preserved, and `mise exec`/tasks supply the selected project JDK. Java binaries are selected through mise shims rather than an extra JDK PATH entry.
+`~/.local/bin` remains first, preserving custom agent wrappers and native CLIs. `$PI_CODING_AGENT_DIR/bin` follows for Pi's official managed launcher, then mise shims, then Homebrew (including GNU coreutils), then other tool roots. mise supplies the default Node. Global mise configuration is linked from `config/mise/`, separate from project-scoped bootstrap resources. `JAVA_HOME` defaults to mise's stable `installs/java/temurin-21` symlink; explicit values are preserved, and `mise exec`/tasks supply the selected project JDK. Java binaries are selected through mise shims rather than an extra JDK PATH entry.
 
 ## [SPEC-009-S3a] SHELL Contract
 
@@ -43,7 +43,7 @@ On macOS, the base uses `/bin/zsh` when `SHELL` is unset or names Zsh, including
 
 ## [SPEC-009-S3b] Mise Environment
 
-The base selects mise's machine package profile: `personal` for `codethread`, `work` for `adamhall` with `$HOME/pb/adam.hall/workfiles`, `work-boot` for other work accounts, and `dev` otherwise. An existing non-empty `MISE_ENV` is preserved; an explicit CLI `-E` still overrides the selection. Personal and work-boot machines apply packages only, not the dev/work services.
+The base selects mise's machine package profile: `personal` for `codethread`, `work` for work accounts, and `dev` otherwise. An existing non-empty `MISE_ENV` is preserved; an explicit CLI `-E` still overrides the selection. Personal machines apply shared packages and syncengine only; work and dev machines also load their profile-specific services.
 
 ### [SPEC-009-S3c] Native mise Activation
 
@@ -82,13 +82,13 @@ The base enables export-all only while loading, then restores the caller's setti
 
 ## Zsh completion lifecycle
 
-`mise -E <profile> run shell:prepare` generates the completion cache after packages and dotfile links are installed. `boot/boot.sh` runs it as part of `mise run boot`, so the scan reflects the current system. The helper inherits the environment supplied by its caller; it does not source the base itself.
+`boot/shell.sh`, called by the bootstrap setup hook, generates the completion cache after packages and dotfile links are installed. `mise bootstrap` runs the hook, so the scan reflects the current system. The helper inherits the environment supplied by its caller; it does not source the base itself.
 
 `config/zsh/completion-path.zsh` is shared by `config/zsh/cache-completions.zsh` and interactive startup. It keeps the running Zsh's built-in function directories and adds Homebrew site completions, not another Zsh installation's versioned functions. Preparation explicitly uses macOS `/bin/zsh`, matching terminal/tmux startup. It audits those paths as the user, builds a fresh dump even if the completion file count is unchanged, and atomically replaces each cache file under `$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION`. Stale dumps for other Zsh versions are removed after publication. Insecure paths fail preparation without replacing the old cache.
 
-Interactive shells use `compinit -C`: completion discovery and security checks happen during explicit preparation, not on every launch. Completion files remain live on disk. Rerun `shell:prepare` after macOS/package upgrades. Missing caches produce a warning and audited, uncached initialization.
+Interactive shells use `compinit -C`: completion discovery and security checks happen during explicit preparation, not on every launch. Completion files remain live on disk. Rerun `mise bootstrap` after macOS/package upgrades. Missing caches produce a warning and audited, uncached initialization.
 
-Nushell sources Atuin and Carapace init files generated into `~/.local/cache/dots/shell`, and imports the mise activation module generated at interactive startup ([SPEC-009-S3c]). Interactive Bash and Zsh evaluate the native mise hook. The `mise-llm` helper, `mise-shell-prepare`, and Carapace bridge all preserve the environment supplied by their caller rather than sourcing the base.
+Nushell sources Atuin and Carapace init files generated into `~/.local/cache/dots/shell`, and imports the mise activation module generated at interactive startup ([SPEC-009-S3c]). Interactive Bash and Zsh evaluate the native mise hook. The `mise-llm` helper, `boot/shell.sh`, and Carapace bridge all preserve the environment supplied by their caller rather than sourcing the base.
 
 Starship, fzf, and Atuin init scripts are cached separately by resolved executable path. Startup generates into temporary files and publishes the init script and path stamp only after the generator succeeds. A failed generator returns failure without sourcing partial output or replacing the previous cache, so the next launch retries. Empty init caches are regenerated as well.
 

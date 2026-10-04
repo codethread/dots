@@ -105,7 +105,7 @@ if [[ -r "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION" ]]; then
   # Audited and compiled by mise; deliberately no per-shell rescan.
   compinit -C -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
 else
-  print -u2 'zsh: completion cache missing; run mise run shell:prepare from dots to generate it.'
+  print -u2 'zsh: completion cache missing; run mise bootstrap from dots to generate it.'
   # Safe before the first preparation or after cache deletion: audit, but do not
   # write a replacement cache or skip security checks on an unprepared path.
   compinit -D

@@ -1,7 +1,0 @@
-# Both work bootstrap usernames use this package environment.
-[bootstrap.packages]
-"brew:bitwarden-cli" = { os = "macos" }
-"brew:glab" = { os = "macos" }
-"brew:podman" = { os = "macos" }
-"brew:podman-compose" = { os = "macos" }
-"brew-cask:terminal-browser" = { os = "macos" }

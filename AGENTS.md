@@ -2,11 +2,11 @@
 
 ## Bootstrap Flow
 
-New machine → `boot/boot.sh`, which installs Homebrew and mise, clones dots, runs `mise run boot`, then checks Full Disk Access, builds Oven, and syncs Neovim plugins. Existing machine → `make` (`make boot` and `make all` are the same path): it applies the user environment, builds Oven, renders Claude settings, and applies services. The shell selects the machine's mise profile via `MISE_ENV`, and `boot.sh -p` sets it explicitly. Optional local tool rebuild → `make build`. The previous Nix system switch is gone: there is no `make system`, `nrs`, or `nfu`.
+New machine → `boot/boot.sh`: install Homebrew/mise, clone dots, initialize the shared environment, run `mise bootstrap`, then check Full Disk Access and sync Neovim plugins. Existing machine → `mise bootstrap` (also `make`). Preview with `mise bootstrap --dry-run`; inspect with `mise bootstrap status`. `MISE_ENV` selects the machine profile, `-E` overrides it, and `boot.sh -p` sets it explicitly.
 
-Global tools live in `config/mise/`; project tasks and machine resources live in `.mise/conf.d/` and the root profile overlays. See `docs/mise.md`, including the one-time [Nix retirement](docs/mise.md#retiring-nix) runbook for machines that predate the migration.
+`llm:update` is the only custom task. Tools live in `config/mise/`, reused by project fragment symlinks. `.mise/conf.d/` groups packages, workstation resources, macOS settings, and services; `.miserc.toml` enables environment-suffixed fragments. Dev/work service fragments share `.mise/services.toml`. Root profile overlays contain machine differences.
 
-cc-notify and Git maintenance are owned separately by `.mise/conf.d/*.toml`, with tools/shared tasks in root `mise.toml` and explicit `dev`/`work` overlays. Load the mise skill before changing them; use `mise -E dev run services:apply` (or `work`), not bare `mise bootstrap`, so preparation finishes before agents load. See `devflow/specs/mise-services.md` for migration and verification. Apply from a durable checkout: generated agents reference its absolute path.
+Load the mise skill before changing bootstrap. Root hooks install tools early, check sudo prerequisites, and run `boot/setup.sh` after repository provisioning, before native LaunchAgents load. Do not move preparation into a final bootstrap task: that runs too late. Full bootstrap is the safe setup path; native subsystem applies require already-prepared dependencies. See `devflow/specs/mise-infra.md` and `devflow/specs/mise-services.md`. Apply from a durable checkout: jobs embed its path. Existing machines still on Nix must follow `docs/nix-to-mise.md` first.
 
 ## Directories
 
@@ -21,8 +21,8 @@ cc-notify and Git maintenance are owned separately by `.mise/conf.d/*.toml`, wit
 ### Makefile (Root)
 
 ```nu
-make         # Apply user environment, tools, settings, and services (same as `make boot`)
-make boot    # Explicit boot target
+make         # Run native mise bootstrap
+make boot    # Same native bootstrap path
 make link    # Link dotfiles via dotty
 make build   # Install/check/build oven tools through `mise -C oven run verify`
 ```
@@ -86,10 +86,10 @@ Validate the mise configuration and task graph without applying host changes:
 ```bash
 mise -E dev tasks validate --errors-only
 mise -E dev bootstrap packages apply --dry-run
-mise -E dev run system:status
+mise -E dev bootstrap status
 ```
 
-`system:apply` is host-mutating (login shell and `/etc/pam.d/sudo_local`) and requires nix-darwin ownership to be retired first (before uninstalling the Nix store).
+`mise bootstrap` is host-mutating. Its post-packages hook checks the stock PAM include, installed pam-reattach, and absence of a foreign sudo_local symlink before native file convergence. Run `boot/check-system.sh` before any manual managed-file apply too. Use only read-only plans/status during validation unless host changes are explicitly authorized.
 
 ### Nushell
 

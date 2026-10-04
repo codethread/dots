@@ -7,7 +7,7 @@ all: boot
 
 boot:
 	@printf '%s\n' '==> boot'
-	@mise -C "$(ROOT)" run boot
+	@mise -C "$(ROOT)" bootstrap
 
 link:
 	@printf '%s\n' '==> link'
