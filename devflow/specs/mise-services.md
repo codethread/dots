@@ -10,7 +10,7 @@ Native `mise bootstrap` prepares and applies user LaunchAgents. Use a durable ch
 | dev/work | cc-notify, hourly/daily/weekly Git maintenance |
 | dev only | backup-notes                                   |
 
-Syncengine lives in `.mise/conf.d/services.toml`. Dev/work fragments are symlinks to `.mise/services.toml`; `.miserc.toml` enables environment-suffixed fragments. Root profile overlays supply maintenance repositories and dev's backup job. Each complete agent declaration has one source.
+Syncengine is declared in root `mise.toml`. The dev/work entrypoints `.mise/conf.d/services.dev.toml` and `.mise/conf.d/services.work.toml` are symlinks to `.mise/dev-work-services.toml`; that reusable source is not automatically loaded. `.miserc.toml` enables the environment-suffixed entrypoints, so personal excludes these services. Root profile overlays supply maintenance repositories and dev's backup job. Each complete agent declaration has one source.
 
 ```nu
 mise -E work bootstrap --dry-run

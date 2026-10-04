@@ -79,7 +79,7 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 
 ### [SPEC-001-S2.2] Package Provisioning
 
-- Mise provides the Node runtime; `.mise/conf.d/packages.toml` installs the user-prefix Playwright CLI with that runtime.
+- Mise provides the Node runtime; root `mise.toml` installs the user-prefix Playwright CLI with that runtime.
 - `mise.toml` provides the `llm:update` task, while `boot/setup.sh` invokes `home/.local/bin/mise-llm install` during bootstrap for official Claude, Cursor (`cursor-agent` and `agent`), Codex, and Pi installers. `llm:update` updates them and Pi's npm extensions, stopping on failure.
 - Pi installs missing `npm:pi-nvim` and `npm:@narumitw/pi-goal` extensions from `pi/agent/settings.json`.
 
@@ -141,7 +141,7 @@ The `config` project covers `config/codex/` → `~/.config/codex/` as part of th
 
 ### [SPEC-001-S4.1] Settings Generation (`templates/claude-settings.json.tera`)
 
-Mise owns `~/.claude/settings.json` as a rendered regular file via `.mise/conf.d/workstation.toml`; dotty excludes it. Apply with `mise dot apply ~/.claude/settings.json`. `/tmp/claude` is declared in `.mise/conf.d/workstation.toml` and prepared by the native files phase, not `mise dot apply`. See [Claude README](../../claude/README.md) for the apply workflow.
+Mise owns `~/.claude/settings.json` as a rendered regular file via root `mise.toml`; dotty excludes it. Apply with `mise dot apply ~/.claude/settings.json`. `/tmp/claude` is declared in root `mise.toml` and prepared by the native files phase, not `mise dot apply`. See [Claude README](../../claude/README.md) for the apply workflow.
 
 **Permissions:** The template preserves the previous allow/deny lists, `acceptEdits` default mode, and additional directories (`$DOTFILES`, `~/.local`, `~/.claude`, `~/dev`, `~/pb`). Secret-file reads, plan/worktree/cron tools, and other unwanted tools remain denied.
 
@@ -223,7 +223,7 @@ Direct `pi` invocation with shared repo-aware configuration:
 
 - `mise.toml`, `boot/setup.sh`, and `home/.local/bin/mise-llm`: official agent CLI installation and updates.
 - `config/mise/config.toml`: runtimes, TypeScript and its language server.
-- `.mise/conf.d/packages.toml`: user-prefix Playwright CLI.
+- `mise.toml`: user-prefix Playwright CLI.
 - `.mise/conf.d/tools.toml`: project link to the global tools file, so first bootstrap does not require installed global config.
 - `pi/agent/settings.json`: Pi-owned npm extension declarations.
 

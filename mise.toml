@@ -1,6 +1,15 @@
 min_version = "2026.9.15"
 
-# Resources are grouped in .mise/conf.d/; machine differences live in the overlays.
+# Shared bootstrap resources live here; machine differences live in mise.<profile>.toml.
+# .mise/conf.d/ only reuses global tools and dev/work services.
+[vars]
+vscode_extensions = "cunbidun.flash-vscode haphazarddev.oil-code vscodevim.vim dbaeumer.vscode-eslint esbenp.prettier-vscode biomejs.biome davidsanders.search-under-cursor usernamehw.commands wraith13.unsaved-files-vscode formulahendry.auto-close-tag formulahendry.auto-rename-tag mvllow.rose-pine jgclark.vscode-todo-highlight kamikillerto.vscode-colorize rust-lang.rust-analyzer bradlc.vscode-tailwindcss ms-playwright.playwright"
+vscode_work_extensions = ""
+git_maintenance_repositories = ""
+claude_work_machine = false
+claude_enable_notify = false
+syncengine_path = "{{ env.HOME }}/.local/bin:/opt/homebrew/opt/coreutils/libexec/gnubin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin"
+
 # Native bootstrap owns convergence. Hooks handle only repo-specific setup.
 [bootstrap.hooks]
 # Raw LaunchAgents load before mise's normal tools phase, so install tools early.
@@ -13,7 +22,241 @@ SYNCENGINE_PATH="{{ vars.syncengine_path }}" \
 mise exec -- "{{ config_root }}/boot/setup.sh"
 '''
 
+# Defaults values are literal; use the hook for the user's screenshot path.
+post-defaults = """
+set -e
+/usr/bin/defaults write com.apple.screencapture location "$HOME/Pictures"
+/usr/bin/killall SystemUIServer >/dev/null 2>&1 || true
+/usr/bin/killall Finder >/dev/null 2>&1 || true
+/usr/bin/killall Dock >/dev/null 2>&1 || true
+"""
+
 [tasks."llm:update"]
 description = "Update Claude, Cursor Agent, Codex, Pi, and Pi npm extensions"
 env.DOTFILES = "{{ config_root }}"
 run = '"{{ config_root }}/home/.local/bin/mise-llm" update'
+
+# Shared macOS host packages. Apply explicitly; never prune during bootstrap.
+[bootstrap.brew.taps]
+"codethread/wktree" = "https://github.com/codethread/wktree"
+
+[bootstrap.packages]
+# Shared CLI packages.
+# python-yq is the jq wrapper; tree-sitter-cli is the parser generator.
+"brew:nushell" = { os = "macos" }
+# Scripts such as qlock require Bash 5+; macOS ships Bash 3.2.
+"brew:bash" = { os = "macos" }
+"brew:git" = { os = "macos" }
+"brew:luarocks" = { os = "macos" }
+"brew:neovim" = { os = "macos" }
+"brew:tmux" = { os = "macos" }
+"brew:smug" = { os = "macos" }
+"brew:antidote" = { os = "macos" }
+"brew:atuin" = { os = "macos" }
+"brew:starship" = { os = "macos" }
+"brew:carapace" = { os = "macos" }
+"brew:fzf" = { os = "macos" }
+"brew:sk" = { os = "macos" }
+"brew:zellij" = { os = "macos" }
+"brew:poppler" = { os = "macos" }
+"brew:resvg" = { os = "macos" }
+"brew:coreutils" = { os = "macos" }
+"brew:fswatch" = { os = "macos" }
+"brew:entr" = { os = "macos" }
+"brew:ffmpeg" = { os = "macos" }
+"brew:fd" = { os = "macos" }
+"brew:ripgrep" = { os = "macos" }
+"brew:jq" = { os = "macos" }
+"brew:python-yq" = { os = "macos" }
+"brew:dasel" = { os = "macos" }
+"brew:sd" = { os = "macos" }
+"brew:tree" = { os = "macos" }
+"brew:btop" = { os = "macos" }
+"brew:dust" = { os = "macos" }
+"brew:stylua" = { os = "macos" }
+"brew:tree-sitter-cli" = { os = "macos" }
+"brew:wakatime-cli" = { os = "macos" }
+"brew:prettierd" = { os = "macos" }
+"brew:just" = { os = "macos" }
+"brew:fx" = { os = "macos" }
+"brew:tokei" = { os = "macos" }
+"brew:grc" = { os = "macos" }
+"brew:taplo" = { os = "macos" }
+"brew:gh" = { os = "macos" }
+"brew:git-lfs" = { os = "macos" }
+"brew:lazygit" = { os = "macos" }
+"brew:lazydocker" = { os = "macos" }
+"brew:difftastic" = { os = "macos" }
+"brew:yt-dlp" = { os = "macos" }
+"brew:ast-grep" = { os = "macos" }
+"brew:vivid" = { os = "macos" }
+"brew:pam-reattach" = { os = "macos" }
+# Shared desktop and shell tools.
+"brew:agent-browser" = { os = "macos" }
+"brew:pngpaste" = { os = "macos" }
+"brew:yazi" = { os = "macos" }
+"brew:flock" = { os = "macos" }
+"brew:clojure" = { os = "macos" }
+
+"brew:dicklesworthstone/tap/br" = { os = "macos" }
+"brew:dicklesworthstone/tap/bv" = { os = "macos" }
+"brew:morantron/tmux-fingers/tmux-fingers" = { os = "macos" }
+"brew:codethread/wktree/wktree" = { os = "macos" }
+"brew:BRO3886/tap/ical" = { os = "macos" }
+"brew:ical-buddy" = { os = "macos" }
+"brew:rsync" = { os = "macos" }
+"brew:graphviz" = { os = "macos" }
+"brew:imagemagick" = { os = "macos" }
+"brew:mise" = { os = "macos" }
+"brew:gum" = { os = "macos" }
+"brew:sderosiaux/tap/launchdeck" = { os = "macos" }
+
+# Shared fonts (unpatched families + symbols).
+"brew-cask:font-fira-code" = { os = "macos" }
+"brew-cask:font-victor-mono" = { os = "macos" }
+"brew-cask:font-symbols-only-nerd-font" = { os = "macos" }
+
+"brew-cask:kitty" = { os = "macos" }
+"brew-cask:ghostty" = { os = "macos" }
+"brew-cask:terminal-browser" = { os = "macos" }
+"brew-cask:nikitabobko/tap/aerospace" = { os = "macos" }
+"brew-cask:alfred" = { os = "macos" }
+"brew-cask:spotify" = { os = "macos" }
+"brew-cask:todoist-app" = { os = "macos" }
+"brew-cask:obsidian" = { os = "macos" }
+"brew-cask:1password" = { os = "macos" }
+"brew-cask:1password-cli" = { os = "macos" }
+"brew-cask:google-chrome" = { os = "macos" }
+"brew-cask:ungoogled-chromium" = { os = "macos" }
+"brew-cask:visual-studio-code" = { os = "macos" }
+"brew-cask:zed" = { os = "macos" }
+"brew-cask:opensuperwhisper" = { os = "macos" }
+
+# Workstation setup.
+[bootstrap.directories]
+"~/dev/vendor" = {}
+"~/dev/learn" = {}
+"~/dev/projects" = {}
+"~/.local/cache/docs" = {}
+"~/.local/bin" = {}
+"/tmp/claude" = { mode = "1777" }
+
+[bootstrap.repos]
+"~/dev/vendor/nu_scripts" = { url = "https://github.com/nushell/nu_scripts.git" }
+"~/dev/vendor/gitwatch" = { url = "https://github.com/gitwatch/gitwatch.git" }
+"~/sync/Alfred" = { url = "git@github.com:codethread/alfred.git" }
+"~/sync/images" = { url = "git@github.com:codethread/images.git" }
+# Pi's repo-owned settings already load this checkout as a local package.
+"~/dev/projects/agents" = { url = "git@github.com:codethread/agents.git" }
+"~/dev/projects/hive" = { url = "git@github.com:codethread/hive.git" }
+
+# Preserve the API-compatible codethread fork, not Homebrew's upstream CLI.
+[bootstrap.repos."~/dev/vendor/todoist"]
+url = "https://github.com/codethread/todoist.git"
+ref = "5d1c6df1a86729b193840d988fb38fa654b93bb9"
+
+[dotfiles."~/.local/bin/gitwatch"]
+source = "~/dev/vendor/gitwatch/gitwatch.sh"
+mode = "symlink"
+
+[dotfiles."~/.claude/settings.json"]
+source = "templates/claude-settings.json.tera"
+mode = "template"
+
+# Apple-supported sudo extension point (macOS 14+). Leave /etc/pam.d/sudo alone.
+# https://support.apple.com/en-us/109030
+# https://github.com/fabianishere/pam_reattach
+[bootstrap.user]
+login_shell = "/bin/zsh"
+
+[bootstrap.files."/etc/pam.d/sudo_local"]
+owner = "root"
+group = "wheel"
+mode = "0644"
+# Do not replace symlinks owned by another configuration manager.
+content = '''
+# Managed by dots/mise; optional reattach enables Touch ID inside tmux/screen.
+auth       optional       /opt/homebrew/lib/pam/pam_reattach.so
+auth       sufficient     pam_tid.so
+'''
+
+# Shared user macOS preferences.
+[bootstrap.macos.dock]
+autohide = true
+mru_spaces = false
+orientation = "left"
+tilesize = 50
+
+[bootstrap.macos.finder]
+preferred_view_style = "list"
+show_all_files = true
+show_extensions_warning = false
+show_status_bar = true
+sort_folders_first = true
+
+[bootstrap.macos.keyboard]
+initial_key_repeat = 12
+key_repeat = 2
+press_and_hold = false
+
+[bootstrap.macos.defaults.NSGlobalDomain]
+AppleShowAllExtensions = true
+AppleShowScrollBars = "WhenScrolling"
+NSAutomaticWindowAnimationsEnabled = false
+NSNavPanelExpandedStateForSaveMode = true
+
+[bootstrap.macos.defaults."com.apple.dock"]
+"expose-animation-duration" = 0.0
+"expose-group-apps" = true
+"static-only" = true
+
+[bootstrap.macos.defaults."com.apple.finder"]
+FXDefaultSearchScope = "SCcf"
+ShowExternalHardDrivesOnDesktop = true
+ShowHardDrivesOnDesktop = false
+ShowRecentTags = false
+ShowRemovableMediaOnDesktop = true
+"_FXShowPosixPathInTitle" = false
+
+[bootstrap.macos.defaults."com.apple.spaces"]
+"spans-displays" = false
+
+[bootstrap.macos.defaults."com.apple.universalaccess"]
+reduceMotion = true
+
+# Shared all-profile syncengine service.
+[bootstrap.directories."~/.local/state/com.codethread.syncengine"]
+
+[bootstrap.macos.launchd.agents.syncengine]
+program = "/bin/bash"
+args = ["-c", '''
+echo "Starting sync"
+
+directory="$HOME/sync"
+
+LOGDIR="$HOME/.local/state/com.codethread.syncengine"
+mkdir -p "$LOGDIR"
+mkdir -p "$directory"
+
+# An empty sync directory has no watchers.
+shopt -s nullglob
+for file in "$directory"/*; do
+  logfile="$LOGDIR/${file##*/}.log"
+  gitwatch -r origin -R "$file" >"$logfile" 2>&1 &
+  echo "Running syncengine on $file and logging to $logfile"
+done
+
+file="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Documents/Notes"
+if [ -d "$file" ]; then
+  logfile="$LOGDIR/notes.log"
+  gitwatch -r origin -R "$file" >"$logfile" 2>&1 &
+  echo "Running syncengine on $file and logging to $logfile"
+fi
+
+wait
+''']
+run_at_load = true
+# Start at login; no automatic restart after exit.
+environment = { HOME = "{{ env.HOME }}", PATH = "{{ vars.syncengine_path }}" }
+stdout_path = "~/.local/state/com.codethread.syncengine/std.log"
+stderr_path = "~/.local/state/com.codethread.syncengine/std.log"

@@ -8,7 +8,7 @@ Custom directories (those not carrying Claude Code significance like `agents/` o
 
 ## Settings Source of Truth
 
-The global `~/.claude/settings.json` is a **regular file rendered by mise** from `templates/claude-settings.json.tera`. Edit the template, then apply it; edits to the generated file are overwritten on the next apply. The resource lives in `.mise/conf.d/workstation.toml`. The `.claude/settings.json` in this repo is project-local settings (for this repo only) and `.claude/settings.local.json` is the local override.
+The global `~/.claude/settings.json` is a **regular file rendered by mise** from `templates/claude-settings.json.tera`. Edit the template, then apply it; edits to the generated file are overwritten on the next apply. The resource lives in root `mise.toml`. The `.claude/settings.json` in this repo is project-local settings (for this repo only) and `.claude/settings.local.json` is the local override.
 
 ### Apply
 
@@ -19,7 +19,7 @@ mise dot apply ~/.claude/settings.json
 mise dot status
 ```
 
-Use `-E work` for work-only marketplaces/plugins. Without an overlay, the personal/dev plugin set is used. `/tmp/claude` is declared in `.mise/conf.d/workstation.toml` and prepared by the native files phase, not `mise dot apply`. Bash is resolved from PATH when rendering.
+Use `-E work` for work-only marketplaces/plugins. Without an overlay, the personal/dev plugin set is used. `/tmp/claude` is declared in root `mise.toml` and prepared by the native files phase, not `mise dot apply`. Bash is resolved from PATH when rendering.
 
 Other Claude assets remain managed by dotty; project-local settings and local overrides are untouched.
 

@@ -18,7 +18,6 @@ vscode_work_extensions = "rohit-gohri.format-code-action golang.go styled-compon
 "brew:podman" = { os = "macos" }
 "brew:podman-compose" = { os = "macos" }
 "brew:cocoapods" = { os = "macos" }
-"brew-cask:terminal-browser" = { os = "macos" }
 "brew-cask:figma" = { os = "macos" }
 "brew-cask:licecap" = { os = "macos" }
 "brew-cask:obs" = { os = "macos" }

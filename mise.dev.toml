@@ -7,7 +7,6 @@ git_maintenance_repositories = "~/dev/projects/notes/vault"
 "brew:dos2unix" = { os = "macos" }
 "brew:podman" = { os = "macos" }
 "brew:podman-compose" = { os = "macos" }
-"brew-cask:terminal-browser" = { os = "macos" }
 
 # Configure Apple's SSH server; Remote Login stays manual in System Settings.
 [bootstrap.files."/etc/ssh/sshd_config.d/090-dots.conf"]

@@ -8,18 +8,21 @@
 
 Mise owns the Apple Silicon macOS workstation: packages, managed files, repositories, defaults, user settings, and LaunchAgents. Dotty links repository assets and renders the structured Codex template. Shells activate mise natively.
 
-| Configuration                   | Responsibility                                                |
-| ------------------------------- | ------------------------------------------------------------- |
-| `mise.toml`                     | Bootstrap hooks and the single `llm:update` task              |
-| `.mise/conf.d/packages.toml`    | Shared host packages, VS Code extensions, pinned Todoist repo |
-| `.mise/conf.d/workstation.toml` | Directories, supporting repos, gitwatch link, Claude settings |
-| `.mise/conf.d/macos.toml`       | Login shell, sudo extension, user preferences                 |
-| `.mise/conf.d/services.toml`    | Shared syncengine agent                                       |
-| `.mise/services.toml`           | Shared dev/work cc-notify and Git-maintenance agents          |
-| `config/mise/config*.toml`      | Global tools, reused through project fragment symlinks        |
-| `mise.<profile>.toml`           | Machine packages, variables, and dev-only resources           |
+## Configuration locations
 
-`.miserc.toml` enables `env_conf_d`: `services.dev.toml` and `services.work.toml` link to the same service declarations, while `tools.dev.toml` and `tools.work.toml` reuse global profile tools. Personal does not load the dev/work-only service declarations. There are no duplicated tool lists or scoped-config overrides.
+There are two configuration scopes—project bootstrap and global tools—not four independent systems. The extra locations organize project fragments and reusable sources.
+
+| Location | Loading and purpose |
+| --- | --- |
+| `mise.toml`, `mise.<profile>.toml` | Project entrypoints: mise loads the base and selected profile. The base owns shared bootstrap resources, hooks, and `llm:update`; profiles add machine-specific packages, variables, and resources. |
+| `.mise/conf.d/*.toml` | Reusable entrypoints only: `tools.toml`, `tools.dev.toml`, and `tools.work.toml` symlink to global tool sources; `services.dev.toml` and `services.work.toml` symlink to the shared dev/work service source. Environment-suffixed entries load only for the selected environment with `env_conf_d` enabled. |
+| `.mise/dev-work-services.toml` | Reusable service source, not automatically discovered. The `.mise/conf.d/services.dev.toml` and `.mise/conf.d/services.work.toml` symlinks load its cc-notify and Git-maintenance declarations; personal does not. |
+| `config/mise/config*.toml` | Global tool sources. Dotty links them into `~/.config/mise`, so their tools are available outside dots. Project `tools*.toml` fragment symlinks reuse the same sources before global links exist. |
+| `.miserc.toml` | Early discovery settings, not a package/tool list. Enables environment-suffixed fragments with `env_conf_d = true`. |
+
+Root `mise.toml` owns shared bootstrap resources: host packages, VS Code extensions, the pinned Todoist repo, workstation directories/repos, Claude settings, macOS preferences, the login shell and sudo extension, and the all-profile syncengine agent. Profile overlays contain machine-specific packages, variables, files, and agents.
+
+Keep bootstrap resources project-local: global tool configuration loads in other repositories too. Symlinks reuse declarations without creating a second configuration scope or duplicating lists.
 
 ## Commands
 
