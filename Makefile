@@ -12,11 +12,11 @@ help: ## Show available commands
 	@printf '\n%s\n' 'Profiles: dev, work, personal. Override with: make plan MISE_ENV=work'
 	@printf '%s\n' 'Run setup from a durable checkout; services embed its path.'
 
-boot: ## Apply full workstation setup
-	$(MISE) bootstrap
+boot: ## Apply full workstation setup, skipping dirty repos
+	$(MISE) bootstrap --skip-dirty
 
 plan: ## Preview setup without applying changes
-	$(MISE) bootstrap --dry-run
+	$(MISE) bootstrap --skip-dirty --dry-run
 
 status: ## Inspect workstation state
 	$(MISE) bootstrap status

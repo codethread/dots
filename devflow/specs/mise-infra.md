@@ -44,7 +44,7 @@ mise bootstrap --update        # Also update declared repositories/package metad
 mise run llm:update             # Explicit agent CLI updates
 ```
 
-`make` delegates to `mise bootstrap`; `make help` lists setup, preview, status, update, linking, and build commands with profile selection. Zsh's `mise-packages`, `mise-services`, and `mise-dot-diff` inspect this checkout from any directory. Native subcommands also apply individual resources; narrow applies must select their own prerequisites, so use full bootstrap for initial setup.
+`make` delegates to `mise bootstrap --skip-dirty`; `make plan` previews the same policy, while `make update` remains strict about dirty repositories; `make help` lists setup, preview, status, update, linking, and build commands with profile selection. Zsh's `mise-packages`, `mise-services`, and `mise-dot-diff` inspect this checkout from any directory. Native subcommands also apply individual resources; narrow applies must select their own prerequisites, so use full bootstrap for initial setup.
 
 Plain bootstrap clones missing repositories but does not pull unpinned existing branches. `--update` fast-forwards declared repositories; dirty checkouts, origin conflicts, and divergent history fail visibly. Resolve them rather than forcing a reset. Dependencies are installed from their committed lockfiles. No packages are pruned or upgraded implicitly.
 
@@ -61,7 +61,7 @@ Agent CLI setup, Playwright, individual VS Code extensions, Todoist, and Oven in
 
 Log directories and the cc-notify checkout are declarative resources. Secrets stay in cc-notify's local `.env`, not TOML or generated plists. Bootstrap warns about missing credential names without printing their values and continues. Missing credentials fail cc-notify at runtime without blocking other services; inspect its launchd state and logs after bootstrap. Claude settings render in the native dotfiles phase; `/tmp/claude` is prepared in the files phase.
 
-Hooks run on every selected bootstrap and stop on failure; completed phases are not rolled back. A dry run prints hooks but cannot prove their runtime success. `--skip-dirty` is an explicit opt-in: it skips repository convergence, not the later setup hook's installs/builds.
+Hooks run on every selected bootstrap and stop on failure; completed phases are not rolled back. A dry run prints hooks but cannot prove their runtime success. `make` opts into `--skip-dirty`: it skips dirty repository convergence, not the later setup hook's installs/builds against those local checkouts. Direct `mise bootstrap` remains strict unless given the flag.
 
 ## System and user configuration
 
