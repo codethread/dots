@@ -38,10 +38,14 @@ done
 
 # The pinned Todoist fork commits its generated parser; no goyacc step is needed.
 optional 'Todoist build' /bin/bash -c 'cd "$HOME/dev/vendor/todoist" && go build -trimpath -o "$HOME/.local/bin/todoist" .'
-bun install --cwd "$HOME/dev/projects/hive" --frozen-lockfile
-bun run --cwd "$HOME/dev/projects/hive" --filter @hive/honeycomb build
-pnpm --dir "$HOME/dev/projects/agents" install --frozen-lockfile
-pnpm --dir "$HOME/dev/projects/agents" run link:pi
+# Each repo owns its install/build/link steps behind a default mise task.
+# Hive's canonical checkout owns its launchers and tracker, not a feature worktree.
+(
+  cd "$HOME/dev/projects/hive"
+  mise trust mise.toml
+  mise run
+)
+( cd "$HOME/dev/projects/agents" && mise run )
 
 nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --no-cache ($env.DOTFILES | path join "config/dotty/dotty.toml") | ignore'
 git -C "$DOTFILES" config core.hooksPath .githooks
