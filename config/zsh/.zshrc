@@ -96,6 +96,9 @@ done
 
 alias hc='honeycomb'
 
+source "$DOTFILES/config/zsh/helpers.zsh"
+source "$DOTFILES/config/zsh/claude.zsh"
+
 #: }}}
 #: completion {{{
 
