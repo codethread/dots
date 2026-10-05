@@ -5,7 +5,11 @@ min_version = "2026.9.15"
 bun = "1.4.2"
 node = "24.21.0"
 
-# Require Oven's lock without imposing locked mode on inherited workstation tools.
+# Do not activate or install unrelated parent/global workstation tools in Oven.
+[settings]
+enable_tools = ["bun", "node"]
+
+# Require Oven's committed runtime artifact metadata.
 [tool_config]
 locked = true
 
