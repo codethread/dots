@@ -20,7 +20,7 @@ export alias pih = pi --tools ($core_tools ++ $subagent ++ $goal_tools | str joi
 export alias pim = pi --tools ($core_tools ++ $subagent ++ $goal_tools | str join ",") --provider openai-codex --model gpt-5.6-sol --thinking high
 
 # Cheap lightweight work
-export alias pil = pi --tools ($core_tools ++ $subagent | str join ",") --provider openai-codex --model gpt-5.6-luna --thinking xhigh
+export alias pil = pi --tools ($core_tools ++ $subagent | str join ",") --provider openai-codex --model gpt-6-luna --thinking xhigh
 
 # Fastest; response
 export alias pif = pi --tools ($core_tools | str join ",") --model deepseek/deepseek-flash --thinking max
