@@ -20,12 +20,7 @@ Load the mise skill before changing bootstrap. Root hooks install tools early, c
 
 ### Makefile (Root)
 
-```nu
-make         # Run native mise bootstrap
-make boot    # Same native bootstrap path
-make link    # Link dotfiles via dotty
-make build   # Install/check/build oven tools through `mise -C oven run verify`
-```
+Run `make help` for commands and profile selection. Plain `make` runs native mise bootstrap; `make build` installs, checks, fixes, builds, and syncs Oven docs through `mise -C oven run verify`.
 
 ## Tool Development Workflow
 
