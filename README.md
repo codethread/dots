@@ -25,7 +25,7 @@ mise bootstrap status
 mise run llm:update
 ```
 
-Select `dev`, `work`, or `personal` with `MISE_ENV` or `mise -E work bootstrap`. `make` is a shortcut for bootstrap; `make build` verifies/builds Oven. Use a durable checkout: services embed its path. Existing Nix installations must follow the [migration guide](docs/nix-to-mise.md) first.
+Select `dev`, `work`, or `personal` with `MISE_ENV` or `mise -E work bootstrap`. `make` is a shortcut for bootstrap; `make build` verifies/builds Oven. Use a durable checkout: services embed its path.
 
 Configuration has three distinct roles:
 

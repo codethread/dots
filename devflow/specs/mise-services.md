@@ -18,9 +18,9 @@ mise -E work bootstrap
 mise -E work bootstrap macos launchd-agents status
 ```
 
-Bootstrap creates log directories and clones declared repos before `boot/setup.sh` runs. That hook installs application dependencies, checks cc-notify credential names without printing values, registers filtered Git maintenance, and checks syncengine dependencies. The later native dotfiles phase links gitwatch; LaunchAgents load afterwards. Tools are installed early in the post-packages hook because raw LaunchAgents precede mise's normal tools phase.
+Bootstrap creates log directories and clones declared repos before `boot/setup.sh` runs. That hook installs application dependencies, warns about missing cc-notify credential names without printing values, registers filtered Git maintenance, and checks syncengine dependencies. The later native dotfiles phase links gitwatch; LaunchAgents load afterwards. Tools are installed early in the post-packages hook because raw LaunchAgents precede mise's normal tools phase.
 
-Keep credentials in cc-notify's local `.env`. Missing SSH access, credentials, or failed setup aborts before loading new agents. Direct `mise bootstrap macos launchd-agents apply` bypasses preparation; use it only when prerequisites are already ready. Neither a dry run nor `loaded` proves application health.
+Keep credentials in cc-notify's local `.env`. Missing SSH access or failed dependency setup aborts before loading new agents. Missing credentials produce a bootstrap warning and fail cc-notify at runtime; general bootstrap and other agents continue. Inspect `launchctl print gui/UID/dev.mise.cc-notify` and `~/.local/state/com.codethread.cc-notify/std.log` after bootstrap. Add `PUSHOVER_CC_KEY` and `PUSHOVER_DEV_KEY` to the application's `.env` when ready; KeepAlive retries startup. Neither a dry run nor `loaded` proves application health. Direct `mise bootstrap macos launchd-agents apply` bypasses preparation; use it only when dependencies are already ready.
 
 ## Inspection and lifecycle
 

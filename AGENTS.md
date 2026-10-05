@@ -6,7 +6,7 @@ New machine → `boot/boot.sh`: install Homebrew/mise, clone dots, initialize th
 
 `llm:update` is the only custom task. `mise.toml` owns shared bootstrap resources and hooks; `mise.<profile>.toml` holds machine differences. `.mise/conf.d/` is reserved for reusable entrypoints: `tools*.toml` symlinks to global `config/mise/` sources, while `services.dev.toml` and `services.work.toml` symlink to `.mise/dev-work-services.toml`, a source not loaded directly. `.miserc.toml` enables environment-suffixed entrypoints. Global tools are linked by dotty into `~/.config/mise` and reused by project tool fragments before those links exist. Keep bootstrap resources project-local, not in global tool config.
 
-Load the mise skill before changing bootstrap. Root hooks install tools early, check sudo prerequisites, and run `boot/setup.sh` after repository provisioning, before native LaunchAgents load. Do not move preparation into a final bootstrap task: that runs too late. Full bootstrap is the safe setup path; native subsystem applies require already-prepared dependencies. See `devflow/specs/mise-infra.md` and `devflow/specs/mise-services.md`. Apply from a durable checkout: jobs embed its path. Existing machines still on Nix must follow `docs/nix-to-mise.md` first.
+Load the mise skill before changing bootstrap. Root hooks install tools early, check sudo prerequisites, and run `boot/setup.sh` after repository provisioning, before native LaunchAgents load. Do not move preparation into a final bootstrap task: that runs too late. Full bootstrap is the safe setup path; native subsystem applies require already-prepared dependencies. See `devflow/specs/mise-infra.md` and `devflow/specs/mise-services.md`. Apply from a durable checkout: jobs embed its path.
 
 ## Directories
 

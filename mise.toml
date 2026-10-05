@@ -16,7 +16,7 @@ syncengine_path = "{{ env.HOME }}/.local/bin:/opt/homebrew/opt/coreutils/libexec
 post-packages = ["mise install", '"{{ config_root }}/boot/check-system.sh"']
 post-repos = '''
 DOTFILES="{{ config_root }}" \
-VSCODE_EXTENSIONS="{{ vars.vscode_extensions }} {{ vars.vscode_work_extensions }}" \
+DOTS_VSCODE_EXTENSIONS="{{ vars.vscode_extensions }} {{ vars.vscode_work_extensions }}" \
 GIT_MAINTENANCE_REPOSITORIES="{{ vars.git_maintenance_repositories }}" \
 SYNCENGINE_PATH="{{ vars.syncengine_path }}" \
 mise exec -- "{{ config_root }}/boot/setup.sh"
