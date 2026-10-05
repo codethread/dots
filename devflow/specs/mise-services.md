@@ -18,7 +18,7 @@ mise -E work bootstrap
 mise -E work bootstrap macos launchd-agents status
 ```
 
-Bootstrap creates log directories and clones declared repos before `boot/setup.sh` runs. That hook installs application dependencies, warns about missing cc-notify credential names without printing values, registers filtered Git maintenance, and checks syncengine dependencies. The later native dotfiles phase links gitwatch; LaunchAgents load afterwards. Tools are installed early in the post-packages hook because raw LaunchAgents precede mise's normal tools phase.
+Bootstrap creates log directories and clones declared repos before `boot/setup.sh` runs. That hook installs application dependencies, runs cc-notify's `make link-bin` to link its CLI into `~/.local/bin`, warns about missing cc-notify credential names without printing values, registers filtered Git maintenance, and checks syncengine dependencies. The later native dotfiles phase links gitwatch; LaunchAgents load afterwards. Tools are installed early in the post-packages hook because raw LaunchAgents precede mise's normal tools phase.
 
 Keep credentials in cc-notify's local `.env`. Missing SSH access or failed dependency setup aborts before loading new agents. Missing credentials produce a bootstrap warning and fail cc-notify at runtime; general bootstrap and other agents continue. Inspect `launchctl print gui/UID/dev.mise.cc-notify` and `~/.local/state/com.codethread.cc-notify/std.log` after bootstrap. Add `PUSHOVER_CC_KEY` and `PUSHOVER_DEV_KEY` to the application's `.env` when ready; KeepAlive retries startup. Neither a dry run nor `loaded` proves application health. Direct `mise bootstrap macos launchd-agents apply` bypasses preparation; use it only when dependencies are already ready.
 
@@ -45,7 +45,7 @@ Logs:
 
 ## Service behavior
 
-**cc-notify:** launchd invokes Homebrew's stable mise path with the dots profile, then `mise exec -- bun run --cwd <cc-notify> src/main.ts`. Bun selects the application's working directory and `.env`; no hidden foreground task or shell activation is needed. KeepAlive is unconditional.
+**cc-notify:** launchd starts Homebrew's stable mise path in the dots configuration root with the explicit profile, then `mise exec -- bun run --cwd <cc-notify> src/main.ts`. Starting mise in dots loads its early `.miserc.toml` settings; `mise -C` from the application directory misses those early settings in mise 2026.9.15 and can load other profiles' fragments. Bun still selects the application's working directory and `.env`; no hidden foreground task or shell activation is needed. KeepAlive is unconditional.
 
 **Syncengine:** an inline `/bin/bash` runner launches `gitwatch -r origin -R` for each entry in `~/sync` and for iCloud Notes when present. An empty directory starts no watchers. It starts at login/load without KeepAlive, using explicit user/Homebrew/coreutils/macOS paths. Git/SSH configuration stays user-owned. Check child gitwatch/fswatch processes and per-target logs; the loaded parent alone is insufficient. After updating gitwatch, boot out syncengine and wait for its children to exit before reapplying. Do not edit real repositories to test it: syncing commits and pushes automatically.
 

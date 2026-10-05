@@ -83,8 +83,10 @@ mkdir -p "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$XDG_CACHE_HOME"
 
 echo "Setting up workstation (profile: $MISE_ENV, branch: $GIT_BRANCH)"
 echo 'If this script fails it can be rerun.'
+# Start mise here so early .miserc.toml settings load before config discovery.
+cd "$DOTFILES"
 /opt/homebrew/bin/mise trust "$DOTFILES/mise.toml"
-/opt/homebrew/bin/mise -C "$DOTFILES" -E "$MISE_ENV" bootstrap
+/opt/homebrew/bin/mise -E "$MISE_ENV" bootstrap
 
 # Optional first-boot integration checks and editor plugin setup.
 nu \

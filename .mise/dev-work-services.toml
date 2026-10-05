@@ -9,8 +9,6 @@ url = "git@github.com:codethread/cc-notify.git"
 [bootstrap.macos.launchd.agents.cc-notify]
 program = "/opt/homebrew/bin/mise"
 args = [
-  "-C",
-  "{{ config_root }}",
   "-E",
   "{{ vars.service_profile }}",
   "exec",
@@ -21,7 +19,8 @@ args = [
   "{{ env.HOME }}/dev/projects/cc-notify",
   "src/main.ts",
 ]
-working_directory = "~/dev/projects/cc-notify"
+# Load dots' early .miserc.toml settings; Bun's --cwd selects the app directory.
+working_directory = "{{ config_root }}"
 run_at_load = true
 keep_alive = true
 environment = { HOME = "{{ env.HOME }}", PATH = "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" }

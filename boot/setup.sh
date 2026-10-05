@@ -63,6 +63,8 @@ if [ -n "$GIT_MAINTENANCE_REPOSITORIES" ]; then
   (
     cd "$HOME/dev/projects/cc-notify"
     bun install --frozen-lockfile
+    # Link the CLI into ~/.local/bin before dependent LaunchAgents load.
+    make link-bin
     # Warn without blocking other services; cc-notify owns runtime validation.
     bun -e 'const missing = ["PUSHOVER_CC_KEY", "PUSHOVER_DEV_KEY"].filter(key => !process.env[key]);
       if (missing.length) console.error(`WARN: cc-notify is missing ${missing.join(", ")}. Notifications will not work until configured in ~/dev/projects/cc-notify/.env. Bootstrap will continue; inspect ~/.local/state/com.codethread.cc-notify/std.log after startup.`);'
