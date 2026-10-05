@@ -78,7 +78,7 @@ unset pi_core_tools pi_subagent pi_goal_tools
 
 alias gst='git status --short'
 alias ga='git add'
-alias gcm='git commit'
+alias gc='git commit'
 alias gco='git checkout'
 
 alias l="nu -c 'ls -a'"
