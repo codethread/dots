@@ -21,13 +21,12 @@ local M = {}
 --- - quoted inputs are left i.e `'foo bar'` => `foo bar`
 ---
 ---Globs are automatically created from simple inputs
----	- `apps` => `*/apps/*`
----	- `apps foo` => `*/apps/*` `*/foo/*`
----	- `!` negates glob, `!apps` => `!*/apps/*`
+---	- `apps` => `{**/apps,**/apps/**}` (a path component at any depth, or anything below it)
+---	- `apps foo` => `{**/apps,**/apps/**}` `{**/foo,**/foo/**}`
+---	- `!` negates glob, `!apps` => `!{**/apps,**/apps/**}`
 ---
----	Flags are expanded: TODO
----		- i => -i
----		- h => --hidden
+---	Flags are passed to rg verbatim, e.g. `-Tmd` (exclude markdown by type)
+---	(TODO: short expansions: i => -i, h => --hidden)
 ---@param opts any
 M.live_grepper = function(opts)
 	local action_state = require 'telescope.actions.state'
@@ -62,9 +61,10 @@ M.live_grepper = function(opts)
 						.iter(_dirs)
 						:map(function(dir)
 							if vim.startswith(dir, '!') then
-								return { '-g', string.format('!**/%s/**', string.sub(dir, 2)) }
+								local glob = string.sub(dir, 2)
+								return { '-g', string.format('!{**/%s,**/%s/**}', glob, glob) }
 							end
-							return { '-g', string.format('**/%s/**', dir) }
+							return { '-g', string.format('{**/%s,**/%s/**}', dir, dir) }
 						end)
 						:flatten(1)
 						:totable()
