@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# :module: Dismiss macOS notifications without changing the active window.
+set -euo pipefail
+
+# Use the menu-bar control, not activate or keyboard events, to preserve focus.
+# Only macOS dismissal actions are allowed; never app-specific actions like Delete.
+exec /usr/bin/osascript <<'APPLESCRIPT'
+on historyIsOpen()
+    try
+        tell application "System Events" to tell process "NotificationCenter"
+            repeat with windowIndex from 1 to count windows
+                set entries to entire contents of window windowIndex
+                repeat with entry in entries
+                    if role of entry is "AXButton" then
+                        if exists attribute "AXIdentifier" of entry then
+                            if value of attribute "AXIdentifier" of entry is "widget-editor-button" then return true
+                        end if
+                    end if
+                end repeat
+            end repeat
+        end tell
+    on error errorMessage number errorNumber
+        -- Notification Center removes AX elements while its panel animates.
+        if errorNumber is not in {-10000, -1728, -1719} then error errorMessage number errorNumber
+    end try
+    return false
+end historyIsOpen
+
+on dismissNotifications()
+    tell application "System Events" to tell process "NotificationCenter"
+        -- Work backwards so removals do not shift remaining indices.
+        repeat with windowIndex from (count windows) to 1 by -1
+            set entries to entire contents of window windowIndex
+            repeat with entryIndex from (count entries) to 1 by -1
+                set entry to item entryIndex of entries
+                set dismissActions to actions of entry whose description is "Clear All"
+                if (count dismissActions) is 0 then
+                    set dismissActions to actions of entry whose description is "Close"
+                end if
+                if (count dismissActions) > 0 then perform item 1 of dismissActions
+            end repeat
+        end repeat
+    end tell
+end dismissNotifications
+
+tell application "System Events"
+    tell process "ControlCenter"
+        set clockItem to first menu bar item of menu bar 1 whose description is "Clock"
+    end tell
+    if not my historyIsOpen() then perform action "AXPress" of clockItem
+end tell
+
+try
+    -- Wait only while the panel is opening; do not guess an animation delay.
+    set panelReady to false
+    repeat 25 times
+        if my historyIsOpen() then
+            set panelReady to true
+            exit repeat
+        end if
+        delay 0.02
+    end repeat
+    if not panelReady then error "Notification Center did not open."
+    my dismissNotifications()
+on error errorMessage number errorNumber
+    if my historyIsOpen() then
+        tell application "System Events" to perform action "AXPress" of clockItem
+    end if
+    error errorMessage number errorNumber
+end try
+
+tell application "System Events"
+    perform action "AXPress" of clockItem
+end tell
+repeat 25 times
+    if not my historyIsOpen() then return
+    delay 0.02
+end repeat
+error "Notification Center did not close."
+APPLESCRIPT
