@@ -16,7 +16,7 @@ Persistent domain specifications. Organized by system area, not feature chronolo
 
 | Spec | Code | Purpose |
 | --- | --- | --- |
-| [Mise services](./specs/mise-services.md) | `mise.toml`, `.mise/dev-work-services.toml`, `.mise/conf.d/services.{dev,work}.toml`, `mise.{dev,work}.toml`, `home/.local/bin/git-maintenance` | macOS LaunchAgents for syncengine, cc-notify, and Git maintenance |
+| [Mise services](./specs/mise-services.md) | `mise.toml`, `.mise/dev-services.toml`, `.mise/conf.d/services.dev.toml`, `mise.{dev,work}.toml`, `boot/workfiles.sh`, `home/.local/bin/git-maintenance` | Shared/dev macOS LaunchAgents and the workfiles-owned work-service handoff |
 | [SPEC-006 mise-infra](./specs/mise-infra.md) | `boot/{boot,setup,shell}.sh`, `Makefile`, `mise.toml`, `mise.<profile>.toml`, `.mise/conf.d/`, `.miserc.toml`, `config/env/base.sh`, `config/{bash,zsh,nushell}/` | Mise-owned macOS bootstrap and minimal system layer: Homebrew/mise install, identity profile resolution, login shell and Touch ID sudo, native shell activation |
 | [SPEC-009 shell-environment](./specs/shell-environment.md) | `config/env/`, `config/{bash,zsh,nushell}/`, `config/tmux/tmux.conf`, `boot/{boot,setup,shell}.sh` | Shared Bash-authored environment and PATH contract with shell adapters |
 | [SPEC-003 dotty](./specs/dotty.md) | `config/nushell/scripts/ct/dotty/`, `config/dotty/dotty.toml`, `config/nvim/lua/codethread/dotty.lua`, `Makefile`, `mise.toml` | General-purpose dotfile symlink manager: TOML-driven file and directory linking with caching and conflict resolution |

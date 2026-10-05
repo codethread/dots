@@ -14,11 +14,21 @@ There are two configuration scopes—project bootstrap and global tools—not fo
 
 | Location | Loading and purpose |
 | --- | --- |
-| `mise.toml`, `mise.<profile>.toml` | Project entrypoints: mise loads the base and selected profile. The base owns shared bootstrap resources, hooks, and `llm:update`; profiles add machine-specific packages, variables, and resources. |
-| `.mise/conf.d/*.toml` | Reusable entrypoints only: `tools.toml`, `tools.dev.toml`, and `tools.work.toml` symlink to global tool sources; `services.dev.toml` and `services.work.toml` symlink to the shared dev/work service source. Environment-suffixed entries load only for the selected environment with `env_conf_d` enabled. |
-| `.mise/dev-work-services.toml` | Reusable service source, not automatically discovered. The `.mise/conf.d/services.dev.toml` and `.mise/conf.d/services.work.toml` symlinks load its cc-notify and Git-maintenance declarations; personal does not. |
-| `config/mise/config*.toml` | Global tool sources. Dotty links them into `~/.config/mise`, so their tools are available outside dots. Project `tools*.toml` fragment symlinks reuse the same sources before global links exist. |
+| `mise.toml`, `mise.<profile>.toml` | Project entrypoints: mise loads the base and selected profile. The base owns shared bootstrap resources, hooks, and `llm:update`; profiles add machine-specific resources. `mise.work.toml` deliberately contains only `brew:glab` and the final workfiles handoff. |
+| `.mise/conf.d/*.toml` | Reusable entrypoints only: `tools.toml` and `tools.dev.toml` symlink to global tool sources; `services.dev.toml` symlinks to the dev-only service source. Environment-suffixed entries load only for the selected environment with `env_conf_d` enabled. |
+| `.mise/dev-services.toml` | Reusable dev-service source, not automatically discovered. The `.mise/conf.d/services.dev.toml` symlink loads its cc-notify and Git-maintenance declarations; workfiles declares the work equivalents in its own repository. |
+| `config/mise/config.toml`, `config/mise/config.dev.toml` | Global tool sources. Dotty links them into `~/.config/mise`, so their tools are available outside dots. Project `tools*.toml` fragment symlinks reuse the same sources before global links exist. |
 | `.miserc.toml` | Early discovery settings, not a package/tool list. Enables environment-suffixed fragments with `env_conf_d = true`. |
+
+## Workfiles handoff
+
+On work profiles, `mise.work.toml` passes the GitLab host, repository, and checkout to `boot/workfiles.sh` as its final hook. This is the narrow exception to the rule against final-phase preparation: all common dots phases have completed, then workfiles independently prepares its own resources and services before its LaunchAgents phase. Workfiles' default `make` assumes that common dots setup already exists.
+
+If the checkout is absent and `glab` is not authenticated for GitLab, the handoff warns and skips without failing dots. An existing checkout is local input: the hook does not authenticate, pull, reset, or clean it; it trusts only that checkout and runs its default `make`, whose errors block visibly. `mise -E work bootstrap --dry-run` prints the final handoff but does not recursively plan workfiles; after the checkout exists, run `make plan` or `make status` from it separately.
+
+Workfiles owns the moved work-specific packages, Vault and cargo-lambda global tools, `work_home`/`deals` dotty configuration, work VS Code extensions, cc-notify, and work Git-maintenance jobs. Dots retains the generic Git-maintenance helper and all-profile syncengine. The shared Claude template remains a generic base that optionally merges `~/.config/claude/settings-overlay.json`; workfiles renders that overlay and, after its dotfiles phase, rerenders dots' one shared `~/.claude/settings.json` with targeted `mise dot apply ~/.claude/settings.json`, not a whole dots bootstrap. Work plugins/marketplaces and Microsoft 365/Atlassian allowances live in the overlay rather than a duplicate complete template.
+
+Runtime application ownership follows whole files, not individual work references. Mixed Pi, Git, Honeycomb/worktree, environment, and tmux settings stay in dots. The wholly work-specific Nushell `ct/config/hooks.nu` and `ct/onepassword.nu` modules live in workfiles' home tree and load through the existing optional `~/.work.nu` entrypoint. Work hooks append to the existing PWD hooks so mise activation is retained; common Nushell startup does not require either work module.
 
 Root `mise.toml` owns shared bootstrap resources: host packages, VS Code extensions, the pinned Todoist repo, workstation directories/repos, Claude settings, macOS preferences, the login shell and sudo extension, and the all-profile syncengine agent. Profile overlays contain machine-specific packages, variables, files, and agents.
 

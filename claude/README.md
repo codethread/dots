@@ -19,7 +19,7 @@ mise dot apply ~/.claude/settings.json
 mise dot status
 ```
 
-Use `-E work` for work-only marketplaces/plugins. Without an overlay, the personal/dev plugin set is used. `/tmp/claude` is declared in root `mise.toml` and prepared by the native files phase, not `mise dot apply`. Bash is resolved from PATH when rendering.
+Workfiles' `make` installs `~/.config/claude/settings-overlay.json` and requests a targeted rerender of this shared output. The template deep-merges that optional JSON object; work-specific plugins, marketplaces and permissions live in workfiles rather than dots' profile. Without an installed overlay, the personal/dev defaults are used. Malformed overlays fail rather than silently dropping work settings. `/tmp/claude` is declared in root `mise.toml` and prepared by the native files phase, not `mise dot apply`. Bash is resolved from PATH when rendering.
 
 Other Claude assets remain managed by dotty; project-local settings and local overrides are untouched.
 
@@ -74,7 +74,7 @@ The plugin opt-in is independent of daemon ownership. Prepare/apply the daemon w
 
 ## Plugins
 
-Configured in `templates/claude-settings.json.tera`. Shared: claude-md-management, harness, coding (devflow disabled). Personal/dev: claude-code-knowledge, dev, writing. Work: admin, backend, pb-prose, pb-news, pb-claude-harness-engineering. Optional: cc-notify.
+Shared defaults are configured in `templates/claude-settings.json.tera`: claude-md-management, harness, coding (devflow disabled), plus claude-code-knowledge, dev and writing. Workfiles owns its plugin overrides and marketplaces through the installed JSON overlay. Optional: cc-notify.
 
 ## Supporting Tools
 

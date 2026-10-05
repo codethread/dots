@@ -1,4 +1,0 @@
-# Shared by global mise and the matching project conf.d symlink.
-[tools]
-vault = "latest"
-"github:cargo-lambda/cargo-lambda" = "latest"

@@ -35,16 +35,6 @@ name = "pi"
 origin = "${DOTFILES}/pi"
 target = "~/.pi"
 
-[[project]]
-name = "work_home"
-origin = "~/pb/adam.hall/workfiles/home"
-target = "~"
-
-[[project]]
-name = "deals"
-origin = "~/pb/adam.hall/workfiles/home/pb/app/deals-light-ui/_git"
-target = "~/pb/app/deals-light-ui/.git"
-
 # Structured templates are merged after project links. A template target
 # cannot overlap a project symlink. Array records require an explicit identity
 # keyed by their dotted TOML path.

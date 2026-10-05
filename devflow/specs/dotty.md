@@ -116,14 +116,14 @@ A template cache stores the previous parsed source and synchronized target under
 
 ### [SPEC-003-S3.2] Current Projects
 
-| Name | Origin | Target | Project-Specific Excludes |
-| --- | --- | --- | --- |
-| home | `${DOTFILES}/home` | `~` | — |
-| config | `${DOTFILES}/config` | `~/.config` | — |
-| claude | `${DOTFILES}/claude` | `~/.claude` | `**/settings.json`, `**/settings.local.json` |
-| pi | `${DOTFILES}/pi` | `~/.pi/agent` | — |
-| work | `~/work/me/workfiles/home` | `~` | — |
-| deals | `~/work/me/workfiles/work/app/deals-light-ui/_git` | `~/work/app/deals-light-ui/.git` | — |
+| Name   | Origin               | Target        | Project-Specific Excludes                    |
+| ------ | -------------------- | ------------- | -------------------------------------------- |
+| home   | `${DOTFILES}/home`   | `~`           | —                                            |
+| config | `${DOTFILES}/config` | `~/.config`   | —                                            |
+| claude | `${DOTFILES}/claude` | `~/.claude`   | `**/settings.json`, `**/settings.local.json` |
+| pi     | `${DOTFILES}/pi`     | `~/.pi/agent` | —                                            |
+
+Workfiles owns separate `work_home` and `deals` projects in its `config/dotty.toml`, using `${WORKFILES}/home` → `~` and `${WORKFILES}/home/pb/app/deals-light-ui/_git` → `~/pb/app/deals-light-ui/.git`. Its setup hook invokes the shared dotty module with that manifest; dots no longer discovers or links workfiles implicitly.
 
 Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.md`
 
@@ -194,5 +194,5 @@ The bootstrap setup hook also exports the active checkout as `DOTFILES` and pass
 
 ## [SPEC-003-S7] 7. Open Questions
 
-- The `deals` project links a `_git` directory as individual files to `.git` — fragile if git internals change structure
-- `work` and `home` projects both target `~` — relies on non-overlapping file trees with no enforcement beyond duplicate-target detection
+- Workfiles' `deals` project links a `_git` directory as individual files to `.git` — fragile if git internals change structure
+- Workfiles' `work_home` and dots' `home` projects both target `~`; keep their owned paths disjoint because separate invocations cannot detect cross-manifest collisions

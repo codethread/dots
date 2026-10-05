@@ -1,24 +1,8 @@
-[vars]
-service_profile = "work"
-claude_work_machine = true
-git_maintenance_repositories = "~/pb/app/deals-light-ui"
-vscode_work_extensions = "rohit-gohri.format-code-action golang.go styled-components.vscode-styled-components stylelint.vscode-stylelint"
-
-# All work machines use the complete work package set.
+# Only the private-repository handoff belongs here; workfiles owns work setup.
 [bootstrap.packages]
-"brew:pandoc" = { os = "macos" }
-"brew:jira-cli" = { os = "macos" }
-"brew:bitwarden-cli" = { os = "macos" }
-"brew:awscli" = { os = "macos" }
-"brew:buf" = { os = "macos" }
-"brew:miller" = { os = "macos" }
-"brew:grpcui" = { os = "macos" }
-"brew:grpcurl" = { os = "macos" }
 "brew:glab" = { os = "macos" }
-"brew:podman" = { os = "macos" }
-"brew:podman-compose" = { os = "macos" }
-"brew:cocoapods" = { os = "macos" }
-"brew-cask:figma" = { os = "macos" }
-"brew-cask:licecap" = { os = "macos" }
-"brew-cask:obs" = { os = "macos" }
-"brew-cask:proxyman" = { os = "macos" }
+
+# Run after common dotfiles/tools/services are ready. Workfiles has its own
+# ordered bootstrap, including service preparation before its LaunchAgents.
+[bootstrap.hooks]
+final = 'DOTFILES="{{ config_root }}" "{{ config_root }}/boot/workfiles.sh" git.perkbox.io adam.hall/workfiles "{{ env.HOME }}/pb/adam.hall/workfiles"'

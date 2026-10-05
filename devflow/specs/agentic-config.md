@@ -143,7 +143,7 @@ The `config` project covers `config/codex/` → `~/.config/codex/` as part of th
 
 Mise owns `~/.claude/settings.json` as a rendered regular file via root `mise.toml`; dotty excludes it. Apply with `mise dot apply ~/.claude/settings.json`. `/tmp/claude` is declared in root `mise.toml` and prepared by the native files phase, not `mise dot apply`. See [Claude README](../../claude/README.md) for the apply workflow.
 
-**Permissions:** The template preserves the previous allow/deny lists, `acceptEdits` default mode, and additional directories (`$DOTFILES`, `~/.local`, `~/.claude`, `~/dev`, `~/pb`). Secret-file reads, plan/worktree/cron tools, and other unwanted tools remain denied.
+**Permissions:** The shared template owns the common allow/deny lists, `acceptEdits` default mode, and additional directories (`$DOTFILES`, `~/.local`, `~/.claude`, `~/dev`). Workfiles' JSON overlay adds the work directory and Microsoft 365/Atlassian allowances. Secret-file reads, plan/worktree/cron tools, and other unwanted tools remain denied.
 
 **Global hook:** `PostToolUse[Write]` runs inline `git add -N` for new files. Status line uses `cc-statusline`.
 
@@ -152,9 +152,9 @@ Mise owns `~/.claude/settings.json` as a rendered regular file via root `mise.to
 **Plugins & Marketplaces:**
 
 - Shared: `claude-md-management@claude-plugins-official`, `harness@agents`, `coding@agents`; `devflow@agents` disabled
-- Personal/dev (`claude_work_machine=false`, the default): `claude-code-knowledge` and `dev` from the local `claude-code-plugins` marketplace, `writing@agents`
-- Work (`mise.work.toml`, `claude_work_machine=true`): `admin` and `backend` from `local-work`; `pb-prose`, `pb-news`, and `pb-claude-harness-engineering` from `pb-claude`
-- Local marketplaces resolve under the current user's home directory, including the existing work checkout paths
+- Default: `claude-code-knowledge` and `dev` from the local `claude-code-plugins` marketplace, `writing@agents`
+- Workfiles installs `~/.config/claude/settings-overlay.json`: it disables those default plugins and enables its work plugins/marketplaces, with paths rendered under the current user's home directory
+- The shared template deep-merges that optional JSON object over its base; malformed overlays fail visibly. Dots remains the only owner of `~/.claude/settings.json`. Workfiles' post-dotfiles hook requests a targeted rerender from dots after installing its overlay; subsequent dots applies consume the same overlay
 - `claude_enable_notify` defaults to `false`; opt in via `[vars]` in untracked `mise.local.toml` to add `cc-notify@cc-notify-marketplace` and its GitHub marketplace. Notification hooks belong to that plugin; daemon deployment is part of `mise bootstrap`
 
 All remaining feature flags and skill overrides are preserved in the template. Project-local settings and local overrides are not managed by this resource.
@@ -266,7 +266,7 @@ Disables Ctrl+A in Global context.
 
 ## [SPEC-001-S5] 5. Design Decisions
 
-- **Mise as settings source of truth.** `templates/claude-settings.json.tera` renders to a regular `~/.claude/settings.json`; profile overlays select work plugins and marketplaces. Applying settings requires no system-layer change. Manual edits to the output are overwritten on apply; use project-local or local override settings for overrides.
+- **Mise as settings source of truth.** `templates/claude-settings.json.tera` renders to a regular `~/.claude/settings.json`; an optional `~/.config/claude/settings-overlay.json` supplies separately owned machine policy. Applying settings requires no system-layer change. Manual edits to the output are overwritten on apply; use project-local or local override settings for overrides.
 
 - **One owner per agent CLI.** Official vendor installers own Claude, Cursor, Codex, and Pi; bootstrap setup installs them and the `llm:update` task updates them. Node remains mise-managed, Playwright is npm-managed in `~/.local`, and Pi uses its official locked Node/npm installation. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
 

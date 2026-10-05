@@ -1,7 +1,7 @@
 use ct/boot
 use ct/themes.nu themes
 use ct/ls-colors.nu
-use ct/config [keybindings menus hooks]
+use ct/config [keybindings menus]
 use ct/core *
 use ct/tmux
 use ct/dotty
@@ -12,7 +12,6 @@ use ~/dev/projects/wktree/nu/wktree *
 use ct/homebrew.nu *
 use ct/editor.nu *
 use ct/terminal.nu *
-use ct/onepassword.nu *
 use ct/system.nu *
 use ct/search.nu *
 use ct/purge.nu
@@ -57,10 +56,8 @@ $env.config.highlight_resolved_externals = true
 
 $env.config.keybindings ++= $keybindings
 $env.config.menus ++= $menus
-$env.config.hooks = (hooks)
-
-# Import mise's generated activation module after config hooks exist so it can
-# register its PWD and pre-prompt hooks. Interactive only; env.nu generates it.
+# Register mise's PWD and pre-prompt hooks. The optional work config below
+# appends its own hooks without replacing these. Interactive only; env.nu generates it.
 use (if $nu.is-interactive { ($nu.default-config-dir | path join mise.nu) } else { null })
 
 if $nu.is-interactive {

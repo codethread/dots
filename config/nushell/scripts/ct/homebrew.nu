@@ -8,12 +8,14 @@ export def brewclean [] {
 
 export alias brewdeps = brew deps --graph --installed
 
-# Show installed packages not declared in any mise machine profile.
-export def brewdrift [] {
-    let root = $env.DOTFILES
-    let configs = (
-        (glob ($root | path join "mise*.toml"))
-        ++ (glob ($root | path join ".mise/conf.d/*.toml"))
+# Include other owning repositories explicitly: brewdrift /path/to/workfiles
+export def brewdrift [...roots: path] {
+    let configs = ([$env.DOTFILES ...$roots]
+        | each {|root|
+            (glob ($root | path join "mise*.toml"))
+            ++ (glob ($root | path join ".mise/conf.d/*.toml"))
+        }
+        | flatten
         | each { open $in }
     )
     let packages = $configs
@@ -27,10 +29,8 @@ export def brewdrift [] {
     | each { $in | str replace "brew-cask:" "" | split row "/" | last }
     let declared_vscode = $configs
     | each {|cfg|
-        [
-            ($cfg | get -o vars.vscode_extensions | default "")
-            ($cfg | get -o vars.vscode_work_extensions | default "")
-        ] | str join " " | split row " " | where { $in != "" }
+        $cfg | get -o vars.vscode_extensions | default ""
+        | split row " " | where { $in != "" }
     }
     | flatten
 
@@ -67,7 +67,7 @@ export def brewdrift [] {
 
 # Nudge: direct package installs should go through mise declarations.
 export def "brew install" [...args] {
-    print $"(ansi yellow)packages are managed by mise — add shared packages to mise.toml or profile-specific packages to mise.<profile>.toml, then run `mise -E <profile> bootstrap packages apply`(ansi reset)"
+    print $"(ansi yellow)packages are managed by mise — add packages to their owning repository's mise config, then run `mise bootstrap` from that checkout(ansi reset)"
 }
 
 export def "brew tap" [...args] {

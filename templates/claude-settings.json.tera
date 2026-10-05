@@ -1,4 +1,7 @@
-{
+{# A repo may install a JSON overlay without owning this shared output file. #}
+{% set notify_plugins = {"cc-notify@cc-notify-marketplace": true} if vars.claude_enable_notify else {} %}
+{% set notify_marketplaces = {"cc-notify-marketplace": {"source": {"source": "github", "repo": "codethread/cc-notify"}}} if vars.claude_enable_notify else {} %}
+{% set base = {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 999,
   "env": {
@@ -10,7 +13,7 @@
     "DISABLE_ERROR_REPORTING": "1",
     "DISABLE_FEEDBACK_COMMAND": "1",
     "MANPAGER": "cat",
-    "SHELL": {{ exec(command="command -v bash") | json_encode }},
+    "SHELL": exec(command="command -v bash"),
     "TMPDIR": "/tmp/claude"
   },
   "includeCoAuthoredBy": false,
@@ -24,9 +27,7 @@
       "WebFetch",
       "WebSearch",
       "Skill",
-      "mcp__context7__*",
-      "mcp__claude_ai_Microsoft_365__*",
-      "mcp__atlassian__*"
+      "mcp__context7__*"
     ],
     "deny": [
       "Agent(Plan)",
@@ -64,13 +65,10 @@
       "$DOTFILES",
       "~/.local",
       "~/.claude",
-      "~/dev",
-      "~/pb"
+      "~/dev"
     ]
   },
-  "enabledMcpjsonServers": [
-    "microsoft365"
-  ],
+  "enabledMcpjsonServers": [],
   "skillOverrides": {
     "autofix-pr": "off",
     "batch": "off",
@@ -103,60 +101,29 @@
     "padding": 0
   },
   "enabledPlugins": {
+    ...notify_plugins,
     "claude-md-management@claude-plugins-official": true,
     "harness@agents": true,
     "devflow@agents": false,
     "coding@agents": true,
-{%- if vars.claude_enable_notify %}
-    "cc-notify@cc-notify-marketplace": true,
-{%- endif %}
-{%- if vars.claude_work_machine %}
-    "admin@local-work": true,
-    "backend@local-work": true,
-    "pb-prose@pb-claude": true,
-    "pb-news@pb-claude": true,
-    "pb-claude-harness-engineering@pb-claude": true
-{%- else %}
     "claude-code-knowledge@claude-code-plugins": true,
     "dev@claude-code-plugins": true,
     "writing@agents": true
-{%- endif %}
   },
   "extraKnownMarketplaces": {
+    ...notify_marketplaces,
     "agents": {
       "source": {
         "source": "directory",
-        "path": {{ (env.HOME ~ "/dev/projects/agents") | json_encode }}
+        "path": env.HOME ~ "/dev/projects/agents"
       }
     },
     "claude-code-plugins": {
       "source": {
         "source": "directory",
-        "path": {{ (env.HOME ~ "/dev/projects/claude-code-plugins") | json_encode }}
-      }
-    }{% if vars.claude_work_machine or vars.claude_enable_notify %},{% endif %}
-{%- if vars.claude_work_machine %}
-    "local-work": {
-      "source": {
-        "source": "directory",
-        "path": {{ (env.HOME ~ "/pb/adam.hall/local-work-claude") | json_encode }}
-      }
-    },
-    "pb-claude": {
-      "source": {
-        "source": "directory",
-        "path": {{ (env.HOME ~ "/pb/ai/tools/claude-plugins") | json_encode }}
-      }
-    }{% if vars.claude_enable_notify %},{% endif %}
-{%- endif %}
-{%- if vars.claude_enable_notify %}
-    "cc-notify-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "codethread/cc-notify"
+        "path": env.HOME ~ "/dev/projects/claude-code-plugins"
       }
     }
-{%- endif %}
   },
   "outputStyle": "Proactive",
   "spinnerTipsEnabled": false,
@@ -178,4 +145,10 @@
   "terminalProgressBarEnabled": true,
   "teammateMode": "in-process",
   "useAutoModeDuringPlan": false
-}
+} %}
+{% set overlay = env.HOME ~ "/.config/claude/settings-overlay.json" %}
+{% if overlay is file %}
+{{ exec(command="printf '%s' " ~ (base | json_encode | quote) ~ " | /opt/homebrew/bin/jq -Se --slurpfile overlay " ~ (overlay | quote) ~ " 'if ($overlay | length) == 1 and ($overlay[0] | type) == \"object\" then . * $overlay[0] else error(\"Claude settings overlay must contain one JSON object\") end'") }}
+{% else %}
+{{ exec(command="printf '%s' " ~ (base | json_encode | quote) ~ " | /opt/homebrew/bin/jq -S .") }}
+{% endif %}

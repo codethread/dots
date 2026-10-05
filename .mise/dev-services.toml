@@ -1,4 +1,4 @@
-# Shared dev/work services, loaded through the two profile fragment symlinks.
+# Dev services. Workfiles owns its equivalent work-machine services.
 [bootstrap.repos."~/dev/projects/cc-notify"]
 url = "git@github.com:codethread/cc-notify.git"
 

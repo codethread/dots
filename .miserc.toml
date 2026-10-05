@@ -1,2 +1,2 @@
-# Load dev/work-only resource and tool fragments by their environment suffix.
+# Load profile-specific resource and tool fragments by their environment suffix.
 env_conf_d = true

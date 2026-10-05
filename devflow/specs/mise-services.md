@@ -4,21 +4,26 @@
 
 Native `mise bootstrap` prepares and applies user LaunchAgents. Use a durable checkout in a logged-in macOS GUI session, without sudo: generated jobs reference that checkout's absolute path.
 
-| Profile  | Agents                                         |
-| -------- | ---------------------------------------------- |
-| All      | syncengine                                     |
-| dev/work | cc-notify, hourly/daily/weekly Git maintenance |
-| dev only | backup-notes                                   |
+| Owner              | Agents                                                       |
+| ------------------ | ------------------------------------------------------------ |
+| Dots, all profiles | syncengine                                                   |
+| Dots, dev only     | cc-notify, hourly/daily/weekly Git maintenance, backup-notes |
+| Workfiles          | cc-notify, hourly/daily/weekly Git maintenance               |
 
-Syncengine is declared in root `mise.toml`. The dev/work entrypoints `.mise/conf.d/services.dev.toml` and `.mise/conf.d/services.work.toml` are symlinks to `.mise/dev-work-services.toml`; that reusable source is not automatically loaded. `.miserc.toml` enables the environment-suffixed entrypoints, so personal excludes these services. Root profile overlays supply maintenance repositories and dev's backup job. Each complete agent declaration has one source.
+Syncengine is declared in root `mise.toml`. The dev entrypoint `.mise/conf.d/services.dev.toml` links to `.mise/dev-services.toml`; `.miserc.toml` enables that environment-suffixed entrypoint. Workfiles owns its work-machine services in `.mise/conf.d/services.toml`, including its repository list and preparation hooks. It reuses the generic `~/.local/bin/git-maintenance` helper installed by dots. The existing `dev.mise.*` labels and schedules are preserved, so the ownership move does not introduce a second scheduler.
 
 ```nu
-mise -E work bootstrap --dry-run
-mise -E work bootstrap
-mise -E work bootstrap macos launchd-agents status
+mise -E dev bootstrap --dry-run
+mise -E dev bootstrap macos launchd-agents status
+# On work machines, inspect work-owned agents from their owning checkout:
+cd ~/pb/adam.hall/workfiles
+make plan
+make status
 ```
 
-Bootstrap creates log directories and clones declared repos before `boot/setup.sh` runs. That hook installs application dependencies, runs cc-notify's `make link-bin` to link its CLI into `~/.local/bin`, warns about missing cc-notify credential names without printing values, registers filtered Git maintenance, and checks syncengine dependencies. The later native dotfiles phase links gitwatch; LaunchAgents load afterwards. Tools are installed early in the post-packages hook because raw LaunchAgents precede mise's normal tools phase.
+Dots' work-profile final hook clones workfiles when needed and runs its default `make`, after common dots setup finishes. Missing GitLab authentication warns and skips this handoff; errors from an available workfiles checkout fail visibly. Dots' dry run prints the handoff but does not recursively plan workfiles. This is a separate ordered bootstrap, not late preparation for dots-owned jobs.
+
+Each owning bootstrap creates log directories and clones declared repos before its `boot/setup.sh` runs. That hook installs application dependencies, runs cc-notify's `make link-bin` to link its CLI into `~/.local/bin`, warns about missing cc-notify credential names without printing values, registers filtered Git maintenance, and checks syncengine dependencies. The later native dotfiles phase links gitwatch; LaunchAgents load afterwards. Tools are installed early in the post-packages hook because raw LaunchAgents precede mise's normal tools phase.
 
 Keep credentials in cc-notify's local `.env`. Missing SSH access or failed dependency setup aborts before loading new agents. Missing credentials produce a bootstrap warning and fail cc-notify at runtime; general bootstrap and other agents continue. Inspect `launchctl print gui/UID/dev.mise.cc-notify` and `~/.local/state/com.codethread.cc-notify/std.log` after bootstrap. Add `PUSHOVER_CC_KEY` and `PUSHOVER_DEV_KEY` to the application's `.env` when ready; KeepAlive retries startup. Neither a dry run nor `loaded` proves application health. Direct `mise bootstrap macos launchd-agents apply` bypasses preparation; use it only when dependencies are already ready.
 
@@ -45,7 +50,7 @@ Logs:
 
 ## Service behavior
 
-**cc-notify:** launchd starts Homebrew's stable mise path in the dots configuration root with the explicit profile, then `mise exec -- bun run --cwd <cc-notify> src/main.ts`. Starting mise in dots loads its early `.miserc.toml` settings; `mise -C` from the application directory misses those early settings in mise 2026.9.15 and can load other profiles' fragments. Bun still selects the application's working directory and `.env`; no hidden foreground task or shell activation is needed. KeepAlive is unconditional.
+**cc-notify:** launchd starts Homebrew's stable mise path in the owning configuration root (dots on dev, workfiles on work) with the explicit profile, then `mise exec -- bun run --cwd <cc-notify> src/main.ts`. Starting mise in its checkout loads early `.miserc.toml` settings; `mise -C` from the application directory misses those early settings in mise 2026.9.15 and can load other profiles' fragments. Bun still selects the application's working directory and `.env`; no hidden foreground task or shell activation is needed. KeepAlive is unconditional.
 
 **Syncengine:** an inline `/bin/bash` runner launches `gitwatch -r origin -R` for each entry in `~/sync` and for iCloud Notes when present. An empty directory starts no watchers. It starts at login/load without KeepAlive, using explicit user/Homebrew/coreutils/macOS paths. Git/SSH configuration stays user-owned. Check child gitwatch/fswatch processes and per-target logs; the loaded parent alone is insufficient. After updating gitwatch, boot out syncengine and wait for its children to exit before reapplying. Do not edit real repositories to test it: syncing commits and pushes automatically.
 
