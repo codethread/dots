@@ -114,6 +114,7 @@ copy = [
 	".rgignore",
 	".pi",
 	".claude/settings.local.json",
+	"mise.toml",
 	"CLAUDE.local.md",
 ]
 command = '''
