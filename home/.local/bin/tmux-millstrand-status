@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# :module: read-only running Weaver count for the tmux status bar
+# :module: read-only running Weaver and JVM pool counts for the tmux status bar
 set -euo pipefail
 
 case "${1:-}" in
   -h|--help)
-    printf 'Usage: tmux-millstrand-status\nShows running Weavers from the local Mill; ? means unavailable.\n'
+    printf 'Usage: tmux-millstrand-status\nShows running Weavers and their JVM pools from the local Mill as (weavers/pools); ? means unavailable.\n'
     exit 0
     ;;
 esac
@@ -12,8 +12,12 @@ esac
 # Machines without Millstrand do not need a status segment.
 command -v mill >/dev/null 2>&1 || exit 0
 
-if count=$(mill weaver list | jq -er '[.[] | select(.state == "running")] | length'); then
-  printf 'weavers:%s' "$count"
+# Pooled rows share a jvm_pool; isolated weavers each run in their own JVM.
+if counts=$(mill weaver list | jq -er '
+  [.[] | select(.state == "running")]
+  | "\(length)/\(map(.jvm_pool // .config_dir) | unique | length)"
+'); then
+  printf '(%s)' "$counts"
 else
-  printf 'weavers:?'
+  printf '(?)'
 fi

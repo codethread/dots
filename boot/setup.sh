@@ -32,9 +32,6 @@ trap summary EXIT
 # Official installers own agent CLIs; their updates remain a separate task.
 optional 'Agent CLI setup' "$DOTFILES/home/.local/bin/mise-llm" install
 optional 'Playwright CLI installation' env NPM_CONFIG_PREFIX="$HOME/.local" npm install --global @playwright/cli
-for extension in $DOTS_VSCODE_EXTENSIONS; do
-  optional "VS Code extension $extension" "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" --install-extension "$extension"
-done
 
 # The pinned Todoist fork commits its generated parser; no goyacc step is needed.
 optional 'Todoist build' /bin/bash -c 'cd "$HOME/dev/vendor/todoist" && go build -trimpath -o "$HOME/.local/bin/todoist" .'

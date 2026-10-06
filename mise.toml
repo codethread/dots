@@ -3,7 +3,6 @@ min_version = "2026.9.15"
 # Shared bootstrap resources live here; machine differences live in mise.<profile>.toml.
 # .mise/conf.d/ only reuses global tools and dev/work services.
 [vars]
-vscode_extensions = "cunbidun.flash-vscode haphazarddev.oil-code vscodevim.vim dbaeumer.vscode-eslint esbenp.prettier-vscode biomejs.biome davidsanders.search-under-cursor usernamehw.commands wraith13.unsaved-files-vscode formulahendry.auto-close-tag formulahendry.auto-rename-tag mvllow.rose-pine jgclark.vscode-todo-highlight kamikillerto.vscode-colorize rust-lang.rust-analyzer bradlc.vscode-tailwindcss ms-playwright.playwright"
 git_maintenance_repositories = ""
 claude_enable_notify = false
 syncengine_path = "{{ env.HOME }}/.local/bin:/opt/homebrew/opt/coreutils/libexec/gnubin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -14,7 +13,6 @@ syncengine_path = "{{ env.HOME }}/.local/bin:/opt/homebrew/opt/coreutils/libexec
 post-packages = ["mise install", '"{{ config_root }}/boot/check-system.sh"']
 post-repos = '''
 DOTFILES="{{ config_root }}" \
-DOTS_VSCODE_EXTENSIONS="{{ vars.vscode_extensions }}" \
 GIT_MAINTENANCE_REPOSITORIES="{{ vars.git_maintenance_repositories }}" \
 SYNCENGINE_PATH="{{ vars.syncengine_path }}" \
 mise exec -- "{{ config_root }}/boot/setup.sh"
@@ -37,6 +35,9 @@ run = '"{{ config_root }}/home/.local/bin/mise-llm" update'
 # Shared macOS host packages. Apply explicitly; never prune during bootstrap.
 [bootstrap.brew.taps]
 "codethread/wktree" = "https://github.com/codethread/wktree"
+
+[bootstrap.plugins]
+vscode = "https://github.com/waynehoover/mise-vscode"
 
 [bootstrap.packages]
 # Shared CLI packages.
@@ -129,6 +130,27 @@ run = '"{{ config_root }}/home/.local/bin/mise-llm" update'
 "brew-cask:visual-studio-code" = { os = "macos" }
 "brew-cask:zed" = { os = "macos" }
 "brew-cask:opensuperwhisper" = { os = "macos" }
+
+# Shared VS Code extensions; VS Code owns updates, mise installs missing entries.
+"vscode:cunbidun.flash-vscode" = { os = "macos" }
+"vscode:haphazarddev.oil-code" = { os = "macos" }
+"vscode:vscodevim.vim" = { os = "macos" }
+"vscode:dbaeumer.vscode-eslint" = { os = "macos" }
+"vscode:esbenp.prettier-vscode" = { os = "macos" }
+"vscode:biomejs.biome" = { os = "macos" }
+"vscode:davidsanders.search-under-cursor" = { os = "macos" }
+"vscode:usernamehw.commands" = { os = "macos" }
+"vscode:wraith13.unsaved-files-vscode" = { os = "macos" }
+"vscode:formulahendry.auto-close-tag" = { os = "macos" }
+"vscode:formulahendry.auto-rename-tag" = { os = "macos" }
+"vscode:mvllow.rose-pine" = { os = "macos" }
+"vscode:jgclark.vscode-todo-highlight" = { os = "macos" }
+"vscode:kamikillerto.vscode-colorize" = { os = "macos" }
+"vscode:rust-lang.rust-analyzer" = { os = "macos" }
+"vscode:bradlc.vscode-tailwindcss" = { os = "macos" }
+"vscode:ms-playwright.playwright" = { os = "macos" }
+"vscode:catppuccin.catppuccin-vsc" = "latest"
+"vscode:statelyai.stately-vscode" = "latest"
 
 # Workstation setup.
 [bootstrap.directories]

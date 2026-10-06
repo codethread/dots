@@ -544,6 +544,7 @@
     "https://json.schemastore.org/": true,
     "https://json-schema.org/": true,
     "https://developer.microsoft.com/json-schemas/": true,
-    "https://biomejs.dev": true
+    "https://biomejs.dev": true,
   },
+  "workbench.colorTheme": "Catppuccin Mocha",
 }

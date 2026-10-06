@@ -2,7 +2,7 @@
 
 - Document ID: SPEC-006
 - **Status:** Implemented
-- **Last Updated:** 2026-10-04
+- **Last Updated:** 2026-10-06
 
 ## Ownership
 
@@ -32,6 +32,8 @@ Runtime application ownership follows whole files, not individual work reference
 
 Root `mise.toml` owns shared bootstrap resources: host packages, VS Code extensions, the pinned Todoist repo, workstation directories/repos, Claude settings, macOS preferences, the login shell and sudo extension, and the all-profile syncengine agent. Profile overlays contain machine-specific packages, variables, files, and agents.
 
+Shared VS Code extensions are `vscode:*` entries in `[bootstrap.packages]`, backed by the [waynehoover/mise-vscode package plugin](https://github.com/waynehoover/mise-vscode) declared in `[bootstrap.plugins]`. The VS Code cask supplies the host application; `config/env/base.sh` includes its bundled `code` CLI on PATH. Mise installs missing extensions and reports their status; VS Code owns extension updates (the plugin does not support version pins). Removing a declaration does not uninstall an extension; pruning is explicit and limited to extensions mise installed. Work-specific extensions remain workfiles-owned.
+
 Keep bootstrap resources project-local: global tool configuration loads in other repositories too. Symlinks reuse declarations without creating a second configuration scope or duplicating lists.
 
 ## Commands
@@ -52,12 +54,12 @@ Plain bootstrap clones missing repositories but does not pull unpinned existing 
 
 `boot/boot.sh` installs Homebrew and mise, clones dots, selects the profile, initializes the shared environment, and runs native bootstrap. It then checks Full Disk Access and syncs Neovim plugins. Existing machines use the same bootstrap from a durable checkout.
 
-Native bootstrap applies packages before managed files and repositories, then dotfiles, defaults, LaunchAgents, login shell, and tools. Two repo-specific hooks fill the gaps:
+Native bootstrap installs package-manager plugins first, then applies built-in packages before managed files and repositories, followed by dotfiles, defaults, LaunchAgents, login shell, and tools. Plugin-managed packages (including VS Code extensions) apply after tools, so the host application is ready. Two repo-specific hooks fill the gaps:
 
 1. **Post-packages:** install mise tools early, then run `boot/check-system.sh` before any managed PAM file is written. Raw LaunchAgents occur before mise's normal tools phase, so the early tool install is deliberate; the later native tools phase is an unchanged-state check.
-2. **Post-repos:** `boot/setup.sh` installs missing agent CLIs, Playwright and VS Code extensions; builds Todoist/Honeycomb; links Pi and dotfiles; generates shell caches with `boot/shell.sh`; installs/builds Oven; installs service dependencies and prepares Git-maintenance registrations. Only then can the later native dotfiles and LaunchAgent phases run.
+2. **Post-repos:** `boot/setup.sh` installs missing agent CLIs and Playwright; builds Todoist/Honeycomb; links Pi and dotfiles; generates shell caches with `boot/shell.sh`; installs/builds Oven; installs service dependencies and prepares Git-maintenance registrations. Only then can the later native dotfiles and LaunchAgent phases run.
 
-Agent CLI setup, Playwright, individual VS Code extensions, Todoist, and Oven installation/build failures print warnings and allow setup to continue. A setup-exit summary repeats these failures. Agent installers still refuse to overwrite custom launchers. Bootstrap does not run Oven tests, typechecking, automatic fixes, or documentation generation; `make build` remains the development verification path. System/PAM checks, dotfile conflicts, required shell dependencies, and service dependency preparation remain blocking.
+Agent CLI setup, Playwright, Todoist, and Oven installation/build failures print warnings and allow setup to continue. A setup-exit summary repeats these failures. VS Code extension failures instead fail visibly through native package convergence. Agent installers still refuse to overwrite custom launchers. Bootstrap does not run Oven tests, typechecking, automatic fixes, or documentation generation; `make build` remains the development verification path. System/PAM checks, dotfile conflicts, required shell dependencies, and service dependency preparation remain blocking.
 
 Log directories and the cc-notify checkout are declarative resources. Secrets stay in cc-notify's local `.env`, not TOML or generated plists. Bootstrap warns about missing credential names without printing their values and continues. Missing credentials fail cc-notify at runtime without blocking other services; inspect its launchd state and logs after bootstrap. Claude settings render in the native dotfiles phase; `/tmp/claude` is prepared in the files phase.
 

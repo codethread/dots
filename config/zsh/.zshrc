@@ -3,6 +3,7 @@
 #: env {{{
 
 # zsh remains minimal, but accidental interactive launches get human-facing env.
+# shuck: source=../env/interactive.sh
 source "$DOTFILES/config/env/interactive.sh"
 source "$HOME/.privates.sh"
 
@@ -97,12 +98,15 @@ done
 
 alias hc='honeycomb'
 
+# shuck: source=./helpers.zsh
 source "$DOTFILES/config/zsh/helpers.zsh"
+# shuck: source=./claude.zsh
 source "$DOTFILES/config/zsh/claude.zsh"
 
 #: }}}
 #: completion {{{
 
+# shuck: source=./completion-path.zsh
 source "$DOTFILES/config/zsh/completion-path.zsh"
 
 # TODO: move to comp
