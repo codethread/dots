@@ -138,7 +138,7 @@
   "editorMode": "vim",
   "verbose": false,
   "preferredNotifChannel": "notifications_disabled",
-  "autoCompactEnabled": false,
+  "autoCompactEnabled": true,
   "autoScrollEnabled": true,
   "fileCheckpointingEnabled": false,
   "showTurnDuration": true,
