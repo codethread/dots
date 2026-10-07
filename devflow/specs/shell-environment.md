@@ -2,7 +2,7 @@
 
 - Document ID: SPEC-009
 - **Status:** Implemented
-- **Last Updated:** 2026-10-03
+- **Last Updated:** 2026-10-07
 
 ## [SPEC-009-S1] Purpose
 
@@ -20,12 +20,14 @@ Adapters may add shell-native state but must not duplicate the base contract:
 | zsh discovery/login | `home/.zshenv` sets only `ZDOTDIR`; after `/etc/zprofile`, `config/zsh/.zprofile` sources the base; `.zshrc` adds interactive state and mise activation |
 | Bash/Zsh non-login children | Inherit the caller's environment and PATH; no adapter sources the base again |
 | Nushell | `config/nushell/env.nu` preserves inherited state for noninteractive shells; interactive shells import `emit.sh --print0 --interactive`, convert PATH to a list, then add typed/Nushell-only values |
-| terminal launch | Kitty and Ghostty use their default shell launch behavior (login on macOS); no custom shell or startup-command wrapper is configured |
+| terminal launch | Kitty uses its default shell launch behavior (login on macOS); Ghostty's `initial-command` runs `/bin/zsh -lic 'exec tmux new-session -A -s main'` in its first terminal only, loading login and interactive environment before creating or attaching the `main` tmux session; later terminals use the default shell |
 | tmux | `emit.sh --tmux` runs the base in a clean subprocess, streams the result into the tmux global environment, and sets `default-shell` from the streamed `SHELL` |
 | machine bootstrap | `boot/boot.sh` sets bootstrap-specific XDG roots, then sources the base |
 | Carapace bridge | The isolated Bash rcfile loads saved completion wrappers and inherits the caller's environment; it does not source the base |
 
 The macOS login environment and launchd may seed the minimum environment needed before a shell exists. Those platform declarations are adapters, not a second shell environment authority.
+
+Ghostty's `initial-command` applies once per app launch, including its login-item launch. Later windows, tabs, and splits open normal shells. Closing the initial terminal does not repeat the command; quit and reopen Ghostty to run it again. A new tmux server inherits that shell's exported environment; the tmux adapter then applies the shared baseline below. Attaching to an existing server preserves its global environment and only refreshes the variables listed in `update-environment`. Ghostty must create the server first for other inherited values to originate there.
 
 ## [SPEC-009-S3] PATH Contract
 

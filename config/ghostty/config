@@ -1,6 +1,10 @@
 # Run `ghostty +show-config --default --docs` to view a list of
 # ghostty +validate-config
 
+# Start tmux through a login/interactive shell only in the first terminal.
+# Later windows, tabs, and splits use Ghostty's default shell.
+initial-command = shell:/bin/zsh -lic 'exec tmux new-session -A -s dots'
+
 keybind = super+r=reload_config
 
 font-family = Victor Mono
