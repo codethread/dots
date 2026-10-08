@@ -67,7 +67,11 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 	const prefix = isGitRoot ? "" : "!";
 	const dirDisplay = `${prefix}${dirName}`;
 
-	const [branch, inContainer] = await Promise.all([getGitBranch(), isInsideContainer()]);
+	const [branch, inContainer, identity] = await Promise.all([
+		getGitBranch(),
+		isInsideContainer(),
+		getStrandIdentity(input.cwd, input.session_id),
+	]);
 
 	// Build dir | branch segment, wrapped in green [] if in container
 	const dirPart = inContainer
@@ -85,6 +89,11 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 		parts.push(colorize.green("[") + dirBranch + colorize.green("]"));
 	} else {
 		parts.push(dirBranch);
+	}
+
+	// Bound Millstrand identity, if this project and session are registered
+	if (identity) {
+		parts.push(colorize.blue(identity));
 	}
 
 	// Model name
@@ -119,6 +128,24 @@ function branchMatchesWorktree(dirName: string, branch: string): boolean {
 	const idx = dirName.indexOf("__");
 	if (idx === -1) return false;
 	return dirName.slice(idx + 2) === branch;
+}
+
+async function getStrandIdentity(cwd: string, sessionId: string): Promise<string | null> {
+	try {
+		const mill = await $`mill weaver status --json`.cwd(cwd).quiet().nothrow();
+		if (mill.exitCode !== 0) return null;
+
+		const where = JSON.stringify(["=", ["attr", "identity/native-session-id"], sessionId]);
+		const identity =
+			await $`strand --cwd ${cwd} list --limit 1 --where ${where} | jq -r '.[0].attributes["identity/id"] // empty'`
+				.cwd(cwd)
+				.quiet()
+				.nothrow()
+				.text();
+		return identity.trim() || null;
+	} catch {
+		return null;
+	}
 }
 
 async function getGitBranch(): Promise<string | null> {
