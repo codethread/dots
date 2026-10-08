@@ -14,12 +14,20 @@ Usage:
   qlock exec --ticket ID LOCK CMD...           run CMD on a ready ticket
   qlock status LOCK                            show the running command and queue
 
+On any subcommand, --merge-target BRANCH replaces LOCK with a per-repository,
+per-destination-branch lock. Run from a checkout of the destination repository;
+honeycomb root supplies its canonical path. main and refs/heads/main share a
+queue. The local lock is /tmp/agent-merge-<sha256>.lock, hashing the canonical
+path and full destination ref, each followed by a newline.
+
 Tickets are served in arrival order. A ready ticket must be exec'd within 30s
 or it is dropped. The slot frees when the exec'd command exits or its qlock
 process dies.
 
 For agents:
   - Start with the one-call form, e.g. qlock -w 180 LOCK make check
+  - For merges: qlock -w 180 --merge-target main honeycomb finish --json
+    Supply the actual destination branch and any required command arguments.
   - On timeout (exit 75) your ticket keeps its place; continue in ONE call:
       qlock await -w 180 --ticket ID LOCK && qlock exec --ticket ID LOCK CMD...
   - --urgent takes the next turn without pre-empting a ready or running ticket.
@@ -32,6 +40,7 @@ Options:
                    long blocking call outlives the prompt cache)
   -E CODE          exit code when a wait times out (default: 75)
   --urgent REASON  join the urgent lane; REASON is shown to other waiters
+  --merge-target BRANCH  derive LOCK via honeycomb root and the destination branch
 
 Exit codes: 75 still queued (or not ready, for exec), 3 ticket gone (take a
 new one), 2 usage; otherwise CMD's exit code. Killing qlock with SIGKILL
@@ -48,10 +57,10 @@ sub=run
 case "${1:-}" in
   take | await | exec | status) sub=$1; shift ;;
 esac
-wait_max="" timeout_code=75 reason="" ticket=""
+wait_max="" timeout_code=75 reason="" ticket="" merge_target=""
 while (($#)); do
   case "$1" in
-    -w | -E | --urgent | --ticket)
+    -w | -E | --urgent | --ticket | --merge-target)
       (($# >= 2)) && [[ -n $2 ]] || die "$1 requires a value (see qlock -h)"
       ;;
   esac
@@ -61,14 +70,27 @@ while (($#)); do
     -E) timeout_code="$2"; shift 2 ;;
     --urgent) reason="$2"; shift 2 ;;
     --ticket) ticket="$2"; shift 2 ;;
+    --merge-target) merge_target="$2"; shift 2 ;;
     --) shift; break ;;
     -*) die "unknown option $1 (see qlock -h)" ;;
     *) break ;;
   esac
 done
-(($#)) || die "missing LOCK (see qlock -h)"
-lock=$1
-shift
+if [[ -n $merge_target ]]; then
+  case $merge_target in
+    refs/heads/*) ;;
+    refs/*) die "--merge-target requires a branch name or refs/heads/<branch>" ;;
+    *) merge_target="refs/heads/$merge_target" ;;
+  esac
+  git check-ref-format "$merge_target" || die "invalid merge target: $merge_target"
+  merge_root=$(honeycomb root)
+  merge_key=$(printf '%s\n' "$merge_root" "$merge_target" | shasum -a 256 | cut -d ' ' -f 1)
+  lock="/tmp/agent-merge-${merge_key}.lock"
+else
+  (($#)) || die "missing LOCK (see qlock -h)"
+  lock=$1
+  shift
+fi
 case $sub in
   take | await | status) (($# == 0)) || die "$sub takes no command" ;;
   *) (($#)) || die "missing CMD (see qlock -h)" ;;
