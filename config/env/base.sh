@@ -152,6 +152,7 @@ ct_path_append "$HOME/.local/bin"
 ct_path_append "$PI_CODING_AGENT_DIR/bin"
 # Global defaults without interactive activation; local wrappers stay first.
 ct_path_append "${MISE_DATA_DIR:-$XDG_DATA_HOME/mise}/shims"
+ct_path_append "$GOBIN"
 if [ "$ct_os" = Darwin ]; then
   ct_path_append /opt/homebrew/opt/coreutils/libexec/gnubin
   ct_path_append /opt/homebrew/bin
@@ -160,7 +161,6 @@ fi
 ct_path_append "$CARGO_BIN"
 ct_path_append "$HOME/.bun/bin"
 ct_path_append "$HOME/.luarocks/bin"
-ct_path_append "$GOBIN"
 ct_path_append "$HOME/.linkerd2/bin"
 ct_path_append "$HOME/.emacs.d/bin"
 ct_path_append "$XDG_CONFIG_HOME/skein/bin"

@@ -37,7 +37,7 @@ A non-login child does not reconstruct this baseline. Its inherited PATH, includ
 
 Known user/tool roots remain in PATH even before they exist. Installing into one of those roots therefore works in the current shell; stale nonexistent entries are harmless and intentionally tolerated.
 
-`~/.local/bin` remains first, preserving custom agent wrappers and native CLIs. `$PI_CODING_AGENT_DIR/bin` follows for Pi's official managed launcher, then mise shims, then Homebrew (including GNU coreutils), then other tool roots. mise supplies the default Node. Global mise configuration is linked from `config/mise/`, separate from project-scoped bootstrap resources. `JAVA_HOME` defaults to mise's stable `installs/java/temurin-21` symlink; explicit values are preserved, and `mise exec`/tasks supply the selected project JDK. Java binaries are selected through mise shims rather than an extra JDK PATH entry.
+`~/.local/bin` remains first, preserving custom agent wrappers and native CLIs. `$PI_CODING_AGENT_DIR/bin` follows for Pi's official managed launcher, then mise shims, then `$GOBIN`, then Homebrew (including GNU coreutils), then other tool roots. mise supplies the default Node. Global mise configuration is linked from `config/mise/`, separate from project-scoped bootstrap resources. `JAVA_HOME` defaults to mise's stable `installs/java/temurin-21` symlink; explicit values are preserved, and `mise exec`/tasks supply the selected project JDK. Java binaries are selected through mise shims rather than an extra JDK PATH entry.
 
 ## [SPEC-009-S3a] SHELL Contract
 
