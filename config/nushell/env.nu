@@ -33,9 +33,10 @@ $env.NU_LIB_DIRS = [
 ]
 $env.NU_PLUGIN_DIRS = [$env.CARGO_BIN]
 
-# mise activation is a generated module. Regenerate it for each interactive
-# startup so the baked environment reflects this session; noninteractive
-# shells use shims or `mise exec` and never write or import it.
+# Regenerate shell integration modules for each interactive startup so mise
+# reflects this session and the Honeycomb picker follows the installed CLI.
+# Noninteractive shells use shims or `mise exec` and never write or import them.
 if $nu.is-interactive {
     ^mise activate nu | save --force ($nu.default-config-dir | path join mise.nu)
+    ^honeycomb shell-init nu | save --force ($nu.default-config-dir | path join honeycomb.nu)
 }

@@ -59,13 +59,11 @@ delete_branch = true
 # PRs, not by local merges to main.
 [[rule]]
 root_glob = "~/pb/**"
-pre_remote_check = "scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware wktree operations' >&2; exit 1; }"
+pre_remote_check = "scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware honeycomb operations' >&2; exit 1; }"
 
-# Deals UI keeps nested worktrees for its prepared pool of slots.
 [[rule]]
 root_glob = "~/pb/app/deals-light-ui*/**"
-worktree_location = "nested"
-pre_remote_check = "git remote prune origin && scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware wktree operations' >&2; exit 1; }"
+pre_remote_check = "git remote prune origin && scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware honeycomb operations' >&2; exit 1; }"
 
 
 [rule.finish]
@@ -85,11 +83,6 @@ strategy = "squash"
 push = true
 remove_worktree = true
 delete_branch = true
-
-[[project]]
-name = "wktree"
-root = "~/dev/projects/wktree"
-worktree_location = "nested"
 
 # Dotfiles are special: work can happen directly on main, so add does not
 # require mutating the canonical root first. Finish uses the conservative
@@ -121,7 +114,3 @@ command = '''
 ~/.local/bin/deals-light-boot
 notif worktree wk "$WK_CREATED" ready
 '''
-
-[[project]]
-root = "~/dev/projects/hive"
-worktree_location = "nested"

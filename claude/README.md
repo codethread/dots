@@ -61,7 +61,6 @@ The plugin opt-in is independent of daemon ownership. Prepare/apply the daemon w
 | ------------------ | ---------------------------------------------------- |
 | commit (ct:commit) | Conventional commits with auto status/diff injection |
 | playwright-cli     | Browser automation with 7 reference docs             |
-| wktree             | Local git worktree workflow via `wk`/`wktree`        |
 
 ## Slash Commands
 
@@ -78,12 +77,13 @@ Shared defaults are configured in `templates/claude-settings.json.tera`: claude-
 
 ## Supporting Tools
 
-| Tool                    | Source           | Purpose                                  |
-| ----------------------- | ---------------- | ---------------------------------------- |
-| cc-statusline           | oven/bin/        | Status line formatter                    |
-| cc-speak                | oven/bin/        | TTS with file/section reading            |
-| cindex                  | oven/bin/        | Project file index generator             |
-| cc-logs--extract-agents | home/.local/bin/ | Extract agent IDs for session resumption |
+| Tool                    | Source                             | Purpose                                    |
+| ----------------------- | ---------------------------------- | ------------------------------------------ |
+| cc-statusline           | oven/bin/                          | Status line formatter                      |
+| cc-speak                | oven/bin/                          | TTS with file/section reading              |
+| cindex                  | oven/bin/                          | Project file index generator               |
+| cc-logs--extract-agents | home/.local/bin/                   | Extract agent IDs for session resumption   |
+| honeycomb               | ~/dev/projects/hive/lib/honeycomb/ | Git worktree lifecycle; see `honeycomb -h` |
 
 ## Hook Development
 

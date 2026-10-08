@@ -32,13 +32,10 @@ description = "Update Claude, Codex, Pi, and Pi npm extensions"
 env.DOTFILES = "{{ config_root }}"
 run = '"{{ config_root }}/home/.local/bin/mise-llm" update'
 
-# Shared macOS host packages. Apply explicitly; never prune during bootstrap.
-[bootstrap.brew.taps]
-"codethread/wktree" = "https://github.com/codethread/wktree"
-
 [bootstrap.plugins]
 vscode = "https://github.com/waynehoover/mise-vscode"
 
+# Shared macOS host packages. Apply explicitly; never prune during bootstrap.
 [bootstrap.packages]
 # Shared CLI packages.
 # python-yq is the jq wrapper; tree-sitter-cli is the parser generator.
@@ -100,7 +97,6 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "brew:dicklesworthstone/tap/br" = { os = "macos" }
 "brew:dicklesworthstone/tap/bv" = { os = "macos" }
 "brew:morantron/tmux-fingers/tmux-fingers" = { os = "macos" }
-"brew:codethread/wktree/wktree" = { os = "macos" }
 "brew:BRO3886/tap/ical" = { os = "macos" }
 "brew:ical-buddy" = { os = "macos" }
 "brew:rsync" = { os = "macos" }
