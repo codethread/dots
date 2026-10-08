@@ -13,7 +13,6 @@ export use cache.nu
 export use config.nu
 use helpers.nu [assert-no-conflicts]
 use list-files.nu
-use template.nu
 
 export def link [
 	--no-cache(-c)
@@ -51,10 +50,7 @@ export def link [
 	}
     | where {|r| ($r.created | is-not-empty) or ($r.deleted | is-not-empty) }
 
-    let generated = config load-templates $config_path
-    | each {|item| template apply $item }
-    | where {|result| $result.created | is-not-empty }
-    $linked ++ $generated
+    $linked
 }
 
 # Format the output from `dotty link` into something easier to read, e.g in an

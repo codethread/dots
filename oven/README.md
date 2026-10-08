@@ -58,6 +58,7 @@ To update runtimes, edit their exact versions in `mise.toml`, run `mise lock --p
 - **git-cleanup** - Clean up build artifacts and log files from git projects
 - **git-pipeline--await** - Watch the current branch's MR pipeline to completion
 - **gitlab-pipeline-watcher** - Monitor GitLab pipelines and send notifications
+- **mise-dot-diff** - Preview mise dotfiles and pull JSON template edits into local overlays
 - **notif** - Show macOS native notifications
 - **prepend-comment** - Add or update module documentation comments
 - **strip-markdown** - Strip markdown formatting from text, optimized for text-to-speech or plain text output.

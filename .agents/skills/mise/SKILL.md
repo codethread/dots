@@ -51,7 +51,7 @@ Read the relevant vendored source before relying on remembered syntax. The check
 - [Docker cookbook](file:///Users/ct/dev/vendor/mise/docs/mise-cookbook/docker.md)
 - [trust](file:///Users/ct/dev/vendor/mise/docs/cli/trust.md)
 
-Use <https://mise.jdx.dev/> when the vendored checkout may be stale. The config schema is <https://mise.jdx.dev/schema/mise.json>.
+Use <https://mise.jdx.dev/> and current release notes when the vendored checkout may be stale, especially before concluding a feature is missing. Match the installed version to the checkout; this repo now requires 2026.10.4+. The config schema is <https://mise.jdx.dev/schema/mise.json>.
 
 ## Compose configuration deliberately
 
@@ -125,6 +125,18 @@ Review the plan, then apply the same narrowed selection without `--dry-run`. Do 
 Use declarative resources when mise can inspect their state. Reserve `[tasks.bootstrap]` and hooks for setup that has no declarative representation. Dotfile conflicts should fail visibly; do not overwrite them by default.
 
 For a repository bootstrap, use `mise bootstrap --from <url>`. Use `--adopt <url>` only when the repository is intended to become the global mise configuration or tracked-history source. Review remote configuration before trusting it.
+
+## Share application-written config files
+
+For JSON, TOML, or YAML files that an application also writes, mise 2026.10.4+ supports native structured merge edits:
+
+```toml
+[dotfiles."~/.config/codex/config.toml/shared"]
+source = "templates/codex-config.toml"
+merge = true
+```
+
+The final path segment is the edit id, not part of the target filename. Tables merge recursively; target-only keys remain local. Arrays replace wholesale, source-key removals do not remove target keys, and edits do not sync back into the source. TOML/YAML preserve untouched formatting and comments. Use `mise dot diff TARGET/ID` before applying. `mise dot status -J` lists these under `edits`, not `files`. Add `template = "tera"` only if the source needs rendering; do not combine merge edits with whole-file `mode`.
 
 ## Deploy macOS services
 

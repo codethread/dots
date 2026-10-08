@@ -19,7 +19,7 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 - Type-safe hook contracts shared across TypeScript and Bash implementations
 - Context-aware shell wrappers that inject environment-specific prompts
 - Plugin extensibility via local and remote marketplaces
-- Codex configuration colocated and linked alongside Claude Code
+- Shared Codex settings merged by mise without replacing machine-local state
 
 ### [SPEC-001-S1.3] Non-Goals
 
@@ -42,6 +42,8 @@ Four configuration layers compose at runtime:
 │ Layer 1: Mise-rendered globals                      │
 │   templates/claude-settings.json.tera               │
 │     → ~/.claude/settings.json (regular file)        │
+│   templates/codex-config.toml                       │
+│     → ~/.config/codex/config.toml (key merge)       │
 │   Owns: permissions, hooks, env vars, plugins,      │
 │         marketplaces, feature flags                  │
 ├─────────────────────────────────────────────────────┤
@@ -53,7 +55,7 @@ Four configuration layers compose at runtime:
 │     agent.njk, README.md, settings.json             │
 │     (appended system prompt + shared defaults)       │
 │   config/codex/ → ~/.config/codex/                  │
-│     config.toml, AGENTS.md                          │
+│     AGENTS.md                                      │
 ├─────────────────────────────────────────────────────┤
 │ Layer 3: Project-local overrides (per-repo)         │
 │   .claude/settings.json    (repo-specific hooks)    │
@@ -71,6 +73,7 @@ Settings merge order: mise globals → project settings → local overrides. Age
 ```
 mise bootstrap → packages, declared repositories, native files, and setup applied
 mise dot apply ~/.claude/settings.json → ~/.claude/settings.json rendered
+mise dot apply ~/.config/codex/config.toml/shared → shared Codex keys merged
 make link    →  dotty link   →  claude/ assets symlinked to ~/.claude/
 make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
 ```
@@ -214,10 +217,12 @@ Direct `pi` invocation with shared repo-aware configuration:
 - `extensions/subagent/index.ts`: adds `/debug-agents` to show discovered agents with resolved model and normalized tools
 - Machine-local state stays outside the repo: `auth.json`, `models.json`, `sessions/`
 
-### [SPEC-001-S4.8] Codex Configuration (`config/codex/`)
+### [SPEC-001-S4.8] Codex Configuration
 
-- `config.toml`: model gpt-5.4, personality pragmatic, effort high. Profiles: fast-review (gpt-5.3-codex, medium), deep-review (gpt-5.4, high). 15 trusted project paths. Falls back to CLAUDE.md for project docs.
-- `AGENTS.md`: global instruction for conciseness
+- `templates/codex-config.toml`: shared model, reasoning, TUI, plugin, marketplace, and skill settings. Root `mise.toml` owns these keys via a native `merge = true` edit at `~/.config/codex/config.toml/shared` (mise 2026.10.4+). The destination follows this repo's `CODEX_HOME`, not Codex's default `~/.codex`.
+- Tables merge recursively; target-only settings such as trusted projects, MCP servers, and application state remain local. Comments and untouched TOML formatting survive. Arrays, including `skills.config`, replace wholesale. Removing a source key does not delete it from the target. Live edits are not synchronized back into the source.
+- Preview with `mise dot diff ~/.config/codex/config.toml/shared`; apply with `mise dot apply ~/.config/codex/config.toml/shared`. Dotty's former structured-template option and cache are no longer used.
+- `config/codex/AGENTS.md`: global instruction for conciseness, still symlinked by dotty.
 
 ### [SPEC-001-S4.9] Agent CLI Packages
 

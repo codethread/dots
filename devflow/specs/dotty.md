@@ -3,7 +3,7 @@
 - Document ID: SPEC-003
 - Configuration identification: SPEC-003; migrated from `specs/dotty.md`; canonical path `devflow/specs/dotty.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-10-01
+- **Last Updated:** 2026-10-08
 
 ## [SPEC-003-S1] 1. Overview
 
@@ -22,10 +22,9 @@ General-purpose dotfile symlink manager written in Nushell. Takes a TOML configu
 
 ### [SPEC-003-S1.3] Non-Goals
 
-- Managing application-specific config generation (that's each tool's concern; e.g. mise renders `templates/claude-settings.json.tera` to `~/.claude/settings.json`)
+- Managing application-specific config generation (mise owns Claude and Codex settings; e.g. it renders `templates/claude-settings.json.tera` to `~/.claude/settings.json` and merges `templates/codex-config.toml` into `~/.config/codex/config.toml`)
 - Package installation or system configuration (mise owns user packages and the macOS bootstrap layer)
 - Text template rendering or variable substitution in linked files
-- Structured formats other than TOML (the merge architecture may add formats later)
 
 ## [SPEC-003-S2] 2. Architecture
 
@@ -42,7 +41,6 @@ config/nushell/scripts/ct/dotty/
     cache.nu                Per-project cache (load/store/delete)
     helpers.nu              Conflict detection, path overlap validation
     list-files.nu           File enumeration with git-ignore filtering
-    template.nu             Three-way TOML merge and template cache
 ```
 
 ### [SPEC-003-S2.2] Linking Algorithm (`dotty link`)
@@ -102,18 +100,6 @@ target = "~/path/to/destination"          # Required. Supports `~` and `${ENV}` 
 excludes = ["glob_pattern", ...]          # Optional. Combined with global excludes.
 ```
 
-Templates merge repository-owned values into machine-local structured files:
-
-```toml
-[[template]]
-name = "codex"
-origin = "${DOTFILES}/templates/codex-config.toml"
-target = "~/.config/codex/config.toml"
-array_identity = { "skills.config" = "path" }
-```
-
-A template cache stores the previous parsed source and synchronized target under `~/.local/data/dotty-templates/<name>.toml`. The previous source defines the VCS-owned subset. Target edits to owned paths sync back into the source; direct source edits sync forward into the target. Target-only paths and record-array identities remain machine-local. Scalar arrays synchronize as ordered values; record arrays require an explicit dotted-path identity. Dotty collects divergent edits and reports all conflicting paths without changing source, target, or cache.
-
 ### [SPEC-003-S3.2] Current Projects
 
 | Name   | Origin               | Target        | Project-Specific Excludes                    |
@@ -143,7 +129,7 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 
 | Command | Purpose |
 | --- | --- |
-| `dotty link [--no-cache] [--force] [config_path]` | Create/update symlinks, then bidirectionally synchronize owned TOML template paths. `--no-cache` applies to symlink discovery; template caches are always used for merge safety. |
+| `dotty link [--no-cache] [--force] [config_path]` | Create/update symlinks. `--no-cache` re-scans all files instead of trusting the per-project link cache. |
 | `dotty format` | Format link output for editor integration (pipe: `dotty link \| dotty format`) |
 | `dotty is-cwd [dir] [--exit]` | Check if directory is a dotty project. `--exit` returns exit code instead of bool. |
 | `dotty prune [target]` | Remove broken symlinks under target (default: `~/.config/**/*`) |

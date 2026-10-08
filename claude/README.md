@@ -12,7 +12,7 @@ The global `~/.claude/settings.json` is a **regular file rendered by mise** from
 
 ### Apply
 
-From the dots checkout (mise 2026.9.15 or newer):
+From the dots checkout (mise 2026.10.4 or newer):
 
 ```nu
 mise dot apply ~/.claude/settings.json

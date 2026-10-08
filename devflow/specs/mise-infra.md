@@ -2,11 +2,11 @@
 
 - Document ID: SPEC-006
 - **Status:** Implemented
-- **Last Updated:** 2026-10-06
+- **Last Updated:** 2026-10-08
 
 ## Ownership
 
-Mise owns the Apple Silicon macOS workstation: packages, managed files, repositories, defaults, user settings, and LaunchAgents. Dotty links repository assets and renders the structured Codex template. Shells activate mise natively.
+Mise owns the Apple Silicon macOS workstation: packages, managed files, repositories, defaults, user settings, and LaunchAgents. Mise renders Claude settings and merges shared Codex settings; dotty only links repository assets. Shells activate mise natively. The checkout requires mise 2026.10.4 or newer for native structured dotfile merges.
 
 ## Configuration locations
 
@@ -30,11 +30,17 @@ Workfiles owns the moved work-specific packages, Vault and cargo-lambda global t
 
 Runtime application ownership follows whole files, not individual work references. Mixed Pi, Git, Honeycomb/worktree, environment, and tmux settings stay in dots. The wholly work-specific Nushell `ct/config/hooks.nu` and `ct/onepassword.nu` modules live in workfiles' home tree and load through the existing optional `~/.work.nu` entrypoint. Work hooks append to the existing PWD hooks so mise activation is retained; common Nushell startup does not require either work module.
 
-Root `mise.toml` owns shared bootstrap resources: host packages, VS Code extensions, the pinned Todoist repo, workstation directories/repos, Claude settings, macOS preferences, the login shell and sudo extension, and the all-profile syncengine agent. Profile overlays contain machine-specific packages, variables, files, and agents.
+Root `mise.toml` owns shared bootstrap resources: host packages, VS Code extensions, the pinned Todoist repo, workstation directories/repos, Claude and Codex settings, macOS preferences, the login shell and sudo extension, and the all-profile syncengine agent. Profile overlays contain machine-specific packages, variables, files, and agents.
 
 Shared VS Code extensions are `vscode:*` entries in `[bootstrap.packages]`, backed by the [waynehoover/mise-vscode package plugin](https://github.com/waynehoover/mise-vscode) declared in `[bootstrap.plugins]`. The VS Code cask supplies the host application; `config/env/base.sh` includes its bundled `code` CLI on PATH. Mise installs missing extensions and reports their status; VS Code owns extension updates (the plugin does not support version pins). Removing a declaration does not uninstall an extension; pruning is explicit and limited to extensions mise installed. Work-specific extensions remain workfiles-owned.
 
 Keep bootstrap resources project-local: global tool configuration loads in other repositories too. Symlinks reuse declarations without creating a second configuration scope or duplicating lists.
+
+## Codex settings
+
+`templates/codex-config.toml` supplies the shared keys for the native `merge = true` edit at `~/.config/codex/config.toml/shared`. Mise recursively merges tables and preserves target-only settings, comments, and untouched formatting. It replaces arrays wholesale, including `skills.config`; it does not merge skill records by path. Removed source keys remain in the target, and live edits do not sync back into the source. Keep durable shared changes in the source; machine-local keys can remain in the live file. Invalid TOML fails without overwriting the target.
+
+Preview with `mise dot diff ~/.config/codex/config.toml/shared`, then apply that same target after reviewing. No overlay or dotty template cache is used. Removing dotty's template option leaves any old cache inert; do not delete live configuration as part of the migration.
 
 ## Commands
 
@@ -61,7 +67,7 @@ Native bootstrap installs package-manager plugins first, then applies built-in p
 
 Agent CLI setup, Playwright, Todoist, and Oven installation/build failures print warnings and allow setup to continue. A setup-exit summary repeats these failures. VS Code extension failures instead fail visibly through native package convergence. Agent installers still refuse to overwrite custom launchers. Bootstrap does not run Oven tests, typechecking, automatic fixes, or documentation generation; `make build` remains the development verification path. System/PAM checks, dotfile conflicts, required shell dependencies, and service dependency preparation remain blocking.
 
-Log directories and the cc-notify checkout are declarative resources. Secrets stay in cc-notify's local `.env`, not TOML or generated plists. Bootstrap warns about missing credential names without printing their values and continues. Missing credentials fail cc-notify at runtime without blocking other services; inspect its launchd state and logs after bootstrap. Claude settings render in the native dotfiles phase; `/tmp/claude` is prepared in the files phase.
+Log directories and the cc-notify checkout are declarative resources. Secrets stay in cc-notify's local `.env`, not TOML or generated plists. Bootstrap warns about missing credential names without printing their values and continues. Missing credentials fail cc-notify at runtime without blocking other services; inspect its launchd state and logs after bootstrap. Claude settings render and Codex settings merge in the native dotfiles phase; `/tmp/claude` is prepared in the files phase.
 
 Hooks run on every selected bootstrap and stop on failure; completed phases are not rolled back. A dry run prints hooks but cannot prove their runtime success. `make` opts into `--skip-dirty`: it skips dirty repository convergence, not the later setup hook's installs/builds against those local checkouts. Direct `mise bootstrap` remains strict unless given the flag.
 

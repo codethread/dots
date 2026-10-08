@@ -1,4 +1,4 @@
-min_version = "2026.9.15"
+min_version = "2026.10.4"
 
 # Shared bootstrap resources live here; machine differences live in mise.<profile>.toml.
 # .mise/conf.d/ only reuses global tools and dev/work services.
@@ -182,6 +182,11 @@ mode = "symlink"
 [dotfiles."~/.claude/settings.json"]
 source = "templates/claude-settings.json.tera"
 mode = "template"
+
+# Own only source keys; preserve Codex's machine-local settings and state.
+[dotfiles."~/.config/codex/config.toml/shared"]
+source = "templates/codex-config.toml"
+merge = true
 
 # Apple-supported sudo extension point (macOS 14+). Leave /etc/pam.d/sudo alone.
 # https://support.apple.com/en-us/109030

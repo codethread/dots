@@ -27,7 +27,7 @@ bindkey -e
 # Inspect dots' mise resources from any directory, loading its .miserc.toml.
 mise-packages() (cd -- "$DOTFILES" && mise bootstrap packages status "$@")
 mise-services() (cd -- "$DOTFILES" && mise bootstrap macos launchd-agents status "$@")
-mise-dot-diff() (cd -- "$DOTFILES" && mise dot diff "$@")
+mise-dot-diff() { "$DOTFILES/.agents/skills/mise-diff/scripts/mise-dot-diff" "$@"; }
 
 # Pi wrappers for interactive use. Keep these in sync with the Nushell
 # equivalents in config/nushell/scripts/ct/interactive/pi.nu.

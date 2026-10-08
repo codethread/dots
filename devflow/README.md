@@ -10,7 +10,7 @@ Persistent domain specifications. Organized by system area, not feature chronolo
 
 | Spec | Code | Purpose |
 | --- | --- | --- |
-| [SPEC-001 agentic-config](./specs/agentic-config.md) | `config/mise/`, `mise.toml`, `templates/claude-settings.json.tera`, `claude/`, `pi/`, `config/codex/`, `config/nushell/scripts/ct/interactive/{claude,pi}.nu`, `home/.local/bin/cl`, `oven/bin/cc-hook--*.ts`, `oven/shared/claude-hooks.ts`, `home/.local/bin/cc-hook--*` | Claude Code, Codex, and Pi global configuration: package provisioning, settings, hooks, agents, skills, plugins, wrappers (Note: much of the reusable Pi configuration has moved to the `agents` project repository) |
+| [SPEC-001 agentic-config](./specs/agentic-config.md) | `config/mise/`, `mise.toml`, `templates/{claude-settings.json.tera,codex-config.toml}`, `claude/`, `pi/`, `config/codex/`, `config/nushell/scripts/ct/interactive/{claude,pi}.nu`, `home/.local/bin/cl`, `oven/bin/cc-hook--*.ts`, `oven/shared/claude-hooks.ts`, `home/.local/bin/cc-hook--*` | Claude Code, Codex, and Pi global configuration: package provisioning, settings, hooks, agents, skills, plugins, wrappers (Note: much of the reusable Pi configuration has moved to the `agents` project repository) |
 
 ## Infrastructure
 

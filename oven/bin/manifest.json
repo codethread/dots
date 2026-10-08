@@ -10,6 +10,7 @@
 		{"bin": "git-cleanup", "entry": "git-cleanup.ts"},
 		{"bin": "git-pipeline--await", "entry": "git-pipeline--await.ts"},
 		{"bin": "gitlab-pipeline-watcher", "entry": "gitlab-pipeline-watcher.ts"},
+		{"bin": "mise-dot-diff", "entry": "mise-dot-diff.ts"},
 		{"bin": "notif", "entry": "notif.ts"},
 		{"bin": "prepend-comment", "entry": "prepend-comment.ts"},
 		{"bin": "strip-markdown", "entry": "strip-markdown.ts"},
