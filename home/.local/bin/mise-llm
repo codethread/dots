@@ -36,8 +36,6 @@ check_launcher() {
   fi
 }
 check_launcher "$local_bin/claude" "$HOME/.local/share/claude/versions"
-check_launcher "$local_bin/agent" "$HOME/.local/share/cursor-agent/versions"
-check_launcher "$local_bin/cursor-agent" "$HOME/.local/share/cursor-agent/versions"
 check_launcher "$local_bin/codex" "$CODEX_HOME/packages/standalone"
 check_launcher "$local_bin/codex-code-mode-host" "$CODEX_HOME/packages/standalone"
 
@@ -66,12 +64,6 @@ elif [[ $action == update ]]; then
   "$local_bin/claude" update
 fi
 
-if [[ ! -x "$local_bin/agent" ]]; then
-  run_installer cursor https://cursor.com/install "$local_bin:$system_path"
-elif [[ $action == update ]]; then
-  "$local_bin/agent" update
-fi
-
 # OpenAI documents rerunning the installer for standalone updates.
 if [[ ! -x "$local_bin/codex" || $action == update ]]; then
   run_installer codex https://chatgpt.com/codex/install.sh "$local_bin:$system_path"
@@ -85,7 +77,7 @@ if [[ $action == update ]]; then
   env -u PI_OFFLINE "$pi_bin" update --all
 fi
 
-for binary in "$local_bin/claude" "$local_bin/agent" "$local_bin/codex" "$pi_bin"; do
+for binary in "$local_bin/claude" "$local_bin/codex" "$pi_bin"; do
   printf '\n%s\n' "$binary"
   "$binary" --version
 done

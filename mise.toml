@@ -28,7 +28,7 @@ set -e
 """
 
 [tasks."llm:update"]
-description = "Update Claude, Cursor Agent, Codex, Pi, and Pi npm extensions"
+description = "Update Claude, Codex, Pi, and Pi npm extensions"
 env.DOTFILES = "{{ config_root }}"
 run = '"{{ config_root }}/home/.local/bin/mise-llm" update'
 

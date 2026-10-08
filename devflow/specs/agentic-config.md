@@ -3,7 +3,7 @@
 - Document ID: SPEC-001
 - Configuration identification: SPEC-001; migrated from `specs/agentic-config.md`; canonical path `devflow/specs/agentic-config.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-10-02
+- **Last Updated:** 2026-10-08
 
 ## [SPEC-001-S1] 1. Overview
 
@@ -14,7 +14,7 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 ### [SPEC-001-S1.2] Goals
 
 - Single source of truth for global Claude settings in `templates/claude-settings.json.tera`, rendered by mise
-- Mise provisions native Codex/Claude/Cursor CLIs, Node-based Pi, and Playwright CLI; Pi owns its npm extensions
+- Mise provisions native Codex/Claude CLIs, Node-based Pi, and Playwright CLI; Pi owns its npm extensions
 - All agent assets (agents, skills, commands, rules) version-controlled and symlinked into place via dotty
 - Type-safe hook contracts shared across TypeScript and Bash implementations
 - Context-aware shell wrappers that inject environment-specific prompts
@@ -80,7 +80,7 @@ make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrap
 ### [SPEC-001-S2.2] Package Provisioning
 
 - Mise provides the Node runtime; root `mise.toml` installs the user-prefix Playwright CLI with that runtime.
-- `mise.toml` provides the `llm:update` task, while `boot/setup.sh` invokes `home/.local/bin/mise-llm install` during bootstrap for official Claude, Cursor (`cursor-agent` and `agent`), Codex, and Pi installers. `llm:update` updates them and Pi's npm extensions, stopping on failure.
+- `mise.toml` provides the `llm:update` task, while `boot/setup.sh` invokes `home/.local/bin/mise-llm install` during bootstrap for official Claude, Codex, and Pi installers. `llm:update` updates them and Pi's npm extensions, stopping on failure.
 - Pi installs missing `npm:pi-nvim` and `npm:@narumitw/pi-goal` extensions from `pi/agent/settings.json`.
 
 `boot/setup.sh` invokes `home/.local/bin/mise-llm install` in the bootstrap post-repos hook. `~/.local/bin` precedes `$PI_CODING_AGENT_DIR/bin` and mise shims, preserving the custom Pi wrapper. Use `mise run llm:update` for explicit updates.
@@ -268,7 +268,7 @@ Disables Ctrl+A in Global context.
 
 - **Mise as settings source of truth.** `templates/claude-settings.json.tera` renders to a regular `~/.claude/settings.json`; an optional `~/.config/claude/settings-overlay.json` supplies separately owned machine policy. Applying settings requires no system-layer change. Manual edits to the output are overwritten on apply; use project-local or local override settings for overrides.
 
-- **One owner per agent CLI.** Official vendor installers own Claude, Cursor, Codex, and Pi; bootstrap setup installs them and the `llm:update` task updates them. Node remains mise-managed, Playwright is npm-managed in `~/.local`, and Pi uses its official locked Node/npm installation. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
+- **One owner per agent CLI.** Official vendor installers own Claude, Codex, and Pi; bootstrap setup installs them and the `llm:update` task updates them. Node remains mise-managed, Playwright is npm-managed in `~/.local`, and Pi uses its official locked Node/npm installation. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
 
 - **Dotty for asset linking.** Agents, skills, commands, and rules are symlinked by dotty, so edits in dots are visible immediately without a system apply. Global settings are templated by mise separately from asset linking.
 
