@@ -6,7 +6,9 @@ local fns = require 'codethread.fns'
 
 vim.cmd [[
 	" paste in visual selection without adding to register
-	xnoremap <leader>p "_dP
+	" (disabled: shadows pi-nvim's visual <leader>p; Neovim's visual P
+	" already pastes without overwriting registers, :h v_P)
+	" xnoremap <leader>p "_dP
 
 	" delete but without adding to register
 	nnoremap x "_d
