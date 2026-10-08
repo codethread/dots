@@ -1,15 +1,15 @@
-# Model shortcuts matching ct/interactive/claude.nu.
+# Model shortcuts (cls/clo/clh) wrapping home/.local/bin/cl.
 # --settings takes a JSON object in Zsh; all other Claude flags pass through.
-# Like Nushell, permissions are skipped unless --safe/-s is supplied.
+# Permissions are skipped unless --safe/-s is supplied.
 _dots_cl() (
   local model=$1 effort=$2
   shift 2
-  local safe=0 printing=0 style='' settings='{}' option value
+  local safe=0 printing=0 mcp_work=0 style='' settings='{}' option value
   local -a args=()
   while (($#)); do
     case $1 in
       --mine|-m) export CLAUDE_CONFIG_DIR="$HOME/.config/claude"; shift ;;
-      --mcp-work) export ENABLE_CLAUDEAI_MCP_SERVERS=1; shift ;;
+      --mcp-work) mcp_work=1; shift ;;
       --safe|-s) safe=1; shift ;;
       --print|-p) printing=1; args+=(--print); shift ;;
       --continue|-c) args+=(--continue); shift ;;
@@ -42,11 +42,14 @@ _dots_cl() (
     esac
   done
 
-  settings=$(jq -ce --arg style "$style" --argjson printing "$printing" '
-    if type != "object" then error("--settings must be a JSON object")
-    elif $style != "" then .outputStyle = $style
-    elif $printing == 0 and (has("outputStyle") | not) then .outputStyle = "pairing"
-    else . end
+  # disableClaudeAiConnectors is any-source-true, so it cannot live in the shared
+  # settings.json: --mcp-work works by omitting it from the session settings.
+  settings=$(jq -ce --arg style "$style" --argjson printing "$printing" --argjson mcp "$mcp_work" '
+    (if type != "object" then error("--settings must be a JSON object") else . end)
+    | (if $mcp == 0 then .disableClaudeAiConnectors = true else . end)
+    | if $style != "" then .outputStyle = $style
+      elif $printing == 0 and (has("outputStyle") | not) then .outputStyle = "pairing"
+      else . end
   ' <<< "$settings") || return
   local -a defaults=(--model "$model")
   [[ $settings == '{}' ]] || defaults+=(--settings "$settings")

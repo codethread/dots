@@ -232,13 +232,12 @@ Direct `pi` invocation with shared repo-aware configuration:
 - `.mise/conf.d/tools.toml`: project link to the global tools file, so first bootstrap does not require installed global config.
 - `pi/agent/settings.json`: Pi-owned npm extension declarations.
 
-### [SPEC-001-S4.10] Nushell Wrappers (`config/nushell/scripts/ct/interactive/claude.nu`)
+### [SPEC-001-S4.10] Zsh Wrappers (`config/zsh/claude.zsh`)
 
-- `clf`/`clo`/`cls`/`clh` — model-specific Claude wrappers (fable/opus/sonnet/haiku)
-- `--output-style` and `--settings` (a nushell record) serialise to `claude --settings '<json>'`, giving per-session overrides of the mise-managed globals
+- `cls`/`clo`/`clh` — model-specific Claude wrappers (sonnet/opus/haiku) around `cl`
+- `--output-style` and `--settings` (a JSON object) merge into `claude --settings '<json>'`, giving per-session overrides of the mise-managed globals
 - output style defaults to `pairing` for tty sessions; `--print` runs omit it so headless output stays terse
-- `cll` — ephemeral haiku session with auto-cleanup of session files
-- `_claude-session`, `_claude-prompts`, `_claude-session-stats` — session log analysis
+- `disableClaudeAiConnectors` is injected by default and omitted by `--mcp-work`; the setting is any-source-true, so it cannot live in the shared settings template
 
 ### [SPEC-001-S4.11] Hook Implementations
 
@@ -294,7 +293,7 @@ Disables Ctrl+A in Global context.
 - `cc-hook--context-injector.test.ts` — session start/end lifecycle
 - `cc-hook--npm-redirect.test.ts` — PM detection, redirection, quote awareness, skill bypass
 
-**No direct tests for:** bash hooks (cc-hook--notify, cc-hook--activity), `cl` wrapper, direct `pi` usage, nushell wrappers. These require manual verification.
+**No direct tests for:** bash hooks (cc-hook--notify, cc-hook--activity), `cl` wrapper, direct `pi` usage, zsh wrappers. These require manual verification.
 
 ## [SPEC-001-S7] 7. Open Questions
 
