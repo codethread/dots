@@ -104,6 +104,7 @@
     ...notify_plugins,
     "claude-md-management@claude-plugins-official": true,
     "harness@agents": true,
+    "millstrand-identity@harnesses": true,
     "devflow@agents": false,
     "coding@agents": true,
     "claude-code-knowledge@claude-code-plugins": true,
@@ -122,6 +123,12 @@
       "source": {
         "source": "directory",
         "path": env.HOME ~ "/dev/projects/claude-code-plugins"
+      }
+    },
+    "harnesses": {
+      "source": {
+        "source": "directory",
+        "path": env.HOME ~ "/dev/projects/millhouse.spool/spools/harnesses"
       }
     }
   },
