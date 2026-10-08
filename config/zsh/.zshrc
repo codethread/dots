@@ -36,7 +36,17 @@ pi_goal_tools=(goal_complete goal_blocked goal_wait)
 
 alias pih="pi --provider openai-codex --model gpt-6-astra       --thinking xhigh  --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools},mcp,codemode"
 alias pim="pi --provider openai-codex --model gpt-6-astra       --thinking low    --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools},mcp,codemode"
-alias pis="pi --provider openai-codex --model gpt-6.1-sol       --thinking xhigh  --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
+# pis: work machines (IS_WORK) and checkouts under $HOME/pb use Anthropic
+# sonnet; everywhere else keeps sol on codex. Resolved per invocation so the
+# choice follows the current directory (pi_core_tools/pi_goal_tools stay set
+# for the runtime tool expansion).
+pis() {
+  if [[ $IS_WORK == true || $PWD == $HOME/pb || $PWD == $HOME/pb/* ]]; then
+    pi --provider anthropic    --model claude-sonnet-5-5 --thinking high   --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools} "$@"
+  else
+    pi --provider openai-codex --model gpt-6.1-sol       --thinking xhigh  --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools} "$@"
+  fi
+}
 alias pil="pi --provider openai-codex --model gpt-6-luna        --thinking xhigh  --tools ${(j:,:)pi_core_tools}"
 alias pif="pi --provider deepseek     --model deepseek-flash    --thinking max    --tools ${(j:,:)pi_core_tools}"
 alias pio="pi --provider anthropic    --model claude-opus-5-5   --thinking high   --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools}"
@@ -75,8 +85,6 @@ gnah() {
     git stash
   fi
 }
-
-unset pi_core_tools pi_subagent pi_goal_tools
 
 alias gst='git status --short'
 alias ga='git add'
