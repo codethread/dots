@@ -4,6 +4,8 @@
 
 New machine → `boot/boot.sh`: install Homebrew/mise, clone dots, initialize the shared environment, run `mise bootstrap`, then check Full Disk Access and sync Neovim plugins. Existing machine → `mise bootstrap` (also `make`). Preview with `mise bootstrap --dry-run`; inspect with `mise bootstrap status`. `MISE_ENV` selects the machine profile, `-E` overrides it, and `boot.sh -p` sets it explicitly.
 
+Mise itself comes from the official `https://mise.run` installer at `~/.local/bin/mise` and updates with `mise self-update`. Do not add it to Homebrew packages. Shells and LaunchAgents use this stable user-owned executable.
+
 `llm:update` is the only custom task. `mise.toml` owns shared bootstrap resources and hooks; `mise.<profile>.toml` holds machine differences. `.mise/conf.d/` is reserved for reusable entrypoints: `tools.toml` and `tools.dev.toml` symlink to global `config/mise/` sources, while `services.dev.toml` symlinks to `.mise/dev-services.toml`, a source not loaded directly. `.miserc.toml` enables environment-suffixed entrypoints. Global tools are linked by dotty into `~/.config/mise` and reused by project tool fragments before those links exist. Keep bootstrap resources project-local, not in global tool config.
 
 Start mise from the checkout (change directory before launching it) so its early `.miserc.toml` discovery settings load. Do not rely on `mise -C` when invoking dots from outside the checkout; service entrypoints must set their working directory before starting mise too.

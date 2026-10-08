@@ -50,7 +50,7 @@ Logs:
 
 ## Service behavior
 
-**cc-notify:** launchd starts Homebrew's stable mise path in the owning configuration root (dots on dev, workfiles on work) with the explicit profile, then `mise exec -- bun run --cwd <cc-notify> src/main.ts`. Starting mise in its checkout loads early `.miserc.toml` settings; `mise -C` from the application directory misses those early settings in mise 2026.9.15 and can load other profiles' fragments. Bun still selects the application's working directory and `.env`; no hidden foreground task or shell activation is needed. KeepAlive is unconditional.
+**cc-notify (dev):** launchd starts the official mise executable at `~/.local/bin/mise` in the dots checkout with the explicit profile, then `mise exec -- bun run --cwd <cc-notify> src/main.ts`. Workfiles owns its equivalent work configuration. Starting mise in its checkout loads early `.miserc.toml` settings; `mise -C` from the application directory misses those early settings in mise 2026.9.15 and can load other profiles' fragments. Bun still selects the application's working directory and `.env`; no hidden foreground task or shell activation is needed. KeepAlive is unconditional.
 
 **Syncengine:** an inline `/bin/bash` runner launches `gitwatch -r origin -R` for each entry in `~/sync` and for iCloud Notes when present. An empty directory starts no watchers. It starts at login/load without KeepAlive, using explicit user/Homebrew/coreutils/macOS paths. Git/SSH configuration stays user-owned. Check child gitwatch/fswatch processes and per-target logs; the loaded parent alone is insufficient. After updating gitwatch, boot out syncengine and wait for its children to exit before reapplying. Do not edit real repositories to test it: syncing commits and pushes automatically.
 

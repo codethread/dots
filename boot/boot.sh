@@ -44,14 +44,17 @@ fi
 cd "$HOME"
 # The Homebrew installer also prepares Apple's Command Line Tools (including Git).
 # Use the stable native prefix, even when an older environment is inherited.
-export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
 if [ ! -x /opt/homebrew/bin/brew ]; then
   echo 'Installing Homebrew'
   installer="$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   /bin/bash -c "$installer"
 fi
-if [ ! -x /opt/homebrew/bin/mise ]; then
-  /opt/homebrew/bin/brew install mise
+if [ ! -x "$HOME/.local/bin/mise" ]; then
+  echo 'Installing mise (official release; update with mise self-update)'
+  installer="$(curl -fsSL https://mise.run)"
+  # Match mise.toml's minimum even before the installer's release-age delay ends.
+  MISE_VERSION=v2026.10.4 MISE_INSTALL_PATH="$HOME/.local/bin/mise" /bin/sh -c "$installer"
 fi
 
 mkdir -p "$DOTFILES"
@@ -85,8 +88,8 @@ echo "Setting up workstation (profile: $MISE_ENV, branch: $GIT_BRANCH)"
 echo 'If this script fails it can be rerun.'
 # Start mise here so early .miserc.toml settings load before config discovery.
 cd "$DOTFILES"
-/opt/homebrew/bin/mise trust "$DOTFILES/mise.toml"
-/opt/homebrew/bin/mise -E "$MISE_ENV" bootstrap
+"$HOME/.local/bin/mise" trust "$DOTFILES/mise.toml"
+"$HOME/.local/bin/mise" -E "$MISE_ENV" bootstrap
 
 # Optional first-boot integration checks and editor plugin setup.
 nu \

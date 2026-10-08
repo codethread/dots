@@ -102,7 +102,6 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "brew:rsync" = { os = "macos" }
 "brew:graphviz" = { os = "macos" }
 "brew:imagemagick" = { os = "macos" }
-"brew:mise" = { os = "macos" }
 "brew:gum" = { os = "macos" }
 "brew:sderosiaux/tap/launchdeck" = { os = "macos" }
 

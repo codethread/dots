@@ -8,6 +8,8 @@
 
 Mise owns the Apple Silicon macOS workstation: packages, managed files, repositories, defaults, user settings, and LaunchAgents. Mise renders Claude settings and merges shared Codex settings; dotty only links repository assets. Shells activate mise natively. The checkout requires mise 2026.10.4 or newer for native structured dotfile merges.
 
+The official installer at `https://mise.run` owns `~/.local/bin/mise`; Homebrew does not manage mise. Update it with `mise self-update`. The shared shell environment puts `~/.local/bin` on PATH, and LaunchAgents use that stable executable path. Zsh caches `mise completion zsh` through its existing CLI-init helper.
+
 ## Configuration locations
 
 There are two configuration scopes—project bootstrap and global tools—not four independent systems. The extra locations organize project fragments and reusable sources.
@@ -50,6 +52,7 @@ mise bootstrap                 # Apply the workstation
 mise bootstrap status          # Inspect declarative state
 mise bootstrap --update        # Also update declared repositories/package metadata
 mise run llm:update             # Explicit agent CLI updates
+mise self-update               # Update the mise executable
 ```
 
 `make` delegates to `mise bootstrap --skip-dirty`; `make plan` previews the same policy, while `make update` remains strict about dirty repositories; `make help` lists setup, preview, status, update, linking, and build commands with profile selection. Zsh's `mise-packages`, `mise-services`, and `mise-dot-diff` inspect this checkout from any directory. Native subcommands also apply individual resources; narrow applies must select their own prerequisites, so use full bootstrap for initial setup.
@@ -58,7 +61,7 @@ Plain bootstrap clones missing repositories but does not pull unpinned existing 
 
 ## Bootstrap ordering
 
-`boot/boot.sh` installs Homebrew and mise, clones dots, selects the profile, initializes the shared environment, and runs native bootstrap. It then checks Full Disk Access and syncs Neovim plugins. Existing machines use the same bootstrap from a durable checkout.
+`boot/boot.sh` installs Homebrew and the official mise release at `~/.local/bin/mise`, clones dots, selects the profile, initializes the shared environment, and runs native bootstrap. The initial mise version matches the root `min_version`, avoiding the installer's default release-age delay; keep them in sync when raising the minimum. Existing binaries stay in place and update with `mise self-update`. It then checks Full Disk Access and syncs Neovim plugins. Existing machines use the same bootstrap from a durable checkout.
 
 Native bootstrap installs package-manager plugins first, then applies built-in packages before managed files and repositories, followed by dotfiles, defaults, LaunchAgents, login shell, and tools. Plugin-managed packages (including VS Code extensions) apply after tools, so the host application is ready. Two repo-specific hooks fill the gaps:
 

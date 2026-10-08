@@ -7,7 +7,7 @@ url = "git@github.com:codethread/cc-notify.git"
 "~/.local/state/com.codethread.git-maintenance" = {}
 
 [bootstrap.macos.launchd.agents.cc-notify]
-program = "/opt/homebrew/bin/mise"
+program = "{{ env.HOME }}/.local/bin/mise"
 args = [
   "-E",
   "{{ vars.service_profile }}",
@@ -23,7 +23,7 @@ args = [
 working_directory = "{{ config_root }}"
 run_at_load = true
 keep_alive = true
-environment = { HOME = "{{ env.HOME }}", PATH = "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
+environment = { HOME = "{{ env.HOME }}", PATH = "{{ env.HOME }}/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
 stdout_path = "~/.local/state/com.codethread.cc-notify/std.log"
 stderr_path = "~/.local/state/com.codethread.cc-notify/std.log"
 
