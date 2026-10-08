@@ -71,7 +71,7 @@ enabled = true
 enabled = true
 
 [desktop]
-conversationDetailMode = "STEPS_PROSE"
+conversationDetailMode = "STEPS_COMMANDS"
 ambient-suggestions-enabled = false
 mac-menu-bar-enabled = true
 show-context-window-usage = true
@@ -83,7 +83,7 @@ enabled-reasoning-efforts = [
     "high",
     "xhigh",
 ]
-followUpQueueMode = "queue"
+followUpQueueMode = "steer"
 
 [[skills.config]]
 path = "~/.config/.codex/skills/.system/imagegen/SKILL.md"
