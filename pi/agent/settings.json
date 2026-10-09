@@ -23,10 +23,10 @@
       "source": "../../dev/projects/agents"
     },
     {
-      "source": "../../pb/adam.hall/local-work-claude/plugins/admin"
+      "source": "../../pb/adam.hall/workfiles/agents/plugins/admin"
     },
     {
-      "source": "../../pb/adam.hall/local-work-claude/plugins/backend"
+      "source": "../../pb/adam.hall/workfiles/agents/plugins/backend"
     },
     "npm:pi-nvim",
     "npm:@narumitw/pi-goal",
