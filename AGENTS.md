@@ -34,47 +34,22 @@ Run `make help` for commands and profile selection. Plain `make` runs native mis
 
 ### Development Hierarchy
 
-Build tools in order of increasing complexity
+Nushell tooling is deprecated. Choose between two forms for new utilities:
 
-1. **Nushell alias** (1 line)
-    - Location: `config/nushell/scripts/ct/alias/*.nu`
-    - Example: `export alias ga = git add`
-    - When: Simple command shortcuts
-
-2. **Nushell function** (3-4 lines)
-    - Location: `config/nushell/scripts/ct/<category>/mod.nu`
-    - Example: Short functions like `git_current_branch`
-    - When: Need parameters or simple logic
-
-3. **Bash script** (≤200 lines)
+1. **Standalone Zsh helper** (usually no more than 200 lines)
     - Location: `home/.local/bin/`
-    - Example: `home/.local/bin/nush`
-    - When: Composition of multiple tools, and or needs to be globally available in PATH for non-tty usage
-    - Notes:
-        - `$ make link` links executables to `~/.local/bin/` (in PATH)
-        - Always use bash (not zsh or other shells)
-        - Add `:module:` comment for documentation
-        - Use `-h` or `--help` flag for usage info
+    - Use for simple command composition and tools needed on PATH.
+    - Add a `:module:` description and `-h` or `--help` output.
+    - `make link` links executables into `~/.local/bin/`.
 
-4. **TypeScript/Bun** (>200 lines or needs dependencies)
-    - Location: entrypoints declared in `oven/bin/manifest.json`
-    - When: Complex logic, dependencies, async task control or shared code
-    - Notes:
-        - `$ make build` builds manifest-declared executables to `~/.local/bin/` (in PATH)
-        - Full development environment with testing
+2. **TypeScript/Bun in Oven**
+    - Use for complex logic, dependencies, async control, shared code, or behavior that needs tests.
+    - Declare entrypoints in `oven/bin/manifest.json`.
+    - `make build` builds the declared tools into `~/.local/bin/` and runs the development checks.
 
 ### Script Evolution Path
 
-Bash must stay simple and self-explanatory. Do not add standalone Bash test suites or harnesses. If logic needs tests, it is too complex for Bash here: move it into `oven/` and test it there. Verify shell changes with syntax checks and direct smoke checks instead.
-
-Start simple → Graduate as needed:
-
-1. Try as nushell alias first
-2. Expand to nushell function if needed
-3. Create bash script in `home/.local/bin/` for standalone tools
-    - `make link` to add script to PATH
-4. Migrate to `oven/` when exceeding 200 lines or needing TypeScript
-    - Build with `make build` (or `mise exec -- bun run build` inside `oven/`) to create executable
+Start with a small Zsh helper and move it into `oven/` when it exceeds this scope or needs TypeScript. Keep shell scripts simple and self-explanatory. Do not add standalone shell test suites or harnesses: if the logic needs tests, implement and test it in Oven. Verify shell changes with syntax checks and focused smoke checks.
 
 ## Claude Code integrations
 
