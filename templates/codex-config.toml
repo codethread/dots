@@ -111,4 +111,4 @@ source = "https://github.com/codethread/agents.git"
 
 [marketplaces.harnesses]
 source_type = "local"
-source = "/Users/ct/dev/projects/millhouse.spool/spools/harnesses"
+source = "{{ env.HOME }}/dev/projects/millhouse.spool/spools/harnesses"

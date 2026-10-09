@@ -182,6 +182,7 @@ mode = "template"
 [dotfiles."~/.config/codex/config.toml/shared"]
 source = "templates/codex-config.toml"
 merge = true
+template = "tera"
 
 # Apple-supported sudo extension point (macOS 14+). Leave /etc/pam.d/sudo alone.
 # https://support.apple.com/en-us/109030
