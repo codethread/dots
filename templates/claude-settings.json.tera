@@ -1,8 +1,6 @@
 {# A repo may install a JSON overlay without owning this shared output file. #}
 {# claude.ai connectors are off by default. disableClaudeAiConnectors is any-source-true, but this env
    default can be overridden per session: --settings '{"env":{"ENABLE_CLAUDEAI_MCP_SERVERS":"true"}}'. #}
-{% set notify_plugins = {"cc-notify@cc-notify-marketplace": true} if vars.claude_enable_notify else {} %}
-{% set notify_marketplaces = {"cc-notify-marketplace": {"source": {"source": "github", "repo": "codethread/cc-notify"}}} if vars.claude_enable_notify else {} %}
 {% set base = {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 999,
@@ -102,7 +100,6 @@
     "padding": 0
   },
   "enabledPlugins": {
-    ...notify_plugins,
     "claude-md-management@claude-plugins-official": true,
     "harness@agents": true,
     "millstrand-identity@harnesses": true,
@@ -113,7 +110,6 @@
     "writing@agents": true
   },
   "extraKnownMarketplaces": {
-    ...notify_marketplaces,
     "agents": {
       "source": {
         "source": "directory",
