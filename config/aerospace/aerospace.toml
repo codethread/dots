@@ -60,7 +60,7 @@ cmd-ctrl-m = 'mode move'
 # See: https://nikitabobko.github.io/AeroSpace/commands#workspace
 cmd-ctrl-u = 'workspace primary'
 cmd-ctrl-i = 'workspace alt' # usually the browser
-cmd-ctrl-o = 'workspace social' # teams/slack/whatsapp etc
+cmd-ctrl-o = 'workspace social' # teams/whatsapp etc
 cmd-ctrl-p = 'workspace planner' # things like calendar, notes, todos etc
 cmd-ctrl-y = 'workspace figma' # gets own space
 cmd-ctrl-n = 'workspace other' # all the other things i've dismissed
@@ -210,7 +210,7 @@ if.app-id = 'net.whatsapp.WhatsApp'
 run = 'move-node-to-workspace social'
 
 [[on-window-detected]]
-if.app-name-regex-substring = '(Slack|Teams)'
+if.app-name-regex-substring = 'Teams'
 run = 'move-node-to-workspace social'
 
 [[on-window-detected]]
