@@ -6,7 +6,7 @@ Native `mise bootstrap` prepares and applies user LaunchAgents. Use a durable ch
 
 | Owner              | Agents                                                       |
 | ------------------ | ------------------------------------------------------------ |
-| Dots, all profiles | syncengine                                                   |
+| Dots, all profiles | syncengine, pitchfork                                        |
 | Dots, dev only     | cc-notify, hourly/daily/weekly Git maintenance, backup-notes |
 | Workfiles          | cc-notify, hourly/daily/weekly Git maintenance               |
 
@@ -21,7 +21,7 @@ make plan
 make status
 ```
 
-Dots' work-profile final hook clones workfiles when needed and runs its default `make`, after common dots setup finishes. Missing GitLab authentication warns and skips this handoff; errors from an available workfiles checkout fail visibly. Dots' dry run prints the handoff but does not recursively plan workfiles. This is a separate ordered bootstrap, not late preparation for dots-owned jobs.
+Dots' work-profile final hook clones workfiles when needed and runs its default `make`, after common dots setup finishes. Workfiles registers its project daemon definitions with Pitchfork during service preparation; registration does not start the approval task. Missing GitLab authentication warns and skips this handoff; errors from an available workfiles checkout fail visibly. Dots' dry run prints the handoff but does not recursively plan workfiles. This is a separate ordered bootstrap, not late preparation for dots-owned jobs.
 
 Each owning bootstrap creates log directories and clones declared repos before its `boot/setup.sh` runs. That hook installs application dependencies, runs cc-notify's `make link-bin` to link its CLI into `~/.local/bin`, warns about missing cc-notify credential names without printing values, registers filtered Git maintenance, and checks syncengine dependencies. The later native dotfiles phase links gitwatch; LaunchAgents load afterwards. Tools are installed early in the post-packages hook because raw LaunchAgents precede mise's normal tools phase.
 
@@ -43,12 +43,17 @@ For a scheduled maintenance run, use `launchctl kickstart gui/UID/dev.mise.git-m
 
 Logs:
 
+- Pitchfork supervisor stdout/stderr: `~/.local/state/com.codethread.pitchfork/std.log`; project daemon logs remain available through `mise daemons logs` in their owning checkout.
 - cc-notify stdout/stderr: `~/.local/state/com.codethread.cc-notify/std.log`; application JSONL: checkout `.logs/cc-notify.jsonl`.
 - Git maintenance: `~/.local/state/com.codethread.git-maintenance/{hourly,daily,weekly}.log`.
 - Backup-notes: `~/.local/state/com.codethread.backup-notes/std.log`.
 - Syncengine: `~/.local/state/com.codethread.syncengine/std.log` plus per-target logs.
 
 ## Service behavior
+
+**Pitchfork:** dots owns `dev.mise.pitchfork`, a user LaunchAgent running the foreground `pitchfork supervisor run --boot` through the official `~/.local/bin/mise`. Common setup installs the pinned tool and global tool links before launchd loads it. It starts at login and restarts only on failure. Each project owns and registers its daemon definitions; registration persists across logins. Pitchfork 2.29.0 discovers registered cron jobs without `boot_start`, so workfiles' five-minute `reapprove` schedule resumes without an extra immediate approval run. `stopped` between cron runs is normal; inspect `mise daemons status reapprove --json` and logs from workfiles to see the last/next run.
+
+Do not also run `pitchfork boot enable`: startup has one owner. Its `boot status` command checks Pitchfork's own service, not `dev.mise.pitchfork`; inspect this LaunchAgent instead. If a CLI-started supervisor is already running, the managed command exits successfully without taking it over, and does not restart-loop. The existing stack stays untouched until logout/reboot; for an immediate handoff, stop the existing supervisor only when its workloads can be interrupted, then start the managed agent. Do not use `--force` during bootstrap. Reconcile any separately installed `pitchfork.plist` before applying. The declared official mise executable must exist; older Homebrew-only installations need the documented installer migration first. After confirming managed startup works, `[settings.supervisor] auto_start = false` in Pitchfork's user config can prevent CLI-created replacements; bootstrap does not change this setting on an already-running stack.
 
 **cc-notify (dev):** launchd starts the official mise executable at `~/.local/bin/mise` in the dots checkout with the explicit profile, then `mise exec -- bun run --cwd <cc-notify> src/main.ts`. Workfiles owns its equivalent work configuration. Starting mise in its checkout loads early `.miserc.toml` settings; `mise -C` from the application directory misses those early settings in mise 2026.9.15 and can load other profiles' fragments. Bun still selects the application's working directory and `.env`; no hidden foreground task or shell activation is needed. KeepAlive is unconditional.
 

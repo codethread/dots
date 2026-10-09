@@ -245,6 +245,21 @@ ShowRemovableMediaOnDesktop = true
 [bootstrap.macos.defaults."com.apple.universalaccess"]
 reduceMotion = true
 
+# One shared supervisor; projects register their own daemon definitions.
+[bootstrap.directories."~/.local/state/com.codethread.pitchfork"]
+
+[bootstrap.macos.launchd.agents.pitchfork]
+program = "{{ env.HOME }}/.local/bin/mise"
+args = ["exec", "--", "pitchfork", "supervisor", "run", "--boot"]
+working_directory = "~"
+run_at_load = true
+# An existing CLI-started supervisor exits this command successfully; don't loop
+# or force a takeover that would stop its running daemons.
+keep_alive_on_failure = true
+environment = { HOME = "{{ env.HOME }}", PATH = "{{ vars.syncengine_path }}", PITCHFORK_MISE_BIN = "{{ env.HOME }}/.local/bin/mise" }
+stdout_path = "~/.local/state/com.codethread.pitchfork/std.log"
+stderr_path = "~/.local/state/com.codethread.pitchfork/std.log"
+
 # Shared all-profile syncengine service.
 [bootstrap.directories."~/.local/state/com.codethread.syncengine"]
 

@@ -8,7 +8,7 @@
 
 Mise owns the Apple Silicon macOS workstation: packages, managed files, repositories, defaults, user settings, and LaunchAgents. Mise renders Claude settings and merges shared Codex settings; dotty only links repository assets. Shells activate mise natively. The checkout requires mise 2026.10.4 or newer for native structured dotfile merges.
 
-The official installer at `https://mise.run` owns `~/.local/bin/mise`; Homebrew does not manage mise. Update it with `mise self-update`. The shared shell environment puts `~/.local/bin` on PATH, and LaunchAgents use that stable executable path. Zsh caches `mise completion zsh` through its existing CLI-init helper.
+The official installer at `https://mise.run` owns `~/.local/bin/mise`; Homebrew does not manage mise. Update it with `mise self-update`. The shared shell environment puts `~/.local/bin` on PATH, and LaunchAgents use that stable executable path. Dots also provisions the shared Pitchfork supervisor at login; projects register their own daemon definitions during their bootstrap. Zsh caches `mise completion zsh` through its existing CLI-init helper.
 
 ## Configuration locations
 
@@ -32,7 +32,7 @@ Workfiles owns the moved work-specific packages, Vault and cargo-lambda global t
 
 Runtime application ownership follows whole files, not individual work references. Mixed Pi, Git, Honeycomb/worktree, environment, and tmux settings stay in dots. The wholly work-specific Nushell `ct/config/hooks.nu` and `ct/onepassword.nu` modules live in workfiles' home tree and load through the existing optional `~/.work.nu` entrypoint. Work hooks append to the existing PWD hooks so mise activation is retained; common Nushell startup does not require either work module.
 
-Root `mise.toml` owns shared bootstrap resources: host packages, VS Code extensions, the pinned Todoist repo, workstation directories/repos, Claude and Codex settings, macOS preferences, the login shell and sudo extension, and the all-profile syncengine agent. Profile overlays contain machine-specific packages, variables, files, and agents.
+Root `mise.toml` owns shared bootstrap resources: host packages, VS Code extensions, the pinned Todoist repo, workstation directories/repos, Claude and Codex settings, macOS preferences, the login shell and sudo extension, and the all-profile syncengine and Pitchfork agents. Profile overlays contain machine-specific packages, variables, files, and agents.
 
 Shared VS Code extensions are `vscode:*` entries in `[bootstrap.packages]`, backed by the [waynehoover/mise-vscode package plugin](https://github.com/waynehoover/mise-vscode) declared in `[bootstrap.plugins]`. The VS Code cask supplies the host application; `config/env/base.sh` includes its bundled `code` CLI on PATH. Mise installs missing extensions and reports their status; VS Code owns extension updates (the plugin does not support version pins). Removing a declaration does not uninstall an extension; pruning is explicit and limited to extensions mise installed. Work-specific extensions remain workfiles-owned.
 
