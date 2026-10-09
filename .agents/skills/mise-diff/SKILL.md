@@ -66,7 +66,7 @@ Whole-file templates still overwrite application edits. Capture wanted live chan
 mise dot apply ~/.claude/settings.json
 ```
 
-`--pull` handles one whole-file JSON-object template. It prints differing or additional live values, merges them into the overlay, and reports template-owned keys absent from live (apply restores those; edit the template to remove them). Arrays replace wholesale. `--write` saves the overlay; without it nothing persistent is written.
+`--pull` handles one whole-file JSON-object template. It prints differing or additional live values, merges them into the overlay, and reports template-owned keys absent from live (apply restores those; edit the template to remove them). Arrays replace wholesale in the pulled overlay; the template then unions `permissions` lists with its base, so a pulled permission list is harmless but redundant—trim it to the additions. `--write` saves the overlay; without it nothing persistent is written.
 
 Claude's template defaults to `~/.config/claude/settings-overlay.json`. Other JSON templates require `--into FILE` and must already consume that overlay; choosing a path does not wire it into the template. Malformed JSON fails visibly. Never use `mise dot add` on a template: it copies the rendered output over the source. For copy-mode entries, `mise dot add TARGET` is the native capture operation.
 

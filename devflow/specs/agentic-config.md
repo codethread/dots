@@ -146,7 +146,7 @@ The `config` project covers `config/codex/` → `~/.config/codex/` as part of th
 
 Mise owns `~/.claude/settings.json` as a rendered regular file via root `mise.toml`; dotty excludes it. Apply with `mise dot apply ~/.claude/settings.json`. `/tmp/claude` is declared in root `mise.toml` and prepared by the native files phase, not `mise dot apply`. See [Claude README](../../claude/README.md) for the apply workflow.
 
-**Permissions:** The shared template owns the common allow/deny lists, `acceptEdits` default mode, and additional directories (`$DOTFILES`, `~/.local`, `~/.claude`, `~/dev`). Workfiles' JSON overlay adds the work directory and Microsoft 365/Atlassian allowances. Secret-file reads, plan/worktree/cron tools, and other unwanted tools remain denied.
+**Permissions:** The shared template owns the common allow/deny lists, `acceptEdits` default mode, and additional directories (`~/.local`, `~/.claude`, `~/dev`). Workfiles' JSON overlay adds the work directory and Microsoft 365/Atlassian allowances; the template unions overlay `permissions` lists (`allow`, `ask`, `deny`, `additionalDirectories`) with its own, so the overlay lists only additions. Secret-file reads, plan/worktree/cron tools, and other unwanted tools remain denied.
 
 **Global hook:** `PostToolUse[Write]` runs inline `git add -N` for new files. Status line uses `cc-statusline`.
 
@@ -195,14 +195,17 @@ All remaining feature flags and skill overrides are preserved in the template. P
 
 Single file covering ways of working, repo conventions, git rules (commit only when asked, atomic, HEREDOC format, never `--no-verify`), comment style, and tool-schema fixes.
 
-### [SPEC-001-S4.6] Claude Wrapper (`home/.local/bin/cl`)
+### [SPEC-001-S4.6] Claude Launcher (`home/.local/bin/cl`)
 
-Bash wrapper prepending context-aware system prompts to `claude` CLI:
+The single Claude entrypoint for people and tooling: sensible defaults, with flags to override them. Shells add only conveniences (S4.10).
 
-- Repository type detection: `/work/*` → GitLab hints; else → GitHub hints
-- Always injected: sub-agent concurrency rules, conciseness directive, tool schema warning
-- Effort defaults: opus→high, others→medium
-- Flags: `-d` (skip permissions), `--dry-run`, `-m/--model`, `--effort`
+- Defaults: `--dangerously-skip-permissions`; `outputStyle: pairing` for interactive sessions (`-p/--print` omits it so headless output stays terse); claude.ai connectors off via the shared template's `env.ENABLE_CLAUDEAI_MCP_SERVERS="false"`
+- Appended system prompt: forge hint from `origin` (`github.com` → gh, any other remote → glab, none outside git) and sub-agent concurrency rules; a caller's `--append-system-prompt` is appended after them
+- Overrides: `-s/--safe` keeps permission prompts; `--mcp-work` sets `env.ENABLE_CLAUDEAI_MCP_SERVERS="true"` in the session `--settings`, which outranks user settings. Settings `env` also outranks the process environment, so launchers must re-enable connectors with `--settings`, not an exported variable. `disableClaudeAiConnectors` is unsuitable: any source setting it true wins
+- `-m/--mine` sets `CLAUDE_CONFIG_DIR=~/.config/claude`; `--output-style` and `--settings` (JSON object or file) merge into one session `--settings`
+- `--dry-run` prints the command; `-h/--help` prints cl's options followed by `claude --help`
+- Claude subcommands (`mcp`, `plugin`, `doctor`, ...) pass through untouched; all other arguments pass to `claude`
+- Effort comes from the shared `effortLevel` setting; `--effort` passes through
 
 ### [SPEC-001-S4.7] Pi Configuration (`pi/`)
 
@@ -232,12 +235,11 @@ Direct `pi` invocation with shared repo-aware configuration:
 - `.mise/conf.d/tools.toml`: project link to the global tools file, so first bootstrap does not require installed global config.
 - `pi/agent/settings.json`: Pi-owned npm extension declarations.
 
-### [SPEC-001-S4.10] Zsh Wrappers (`config/zsh/claude.zsh`)
+### [SPEC-001-S4.10] Zsh Conveniences (`config/zsh/claude.zsh`)
 
-- `cls`/`clo`/`clh` — model-specific Claude wrappers (sonnet/opus/haiku) around `cl`
-- `--output-style` and `--settings` (a JSON object) merge into `claude --settings '<json>'`, giving per-session overrides of the mise-managed globals
-- output style defaults to `pairing` for tty sessions; `--print` runs omit it so headless output stays terse
-- `disableClaudeAiConnectors` is injected by default and omitted by `--mcp-work`; the setting is any-source-true, so it cannot live in the shared settings template
+- `cls`/`clo`/`clh`: `cl --model sonnet|opus|haiku`
+- `_dots_cl` completion for `cl` and the shortcuts: options parsed from `cl --help` (cl's plus claude's), with values for `--output-style` (built-ins plus `output-styles/*.md`), `--model`, `--effort`, `--permission-mode`, `--settings` and `--add-dir`
+- Sourced after `compinit` so `compdef` is available
 
 ### [SPEC-001-S4.11] Hook Implementations
 
@@ -282,7 +284,7 @@ Disables Ctrl+A in Global context.
 
 - **Shared agent assets live in `codethread/agents`.** Pi-related reusable agents/skills are primarily authored and maintained there now; this repo keeps only the `pi/agent.njk` template and compatibility shims needed to append the right system prompt and consume the shared assets.
 
-- **Wrapper-injected system prompts.** Shell wrappers add context-dependent prompts at launch rather than embedding them in settings.json. `cl` injects richer Claude-specific guidance (repo type, concurrency, concision, tool realism, sandbox awareness). `pi` now uses `pi/agent.njk` as the template for appended system prompt management, while the heavier reusable config lives in `codethread/agents`. This keeps prompts context-dependent without polluting global config.
+- **Wrapper-injected system prompts.** Shell wrappers add context-dependent prompts at launch rather than embedding them in settings.json. `cl` injects the forge hint and sub-agent concurrency rules. `pi` now uses `pi/agent.njk` as the template for appended system prompt management, while the heavier reusable config lives in `codethread/agents`. This keeps prompts context-dependent without polluting global config.
 
 - **Package manager detection by lock file.** `cc-hook--npm-redirect` walks the directory tree looking for lock files in priority order (bun > pnpm > yarn > npm). This is more reliable than checking tool presence and handles monorepos.
 

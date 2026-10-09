@@ -1,27 +1,31 @@
 {# A repo may install a JSON overlay without owning this shared output file. #}
+{# claude.ai connectors are off by default. disableClaudeAiConnectors is any-source-true, but this env
+   default can be overridden per session: --settings '{"env":{"ENABLE_CLAUDEAI_MCP_SERVERS":"true"}}'. #}
 {% set notify_plugins = {"cc-notify@cc-notify-marketplace": true} if vars.claude_enable_notify else {} %}
 {% set notify_marketplaces = {"cc-notify-marketplace": {"source": {"source": "github", "repo": "codethread/cc-notify"}}} if vars.claude_enable_notify else {} %}
 {% set base = {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 999,
   "env": {
-    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "true",
-    "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
     "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "1",
-    "CLAUDE_CODE_NO_FLICKER": "1",
     "DISABLE_AUTOUPDATER": "1",
     "DISABLE_ERROR_REPORTING": "1",
     "DISABLE_FEEDBACK_COMMAND": "1",
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
     "MANPAGER": "cat",
     "SHELL": exec(command="command -v bash"),
     "TMPDIR": "/tmp/claude"
   },
-  "includeCoAuthoredBy": false,
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "includeGitInstructions": false,
   "permissions": {
     "allow": [
       "Bash",
-      "Edit(.claude)",
+      "Edit(.claude/**)",
       "Read(//tmp/claude/**)",
       "Edit(//tmp/claude/**)",
       "WebFetch",
@@ -52,8 +56,6 @@
       "Read(~/*.pem)",
       "Read(**/.env)",
       "Read(**/.env.*)",
-      "Read(**/.env.local)",
-      "Read(**/.env.production)",
       "Read(**/.git/hooks/**)",
       "Read(**/id_rsa*)",
       "Read(**/secrets/**)",
@@ -62,7 +64,6 @@
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
-      "$DOTFILES",
       "~/.local",
       "~/.claude",
       "~/dev"
@@ -137,25 +138,28 @@
   "ultracode": false,
   "fastMode": false,
   "promptSuggestionEnabled": false,
-  "autoUpdatesChannel": "latest",
   "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,
   "disableAutoMode": "disable",
   "theme": "auto",
   "editorMode": "vim",
-  "verbose": false,
   "preferredNotifChannel": "notifications_disabled",
   "autoCompactEnabled": true,
   "autoScrollEnabled": true,
   "fileCheckpointingEnabled": false,
   "showTurnDuration": true,
   "terminalProgressBarEnabled": true,
-  "teammateMode": "in-process",
-  "useAutoModeDuringPlan": false
+  "effortLevel": "high",
+  "tui": "fullscreen",
+  "feedbackSurveyRate": 0,
+  "awaySummaryEnabled": false
 } %}
 {% set overlay = env.HOME ~ "/.config/claude/settings-overlay.json" %}
-{% if overlay is file %}
-{{ exec(command="printf '%s' " ~ (base | json_encode | quote) ~ " | /opt/homebrew/bin/jq -Se --slurpfile overlay " ~ (overlay | quote) ~ " 'if ($overlay | length) == 1 and ($overlay[0] | type) == \"object\" then . * $overlay[0] else error(\"Claude settings overlay must contain one JSON object\") end'") }}
-{% else %}
-{{ exec(command="printf '%s' " ~ (base | json_encode | quote) ~ " | /opt/homebrew/bin/jq -S .") }}
-{% endif %}
+{% if overlay is not file %}{% set overlay = "/dev/null" %}{% endif %}
+{# Overlays deep-merge, except permission lists, which combine so overlays list only their additions. #}
+{% set merge = `($overlay[0] // {}) as $o
+  | if ($overlay | length) > 1 or ($o | type) != "object" then error("Claude settings overlay must contain one JSON object") else . end
+  | . as $base | . * $o
+  | reduce ("allow", "ask", "deny", "additionalDirectories") as $k (.;
+      if $o.permissions[$k] then .permissions[$k] = ($base.permissions[$k] + $o.permissions[$k] | unique) else . end)` %}
+{{ exec(command="printf '%s' " ~ (base | json_encode | quote) ~ " | /opt/homebrew/bin/jq -Se --slurpfile overlay " ~ (overlay | quote) ~ " " ~ (merge | quote)) }}

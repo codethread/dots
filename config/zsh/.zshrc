@@ -108,8 +108,6 @@ alias hc='honeycomb'
 
 # shuck: source=./helpers.zsh
 source "$DOTFILES/config/zsh/helpers.zsh"
-# shuck: source=./claude.zsh
-source "$DOTFILES/config/zsh/claude.zsh"
 
 #: }}}
 #: completion {{{
@@ -132,6 +130,9 @@ else
   compinit -D
 fi
 bashcompinit
+
+# shuck: source=./claude.zsh
+source "$DOTFILES/config/zsh/claude.zsh"
 
 #: }}}
 #: keybindings {{{

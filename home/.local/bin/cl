@@ -1,75 +1,97 @@
 #!/usr/bin/env bash
-# :module: Claude Code wrapper with conditional system prompts
+# :module: Claude Code launcher with shared defaults and override flags
 #
-# Appends context-aware system prompts based on environment:
-#   - work repos (path contains /work/) get gitlab hint
-#   - all other repos get github hint
-#   - concurrency and conciseness prompts always included
+# The one entrypoint for people and tooling; shells only add shortcuts.
+# Defaults: skip permission prompts, `pairing` output style for interactive
+# sessions, claude.ai connectors off (shared settings.json), and appended
+# forge + sub-agent concurrency prompts. Other arguments pass to `claude`.
 
 set -euo pipefail
 
-# --- Prompt snippets ---
-PROMPT_PERSONAL="this repo uses github (via gh)"
+usage() {
+    cat <<'EOF'
+Usage: cl [cl options] [claude options] [prompt]
+       cl <claude subcommand> ...      (passed through untouched)
+
+cl options:
+  -s, --safe                  keep permission prompts (default: skip them)
+      --mcp-work              enable claude.ai connectors (Atlassian, Microsoft 365, ...)
+  -m, --mine                  use the personal config dir ~/.config/claude
+      --output-style <style>  session output style (default: pairing, unless --print)
+      --settings <json|file>  session settings, merged with cl's own
+      --append-system-prompt <prompt>
+                              appended after cl's prompts
+      --dry-run               print the claude command instead of running it
+  -h, --help                  show this help and claude's
+
+EOF
+}
+
 PROMPT_CONCURRENCY="Sub-agent concurrency: spawn multiple read-only agents freely (explore, research, etc), but only ever one mutating agent at a time. Don't run read-only agents alongside a mutating agent — they may read stale data."
 
-# --- Parse flags ---
-DANGEROUSLY_SKIP=false
-DRY_RUN=false
-PASSTHROUGH=()
-MODEL=""
-HAS_EFFORT=false
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -d|--dangerously-skip-permissions) DANGEROUSLY_SKIP=true; shift ;;
-        --dry-run) DRY_RUN=true; shift ;;
-        -h|--help)
-            echo "Usage: cl [-d|--dangerously-skip-permissions] [--dry-run] [-- claude-args...]"
-            exit 0 ;;
-        --model|-m) [[ $# -lt 2 ]] && { echo "cl: $1 requires an argument" >&2; exit 1; }; MODEL="$2"; PASSTHROUGH+=("$1" "$2"); shift 2 ;;
-        --model=*) MODEL="${1#*=}"; PASSTHROUGH+=("$1"); shift ;;
-        --effort) [[ $# -lt 2 ]] && { echo "cl: $1 requires an argument" >&2; exit 1; }; HAS_EFFORT=true; PASSTHROUGH+=("$1" "$2"); shift 2 ;;
-        --effort=*) HAS_EFFORT=true; PASSTHROUGH+=("$1"); shift ;;
-        *) PASSTHROUGH+=("$1"); shift ;;
+case ${1:-} in
+    agents|attach|auth|auto-mode|doctor|gateway|import|install|logs|mcp|plugin|plugins|purge|respawn|rm|setup-token|stop|kill|ultrareview|update|upgrade)
+        exec claude "$@" ;;
+esac
+
+safe=0 mcp_work=0 printing=0 dry_run=0 style='' settings='{}' user_prompt=''
+args=()
+while (($#)); do
+    case $1 in
+        --settings=*|--output-style=*|--append-system-prompt=*)
+            set -- "${1%%=*}" "${1#*=}" "${@:2}"; continue ;;
+        -s|--safe) safe=1 ;;
+        --mcp-work) mcp_work=1 ;;
+        -m|--mine) export CLAUDE_CONFIG_DIR="$HOME/.config/claude" ;;
+        --dry-run) dry_run=1 ;;
+        -h|--help) usage; exec claude --help ;;
+        -p|--print) printing=1; args+=("$1") ;;
+        --settings|--output-style|--append-system-prompt)
+            (($# >= 2)) || { echo "cl: $1 requires a value" >&2; exit 2; }
+            case $1 in
+                --settings) settings=$2 ;;
+                --output-style) style=$2 ;;
+                *) user_prompt=$2 ;;
+            esac
+            shift ;;
+        --) args+=("$@"); break ;;
+        *) args+=("$1") ;;
     esac
+    shift
 done
 
-# --- Build args ---
-ARGS=()
-if [[ "$DANGEROUSLY_SKIP" == true ]]; then
-    ARGS+=(--dangerously-skip-permissions)
+# --settings accepts a file like claude does; cl merges it into one object.
+if [[ -f $settings ]]; then
+    settings=$(<"$settings")
 fi
+# Shared settings.json turns connectors off via env, which outranks the process
+# env; only a higher-precedence settings source such as --settings re-enables them.
+settings=$(jq -ce --arg style "$style" --argjson printing "$printing" --argjson mcp "$mcp_work" '
+    (if type != "object" then error("--settings must be a JSON object or file") else . end)
+    | (if $mcp == 1 then .env.ENABLE_CLAUDEAI_MCP_SERVERS = "true" else . end)
+    | if $style != "" then .outputStyle = $style
+      elif $printing == 0 and (has("outputStyle") | not) then .outputStyle = "pairing"
+      else . end
+' <<<"$settings")
 
-# --- Default effort per model ---
-if [[ "$HAS_EFFORT" == false ]]; then
-    case "$MODEL" in
-        opus*|claude-opus*) ARGS+=(--effort high) ;;
-        *)                  ARGS+=(--effort medium) ;;
-    esac
-fi
+prompts=()
+case $(git remote get-url origin 2>/dev/null || true) in
+    *github.com*) prompts+=("this repo uses github (via gh)") ;;
+    ?*) prompts+=("this repo uses gitlab (via glab)") ;;
+esac
+prompts+=("$PROMPT_CONCURRENCY")
+[[ -z $user_prompt ]] || prompts+=("$user_prompt")
 
-# --- Build prompts ---
-PROMPTS=()
+cmd=(claude)
+((safe)) || cmd+=(--dangerously-skip-permissions)
+[[ $settings == '{}' ]] || cmd+=(--settings "$settings")
+cmd+=(--append-system-prompt "$(printf '%s\n' "${prompts[@]}")" "${args[@]}")
 
-if [[ ! "$PWD" == */work/* ]]; then
-    PROMPTS+=("$PROMPT_PERSONAL")
-fi
-
-PROMPTS+=("$PROMPT_CONCURRENCY")
-
-if [[ ${#PROMPTS[@]} -gt 0 ]]; then
-    JOINED="$(printf '%s\n' "${PROMPTS[@]}")"
-    ARGS+=(--append-system-prompt "$JOINED")
-fi
-
-ARGS+=("${PASSTHROUGH[@]}")
-
-if [[ "$DRY_RUN" == true ]]; then
-    printf '%s\n' "${ARGS[@]}"
+if ((dry_run)); then
+    [[ -z ${CLAUDE_CONFIG_DIR:-} ]] || printf 'CLAUDE_CONFIG_DIR=%q ' "$CLAUDE_CONFIG_DIR"
+    printf '%q ' "${cmd[@]}"
+    echo
     exit 0
 fi
 
-if [[ -n "${TMUX:-}" ]]; then
-    export CLAUDE_CODE_NO_FLICKER=1
-fi
-
-exec claude "${ARGS[@]}"
+exec "${cmd[@]}"
