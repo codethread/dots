@@ -3,13 +3,15 @@
 - Document ID: SPEC-003
 - Configuration identification: SPEC-003; migrated from `specs/dotty.md`; canonical path `devflow/specs/dotty.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-10-08
+- **Last Updated:** 2026-10-10
 
 ## [SPEC-003-S1] 1. Overview
 
 ### [SPEC-003-S1.1] Purpose
 
 General-purpose dotfile symlink manager written in Nushell. Takes a TOML configuration declaring source-to-target directory mappings and creates symlinks for every file within each mapping. Supports incremental caching for fast re-runs, git-ignore-aware file enumeration, and force-gated conflict resolution.
+
+Since October 2026 dotty manages only the repository asset trees that mise's native dotfile entries do not: `config/` → `~/.config`, `claude/` → `~/.claude`, and `pi/` → `~/.pi`. Root `mise.toml` deploys the personal `home/` tree to `~` and shared Claude skills from `home/.agents/skills/` to `~/.claude/skills` with `mode = "symlink-each"` (see [mise infrastructure](mise-infra.md)).
 
 ### [SPEC-003-S1.2] Goals
 
@@ -22,7 +24,7 @@ General-purpose dotfile symlink manager written in Nushell. Takes a TOML configu
 
 ### [SPEC-003-S1.3] Non-Goals
 
-- Managing application-specific config generation (mise owns Claude and Codex settings; e.g. it renders `templates/claude-settings.json.tera` to `~/.claude/settings.json` and merges `templates/codex-config.toml` into `~/.config/codex/config.toml`)
+- Managing application-specific config generation or the personal home tree (mise owns Claude and Codex settings — e.g. it renders `templates/claude-settings.json.tera` to `~/.claude/settings.json` and merges `templates/codex-config.toml` into `~/.config/codex/config.toml` — and deploys `home/` → `~` plus `home/.agents/skills/` → `~/.claude/skills`)
 - Package installation or system configuration (mise owns user packages and the macOS bootstrap layer)
 - Text template rendering or variable substitution in linked files
 
@@ -102,12 +104,13 @@ excludes = ["glob_pattern", ...]          # Optional. Combined with global exclu
 
 ### [SPEC-003-S3.2] Current Projects
 
-| Name   | Origin               | Target        | Project-Specific Excludes                    |
-| ------ | -------------------- | ------------- | -------------------------------------------- |
-| home   | `${DOTFILES}/home`   | `~`           | —                                            |
-| config | `${DOTFILES}/config` | `~/.config`   | —                                            |
-| claude | `${DOTFILES}/claude` | `~/.claude`   | `**/settings.json`, `**/settings.local.json` |
-| pi     | `${DOTFILES}/pi`     | `~/.pi/agent` | —                                            |
+| Name   | Origin               | Target      | Project-Specific Excludes                                    |
+| ------ | -------------------- | ----------- | ------------------------------------------------------------ |
+| config | `${DOTFILES}/config` | `~/.config` | —                                                            |
+| claude | `${DOTFILES}/claude` | `~/.claude` | `**/settings.json`, `**/settings.local.json`, `**/skills/**` |
+| pi     | `${DOTFILES}/pi`     | `~/.pi`     | —                                                            |
+
+The `home` project was retired when mise took over `home/` → `~`: its files and the shared skills now deploy through the native `home` dotfile group and shared-skills entry, and dotty no longer walks the home tree. The `claude` project excludes `**/skills/**` to avoid creating links under the mise-owned `~/.claude/skills`. Clear its old skill cache entries during handoff before mise takes ownership.
 
 Workfiles owns separate `work_home` and `deals` projects in its `config/dotty.toml`, using `${WORKFILES}/home` → `~` and `${WORKFILES}/home/pb/app/deals-light-ui/_git` → `~/pb/app/deals-light-ui/.git`. Its setup hook invokes the shared dotty module with that manifest; dots no longer discovers or links workfiles implicitly.
 
@@ -118,6 +121,7 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 - **Location:** `~/.local/data/dotty-cache-<project-name>.nuon`
 - **Format:** NUON (Nushell Object Notation) — a sorted list of relative file paths
 - **Special entry:** `"."` indicates a directory-mode project
+- **Retired projects:** removing a project from `dotty.toml` leaves its cache in place; the cache is no longer read or cleaned. `dotty-cache-home.nuon` (and older `dots`/`pb`/`work` caches) stay on disk until explicitly removed. `dotty teardown` only walks projects still present in the manifest, so it does not remove orphaned caches.
 
 ### [SPEC-003-S3.4] Config Resolution
 
@@ -139,9 +143,9 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 
 | System | Command | When | Notes |
 | --- | --- | --- | --- |
-| **Makefile** (`make link`) | `DOTFILES=$(ROOT) dotty link --no-cache <repo>/config/dotty/dotty.toml` | Manual rebuild | Exports `DOTFILES` as the current checkout root for worktree support |
-| **Mise bootstrap** (`mise bootstrap`) | `dotty link --no-cache <repo>/config/dotty/dotty.toml` | Bootstrap setup hook | Runs after repository preparation. Exports `DOTFILES` as the active checkout, passes its manifest explicitly, and fails on real-file conflicts. No activation or system-layer dependency. |
-| **Neovim** | `dotty link`, `dotty format`, `dotty is-cwd` | Editor events | Auto-links on `BufWritePost`/`BufFilePost`/`VimLeavePre`. Detects dotfiles project via `is-cwd` on git root. |
+| **Makefile** (`make link`) | `DOTFILES=$(ROOT) dotty link --force --no-cache <repo>/config/dotty/dotty.toml`, then `mise dot apply ~ ~/.claude/skills` | Manual rebuild | Exports `DOTFILES` as the current checkout root for worktree support; the targeted mise apply reapplies the native home/skill entries after the dotty link |
+| **Mise bootstrap** (`mise bootstrap`) | `dotty link --no-cache <repo>/config/dotty/dotty.toml` | Bootstrap setup hook | Runs after repository preparation for the remaining projects (`config`, `claude`, `pi`). The native dotfiles phase then applies the `home/` and shared-skill entries before LaunchAgents load. Exports `DOTFILES` as the active checkout, passes its manifest explicitly, and fails on real-file conflicts. |
+| **Neovim** | `dotty link`, `dotty format`, `dotty is-cwd` | Editor events | Auto-links the remaining dotty projects on `BufWritePost`/`BufFilePost`/`VimLeavePre`; mise-owned home/skill changes need `mise dot apply`. Detects dotfiles project via `is-cwd` on git root. |
 
 ### [SPEC-003-S4.3] Worktree / Feature-Branch Support
 
@@ -151,13 +155,15 @@ The Makefile `link` target enables testing dotty from any checkout:
 2. The Makefile exports `DOTFILES=$(ROOT)` before invoking Nushell
 3. `dotty link --no-cache` receives the checkout's tracked `config/dotty/dotty.toml` directly
 
-The bootstrap setup hook also exports the active checkout as `DOTFILES` and passes its manifest explicitly, so it works before `~/.config/dotty` exists and does not read another checkout's manifest. Apply user setup from a durable checkout.
+The bootstrap setup hook also exports the active checkout as `DOTFILES` and passes its manifest explicitly, so it works before `~/.config/dotty` exists and does not read another checkout's manifest. `make link` additionally reapplies the two mise-owned entries from the active checkout with a targeted `mise dot apply ~ ~/.claude/skills`. Apply user setup from a durable checkout.
 
 ## [SPEC-003-S5] 5. Design Decisions
 
 - **Nushell, not a compiled binary** — dotty is a Nushell module, not a standalone tool. This eliminates build steps, enables REPL debugging, and leverages Nushell's structured data (tables, records) for the linking pipeline. Tradeoff: requires Nushell runtime on PATH.
 
-- **TOML over ad hoc conventions** — configuration is explicit rather than convention-based (e.g. "everything in `config/` maps to `~/.config`"). This supports non-obvious mappings like `claude/ → ~/.claude` and `pi/ → ~/.pi/agent`.
+- **TOML over ad hoc conventions** — configuration is explicit rather than convention-based (e.g. "everything in `config/` maps to `~/.config`"). This supports non-obvious mappings like `claude/ → ~/.claude` and `pi/ → ~/.pi`.
+
+- **Split ownership with mise `symlink-each`** — the personal `home/` tree and shared Claude skills are deployed by root `mise.toml`, not dotty. Both entries walk the source tree without a Git manifest, create directories, and link each file into the real target. The home entry excludes `.local/bin/qlock` because Hive owns its live launcher. Unmanaged files (Claude's `synced/` and `.trash/`, local additions) stay untouched. Existing files are visible immediately through their links; source additions/removals require `mise dot apply`, and files created in the destination are never captured back. Dotty keeps the repo asset trees where git-ignore awareness, per-project excludes, directory mode, and duplicate-target checks still apply.
 
 - **Per-project caches** — each project gets its own cache file rather than a single global cache. This allows independent invalidation and makes directory-mode transitions clean (file entries are replaced by a single `"."` entry).
 
@@ -175,10 +181,10 @@ The bootstrap setup hook also exports the active checkout as `DOTFILES` and pass
 
 ### [SPEC-003-S6.2] Manual
 
-- **`mise bootstrap`** — verifies expected symlinks in `~/.config` are created and real-file conflicts fail visibly.
+- **`mise bootstrap`** — verifies expected symlinks for the remaining dotty projects (`~/.config`, `~/.claude`, `~/.pi`) and the mise-owned home/skill entries; real-file conflicts fail visibly.
 - **`dotty prune`** — finds and removes broken symlinks (useful after file deletions).
 
 ## [SPEC-003-S7] 7. Open Questions
 
 - Workfiles' `deals` project links a `_git` directory as individual files to `.git` — fragile if git internals change structure
-- Workfiles' `work_home` and dots' `home` projects both target `~`; keep their owned paths disjoint because separate invocations cannot detect cross-manifest collisions
+- Workfiles' `work_home` project and dots' mise `[dotfile_groups.home]` group both target `~`; keep their owned paths disjoint because dotty and mise cannot detect collisions across their manifests

@@ -3,7 +3,7 @@
 - Document ID: SPEC-001
 - Configuration identification: SPEC-001; migrated from `specs/agentic-config.md`; canonical path `devflow/specs/agentic-config.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-10-08
+- **Last Updated:** 2026-10-10
 
 ## [SPEC-001-S1] 1. Overview
 
@@ -15,7 +15,7 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 
 - Single source of truth for global Claude settings in `templates/claude-settings.json.tera`, rendered by mise
 - Mise provisions native Codex/Claude CLIs, Node-based Pi, and Playwright CLI; Pi owns its npm extensions
-- All agent assets (agents, skills, commands, rules) version-controlled and symlinked into place via dotty
+- Agent assets version-controlled and symlinked into place: mise owns shared personal skills; Dotty owns other agent assets
 - Type-safe hook contracts shared across TypeScript and Bash implementations
 - Context-aware shell wrappers that inject environment-specific prompts
 - Plugin extensibility via local and remote marketplaces
@@ -47,9 +47,11 @@ Four configuration layers compose at runtime:
 │   Owns: permissions, hooks, env vars, plugins,      │
 │         marketplaces, feature flags                  │
 ├─────────────────────────────────────────────────────┤
-│ Layer 2: Dotty-symlinked assets                     │
-│   claude/ → ~/.claude/                              │
-│     agents/, commands/, skills/,                    │
+│ Layer 2: Symlinked assets                          │
+│   mise: home/.agents/skills/                        │
+│     → ~/.agents/skills/ and ~/.claude/skills/       │
+│   dotty: claude/ → ~/.claude/                      │
+│     agents/, commands/,                            │
 │     CLAUDE.md, keybindings.json                     │
 │   pi/ → ~/.pi/agent/                                │
 │     agent.njk, README.md, settings.json             │
@@ -74,7 +76,7 @@ Settings merge order: mise globals → project settings → local overrides. Age
 mise bootstrap → packages, declared repositories, native files, and setup applied
 mise dot apply ~/.claude/settings.json → ~/.claude/settings.json rendered
 mise dot apply ~/.config/codex/config.toml/shared → shared Codex keys merged
-make link    →  dotty link   →  claude/ assets symlinked to ~/.claude/
+make link    →  dotty link + targeted mise apply → assets, home files, shared skills
 make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
 ```
 
@@ -135,8 +137,8 @@ The `claude` project definition:
 
 - Origin: `~/dev/dots/claude/`
 - Target: `~/.claude/`
-- Excludes: `**/settings.json`, `**/settings.local.json`
-- 21 files tracked, cached at `~/.local/data/dotty-cache-claude.nuon`
+- Excludes: `**/settings.json`, `**/settings.local.json`, `**/skills/**`
+- Linked paths cached at `~/.local/data/dotty-cache-claude.nuon`; home files and shared skills are mise-owned
 
 The `config` project covers `config/codex/` → `~/.config/codex/` as part of the broader `config/ → ~/.config/` mapping.
 
@@ -175,12 +177,16 @@ All remaining feature flags and skill overrides are preserved in the template. P
 
 ### [SPEC-001-S4.3] Skills
 
-**Global (`claude/skills/` → `~/.claude/skills/`):**
+**Shared personal (`home/.agents/skills/` → both `~/.agents/skills/` and `~/.claude/skills/`):**
 
-| Skill          | Tools                   | Purpose                                                |
-| -------------- | ----------------------- | ------------------------------------------------------ |
-| commit         | Bash(git:\*)            | Conventional commits with auto status/diff injection   |
-| playwright-cli | Bash(playwright-cli:\*) | Full browser automation (279 lines + 7 reference docs) |
+Root mise entries use `symlink-each`: the home mapping supplies the first destination, and a second entry supplies Claude’s. Both keep destination directories real and preserve unmanaged files, including Claude’s `synced/` and `.trash/`. Existing-file edits are immediate; additions/removals require `make link` or `mise dot apply ~ ~/.claude/skills` from dots. Destination-only skills are not copied back into the repository. Plugin skills remain plugin-owned.
+
+| Skill      | Purpose                                            |
+| ---------- | -------------------------------------------------- |
+| attention  | Get the user’s attention after a long-running task |
+| github     | Work with GitHub issues and pull requests          |
+| repo-setup | Set up repository agent scaffolding                |
+| socrates   | Inspect knowledge sources and assumptions          |
 
 ### [SPEC-001-S4.4] Commands (`claude/commands/` → `~/.claude/commands/`)
 
@@ -276,7 +282,7 @@ Disables Ctrl+A in Global context.
 
 - **One owner per agent CLI.** Official vendor installers own Claude, Codex, and Pi; bootstrap setup installs them and the `llm:update` task updates them. Node remains mise-managed, Playwright is npm-managed in `~/.local`, and Pi uses its official locked Node/npm installation. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
 
-- **Dotty for asset linking.** Agents, skills, commands, and rules are symlinked by dotty, so edits in dots are visible immediately without a system apply. Global settings are templated by mise separately from asset linking.
+- **One owner per asset path.** Mise links `home/` and exposes its shared skills to both agent locations with `symlink-each`; Dotty links other agents, commands, and rules, excluding Claude settings and skills. Real destination directories preserve application-owned metadata. Existing linked-file edits remain immediate, while new or removed files require another apply. Global settings are managed separately by mise.
 
 - **x-agents/ prefix convention.** Disabled agents live in `claude/x-agents/` — the prefix keeps them out of Claude's discovery path while keeping them version-controlled for re-enablement.
 

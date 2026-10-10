@@ -24,8 +24,9 @@ status: ## Inspect workstation state
 update: ## Apply setup and update declared repos/package metadata
 	$(MISE) bootstrap --update
 
-link: ## Relink dotfiles with dotty (replaces conflicts)
+link: ## Relink Dotty assets and mise-managed home files/skills
 	$(NU) -c 'use ct/dotty; dotty link --force --no-cache "$(ROOT)/config/dotty/dotty.toml" | ignore'
+	$(MISE) dot apply "$$HOME" "$$HOME/.claude/skills"
 
 build: ## Install, test, typecheck, fix, and build Oven tools/docs
 	mise -C "$(ROOT)/oven" run verify

@@ -1,6 +1,6 @@
 # Claude Code Global Settings
 
-This directory is symlinked to `~/.claude` and shares global Claude Code settings between machines.
+Dotty links this directory’s assets into `~/.claude`, except settings and skills, which mise manages separately. Destination directories remain real directories so Claude can keep its own state.
 
 Custom directories (those not carrying Claude Code significance like `agents/` or `commands/`) are prefixed with `x-` for clarity and to avoid accidental name collision.
 
@@ -21,7 +21,7 @@ mise dot status
 
 Workfiles' `make` installs `~/.config/claude/settings-overlay.json` and requests a targeted rerender of this shared output. The template deep-merges that optional JSON object; work-specific plugins, marketplaces and permissions live in workfiles rather than dots' profile. Without an installed overlay, the personal/dev defaults are used. Malformed overlays fail rather than silently dropping work settings. `/tmp/claude` is declared in root `mise.toml` and prepared by the native files phase, not `mise dot apply`. Bash is resolved from PATH when rendering.
 
-Other Claude assets remain managed by dotty; project-local settings and local overrides are untouched.
+Other Claude assets except shared skills remain managed by dotty; project-local settings and local overrides are untouched.
 
 ## cc-notify (Push Notifications)
 
@@ -57,10 +57,22 @@ The plugin opt-in is independent of daemon ownership. Prepare/apply the daemon w
 
 ## Skills
 
-| Skill              | Purpose                                              |
-| ------------------ | ---------------------------------------------------- |
-| commit (ct:commit) | Conventional commits with auto status/diff injection |
-| playwright-cli     | Browser automation with 7 reference docs             |
+Author shared personal skills in `home/.agents/skills/`. Mise links that source into both `~/.agents/skills/` (as part of the `home/` mapping) and `~/.claude/skills/` using `symlink-each`. It links individual files, leaving Claude’s `synced/`, `.trash/`, and other destination-only files untouched.
+
+| Skill      | Purpose                                            |
+| ---------- | -------------------------------------------------- |
+| attention  | Get the user’s attention after a long-running task |
+| github     | Work with GitHub issues and pull requests          |
+| repo-setup | Set up repository agent scaffolding                |
+| socrates   | Inspect knowledge sources and assumptions          |
+
+Existing linked-file edits are visible immediately. After adding or removing source files, run `make link`, or from the dots checkout:
+
+```nu
+mise dot apply ~ ~/.claude/skills
+```
+
+Files created only in a destination are not imported into the repository. Keep shared skill changes in the source. Plugin-provided skills remain owned by their plugins.
 
 ## Slash Commands
 

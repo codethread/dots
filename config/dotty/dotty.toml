@@ -12,11 +12,7 @@ excludes = [
     "**/README.md"     # README files
 ]
 
-[[project]]
-name = "home"
-origin = "${DOTFILES}/home"
-target = "~"
-
+# Mise owns home/ and the shared Claude skills destination.
 [[project]]
 name = "config"
 origin = "${DOTFILES}/config"
@@ -26,7 +22,7 @@ target = "~/.config"
 name = "claude"
 origin = "${DOTFILES}/claude"
 target = "~/.claude"
-excludes = ["**/settings.json", "**/settings.local.json"]
+excludes = ["**/settings.json", "**/settings.local.json", "**/skills/**"]
 # excludes = ["**/agents/**"]
 
 # Pi user config

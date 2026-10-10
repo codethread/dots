@@ -2,11 +2,11 @@
 
 - Document ID: SPEC-006
 - **Status:** Implemented
-- **Last Updated:** 2026-10-08
+- **Last Updated:** 2026-10-10
 
 ## Ownership
 
-Mise owns the Apple Silicon macOS workstation: packages, managed files, repositories, defaults, user settings, and LaunchAgents. Mise renders Claude settings and merges shared Codex settings; dotty only links repository assets. Shells activate mise natively. The checkout requires mise 2026.10.4 or newer for native structured dotfile merges.
+Mise owns the Apple Silicon macOS workstation: packages, managed files, repositories, defaults, user settings, and LaunchAgents. Mise renders Claude settings, merges shared Codex settings, and links `home/` plus shared skills. Dotty links the remaining `config/`, `claude/` (except settings and skills), and `pi/` assets. Shells activate mise natively. The checkout requires mise 2026.10.4 or newer for native structured dotfile merges.
 
 The official installer at `https://mise.run` owns `~/.local/bin/mise`; Homebrew does not manage mise. Update it with `mise self-update`. The shared shell environment puts `~/.local/bin` on PATH, and LaunchAgents use that stable executable path. Dots also provisions the shared Pitchfork supervisor at login; projects register their own daemon definitions during their bootstrap. Zsh caches `mise completion zsh` through its existing CLI-init helper.
 
@@ -38,6 +38,14 @@ Shared VS Code extensions are `vscode:*` entries in `[bootstrap.packages]`, back
 
 Keep bootstrap resources project-local: global tool configuration loads in other repositories too. Symlinks reuse declarations without creating a second configuration scope or duplicating lists.
 
+## Home and shared skills
+
+Root `mise.toml` sets `dotfiles.root = "home"` and deploys that tree to `~` through `[dotfile_groups.home]` with `mode = "symlink-each"`. A separate `[dotfiles]` entry maps `home/.agents/skills/` a second time to `~/.claude/skills/`. The native group avoids the first-apply legacy scan of the entire home directory that an ungrouped `~` entry performs. Each source file gets a link; destination directories remain real directories. Claude’s `synced/`, `.trash/`, and other unmanaged neighbors stay local. Hive owns the live `~/.local/bin/qlock` launcher, so that path is excluded from the home mapping rather than replaced by the older dots helper.
+
+The entries walk the source tree, including new files not yet in Git’s index. Existing linked-file edits are visible immediately; additions and removals need another apply. Mise records ownership in its state directory so deleted source files remove only their managed links. Destination-only files are neither removed nor imported into the source. Keep workfiles’ `work_home` targets disjoint from dots’ home files.
+
+From the checkout, preview with `mise dot apply --dry-run ~ ~/.claude/skills`, then apply the same targets. `make link` runs the remaining Dotty projects and this targeted mise apply. Dotty’s editor hooks no longer deploy new home files; run `make link` after adding or removing them. Native bootstrap deploys both entries in its dotfiles phase before LaunchAgents.
+
 ## Codex settings
 
 `templates/codex-config.toml` supplies the shared keys for the native `merge = true` edit at `~/.config/codex/config.toml/shared`. Mise renders the source with Tera first, so the Harnesses marketplace path uses the current user's `env.HOME`. Mise recursively merges tables and preserves target-only settings, comments, and untouched formatting. It replaces arrays wholesale, including `skills.config`; it does not merge skill records by path. Removed source keys remain in the target, and live edits do not sync back into the source. Keep durable shared changes in the source; machine-local keys can remain in the live file. Invalid TOML fails without overwriting the target.
@@ -66,11 +74,11 @@ Plain bootstrap clones missing repositories but does not pull unpinned existing 
 Native bootstrap installs package-manager plugins first, then applies built-in packages before managed files and repositories, followed by dotfiles, defaults, LaunchAgents, login shell, and tools. Plugin-managed packages (including VS Code extensions) apply after tools, so the host application is ready. Two repo-specific hooks fill the gaps:
 
 1. **Post-packages:** install mise tools early, then run `boot/check-system.sh` before any managed PAM file is written. Raw LaunchAgents occur before mise's normal tools phase, so the early tool install is deliberate; the later native tools phase is an unchanged-state check.
-2. **Post-repos:** `boot/setup.sh` installs missing agent CLIs and Playwright; builds Todoist/Honeycomb; links Pi and dotfiles; generates shell caches with `boot/shell.sh`; installs/builds Oven; installs service dependencies and prepares Git-maintenance registrations. Only then can the later native dotfiles and LaunchAgent phases run.
+2. **Post-repos:** `boot/setup.sh` installs missing agent CLIs and Playwright; builds Todoist/Honeycomb; links the remaining Dotty assets (including Pi); generates shell caches with `boot/shell.sh`; installs/builds Oven; installs service dependencies and prepares Git-maintenance registrations. Only then can the later native dotfiles and LaunchAgent phases run.
 
 Agent CLI setup, Playwright, Todoist, and Oven installation/build failures print warnings and allow setup to continue. A setup-exit summary repeats these failures. VS Code extension failures instead fail visibly through native package convergence. Agent installers still refuse to overwrite custom launchers. Bootstrap does not run Oven tests, typechecking, automatic fixes, or documentation generation; `make build` remains the development verification path. System/PAM checks, dotfile conflicts, required shell dependencies, and service dependency preparation remain blocking.
 
-Log directories and the cc-notify checkout are declarative resources. Secrets stay in cc-notify's local `.env`, not TOML or generated plists. Bootstrap warns about missing credential names without printing their values and continues. Missing credentials fail cc-notify at runtime without blocking other services; inspect its launchd state and logs after bootstrap. Claude settings render and Codex settings merge in the native dotfiles phase; `/tmp/claude` is prepared in the files phase.
+Log directories and the cc-notify checkout are declarative resources. Secrets stay in cc-notify's local `.env`, not TOML or generated plists. Bootstrap warns about missing credential names without printing their values and continues. Missing credentials fail cc-notify at runtime without blocking other services; inspect its launchd state and logs after bootstrap. Home files and shared skills link, Claude settings render, and Codex settings merge in the native dotfiles phase; `/tmp/claude` is prepared in the files phase.
 
 Hooks run on every selected bootstrap and stop on failure; completed phases are not rolled back. A dry run prints hooks but cannot prove their runtime success. `make` opts into `--skip-dirty`: it skips dirty repository convergence, not the later setup hook's installs/builds against those local checkouts. Direct `mise bootstrap` remains strict unless given the flag.
 

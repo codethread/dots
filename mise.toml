@@ -1,5 +1,8 @@
 min_version = "2026.10.4"
 
+[settings]
+dotfiles.root = "home"
+
 # Shared bootstrap resources live here; machine differences live in mise.<profile>.toml.
 # .mise/conf.d/ only reuses global tools and dev/work services.
 [vars]
@@ -169,6 +172,18 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 [bootstrap.repos."~/dev/vendor/todoist"]
 url = "https://github.com/codethread/todoist.git"
 ref = "5d1c6df1a86729b193840d988fb38fa654b93bb9"
+
+# Keep real destination directories so application-owned files remain local.
+[dotfile_groups.home]
+root = "."
+target = "~"
+mode = "symlink-each"
+# Hive installs qlock; do not replace its launcher with the older dots helper.
+exclude = [".local/bin/qlock"]
+
+[dotfiles."~/.claude/skills"]
+source = "home/.agents/skills"
+mode = "symlink-each"
 
 [dotfiles."~/.local/bin/gitwatch"]
 source = "~/dev/vendor/gitwatch/gitwatch.sh"

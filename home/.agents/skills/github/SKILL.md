@@ -1,5 +1,5 @@
 ---
-description: "Read GitHub issues and PRs with full context including images, and create PRs. Use when investigating or working on a GitHub issue or PR."
+description: "Use when investigating or working on a GitHub issue or PR."
 argument-hint: <issue-or-pr-number-or-url>
 ---
 

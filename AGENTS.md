@@ -21,7 +21,7 @@ Runtime application ownership is per file: mixed personal/shared and work config
 - **boot/** - System setup scripts. Go here to bootstrap a new machine.
 - **claude/** - Global Claude Code configurations and agent documentation. Go here for multi-agent specs and hooks.
 - **config/** - Application dotfiles (vim, kitty, nushell, etc). Go here to modify tool configurations.
-- **home/** - Files that belong in home directory. Go here for home-specific scripts and configs.
+- **home/** - Mise links this tree into `~` with `symlink-each`; it also links `home/.agents/skills/` into `~/.claude/skills/`, preserving Claude-owned metadata. Dotty owns only `config/`, `claude/` (except settings and skills), and `pi/`. Hive owns the live `qlock` launcher, excluded from the home mapping.
 - **oven/** - TypeScript/Bun workspace for CLI tools. Go here for active development.
 - **devflow/** - Planning workspace. Root specs live in `devflow/specs/`; RFCs in `devflow/rfcs/`; active feature work in `devflow/feat/`.
 - **pdx/** - pandoras-box configs (pithos) for personal machines
