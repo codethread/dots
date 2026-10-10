@@ -41,7 +41,7 @@ alias pim="pi --provider openai-codex --model gpt-6-astra       --thinking low  
 # choice follows the current directory (pi_core_tools/pi_goal_tools stay set
 # for the runtime tool expansion).
 pis() {
-  if [[ $IS_WORK == true || $PWD == $HOME/pb || $PWD == $HOME/pb/* ]]; then
+  if [[ $PWD == $HOME/pb || $PWD == $HOME/pb/* ]]; then
     pi --provider anthropic    --model claude-sonnet-5-5 --thinking high   --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools} "$@"
   else
     pi --provider openai-codex --model gpt-6.1-sol       --thinking xhigh  --tools ${(j:,:)pi_core_tools},${(j:,:)pi_goal_tools} "$@"

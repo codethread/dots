@@ -134,6 +134,7 @@ return {
 
 					-- these are lua patterns
 					file_ignore_patterns = U.flatten {
+						{ 'bun.lock' },
 						U.project('~/dev/projects/qmk.nvim', { 'lua/qmk/lib/' }),
 						U.project('~/dev/projects/skein-src', { 'devflow/archive/' }),
 					},

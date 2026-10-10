@@ -71,7 +71,7 @@ existing domains:
 - **Formatter**: (`bun fmt`) Biome with 100-character line width, no bracket spacing
 - **Linter**: (`bun check`) Biome with recommended rules, allows `any` types and non-null assertions
 - **Types**: (`bun run typecheck`) Typescript via `tsc`, relatively strict
-- IMPORTANT: when work is complete run `mise run verify` (or root `make build`) to install frozen dependencies, validate all checks, build the wrappers and update the docs. Run full suites through `qlock` on `/tmp/millstrand-test.lock`.
+- IMPORTANT: when work is complete run `mise run verify` (or root `make build`) to install frozen dependencies, validate all checks, build the wrappers and update the docs.
 
 ### Best Practices
 
