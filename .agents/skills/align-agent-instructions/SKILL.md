@@ -10,4 +10,4 @@ Please align @claude/CLAUDE.md @config/codex/AGENTS.md and @pi/agent/agent.njk
 - They share a common set of rules, so only focus on the common parts.
 - Look at the git status/history to check what was modified intentionally
 - No need to validate beyond aligning instructions
-- Fix typos/grammer where needed
+- Fix typos/grammar where needed
