@@ -1,0 +1,71 @@
+#!/usr/bin/env zsh
+# :module: Pi launcher with shared tools and thinking shortcuts
+
+usage() {
+  cat <<'EOF'
+Usage: piw [piw options] [pi options] [@files...] [messages...]
+       piw <pi subcommand> ...
+
+piw options:
+      --thinking <level>  set Pi's thinking level (off, minimal, low, medium, high, xhigh, max)
+      --goals           enable goal_complete, goal_blocked, and goal_wait
+      --mcp             enable mcp and codemode
+      --dry-run         print the pi command instead of running it
+  -h, --help            show this help and pi's
+
+Default tools: read, bash, edit, write, interactive_shell, pi-internals,
+harness_metadata, subagent. Override with --tools.
+--model accepts provider/model; both --model=value and --model value work.
+Other Pi options pass through. Use -- for literal messages/files.
+
+EOF
+}
+
+typeset -a tools=(read bash edit write interactive_shell pi-internals harness_metadata subagent)
+typeset -a args=()
+dry_run=0 help=0 goals=0 mcp=0
+while (($#)); do
+  case $1 in
+    --model=*|--thinking=*|--tools=*)
+      set -- "${1%%=*}" "${1#*=}" "${@:2}"
+      continue ;;
+    --model|--thinking|--tools)
+      if (($# < 2)) || [[ -z $2 || $2 == -* ]]; then
+        print -u2 -- "piw: $1 requires a value"
+        exit 2
+      fi
+      if [[ $1 == --thinking ]]; then
+        case $2 in
+          off|minimal|low|medium|high|xhigh|max) ;;
+          *) print -u2 -- "piw: invalid thinking level: $2"; exit 2 ;;
+        esac
+      fi
+      args+=("$1" "$2")
+      shift ;;
+    --goals) goals=1 ;;
+    --mcp) mcp=1 ;;
+    --dry-run) dry_run=1 ;;
+    -h|--help) help=1; args+=("$1") ;;
+    --) args+=("$@"); break ;;
+    *) args+=("$1") ;;
+  esac
+  shift
+done
+
+((goals)) && tools+=(goal_complete goal_blocked goal_wait)
+((mcp)) && tools+=(mcp codemode)
+typeset -a cmd=(pi)
+case ${args[1]} in
+  install|remove|uninstall|update|list|config|auth|mcp) ;;
+  *) cmd+=(--tools "${(j:,:)tools}") ;;
+esac
+cmd+=("${args[@]}")
+
+((help)) && usage
+if ((dry_run)); then
+  printf '%q ' "${cmd[@]}"
+  print
+  exit 0
+fi
+
+exec "${cmd[@]}"

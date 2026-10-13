@@ -1,0 +1,51 @@
+#!/usr/bin/env zsh
+# :module: Codex launcher with thinking and Fast mode shortcuts
+
+usage() {
+  cat <<'EOF'
+Usage: co [co options] [codex options] [prompt]
+       co <codex subcommand> ...
+
+co options:
+      --thinking <level>  set model_reasoning_effort (low, medium, high, xhigh, max, ultra)
+      --fast            use the fast service tier
+      --dry-run         print the codex command instead of running it
+  -h, --help            show this help and codex's
+
+--model and other Codex options pass through unchanged.
+Use -- to pass the remaining arguments through literally.
+
+EOF
+}
+
+typeset -a args=()
+dry_run=0 help=0
+while (($#)); do
+  case $1 in
+    --thinking=*)
+      set -- --thinking "${1#*=}" "${@:2}"
+      continue ;;
+    --thinking)
+      if (($# < 2)) || [[ -z $2 || $2 == -* ]]; then
+        print -u2 -- 'co: --thinking requires a value'
+        exit 2
+      fi
+      args+=(--config "model_reasoning_effort=\"$2\"")
+      shift ;;
+    --fast) args+=(--config 'service_tier="fast"') ;;
+    --dry-run) dry_run=1 ;;
+    -h|--help) help=1; args+=("$1") ;;
+    --) args+=("$@"); break ;;
+    *) args+=("$1") ;;
+  esac
+  shift
+done
+
+((help)) && usage
+if ((dry_run)); then
+  printf '%q ' codex "${args[@]}"
+  print
+  exit 0
+fi
+
+exec codex "${args[@]}"

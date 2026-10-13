@@ -18,6 +18,7 @@ cl options:
       --mcp-work              enable claude.ai connectors (Atlassian, Microsoft 365, ...)
   -m, --mine                  use the personal config dir ~/.config/claude
       --output-style <style>  session output style (default: pairing, unless --print)
+      --thinking <level>      set Claude's effort (low, medium, high, xhigh, max)
       --settings <json|file>  session settings, merged with cl's own
       --append-system-prompt <prompt>
                               appended after cl's prompts
@@ -38,7 +39,7 @@ safe=0 mcp_work=0 printing=0 dry_run=0 style='' settings='{}' user_prompt=''
 args=()
 while (($#)); do
     case $1 in
-        --settings=*|--output-style=*|--append-system-prompt=*)
+        --settings=*|--output-style=*|--append-system-prompt=*|--thinking=*)
             set -- "${1%%=*}" "${1#*=}" "${@:2}"; continue ;;
         -s|--safe) safe=1 ;;
         --mcp-work) mcp_work=1 ;;
@@ -46,6 +47,10 @@ while (($#)); do
         --dry-run) dry_run=1 ;;
         -h|--help) usage; exec claude --help ;;
         -p|--print) printing=1; args+=("$1") ;;
+        --thinking)
+            (($# >= 2)) && [[ -n $2 && $2 != -* ]] || { echo 'cl: --thinking requires a value' >&2; exit 2; }
+            args+=(--effort "$2")
+            shift ;;
         --settings|--output-style|--append-system-prompt)
             (($# >= 2)) || { echo "cl: $1 requires a value" >&2; exit 2; }
             case $1 in
