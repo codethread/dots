@@ -11,3 +11,4 @@ Please align @claude/CLAUDE.md @config/codex/AGENTS.md and @pi/agent/agent.njk
 - Look at the git status/history to check what was modified intentionally
 - No need to validate beyond aligning instructions
 - Fix typos/grammar where needed
+- if required, config for the njk file is at: ~/dev/projects/agents/pi/extensions/system-prompt/README.md
