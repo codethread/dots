@@ -96,6 +96,8 @@ PI_CODING_AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
 # TODO: likely want this in the cli wrapper so it's only interactive and on demand
 # PI_CACHE_RETENTION="${PI_CACHE_RETENTION:-long}"
 PI_SKIP_VERSION_CHECK="${PI_SKIP_VERSION_CHECK:-1}"
+# Also copy through the terminal when remote tmux attaches leave no SSH markers.
+PI_CLIPBOARD_OSC52="${PI_CLIPBOARD_OSC52:-1}"
 
 PDX_DATA_DIR="${PDX_DATA_DIR:-$HOME/.pdx}"
 PITHOS_DB="${PITHOS_DB:-$PDX_DATA_DIR/pithos.sqlite}"

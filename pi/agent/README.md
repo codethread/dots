@@ -14,4 +14,14 @@ Agent CLIs are installed by `boot/setup.sh` during `mise bootstrap`; use `mise r
 
 Pi's official managed launcher lives at `$PI_CODING_AGENT_DIR/bin/pi` (default `~/.pi/agent/bin/pi`), after `~/.local/bin` on PATH so the pies wrapper stays in control. `mise bootstrap --update` updates declared repositories, then setup builds and links the `pi`/`pies` wrappers. Plain `mise bootstrap` does not pull current branches. It does not restart a running Pies daemon.
 
+The core JSON files reference Pi's published schemas for editor validation and completion. Extension settings use their own formats, not the core settings schema.
+
+## Clipboard
+
+`config/env/base.sh` defaults `PI_CLIPBOARD_OSC52=1`, so Pi also sends clipboard writes to the attached terminal after its local clipboard write, even when a remote tmux attach leaves no SSH markers. Set it to `0` to disable this forced emission (Pi still emits OSC 52 for detected remote sessions).
+
+Tmux's `set-clipboard on` accepts application copies and forwards them to the terminal. Its built-in `xterm*` clipboard feature covers both `xterm-ghostty` and `xterm-kitty`. Ghostty permits clipboard writes by default; Kitty explicitly permits them with `clipboard_control write-clipboard write-primary no-append`. No clipboard-read permissions or TERM overrides are needed.
+
+The environment change takes effect in new login shells and new tmux servers; restart Pi/Pies after refreshing the environment. Existing shells and running Pi processes retain their old environment.
+
 Architecture: [SPEC-001 agentic-config](../../devflow/specs/agentic-config.md).

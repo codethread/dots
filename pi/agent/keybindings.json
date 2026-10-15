@@ -1,4 +1,5 @@
 {
+  "$schema": "https://pi.dev/schemas/keybindings.schema.json",
   "app.editor.external": "ctrl+shift+g",
   "app.model.cycleForward": "ctrl+alt+p",
   "app.model.cycleBackward": "ctrl+shift+alt+p",
