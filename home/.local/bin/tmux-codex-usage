@@ -81,7 +81,8 @@ capture_percentage() {
   local output=""
   local work_dir="$state_dir/workdir"
   mkdir -p "$work_dir"
-  tmux -L "$socket" -f /dev/null new-session -d -x 160 -y 50 -c "$work_dir" "$(command -v codex)"
+  # Keep the probe's temporary tmux environment out of the shared agent daemon.
+  tmux -L "$socket" -f /dev/null new-session -d -x 160 -y 50 -c "$work_dir" "$(command -v codex) --no-daemon"
 
   local trust_sent=0
   for _ in {1..25}; do
