@@ -26,12 +26,12 @@ inherit-env-vars = true
 preset = 'qwerty'
 
 [gaps]
-inner.horizontal = [{ monitor.'BenQ RD280U' = 5 }, 5]
-inner.vertical =   [{ monitor.'BenQ RD280U' = 5 }, 5]
-outer.left =       [{ monitor.'BenQ RD280U' = 10 }, 0]
-outer.bottom =     [{ monitor.'BenQ RD280U' = 10 }, 0]
-outer.top =        [{ monitor.'BenQ RD280U' = 10 }, 0]
-outer.right =      [{ monitor.'BenQ RD280U' = 10 }, 0]
+inner.horizontal = 3
+inner.vertical = 3
+outer.left = 0
+outer.bottom = 0
+outer.top = 0
+outer.right = 0
 
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
