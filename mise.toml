@@ -115,7 +115,6 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 
 "brew-cask:kitty" = { os = "macos" }
 "brew-cask:ghostty" = { os = "macos" }
-"brew-cask:terminal-browser" = { os = "macos" }
 "brew-cask:nikitabobko/tap/aerospace" = { os = "macos" }
 "brew-cask:alfred" = { os = "macos" }
 "brew-cask:spotify" = { os = "macos" }
@@ -128,6 +127,8 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "brew-cask:visual-studio-code" = { os = "macos" }
 "brew-cask:zed" = { os = "macos" }
 "brew-cask:opensuperwhisper" = { os = "macos" }
+# agent tools
+"brew-cask:terminal-browser" = { os = "macos" }
 
 # Shared VS Code extensions; VS Code owns updates, mise installs missing entries.
 "vscode:cunbidun.flash-vscode" = { os = "macos" }

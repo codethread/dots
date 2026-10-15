@@ -13,3 +13,8 @@
 
 - Use `clone --help` when cloning external repositories.
     - `clone` vendors repositories in `~/dev/vendor` and personal repositories in `~/dev/projects`.
+
+## Browser use
+
+- When available use your codex/chatGPT builtin browser unless specifically told otherwise
+- As a fallback use `agent-browser` or `playwright-cli`
