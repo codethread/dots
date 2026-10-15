@@ -190,7 +190,7 @@ function formatTime(date: Date): string {
 }
 
 function formatEffort(level: "low" | "medium" | "high" | "xhigh" | "max"): string {
-	const labels: Record<string, string> = {low: "l", medium: "m", high: "h", xhigh: "xh", max: "m"};
+	const labels: Record<string, string> = {low: "l", medium: "m", high: "h", xhigh: "xh", max: "mx"};
 	const label = labels[level] ?? level[0];
 	if (level === "low") return colorize.blue(label);
 	if (level === "medium") return colorize.cyan(label);
