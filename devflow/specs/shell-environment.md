@@ -80,6 +80,8 @@ The base enables export-all only while loading, then restores the caller's setti
 
 ## [SPEC-009-S5] Local and Secret State
 
+`~/.privates.sh` is an optional, unmanaged file for portable environment secrets and overrides. The base sources it after constructing the baseline, while export-all is active. Keep it POSIX-compatible and limited to environment assignments: login shells, machine bootstrap, and the clean tmux adapter all load it. Non-login children (including Nushell) inherit its exports rather than sourcing it again. A missing file is allowed on new machines.
+
 `config/bash/env.local` is an optional, unmanaged machine-local override loaded by `config/bash/env` after interactive setup. It must not be generated from Nushell or used as a portable env snapshot. Transient values such as SSH agent sockets remain inherited from the launching client and are not part of the stable manifest.
 
 ## Zsh completion lifecycle

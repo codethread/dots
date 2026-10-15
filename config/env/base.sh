@@ -204,6 +204,14 @@ else
   ct_shell_resolution_failed=true
 fi
 
+# Local secrets --------------------------------------------------------------
+
+# Optional, unmanaged POSIX-compatible environment overrides. Load after the
+# baseline while export-all is active so child shells and adapters inherit them.
+if [ -f "$HOME/.privates.sh" ]; then
+  . "$HOME/.privates.sh"
+fi
+
 unset ct_dir ct_inherited_path ct_inherited_shell ct_os ct_path ct_remaining
 unset ct_resolved_shell ct_shell_candidate
 

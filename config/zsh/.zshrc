@@ -5,7 +5,6 @@
 # zsh remains minimal, but accidental interactive launches get human-facing env.
 # shuck: source=../env/interactive.sh
 source "$DOTFILES/config/env/interactive.sh"
-source "$HOME/.privates.sh"
 
 # mise project activation for interactive shells; bash uses the same standard
 # hook in config/bash/env. Noninteractive shells use shims or `mise exec`.
