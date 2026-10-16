@@ -1,0 +1,11 @@
+[bootstrap]
+hooks = "none"
+
+[hooks]
+pre_commit = ".githooks/pre-commit"
+pre_merge_commit = ".githooks/pre-merge-commit"
+
+[onboarding]
+harnesses = [ "claude", "codex", "pi" ]
+include = []
+exclude = []

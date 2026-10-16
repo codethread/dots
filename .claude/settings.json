@@ -1,0 +1,15 @@
+{
+	"hooks": {
+		"SessionStart": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "beeswax prime",
+						"statusMessage": "Beeswax onboarding v1"
+					}
+				]
+			}
+		]
+	}
+}

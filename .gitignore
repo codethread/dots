@@ -1,6 +1,7 @@
 .private
 /mise.local.toml
 /mise.*.local.toml
+/.beads/
 .config/exercism
 .config/yarn
 
