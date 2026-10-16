@@ -55,6 +55,14 @@ Start with a small Zsh helper and move it into `oven/` when it exceeds this scop
 
 This repo defines Claude Code configurations such as commands and agents at `claude/`. These include hooks, commands and agents, and the `claude/README.md` gives a comprehensive overview of all aspects, including the dependencies on any scripts from the `oven` module.
 
+## Hive integration
+
+`.hive/beeswax/config.toml` and `.hive/beeswax/meta/lock.json` define the portable Beeswax contract. Run `beeswax sync` in each checkout to bind the accepted installed release. Keep the existing `.githooks` integration: bootstrap sets `core.hooksPath` to `.githooks`, and Beeswax uses `bootstrap.hooks = "none"`. When configuring a checkout without bootstrap, also run `git config --local core.hooksPath .githooks`.
+
+Generated Claude, Codex and Pi adapters load `beeswax prime`; keep one onboarding route per harness. Machine-specific tracker selection lives in ignored `mise.local.toml` and `.codex/config.toml`, never in the committed contract.
+
+The permanent `.worktrees/tracker--state` checkout owns the native Beads database and snapshot history. Preserve it during worktree cleanup, and never merge `tracker/state` into a code branch. New clones may bootstrap only after accepted `origin/tracker/state` history exists; do not initialize a replacement tracker to bypass missing history.
+
 ## Verification
 
 ### Mise
@@ -97,7 +105,7 @@ Given the monorepo nature of this repo, we want to exercise discretion, to that 
 
 ## Beads / br
 
-Track work and implementation steps in repo-local Beads with `br`, from the repository root, instead of native harness todo lists. Start with the work assigned by the user or coordinating agent; do not run triage to replace it with a different task. `bv` is for read-only work selection, prioritization, and coordination—not a prerequisite for execution. Never run bare `bv`, which launches an interactive TUI.
+Track work and implementation steps with native `br`, from the repository root, using the selected `BEADS_DB` in the permanent tracker instead of native harness todo lists. Use `mise exec -- br ...` when the current session has not loaded the local tracker environment. Start with the work assigned by the user or coordinating agent; do not run triage to replace it with a different task. `bv` is for read-only work selection, prioritization, and coordination—not a prerequisite for execution. Never run bare `bv`, which launches an interactive TUI.
 
 1. **Identify:** If given a bead ID, run `br show <id> --json`. Otherwise, use `br search "<topic>" --json` to find an existing bead; if none fits, create one with `br create --title="..." --type=task --priority=2 --description="Scope and completion criteria" --json`.
 2. **Claim:** Before implementation, run `br update <id> --claim --json`. Respect existing ownership and blockers; do not force a claim. A request to just record work ("bead this") stops after creation and sync, without claiming or implementing it.
@@ -108,4 +116,4 @@ Use `task` for scoped work, `bug` for defects, `feature` for new capability, and
 
 Priorities run P0 (critical) through P4 (backlog), with P2 for normal work. Parent-child links group work; record execution prerequisites separately with `br dep add <issue> <depends-on>`: the first issue is blocked by the second.
 
-`.beads/issues.jsonl` is generated and included in normal commits by the pre-commit hook; ignore incidental diffs and do not edit it manually. Tracker commands do not grant permission to commit or push application code.
+`br` exports the generated `.beads/issues.jsonl` inside the permanent tracker; application commits do not flush or stage it. Do not edit generated JSONL manually. Setup and `beeswax sync` stay local; use `beeswax beads sync` only at an authorized tracker publication checkpoint. Tracker commands do not grant permission to commit or push application code.
