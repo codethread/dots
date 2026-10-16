@@ -169,6 +169,12 @@ importers:
       oxfmt:
         specifier: ^0.70.0
         version: 0.70.0
+      xstate:
+        specifier: ^5.33.2
+        version: 5.33.2
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
 packages:
 
@@ -311,6 +317,12 @@ packages:
     resolution: {integrity: sha512-9YodfrxS9g9IbFr/KOjE5bAeJ0p61n3bW6mqvy0jtoeKd1kTW1Cxm0oulm6KX2lyM9Gl6WIe8nEbY7LWv5ZJww==}
     engines: {node: ^20.0.0 || >=22.0.0}
 
+  xstate@5.33.2:
+    resolution: {integrity: sha512-8tC7yXgeCvpT8gKEeEje6ikJJG1wpnoLiXe+HfECW8m10ubMd3QxKOwWA8KxPJVBcLwfdRoMKYxIBGYKmo37/A==}
+
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
+
 snapshots:
 
   '@oxfmt/binding-android-arm-eabi@0.70.0':
@@ -395,3 +407,7 @@ snapshots:
       '@oxfmt/binding-win32-x64-msvc': 0.70.0
 
   tinypool@2.1.2: {}
+
+  xstate@5.33.2: {}
+
+  zod@4.6.7: {}

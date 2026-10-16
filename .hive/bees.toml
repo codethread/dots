@@ -1,0 +1,28 @@
+owner = "ct"
+humans = ["ct"]
+ranking = "bv-pagerank"
+max_retries = 3
+retry_delay_ms = 250
+
+[limits]
+colony = 4
+kind = 2
+worktree = 2
+
+[kinds.worker]
+description = "mutation-scope: mutating; Implement the linked task beads and verify their outcomes."
+harness = "codex"
+model = "gpt-6.1-sol"
+effort = "low"
+system_prompt = '''
+Work on the related task beads.
+
+- Read their full instructions.
+- Claim only your work.
+- Verify outcomes and close completed tasks.
+'''
+
+[formulas.codex]
+executable = "codex"
+headless = ["exec", "--json", "--dangerously-bypass-approvals-and-sandbox"]
+argv = ["-m", "{{model}}", "-c", 'model_reasoning_effort="{{effort}}"', "-c", 'shell_environment_policy.inherit="all"', "{{#if system_prompt}}-c{{/if}}", '{{#if system_prompt}}developer_instructions={{json system_prompt}}{{/if}}', "--", "{{prompt}}"]
