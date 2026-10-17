@@ -109,17 +109,4 @@ Given the monorepo nature of this repo, we want to exercise discretion, to that 
 
 ## Beads / br
 
-Track work and implementation steps with native `br`, from the repository root, using the selected `BEADS_DB` in the permanent tracker instead of native harness todo lists. Use `mise exec -- br ...` when the current session has not loaded the local tracker environment. Start with the work assigned by the user or coordinating agent; do not run triage to replace it with a different task. `bv` is for read-only work selection, prioritization, and coordination—not a prerequisite for execution. Never run bare `bv`, which launches an interactive TUI.
-
-BV uses the same selected tracker. Project recipes live in `.bv/recipes.yaml`: use `bv --recipe work ...` for ordinary work, which excludes the reserved `system` automation label. The `system` recipe is for explicitly authorized automation inspection. Viewer filters grant no authority to claim or modify those records; preserve their labels and use Bee/Colony protocols for their lifecycle.
-
-1. **Identify:** If given a bead ID, run `br show <id> --json`. Otherwise, use `br search "<topic>" --json` to find an existing bead; if none fits, create one with `br create --title="..." --type=task --priority=2 --description="Scope and completion criteria" --json`.
-2. **Claim:** Before implementation, run `br update <id> --claim --json`. Respect existing ownership and blockers; do not force a claim. A request to just record work ("bead this") stops after creation and sync, without claiming or implementing it.
-3. **Work:** Break multi-step work, especially features, into child beads so steps can be claimed, verified, and closed incrementally. Keep progress, decisions, blockers, and handoff context in `br update <id> --append-notes="..." --json`. Pass the relevant bead ID when delegating; reuse it for the same scope rather than creating duplicates.
-4. **Finish:** Verify the work, record the verification in notes, then `br close <id> --reason="Completed" --json`. Leave unfinished or blocked work open with a clear next step.
-
-Use `task` for scoped work, `bug` for defects, `feature` for new capability, and `epic` for a larger effort; `chore` and `docs` cover maintenance and documentation. Nesting is not limited to epics: any bead can have children, and children can have their own children. Create a step with `br create --title="..." --type=task --parent=<parent-id> --json`; use as many levels as useful (e.g. feature → task → subtask), without splitting trivial work unnecessarily. Close a parent only after its children and overall completion criteria are satisfied.
-
-Priorities run P0 (critical) through P4 (backlog), with P2 for normal work. Parent-child links group work; record execution prerequisites separately with `br dep add <issue> <depends-on>`: the first issue is blocked by the second.
-
-`br` exports the generated `.beads/issues.jsonl` inside the permanent tracker; application commits do not flush or stage it. Do not edit generated JSONL manually. Setup and `beeswax sync` stay local; use `beeswax beads sync` only at an authorized tracker publication checkpoint. Tracker commands do not grant permission to commit or push application code.
+Track implementation work and steps with native `br`, using the selected `BEADS_DB` in the permanent tracker rather than harness todo lists. Run tracker commands from the repository root; use `mise exec -- br ...` when the session has not loaded the local tracker environment.

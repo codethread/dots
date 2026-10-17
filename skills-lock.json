@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "skills": {
+    "hive": {
+      "source": "codethread/hive",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/hive/SKILL.md",
+      "computedHash": "66c21b9e991825d2c8230595c5babdfa61824dc91f9f2f947a54170b9a51a367"
+    }
+  }
+}
