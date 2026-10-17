@@ -7,7 +7,8 @@ The build process generates thin bash wrapper scripts that `exec bun run <source
 - Outputs to `~/.local/bin` for system-wide PATH availability
 - entrypoints are declared in `oven/bin/manifest.json`
 - during development run code with `mise exec -- bun run ./bin/<entry path>`
-- `mise.toml` / `mise.lock` pin Bun and Node; `bun.lock` supplies Biome and TypeScript
+- `mise.toml` / `mise.lock` pin Bun and Node; the repository-root `bun.lock` supplies Biome and TypeScript
+- Oven is a member of the root Bun workspace; install all packages with `bun install --frozen-lockfile` from the repository root
 - Git is a host prerequisite
 
 ### Commands

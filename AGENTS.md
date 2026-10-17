@@ -32,6 +32,10 @@ Run `make help` for commands and profile selection. Plain `make` runs native mis
 
 ## Tool Development Workflow
 
+### JavaScript workspace
+
+The root `package.json` explicitly includes `oven` and `.workflows` as Bun workspace members. Run `bun install --frozen-lockfile` from the repository root to install all three packages using the single root `bun.lock`. Keep dependency declarations in their owning package; do not add nested lockfiles or package-manager pins. Application configuration manifests under `config/` are not workspace members. Bun is both the package manager and Oven's runtime/test runner; pnpm remains available for other repositories, not for installing dots.
+
 ### Development Hierarchy
 
 Nushell tooling is deprecated. Choose between two forms for new utilities:
