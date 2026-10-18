@@ -1,54 +1,38 @@
 ---
 name: repo-setup
 description: >
-    Set up or repair a repository's agent scaffolding: shared instructions and skills, repo-local Beads tracking with br/bv, and Markdown format-on-commit. Use when bootstrapping a repository, initializing br, or standardizing formatting while preserving existing package and Git hook tooling.
+    Set up or repair shared agent instructions and skills, adopt Hive, or configure Markdown format-on-commit in a repository.
 ---
 
 # Repository setup
 
-Set up or repair a repository's agent-facing scaffolding. The two tracks are independent: shared instructions, skills, and Beads tracking; and Markdown formatting with format-on-commit.
+Follow only the sections needed for the requested setup.
 
-## Instructions, skills, and Beads
+## Inspect the repository
 
-### Prerequisites
+Work from the intended repository root. Read its instructions and relevant README files; inspect the working tree, instruction/skill layout, setup commands, and active Git hooks (including the origin of `core.hooksPath`).
 
-Work from the intended repository root with `br` available. Clear inherited `BEADS_DIR` or `BEADS_DB` overrides if they point elsewhere.
+## Shared instructions and skills
 
-### Knowledge
+For new repositories, prefer:
 
-Preferred layout for new repositories:
+- `AGENTS.md` as the real instruction file, with `CLAUDE.md` linking to `AGENTS.md`.
+- `.agents/skills/` as the real skills directory, with `.claude/skills` linking to `../.agents/skills`.
 
-- `AGENTS.md` is the real instruction file; `CLAUDE.md` links to `AGENTS.md`.
-- `.agents/skills/` is the real skills directory; `.claude/skills` links to `../.agents/skills`.
+Create real targets before relative symlinks. Preserve existing arrangements, instructions and skills unless conversion is requested. Do not overwrite independent files or directories to create links; resolve conflicting content with the user first.
 
-`br init` creates the `.beads/` workspace, not agent instructions. Adding the workflow guidance is a separate setup step.
+Keep repository instructions project-specific: explain setup, development and verification commands, important directories, and local conventions. Reference tool-owned guidance rather than copying its procedures into `AGENTS.md`.
 
-### Procedures
+## Hive integration
 
-1. For a new repository, establish the shared layout above. Create the real `AGENTS.md` before its `CLAUDE.md` symlink. For existing repositories, preserve their arrangement unless asked to convert it, retaining all guidance and skills.
-2. Run `br init` unless this repository already has an initialized Beads workspace.
-3. Run `br agents --add --force` to add the standard guidance to the detected instruction file, creating `AGENTS.md` if needed. `--force` skips confirmation.
-4. Preserve existing instructions and shared-file arrangements. The generator rejects symlinked instruction files; in that case, edit the resolved target manually to explain `br ready`, `br show <id>`, `br update <id> --claim`, `br close <id>`, and `br sync --flush-only`.
-5. For new repositories, add Beads automation to the pre-commit workflow. Inspect `git config --show-origin --get core.hooksPath` and the active hook first. Extend the existing hook/framework or call a Git-tracked Bash helper; preserve custom/global hooks rather than replacing their ownership. With no existing hook setup, create an executable, tracked `.githooks/pre-commit` and put `git config --local core.hooksPath .githooks` in the project's tracked bootstrap script or setup target, then run it to activate the hook reproducibly rather than leaving activation only in `.git/config`. Use this Bash body (add a Bash shebang for a standalone hook):
+Use Hive for the repository's agent workflow and tracking when that setup is in scope. Follow its installed setup guidance:
 
-    ```bash
-    repo_root="$(git rev-parse --show-toplevel)" || exit $?
-    br --db "$repo_root/.beads/beads.db" sync --flush-only --quiet || exit $?
-    case "$(basename "${GIT_INDEX_FILE:-index}")" in
-      next-index-*) ;; # Git's path-limited commit index: do not widen its scope.
-      *) git add -- "$repo_root/.beads/issues.jsonl" || exit $? ;;
-    esac
-    ```
+```nu
+beeswax skills get repository-setup
+beeswax setup --help
+```
 
-    Keep flush failures fatal and stage only the generated collaboration file, never the SQLite DB or other `.beads/` state. Add just this line to `AGENTS.md`: “`.beads/issues.jsonl` is generated and included in normal commits by the pre-commit hook; ignore incidental diffs and do not edit it manually.”
-
-### Constraints
-
-Do not overwrite independent instruction files or skills to create symlinks; resolve conflicting contents with the user first. Do not use `br init --force` or commit/push unless explicitly requested. Generated guidance grants no authority.
-
-### Validation
-
-Confirm this repository has a `.beads/` workspace and its agent instructions contain the Beads workflow. For regular instruction files, verify with `br agents --check`. For new repositories, also verify both relative symlinks resolve to the canonical instruction file and skills directory. Confirm the hook/helper and its activation instructions are in version-controlled project files and the effective hook path/framework invokes it alongside existing hooks. Check in isolation that ordinary commits stage only JSONL, `next-index-*` indexes skip automatic staging, and a failed flush stops before staging; do not make live commits to verify setup.
+Follow that guidance for tracker setup, harness onboarding, workflow configuration and validation. Preserve existing tracking data and hook ownership. For routine Hive work, use the repository's `hive` skill when installed.
 
 ## Markdown formatting
 
@@ -56,7 +40,7 @@ Produce a repository where Markdown has a documented format command and staged f
 
 ### Workflow
 
-1. Read the repository instructions and inspect its working tree before editing. Identify:
+1. Inspect the formatting setup:
     - package manifests and lockfiles;
     - format scripts and formatter configuration;
     - whether the formatter supports `.md` and `.markdown`;
@@ -163,4 +147,8 @@ Merge these preferences into an existing Oxfmt config rather than overwriting pr
     - run the repository's normal focused checks when formatting touched source or machine-readable data; and
     - inspect the final diff for accidental lockfile replacement, generated files, or removed hook behavior.
 
-Do not commit, discard pre-existing changes, or rewrite the user's staged state unless explicitly asked. Report which path was selected, the files changed, and which commands verified the setup.
+## Complete the setup
+
+Verify requested instruction and skill links resolve and are discoverable by the selected harnesses. Use Hive's own validation for its integration and the checks above for formatting. Keep hook activation reproducible through tracked setup instructions or an entrypoint.
+
+Report what was created or reused, which checks passed, and any remaining setup decisions. Do not commit, push, discard pre-existing work, or rewrite the user's staged state without authorization.
