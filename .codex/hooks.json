@@ -9,6 +9,37 @@
 						"statusMessage": "Beeswax onboarding v1"
 					}
 				]
+			},
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "beeswax harness-alert --harness codex",
+						"statusMessage": "Beeswax tracker alerts v1"
+					}
+				]
+			}
+		],
+		"UserPromptSubmit": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "beeswax harness-alert --harness codex",
+						"statusMessage": "Beeswax tracker alerts v1"
+					}
+				]
+			}
+		],
+		"PostToolUse": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "beeswax harness-alert --harness codex",
+						"statusMessage": "Beeswax tracker alerts v1"
+					}
+				]
 			}
 		]
 	}
