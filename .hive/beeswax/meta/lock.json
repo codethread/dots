@@ -1,6 +1,6 @@
 {
 	"format": 1,
-	"beeswaxVersion": "0.5.0",
+	"beeswaxVersion": "0.6.3",
 	"configDigest": "ba89ab930486e988d836627a0f6a5cfd399395ebabe6021973c917befa8a6568",
 	"hooks": {
 		".githooks/pre-commit": "a11e58c7c8203220f5cc3aa3f615f97293df4b9b16dc7759d12fe468248f7a25",
