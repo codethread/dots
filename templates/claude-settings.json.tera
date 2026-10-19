@@ -146,6 +146,11 @@
   "showTurnDuration": true,
   "terminalProgressBarEnabled": true,
   "effortLevel": "high",
+  "modelSettings": {
+    "claude-fable-5-1": { "effortLevel": "high" },
+    "claude-opus-5-5": { "effortLevel": "high" },
+    "claude-sonnet-5-5": { "effortLevel": "high" }
+  },
   "tui": "fullscreen",
   "feedbackSurveyRate": 0,
   "awaySummaryEnabled": false
