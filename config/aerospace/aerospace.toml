@@ -19,6 +19,10 @@ automatically-unhide-macos-hidden-apps = true
 # Config version 2 no longer infers these from workspace keybindings.
 persistent-workspaces = ['primary', 'alt', 'social', 'planner', 'figma', 'other', 'test', 'ide']
 
+[workspace-to-monitor-force-assignment]
+# Keep Figma on the secondary display, or the main display when using one screen.
+figma = ['secondary', 'main']
+
 [exec]
 inherit-env-vars = true
 

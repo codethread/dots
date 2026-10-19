@@ -108,6 +108,7 @@ copy = [
 	".pi",
 	".claude/settings.local.json",
 	"mise.toml",
+	"AGENTS.md",
 	"CLAUDE.local.md",
 ]
 command = '''
