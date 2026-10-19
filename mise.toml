@@ -132,7 +132,6 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "brew-cask:ungoogled-chromium" = { os = "macos" }
 "brew-cask:visual-studio-code" = { os = "macos" }
 "brew-cask:zed" = { os = "macos" }
-"brew-cask:opensuperwhisper" = { os = "macos" }
 # agent tools
 "brew-cask:terminal-browser" = { os = "macos" }
 
