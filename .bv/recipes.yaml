@@ -1,0 +1,9 @@
+recipes:
+  work:
+    description: Ordinary work, excluding automation beads
+    filters:
+      exclude_tags: [system]
+  system:
+    description: Automation-owned work
+    filters:
+      tags: [system]

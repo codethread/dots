@@ -10,8 +10,14 @@ git_maintenance_repositories = ""
 claude_enable_notify = false
 syncengine_path = "{{ env.HOME }}/.local/bin:/opt/homebrew/opt/coreutils/libexec/gnubin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin"
 
+# Tapped cask metadata evaluation requires Ruby 3+.
+[tools]
+ruby = "4.0"
+
 # Native bootstrap owns convergence. Hooks handle only repo-specific setup.
 [bootstrap.hooks]
+# Cask status checks need Ruby before the packages phase can install anything.
+pre-packages = "mise install ruby"
 # Raw LaunchAgents load before mise's normal tools phase, so install tools early.
 post-packages = ["mise install", '"{{ config_root }}/boot/check-system.sh"']
 post-repos = '''

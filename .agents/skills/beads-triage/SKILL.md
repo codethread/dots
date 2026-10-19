@@ -6,62 +6,40 @@ description: >
 
 # Beads triage
 
-Use `bv` to decide what should be done and how work should be coordinated. Routine execution and tracker mutations belong to the `br` workflow in repository `AGENTS.md`; an assigned task does not need a viewer report first.
-
-Never run bare `bv`: it launches an interactive TUI that blocks an agent session. Do not parse `.beads/issues.jsonl` directly or edit it manually.
+Use robot reports for work selection and coordination; bare `bv` launches an interactive TUI. Execution and tracker mutations belong to [hive](../hive/SKILL.md).
 
 ## Coordination workflow
 
-1. For broad "what next?" requests, start with `bv --robot-triage`. For a specific coordination question, use the focused report below instead.
-2. When selecting from triage, use `triage.quick_ref.top_picks`, which reflects current snapshot readiness. Treat broader `recommendations` as analysis: they may be blocked or assigned.
-3. Inspect the suggested action's local ID, working directory, tracker route, and reasons. Use that route rather than a namespaced display ID.
-4. Recheck current state with `br show <id> --json` or `br ready --json` before recommending or handing off work. Analysis does not reserve work.
-5. Return a recommendation or plan with bead IDs, rationale, prerequisites, and independent tracks where relevant. Do not claim or mutate work for an analysis-only request. If also asked to execute or delegate, hand off to the repository's `br` workflow with the selected IDs and scope.
+1. For broad "what next?" requests, start with `bv --recipe work --robot-triage`. For a specific question, choose a focused report below.
+2. Select from `triage.quick_ref.top_picks`; broader `recommendations` may be blocked or assigned. Inspect the suggested action's local ID, working directory and tracker route rather than using a namespaced display ID.
+3. Recheck current state with `br show <id> --json` or `br ready --exclude-label system --json`. Analysis does not reserve work.
+4. Return bead IDs, rationale, prerequisites and independent tracks where relevant. An analysis-only request does not authorize claims or mutations. When execution or delegation is also requested, hand the selected scope to the Hive workflow.
 
 ## Choose the focused report
 
+Keep `--recipe work` for ordinary reports: its definition in `.bv/recipes.yaml` excludes automation-owned `system` beads. Add report filters instead of replacing this recipe. The `system` recipe is only for explicitly authorized automation inspection; lifecycle changes belong to Bee/Colony protocols.
+
 | Need | Command |
 | --- | --- |
-| One claimable recommendation | `bv --robot-next` |
-| Dependency-respecting parallel tracks | `bv --robot-plan` |
-| Top work per independent track | `bv --robot-triage-by-track` |
-| Top work per area | `bv --robot-triage-by-label` |
-| Explain why one issue is blocked | `bv --robot-blocker-chain <id>` |
-| Detect priority/graph-importance mismatch | `bv --robot-priority` |
-| Inspect graph metrics and cycles | `bv --robot-insights` |
-| Find staleness, cascades, and mismatches | `bv --robot-alerts` |
-| Find duplicates, missing dependencies, or label issues | `bv --robot-suggest` |
-| Search issue text | `bv --robot-search --search "<query>"` |
-| Export a dependency graph | `bv --robot-graph --graph-format=json\|dot\|mermaid` |
-| Compare with an earlier Beads snapshot | `bv --robot-diff --diff-since <ref>` |
+| One ready recommendation | `bv --recipe work --robot-next` |
+| Dependency-respecting parallel tracks | `bv --recipe work --robot-plan` |
+| Top work per independent track | `bv --recipe work --robot-triage-by-track` |
+| Top work per area | `bv --recipe work --robot-triage-by-label` |
+| Explain why one issue is blocked | `bv --recipe work --robot-blocker-chain <id>` |
+| Detect priority/graph-importance mismatch | `bv --recipe work --robot-priority` |
+| Inspect graph metrics and cycles | `bv --recipe work --robot-insights` |
+| Find staleness, cascades and mismatches | `bv --recipe work --robot-alerts` |
+| Find duplicates, missing dependencies or label issues | `bv --recipe work --robot-suggest` |
+| Search issue text | `bv --recipe work --robot-search --search "<query>"` |
+| Export a dependency graph | `bv --recipe work --robot-graph --graph-format=json` |
+| Compare with an earlier Beads snapshot | `bv --recipe work --robot-diff --diff-since <ref>` |
 
-For graph DOT or Mermaid output, extract the `graph` field from the JSON envelope. Historical commands work only when the selected revision contains a Beads export.
+For graph output, `--graph-format` also accepts `dot` or `mermaid`; extract their `graph` field from the JSON envelope. Historical commands need a Beads export in the selected revision.
 
-## Scope and recipes
+## Discover options and output
 
-- `--label <label>` scopes graph analysis to that label's subgraph.
-- `--robot-by-label <label>` filters applicable robot report results without redefining the graph scope.
-- Alerts use `--alert-label <label>` plus optional `--severity` or `--alert-type` filters.
-- Use `--recipe actionable` for unblocked work, `--recipe high-impact` for graph-important work, and `--recipe quick-wins` for small ready items.
-- Run `bv --robot-recipes` rather than guessing other recipe names.
+Read `bv --help` for report filters: `--label` scopes the graph, `--robot-by-label` filters applicable report results, and alerts use `--alert-label`. Keep the work recipe with each filter.
 
-Examples:
+Use `bv --robot-docs commands` for command contracts, `bv --robot-capabilities` for installed capabilities, and `bv --robot-schema --schema-command robot-triage` for exact output fields. Discover recipe definitions with `bv --robot-recipes`. These discovery commands do not query work.
 
-```text
-bv --robot-plan --label backend
-bv --recipe actionable --robot-plan
-bv --recipe high-impact --robot-triage
-bv --robot-alerts --alert-label backend --severity critical
-```
-
-## Discover the installed contract
-
-When flags, fields, or version behavior matter, ask the installed tool instead of relying on remembered output:
-
-```text
-bv --robot-docs commands
-bv --robot-capabilities
-bv --robot-schema --schema-command robot-triage
-```
-
-Most robot analysis commands emit one JSON object by default. `--robot-help` is human-readable text. The correlation feedback commands `--robot-confirm-correlation` and `--robot-reject-correlation` mutate saved state; do not treat every `--robot-*` command as read-only.
+Check `mutates_state` before using unfamiliar robot commands: correlation confirmation and rejection write saved state.

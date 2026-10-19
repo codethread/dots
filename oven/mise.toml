@@ -1,6 +1,6 @@
 min_version = "2026.9.15"
 
-# Runtimes only: Biome and TypeScript are installed from bun.lock.
+# Runtimes only: Biome and TypeScript are installed from the root bun.lock.
 [tools]
 bun = "1.4.2"
 node = "24.21.0"
@@ -14,7 +14,8 @@ enable_tools = ["bun", "node"]
 locked = true
 
 [tasks.install]
-description = "Install Oven dependencies from bun.lock"
+description = "Install all dots workspace dependencies from the root bun.lock"
+dir = "{{ config_root }}/.."
 run = "bun install --frozen-lockfile"
 
 [tasks.verify]

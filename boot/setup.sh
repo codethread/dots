@@ -48,7 +48,12 @@ nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --no-ca
 git -C "$DOTFILES" config core.hooksPath .githooks
 "$DOTFILES/boot/shell.sh"
 # Development verification (including fixes and docs) belongs to make build.
-optional 'Oven installation/build' mise -C "$DOTFILES/oven" exec -- /bin/bash -c 'bun install --frozen-lockfile && bun run build'
+optional 'Workspace installation/Oven build' /bin/bash -ec '
+  cd "$1"
+  mise exec -- bun install --frozen-lockfile
+  cd oven
+  mise exec -- bun run build
+' _ "$DOTFILES"
 
 # launchd loads later in native bootstrap, after the gitwatch dotfile is linked.
 # Check its real execution PATH; gitwatch itself is linked in the next phase.

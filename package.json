@@ -1,6 +1,7 @@
 {
 	"name": "dots",
 	"private": true,
+	"workspaces": ["oven", ".workflows"],
 	"scripts": {
 		"fmt": "oxfmt --disable-nested-config '**/*.{md,markdown}'",
 		"fmt:check": "oxfmt --check --disable-nested-config '**/*.{md,markdown}'"
@@ -8,5 +9,5 @@
 	"devDependencies": {
 		"oxfmt": "^0.70.0"
 	},
-	"packageManager": "pnpm@12.6.0"
+	"packageManager": "bun@1.4.2"
 }

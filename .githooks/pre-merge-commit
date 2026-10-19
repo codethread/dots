@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# beeswax:begin tracker-validation v2
+"$(git rev-parse --git-path beeswax/cli)" system hooks validate || exit $?
+# beeswax:end tracker-validation

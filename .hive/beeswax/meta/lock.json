@@ -1,0 +1,24 @@
+{
+	"format": 1,
+	"beeswaxVersion": "0.7.1",
+	"configDigest": "ba89ab930486e988d836627a0f6a5cfd399395ebabe6021973c917befa8a6568",
+	"hooks": {
+		".githooks/pre-commit": "1317edcef69c26d6c140a013f4f69d63e744367da7b197e37d773bfc6cda54d4",
+		".githooks/pre-merge-commit": "1317edcef69c26d6c140a013f4f69d63e744367da7b197e37d773bfc6cda54d4"
+	},
+	"skills": [
+		"repository-setup",
+		"tracker-recovery"
+	],
+	"components": {
+		"hooks": {
+			"revision": 2
+		},
+		"mergeDriver": {
+			"revision": 1
+		},
+		"skills": {
+			"revision": 1
+		}
+	}
+}
