@@ -59,7 +59,7 @@ To update runtimes, edit their exact versions in `mise.toml`, run `mise lock --p
 - **git-pipeline--await** - Watch the current branch's MR pipeline to completion
 - **gitlab-pipeline-watcher** - Monitor GitLab pipelines and send notifications
 - **mise-dot-diff** - Preview mise dotfiles and pull JSON template edits into local overlays
-- **notif** - Show macOS native notifications
+- **notif** - Send desktop notifications, or CC Notify when away from tmux
 - **prepend-comment** - Add or update module documentation comments
 - **strip-markdown** - Strip markdown formatting from text, optimized for text-to-speech or plain text output.
 - **theme** - Switch macOS and terminal color theme

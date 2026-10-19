@@ -1,227 +1,160 @@
-// :module: System notification command-line utility
+// :module: Notifications through the desktop or CC Notify when away from tmux
 
-import {execSync} from "child_process";
-import {existsSync, readFileSync, unlinkSync, writeFileSync} from "fs";
+import {closeSync, openSync, writeFileSync} from "node:fs";
+import {homedir} from "node:os";
+import {join} from "node:path";
+import {$} from "bun";
 import {parseArgs} from "util";
+import {reportError} from "../shared/report";
 
-// Show macOS native notification
-// Usage: notif [options] [title] [message...]
-// Options:
-//   --aerospace, -a         Use 'aerospace' as title
-//   --id <id>              Delayed notification with ID
-//   --clear <id>           Clear delayed notification by ID
-//   --delay <ms>           Delay in milliseconds (default: 5000)
-//   --help, -h             Show help
+function showHelp() {
+	console.log(`notif - Send desktop notifications, or CC Notify when away from tmux
 
-const logMessage = (message: string) => {
-	const timestamp = new Date().toString();
-	const logEntry = `${timestamp}: ${message}\n`;
-	try {
-		execSync(`echo "${logEntry}" >> /tmp/notif.log`, {stdio: "ignore"});
-	} catch {
-		// Ignore logging errors
-	}
-};
-
-const showHelp = () => {
-	console.log(`
-notif - Show macOS native notifications
-
-Usage: notif [options] [title] [message...]
+Usage: notif <title> [details...]
 
 Options:
-  --aerospace, -a         Use 'aerospace' as title
-  --id <id>              Delayed notification with ID
-  --clear <id>           Clear delayed notification by ID
-  --delay <ms>           Delay in milliseconds (default: 5000)
-  --help, -h             Show help
+  --help, -h  Show help
+
+Uses Kitty when KITTY_WINDOW_ID is present, with tmux passthrough when needed.
+Also supports Ghostty via GHOSTTY_RESOURCES_DIR, TERM_PROGRAM or TERM.
+Otherwise uses AppleScript. Notification duration follows system preferences.
+Requires an attached terminal for terminal delivery. No buttons or click responses.
+Ghostty title semicolons are displayed as fullwidth semicolons.
+
+Inside tmux, uses CC Notify after 180 seconds without input across all attached
+clients on that server, or immediately when all clients are detached.
+Reads tmux client_activity only when notifying; no hook or background polling.
+Outside tmux, always uses desktop delivery. Away delivery requires the local
+cc-notify service; failures are reported without switching delivery channels.
 
 Examples:
-  notif "Hello" "World"
-  notif --aerospace "Workspace changed"
-  notif --id=test --delay=3000 "Delayed" "This appears in 3 seconds"
-  notif --clear=test
-
-Use <> for line breaks in messages: notif "Title" "line1<>line2"
+  notif "Build finished" "All checks passed"
+  notif "Reminder" "Take a break"
 `);
-};
-
-interface NotifOptions {
-	aerospace: boolean;
-	id?: string;
-	clear?: string;
-	delay: number;
-	help: boolean;
 }
 
-const parseCliArgs = (): {options: NotifOptions; title?: string; message?: string} => {
+export interface Notification {
+	title: string;
+	details: string;
+}
+
+async function main() {
+	const notification = parseNotifArgs(Bun.argv.slice(2));
+	if (!notification) {
+		showHelp();
+		return;
+	}
+	await notifLib(notification);
+}
+
+export async function notifLib(notification: Notification, env = process.env): Promise<void> {
+	const away = env.TMUX
+		? tmuxIsAway(await $`tmux list-clients -F '#{client_activity}'`.env(env).quiet().text())
+		: false;
+	const delivery = notificationDelivery(notification, env, away);
+	if (delivery.backend === "cc-notify") {
+		await sendCcNotification(notification, env);
+		return;
+	}
+	if (delivery.backend === "applescript") {
+		const script = `on run argv
+			display notification (item 2 of argv) with title (item 1 of argv)
+		end run`;
+		await $`osascript -e ${script} ${notification.title} ${notification.details}`.quiet();
+		return;
+	}
+
+	const payload =
+		delivery.backend === "ghostty"
+			? delivery.payload
+			: await $`kitten notify --only-print-escape-code ${delivery.args}`.quiet().text();
+	const tty = openSync("/dev/tty", "w");
+	try {
+		writeFileSync(tty, delivery.tmux ? wrapTmuxNotification(payload) : payload);
+	} finally {
+		closeSync(tty);
+	}
+}
+
+export function parseNotifArgs(args: string[]): Notification | undefined {
 	const {values, positionals} = parseArgs({
-		args: Bun.argv.slice(2),
+		args,
 		options: {
-			aerospace: {type: "boolean", short: "a"},
-			id: {type: "string"},
-			clear: {type: "string"},
-			delay: {type: "string", default: "5000"},
 			help: {type: "boolean", short: "h"},
 		},
 		allowPositionals: true,
 	});
+	if (values.help) return;
+	const [title, ...details] = positionals;
+	if (!title) throw new Error("A notification title is required. See notif --help.");
+	return {title, details: details.join(" ")};
+}
 
-	const options: NotifOptions = {
-		aerospace: values.aerospace ?? false,
-		id: values.id,
-		clear: values.clear,
-		delay: parseInt(values.delay as string, 10),
-		help: values.help ?? false,
-	};
-
-	logMessage(`notif called with options: ${JSON.stringify(options)} positionals: ${positionals.join(" ")}`);
-
-	let title: string | undefined;
-	let message: string | undefined;
-
-	if (options.aerospace) {
-		title = "aerospace";
-		message = positionals.length > 0 ? positionals.join(" ") : "empty";
-	} else if (positionals.length === 0) {
-		title = "Notification";
-		message = "empty";
-	} else if (positionals.length === 1) {
-		title = positionals[0];
-		message = "empty";
-	} else {
-		title = positionals[0];
-		message = positionals.slice(1).join(" ");
+export function notificationDelivery(notification: Notification, env: NodeJS.ProcessEnv, away = false) {
+	if (away) return {backend: "cc-notify"} as const;
+	if (env.KITTY_WINDOW_ID) {
+		const args = ["--", notification.title, notification.details];
+		return {backend: "kitty", args, tmux: Boolean(env.TMUX)} as const;
 	}
-
-	return {options, title, message};
-};
-
-const clearNotification = (clearId: string): void => {
-	const tmpFile = `/tmp/notif_${clearId}.tmp`;
-	if (existsSync(tmpFile)) {
-		logMessage(`clearing notification ID: ${clearId}`);
-		unlinkSync(tmpFile);
-		logMessage(`removed tmp file: ${tmpFile}`);
-	} else {
-		logMessage(`no tmp file found for ID: ${clearId}`);
+	if (env.GHOSTTY_RESOURCES_DIR || env.TERM_PROGRAM === "ghostty" || env.TERM === "xterm-ghostty") {
+		return {
+			backend: "ghostty",
+			payload: ghosttyNotification(notification),
+			tmux: Boolean(env.TMUX),
+		} as const;
 	}
-	process.exit(0);
-};
+	return {backend: "applescript"} as const;
+}
 
-const processMultilineMessage = (message: string): string => {
-	if (!message.includes("<>")) {
-		return message;
-	}
-
-	logMessage(`original message: '${message}'`);
-
-	const formattedMessage = message.replace(/<>/g, "\n");
-	logMessage(`after replacement: '${formattedMessage}'`);
-
-	const lines = formattedMessage.split("\n");
-	let maxLength = 0;
-
-	logMessage(`split into ${lines.length} lines`);
-	for (const line of lines) {
-		logMessage(`line: '${line}' (length: ${line.length})`);
-		if (line.length > maxLength) {
-			maxLength = line.length;
+export function tmuxIsAway(clientActivity: string, nowSeconds = Date.now() / 1000): boolean {
+	const activity = clientActivity.trim();
+	if (!activity) return true;
+	const timestamps = activity.split("\n").map((line) => {
+		const timestamp = Number(line);
+		if (!/^\d+$/.test(line) || !Number.isSafeInteger(timestamp)) {
+			throw new Error(`Invalid tmux client_activity: ${JSON.stringify(line)}`);
 		}
-	}
-
-	const paddedLines = lines.map((line) => {
-		const paddingNeeded = maxLength - line.length;
-		return line + " ".repeat(paddingNeeded);
+		return timestamp;
 	});
+	return nowSeconds - Math.max(...timestamps) >= 180;
+}
 
-	logMessage(`processed multiline message, max_length=${maxLength}`);
-	return paddedLines.join("\n");
-};
-
-const showNotification = (title: string, message: string): void => {
-	try {
-		execSync(`osascript -e "display notification \\"${message}\\" with title \\"${title}\\""`, {
-			stdio: "pipe",
-		});
-	} catch (error) {
-		logMessage(`Error showing notification: ${error}`);
+async function sendCcNotification(notification: Notification, env: NodeJS.ProcessEnv): Promise<void> {
+	const stateHome = env.XDG_STATE_HOME || join(homedir(), ".local", "state");
+	const port = (await Bun.file(join(stateHome, "cc-notify", "port")).text()).trim();
+	if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) {
+		throw new Error(`Invalid cc-notify port: ${JSON.stringify(port)}`);
 	}
-};
-
-const createDelayedNotification = (options: {
-	title: string;
-	message: string;
-	notificationId: string;
-	delay: number;
-}): void => {
-	const {title, message, notificationId, delay} = options;
-	const tmpFile = `/tmp/notif_${notificationId}.tmp`;
-
-	const data = JSON.stringify({
-		title,
-		message,
-		timestamp: new Date().toString(),
+	const response = await fetch(`http://localhost:${port}/notify`, {
+		method: "POST",
+		headers: {"Content-Type": "application/json"},
+		body: JSON.stringify({
+			title: notification.title,
+			message: notification.details || notification.title,
+			session_id: `notif-${crypto.randomUUID()}`,
+			notify_at: Date.now(),
+		}),
 	});
-
-	writeFileSync(tmpFile, data);
-	logMessage(`created delayed notification with ID: ${notificationId}, delay: ${delay}ms`);
-
-	setTimeout(() => {
-		if (existsSync(tmpFile)) {
-			logMessage(`executing delayed notification ID: ${notificationId}`);
-
-			try {
-				const storedData = JSON.parse(readFileSync(tmpFile, "utf8"));
-				unlinkSync(tmpFile);
-				showNotification(storedData.title, storedData.message);
-				logMessage(`delayed notification completed for ID: ${notificationId}`);
-			} catch (error) {
-				logMessage(`Error executing delayed notification: ${error}`);
-			}
-		} else {
-			logMessage(`delayed notification was cleared for ID: ${notificationId}`);
-		}
-	}, delay);
-
-	logMessage("background process started for delayed notification");
-};
-
-const main = () => {
-	const {options, title, message} = parseCliArgs();
-
-	if (options.help) {
-		showHelp();
-		process.exit(0);
+	if (!response.ok) {
+		throw new Error(`cc-notify returned HTTP ${response.status}: ${await response.text()}`);
 	}
+}
 
-	if (options.clear) {
-		clearNotification(options.clear);
-		return;
-	}
+export function ghosttyNotification(notification: Notification): string {
+	// OSC 777 has no escaping for the title delimiter or terminal control characters.
+	const text = (value: string) =>
+		value.replace(/\p{Cc}/gu, (char) => (char === "\n" || char === "\t" ? char : ""));
+	const title = text(notification.title).replaceAll(";", "；");
+	return `\x1b]777;notify;${title};${text(notification.details)}\x1b\\`;
+}
 
-	if (!title || !message) {
-		console.error("Error: title and message are required");
-		showHelp();
-		process.exit(1);
-	}
-
-	logMessage(`title='${title}', message='${message}'`);
-
-	const processedMessage = processMultilineMessage(message);
-
-	if (options.id) {
-		createDelayedNotification({
-			title,
-			message: processedMessage,
-			notificationId: options.id,
-			delay: options.delay,
-		});
-	} else {
-		showNotification(title, processedMessage);
-	}
-};
+export function wrapTmuxNotification(payload: string): string {
+	return `\x1bPtmux;${payload.replaceAll("\x1b", "\x1b\x1b")}\x1b\\`;
+}
 
 if (import.meta.main) {
-	main();
+	main().catch((error) => {
+		reportError(error);
+		process.exitCode = 1;
+	});
 }
