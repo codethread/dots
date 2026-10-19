@@ -14,7 +14,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "beeswax harness-alert --harness codex",
+						"command": "beeswax system harness-alert --harness codex",
 						"statusMessage": "Beeswax tracker alerts v1"
 					}
 				]
@@ -25,7 +25,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "beeswax harness-alert --harness codex",
+						"command": "beeswax system harness-alert --harness codex",
 						"statusMessage": "Beeswax tracker alerts v1"
 					}
 				]
@@ -36,7 +36,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "beeswax harness-alert --harness codex",
+						"command": "beeswax system harness-alert --harness codex",
 						"statusMessage": "Beeswax tracker alerts v1"
 					}
 				]

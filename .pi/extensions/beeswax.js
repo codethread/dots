@@ -9,7 +9,7 @@ export default function (pi) {
 		const payload = JSON.stringify({ session_id: ctx.sessionManager.getSessionId(), cwd: ctx.cwd, hook_event_name: "context" });
 		let context;
 		try {
-			const result = await pi.exec("beeswax", ["harness-alert", "--harness", "pi", "--input", payload], { timeout: 5000 });
+			const result = await pi.exec("beeswax", ["system", "harness-alert", "--harness", "pi", "--input", payload], { timeout: 5000 });
 			if (result.code !== 0) throw new Error(result.stderr);
 			const output = JSON.parse(result.stdout);
 			if (typeof output.context !== "string") throw new Error("Invalid alert callback output");
