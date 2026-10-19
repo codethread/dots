@@ -9,6 +9,7 @@ approvals_reviewer = "user"
 service_tier = "default"
 
 [tui]
+notifications = false
 status_line = [
     "model-with-reasoning",
     "current-dir",
