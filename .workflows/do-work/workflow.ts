@@ -40,9 +40,7 @@ export const machine = setup({ types: {} as { context: Work; input: Work } }).cr
 					instructions:
 						`${context.request}` +
 						"\n\nAcceptance criteria:\n" +
-						`${context.acceptance.map((criterion) => `- [ ] ${criterion}`).join("\n")}` +
-						"\n\nPerform this assignment, verify every criterion and record evidence on this " +
-						"stage in comments.",
+						`${context.acceptance.map((criterion) => `- [ ] ${criterion}`).join("\n")}`,
 				}),
 			},
 			on: { COMPLETED: "done" },

@@ -11,3 +11,5 @@ Verify that Busy Bee can import the definition:
 ```nu
 busybee input-schema do-work --json
 ```
+
+Definitions are checkout-owned: upgrading Busy Bee does not update them, and `busybee init` does not overwrite an existing `do-work`. Before changing a definition, inspect unfinished runs with `busybee preflight do-work --json`. Use `busybee skills get workflow-authoring` for definition guidance and `busybee skills get workflow-execution` for run/visit brief reads and outcome delivery.
