@@ -3,7 +3,7 @@
 
 # Start tmux through a login/interactive shell only in the first terminal.
 # Later windows, tabs, and splits use Ghostty's default shell.
-initial-command = shell:/bin/zsh -lic 'exec tmux new-session -A -s dots'
+# initial-command = shell:/bin/zsh -lic 'exec tmux new-session -A -s dots'
 
 keybind = super+r=reload_config
 

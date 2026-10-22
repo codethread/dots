@@ -63,7 +63,7 @@ This repo defines Claude Code configurations such as commands and agents at `cla
 
 `.hive/beeswax/config.toml` and `.hive/beeswax/meta/lock.json` define the portable Beeswax contract. Run `beeswax sync` in each checkout to bind the accepted installed release. Keep the existing `.githooks` integration: bootstrap sets `core.hooksPath` to `.githooks`, and Beeswax uses `bootstrap.hooks = "none"`. When configuring a checkout without bootstrap, also run `git config --local core.hooksPath .githooks`.
 
-Generated Claude, Codex and Pi adapters load `beeswax prime`; keep one onboarding route per harness. Machine-specific tracker selection lives in ignored `mise.local.toml` and `.codex/config.toml`, never in the committed contract.
+Generated Claude, Codex and Pi adapters load `beeswax prime`, tracker alerts and Scent identity; keep one onboarding and identity route per harness. Install the matching Hive suite, including `scent`, before `beeswax update --yes`; review and commit generated adapters, then restart the harness and review/trust its hooks or extensions. Do not add source-path Scent hooks, explicit Pi Scent registrations or the retired Codex Scent plugin alongside these adapters. Machine-specific tracker selection lives in ignored `mise.local.toml` and `.codex/config.toml`, never in the committed contract.
 
 The permanent `.worktrees/tracker--state` checkout owns the native Beads database and snapshot history. Preserve it during worktree cleanup, and never merge `tracker/state` into a code branch. New clones may bootstrap only after accepted `origin/tracker/state` history exists; do not initialize a replacement tracker to bypass missing history.
 

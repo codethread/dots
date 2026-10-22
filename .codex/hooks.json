@@ -18,6 +18,16 @@
 						"statusMessage": "Beeswax tracker alerts v1"
 					}
 				]
+			},
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "scent system hook --harness codex",
+						"statusMessage": "Beeswax identity v1"
+					}
+				],
+				"matcher": "^(startup|resume|clear|compact)$"
 			}
 		],
 		"UserPromptSubmit": [
@@ -38,6 +48,17 @@
 						"type": "command",
 						"command": "beeswax system harness-alert --harness codex",
 						"statusMessage": "Beeswax tracker alerts v1"
+					}
+				]
+			}
+		],
+		"SubagentStart": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "scent system hook --harness codex",
+						"statusMessage": "Beeswax identity v1"
 					}
 				]
 			}
