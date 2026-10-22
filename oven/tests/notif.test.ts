@@ -1,10 +1,10 @@
 import {describe, expect, test} from "bun:test";
 import {
-	ghosttyNotification,
-	notificationDelivery,
+	ghosttyPayload,
 	parseNotifArgs,
+	terminalProtocol,
 	tmuxIsAway,
-	wrapTmuxNotification,
+	wrapTmuxPassthrough,
 } from "../bin/notif";
 
 describe("notif", () => {
@@ -25,64 +25,29 @@ describe("notif", () => {
 		expect(() => tmuxIsAway("not-a-timestamp", 1000)).toThrow("Invalid tmux client_activity");
 	});
 
-	test.each([
-		{},
-		{KITTY_WINDOW_ID: "1"},
-		{TERM_PROGRAM: "ghostty"},
-	])("uses CC Notify when away regardless of desktop backend %j", (env) => {
-		expect(notificationDelivery({title: "Hello", details: "World"}, env, true)).toEqual({
-			backend: "cc-notify",
-		});
-	});
-
-	test.each<[NodeJS.ProcessEnv, ReturnType<typeof notificationDelivery>]>([
-		[{}, {backend: "applescript"}],
-		[{TMUX: "/tmp/tmux"}, {backend: "applescript"}],
-		[
-			{TERM_PROGRAM: "ghostty"},
-			{backend: "ghostty", payload: "\x1b]777;notify;Hello;World\x1b\\", tmux: false},
-		],
-		[
-			{TERM: "xterm-ghostty"},
-			{backend: "ghostty", payload: "\x1b]777;notify;Hello;World\x1b\\", tmux: false},
-		],
-		[
-			{GHOSTTY_RESOURCES_DIR: "/ghostty", TERM_PROGRAM: "tmux", TERM: "tmux-256color", TMUX: "/tmp/tmux"},
-			{backend: "ghostty", payload: "\x1b]777;notify;Hello;World\x1b\\", tmux: true},
-		],
-		[{KITTY_WINDOW_ID: "1"}, {backend: "kitty", args: ["--", "Hello", "World"], tmux: false}],
-		[
-			{KITTY_WINDOW_ID: "1", TMUX: "/tmp/tmux"},
-			{backend: "kitty", args: ["--", "Hello", "World"], tmux: true},
-		],
-	])("selects notification delivery for %j", (env, expected) => {
-		expect(notificationDelivery({title: "Hello", details: "World"}, env)).toEqual(expected);
+	test.each<[NodeJS.ProcessEnv, ReturnType<typeof terminalProtocol>]>([
+		[{}, undefined],
+		[{TMUX: "/tmp/tmux", TERM_PROGRAM: "tmux", TERM: "tmux-256color"}, undefined],
+		[{TERM_PROGRAM: "ghostty"}, "ghostty"],
+		[{TERM: "xterm-ghostty"}, "ghostty"],
+		[{GHOSTTY_RESOURCES_DIR: "/ghostty", TERM_PROGRAM: "tmux", TMUX: "/tmp/tmux"}, "ghostty"],
+		[{KITTY_WINDOW_ID: "1"}, "kitty"],
+		[{KITTY_WINDOW_ID: "1", TMUX: "/tmp/tmux"}, "kitty"],
+	])("detects the terminal protocol from %j", (env, expected) => {
+		expect(terminalProtocol(env)).toBe(expected);
 	});
 
 	test("encodes Ghostty title/details without allowing delimiter or control injection", () => {
-		const payload = ghosttyNotification({title: "Build; done", details: 'Quotes " ; 雪\nnext\x07\x1b\\\x00'});
+		const payload = ghosttyPayload({title: "Build; done", details: 'Quotes " ; 雪\nnext\x07\x1b\\\x00'});
 		expect(payload).toBe('\x1b]777;notify;Build； done;Quotes " ; 雪\nnext\\\x1b\\');
-		expect(wrapTmuxNotification(payload)).toBe(
+		expect(wrapTmuxPassthrough(payload)).toBe(
 			'\x1bPtmux;\x1b\x1b]777;notify;Build； done;Quotes " ; 雪\nnext\\\x1b\x1b\\\x1b\\',
 		);
 	});
 
-	test("passes literal title/details to Kitty", () => {
-		expect(
-			notificationDelivery(
-				{title: "--literal", details: 'Quotes " and $(commands)\nsecond line'},
-				{KITTY_WINDOW_ID: "1"},
-			),
-		).toEqual({
-			backend: "kitty",
-			args: ["--", "--literal", 'Quotes " and $(commands)\nsecond line'],
-			tmux: false,
-		});
-	});
-
 	test("wraps all OSC chunks and doubles every inner escape for tmux", () => {
 		const payload = "\x1b]99;i=test:d=0;Hello\x1b\\\x1b]99;i=test:p=body;World\x1b\\";
-		expect(wrapTmuxNotification(payload)).toBe(
+		expect(wrapTmuxPassthrough(payload)).toBe(
 			"\x1bPtmux;\x1b\x1b]99;i=test:d=0;Hello\x1b\x1b\\\x1b\x1b]99;i=test:p=body;World\x1b\x1b\\\x1b\\",
 		);
 	});
