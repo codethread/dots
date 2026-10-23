@@ -29,6 +29,9 @@
     {
       "source": "../../pb/adam.hall/workfiles/agents/plugins/backend"
     },
+    {
+      "source": "../../pb/adam.hall/workfiles/agents/plugins/work-planning"
+    },
     "npm:pi-nvim",
     "npm:@narumitw/pi-goal",
     "npm:@narumitw/pi-btw",
