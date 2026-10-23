@@ -16,7 +16,7 @@ There are two configuration scopes—project bootstrap and global tools—not fo
 
 | Location | Loading and purpose |
 | --- | --- |
-| `mise.toml`, `mise.<profile>.toml` | Project entrypoints: mise loads the base and selected profile. The base owns shared bootstrap resources, hooks, and `llm:update`; profiles add machine-specific resources. `mise.work.toml` deliberately contains only `brew:glab` and the final workfiles handoff. |
+| `mise.toml`, `mise.<profile>.toml` | Project entrypoints: mise loads the base and selected profile. The base owns shared bootstrap resources, hooks, and explicit maintenance tasks (`llm:update`, `brew:cleanup`); profiles add machine-specific resources. `mise.work.toml` deliberately contains only `brew:glab` and the final workfiles handoff. |
 | `.mise/conf.d/*.toml` | Reusable entrypoints only: `tools.toml` and `tools.dev.toml` symlink to global tool sources; `services.dev.toml` symlinks to the dev-only service source. Environment-suffixed entries load only for the selected environment with `env_conf_d` enabled. |
 | `.mise/dev-services.toml` | Reusable dev-service source, not automatically discovered. The `.mise/conf.d/services.dev.toml` symlink loads its cc-notify and Git-maintenance declarations; workfiles declares the work equivalents in its own repository. |
 | `config/mise/config.toml`, `config/mise/config.dev.toml` | Global tool sources. Dotty links them into `~/.config/mise`, so their tools are available outside dots. Project `tools*.toml` fragment symlinks reuse the same sources before global links exist. |
@@ -59,13 +59,15 @@ mise bootstrap --dry-run       # Preview without running hooks or installing
 mise bootstrap                 # Apply the workstation
 mise bootstrap status          # Inspect declarative state
 mise bootstrap --update        # Also update declared repositories/package metadata
-mise run llm:update             # Explicit agent CLI updates
+mise run llm:update            # Explicit agent CLI updates
+mise run brew:cleanup --dry-run # Preview Homebrew cleanup
+mise run brew:cleanup          # Remove old Homebrew versions and stale downloads
 mise self-update               # Update the mise executable
 ```
 
 `make` delegates to `mise bootstrap --skip-dirty`; `make plan` previews the same policy, while `make update` remains strict about dirty repositories; `make help` lists setup, preview, status, update, linking, and build commands with profile selection. Zsh's `mise-packages`, `mise-services`, and `mise-dot-diff` inspect this checkout from any directory. Native subcommands also apply individual resources; narrow applies must select their own prerequisites, so use full bootstrap for initial setup.
 
-Plain bootstrap clones missing repositories but does not pull unpinned existing branches. `--update` fast-forwards declared repositories; dirty checkouts, origin conflicts, and divergent history fail visibly. Resolve them rather than forcing a reset. Dependencies are installed from their committed lockfiles. No packages are pruned or upgraded implicitly.
+Plain bootstrap clones missing repositories but does not pull unpinned existing branches. `--update` fast-forwards declared repositories; dirty checkouts, origin conflicts, and divergent history fail visibly. Resolve them rather than forcing a reset. Dependencies are installed from their committed lockfiles. No packages are pruned or upgraded implicitly. `brew:cleanup` explicitly runs `brew cleanup` and forwards arguments to Homebrew; it requires the real `brew` executable and never runs during bootstrap. Cleanup removes old formula versions and stale downloads, not packages missing from the mise configuration. It does not clear mise's separate download cache or run `brew autoremove`.
 
 ## Bootstrap ordering
 

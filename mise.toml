@@ -36,6 +36,11 @@ set -e
 /usr/bin/killall Dock >/dev/null 2>&1 || true
 """
 
+# Explicit maintenance only; never run cleanup as part of bootstrap.
+[tasks."brew:cleanup"]
+description = "Remove old Homebrew versions and stale downloads (preview with --dry-run)"
+run = "brew cleanup"
+
 [tasks."llm:update"]
 description = "Update Claude, Codex, Pi, and Pi npm extensions"
 env.DOTFILES = "{{ config_root }}"
