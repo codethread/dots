@@ -54,7 +54,7 @@ done
 
 ((goals)) && tools+=(goal_complete goal_blocked goal_wait)
 ((mcp)) && tools+=(mcp codemode)
-typeset -a cmd=(pi)
+typeset -a cmd=(pi-bolt)
 case ${args[1]} in
   install|remove|uninstall|update|list|config|auth|mcp) ;;
   *) cmd+=(--tools "${(j:,:)tools}") ;;
