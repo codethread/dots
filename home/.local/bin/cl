@@ -3,7 +3,8 @@
 #
 # The one entrypoint for people and tooling; shells only add shortcuts.
 # Defaults: skip permission prompts, `pairing` output style for interactive
-# sessions, claude.ai connectors off (shared settings.json), and appended
+# sessions, claude.ai connectors off (shared settings.json), Artifact off
+# (`enableArtifact` is one-way, so cl sets it per session), and appended
 # forge + sub-agent concurrency prompts. Other arguments pass to `claude`.
 
 set -euo pipefail
@@ -16,6 +17,7 @@ Usage: cl [cl options] [claude options] [prompt]
 cl options:
   -s, --safe                  keep permission prompts (default: skip them)
       --mcp-work              enable claude.ai connectors (Atlassian, Microsoft 365, ...)
+      --artifact              enable the Artifact tool (default: off)
   -m, --mine                  use the personal config dir ~/.config/claude
       --output-style <style>  session output style (default: pairing, unless --print)
       --thinking <level>      set Claude's effort (low, medium, high, xhigh, max)
@@ -35,7 +37,7 @@ case ${1:-} in
         exec claude "$@" ;;
 esac
 
-safe=0 mcp_work=0 printing=0 dry_run=0 style='' settings='{}' user_prompt=''
+safe=0 mcp_work=0 artifact=0 printing=0 dry_run=0 style='' settings='{}' user_prompt=''
 args=()
 while (($#)); do
     case $1 in
@@ -43,6 +45,7 @@ while (($#)); do
             set -- "${1%%=*}" "${1#*=}" "${@:2}"; continue ;;
         -s|--safe) safe=1 ;;
         --mcp-work) mcp_work=1 ;;
+        --artifact) artifact=1 ;;
         -m|--mine) export CLAUDE_CONFIG_DIR="$HOME/.config/claude" ;;
         --dry-run) dry_run=1 ;;
         -h|--help) usage; exec claude --help ;;
@@ -71,9 +74,12 @@ if [[ -f $settings ]]; then
 fi
 # Shared settings.json turns connectors off via env, which outranks the process
 # env; only a higher-precedence settings source such as --settings re-enables them.
-settings=$(jq -ce --arg style "$style" --argjson printing "$printing" --argjson mcp "$mcp_work" '
+# Artifact is the reverse: enableArtifact=false cannot be undone by any higher
+# source, so it is set here unless --artifact is given, not in the shared file.
+settings=$(jq -ce --arg style "$style" --argjson printing "$printing" --argjson mcp "$mcp_work" --argjson artifact "$artifact" '
     (if type != "object" then error("--settings must be a JSON object or file") else . end)
     | (if $mcp == 1 then .env.ENABLE_CLAUDEAI_MCP_SERVERS = "true" else . end)
+    | (if $artifact == 0 then .enableArtifact = false else . end)
     | if $style != "" then .outputStyle = $style
       elif $printing == 0 and (has("outputStyle") | not) then .outputStyle = "pairing"
       else . end

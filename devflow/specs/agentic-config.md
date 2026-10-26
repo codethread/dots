@@ -208,6 +208,7 @@ The single Claude entrypoint for people and tooling: sensible defaults, with fla
 - Defaults: `--dangerously-skip-permissions`; `outputStyle: pairing` for interactive sessions (`-p/--print` omits it so headless output stays terse); claude.ai connectors off via the shared template's `env.ENABLE_CLAUDEAI_MCP_SERVERS="false"`
 - Appended system prompt: forge hint from `origin` (`github.com` → gh, any other remote → glab, none outside git) and sub-agent concurrency rules; a caller's `--append-system-prompt` is appended after them
 - Overrides: `-s/--safe` keeps permission prompts; `--mcp-work` sets `env.ENABLE_CLAUDEAI_MCP_SERVERS="true"` in the session `--settings`, which outranks user settings. Settings `env` also outranks the process environment, so launchers must re-enable connectors with `--settings`, not an exported variable. `disableClaudeAiConnectors` is unsuitable: any source setting it true wins
+- Artifact is off by default: `cl` adds `enableArtifact: false` to the session `--settings` unless `--artifact` is passed. The key is one-way (no file can turn it back on), so it cannot live in the shared template with an opt-in override; a bare `claude` launch keeps Artifact enabled
 - `-m/--mine` sets `CLAUDE_CONFIG_DIR=~/.config/claude`; `--output-style` and `--settings` (JSON object or file) merge into one session `--settings`
 - `--dry-run` prints the command; `-h/--help` prints cl's options followed by `claude --help`
 - Claude subcommands (`mcp`, `plugin`, `doctor`, ...) pass through untouched; all other arguments pass to `claude`
