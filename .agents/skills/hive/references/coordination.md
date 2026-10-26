@@ -6,6 +6,8 @@ Inspect current assignment and blockers immediately before claiming through `br 
 
 When delegating, follow `bee skills get delegation` for submission, retained IDs and result delivery. Choose bee kinds from repository policy and available configuration.
 
+Keep Bee and Busy Bee commands alive while native Beads waits for a tracker lock. Use asynchronous execution with polling, or allow an outer timeout for the configured native wait budget plus command work. Follow returned workflow IDs and native parent-child links rather than deriving ancestry from dotted IDs.
+
 ## Keep resumable evidence
 
 Append progress, decisions, verification and handoff context to task notes. For Busy Bee stages, put narrative evidence in comments and reserve notes for the original workflow outcome. Inspect saved progress after interruption before repeating effects.

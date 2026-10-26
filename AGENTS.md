@@ -110,3 +110,5 @@ Given the monorepo nature of this repo, we want to exercise discretion, to that 
 ## Beads / br
 
 Track implementation work and steps with native `br`, using the selected `BEADS_DB` in the permanent tracker rather than harness todo lists. Run tracker commands from the repository root; use `mise exec -- br ...` when the session has not loaded the local tracker environment.
+
+Use `qlock exec -w 240` for the normal four-minute queue admission budget. Hive 0.9.1 requires this flag explicitly and does not read a qlock configuration file. This queue budget is separate from Beads' five-minute native tracker lock wait; keep the admitted command alive while Beads waits.

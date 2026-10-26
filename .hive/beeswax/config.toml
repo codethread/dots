@@ -5,6 +5,9 @@ hooks = "none"
 pre_commit = ".githooks/pre-commit"
 pre_merge_commit = ".githooks/pre-merge-commit"
 
+[beads]
+lock_timeout = 300000
+
 [onboarding]
 harnesses = [ "claude", "codex", "pi" ]
 include = []
