@@ -2,3 +2,4 @@
 # issue_prefix: dots
 # default_priority: 2
 # default_type: task
+lock_timeout: 300000
