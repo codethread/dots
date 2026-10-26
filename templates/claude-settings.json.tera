@@ -68,6 +68,7 @@
     ]
   },
   "enabledMcpjsonServers": [],
+  "syncClaudeAiSkills": false,
   "skillOverrides": {
     "autofix-pr": "off",
     "batch": "off",
