@@ -546,5 +546,8 @@
     "https://biomejs.dev": true,
   },
   "workbench.colorTheme": "Ayu Light Bordered",
+  "workbench.editorAssociations": {
+    "*.md": "vscode.markdown.preview.editor",
+  },
   "chat.viewSessions.orientation": "stacked",
 }
