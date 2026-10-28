@@ -155,6 +155,8 @@ cache_zsh_init fzf --zsh
 cache_zsh_init atuin init zsh
 # Cobra shim; suggestions are queried from `honeycomb __complete` at tab time.
 cache_zsh_init honeycomb completions zsh
+# Embedded completion for both CLIs; bl discovers lake commands at Tab time.
+cache_zsh_init botlake completions zsh
 # The standalone mise install supplies completions through its CLI.
 cache_zsh_init mise completion zsh
 unfunction cache_zsh_init
