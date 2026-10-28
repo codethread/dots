@@ -1,30 +1,30 @@
 # Pi shortcuts over home/.local/bin/piw, which owns shared tool defaults.
-alias pih='piw --model openai-codex/gpt-6-astra --thinking xhigh --goals --mcp'
-alias pio='piw --model anthropic/claude-opus-5-5 --thinking high --goals --mcp'
-alias pim='piw --model openai-codex/gpt-6.1-sol --thinking high --goals --mcp'
-alias pif='piw --model deepseek/deepseek-flash --thinking max'
-alias pil='piw --model openai-codex/gpt-6-luna --thinking xhigh'
+alias pih='BL_AUDIENCE=human piw --model openai-codex/gpt-6-astra --thinking xhigh --goals --mcp'
+alias pio='BL_AUDIENCE=human piw --model anthropic/claude-opus-5-5 --thinking high --goals --mcp'
+alias pim='BL_AUDIENCE=human piw --model openai-codex/gpt-6.1-sol --thinking high --goals --mcp'
+alias pif='BL_AUDIENCE=human piw --model deepseek/deepseek-flash --thinking max'
+alias pil='BL_AUDIENCE=human piw --model openai-codex/gpt-6-luna --thinking xhigh'
 # Resolve per invocation: checkouts under $HOME/pb use Sonnet; elsewhere Sol.
 pis() {
   if [[ $PWD == $HOME/pb || $PWD == $HOME/pb/* ]]; then
-    piw --model anthropic/claude-sonnet-5-5 --thinking high --goals --mcp "$@"
+    BL_AUDIENCE=human piw --model anthropic/claude-sonnet-5-5 --thinking high --goals --mcp "$@"
   else
-    piw --model openai-codex/gpt-6.1-sol --thinking xhigh --goals --mcp "$@"
+    BL_AUDIENCE=human piw --model openai-codex/gpt-6.1-sol --thinking xhigh --goals --mcp "$@"
   fi
 }
 
 # Interactive conveniences over home/.local/bin/cl, which owns the defaults
 # and override flags shared with other tooling.
-cls() { cl --model sonnet "$@"; }
-clo() { cl --model opus "$@"; }
-clh() { cl --model haiku "$@"; }
+cls() { BL_AUDIENCE=human cl --model sonnet "$@"; }
+clo() { BL_AUDIENCE=human cl --model opus "$@"; }
+clh() { BL_AUDIENCE=human cl --model haiku "$@"; }
 
 # Codex defaults use --config so an explicit --model can override them.
-coa() { co --config 'model="gpt-6-astra"' --thinking xhigh "$@"; }
-cos() { co --config 'model="gpt-6.1-sol"' --thinking high "$@"; }
-com() { co --config 'model="gpt-6.1-sol"' --thinking medium --fast "$@"; }
+coa() { BL_AUDIENCE=human co --config 'model="gpt-6-astra"' --thinking xhigh "$@"; }
+cos() { BL_AUDIENCE=human co --config 'model="gpt-6.1-sol"' --thinking high "$@"; }
+com() { BL_AUDIENCE=human co --config 'model="gpt-6.1-sol"' --thinking medium --fast "$@"; }
 # Shadows /usr/bin/col; use `command col` for the text filter.
-col() { co --config 'model="gpt-6-luna"' --thinking high --fast "$@"; }
+col() { BL_AUDIENCE=human co --config 'model="gpt-6-luna"' --thinking high --fast "$@"; }
 
 # Completion helpers and registrations; this file is sourced after compinit.
 _dots_pi() {
