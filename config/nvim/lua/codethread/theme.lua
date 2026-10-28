@@ -57,6 +57,9 @@ local rose_pine_highlight_groups = {
 	CursorLine = { bg = 'foam', blend = 10 },
 	StatusLine = { fg = 'foam', bg = 'foam', blend = 10 },
 
+	['String'] = { fg = 'foam' },
+	['@property'] = { fg = 'gold' },
+	['@variable.member'] = { fg = 'gold' },
 	['@variable'] = { italic = false },
 	['@variable.builtin'] = { fg = 'text', bold = true },
 	['@keyword.bang'] = { fg = 'love', underline = true },

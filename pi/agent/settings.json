@@ -24,6 +24,9 @@
       "source": "../../dev/projects/agents"
     },
     {
+      "source": "../../dev/projects/botlake/plugins/identity"
+    },
+    {
       "source": "../../pb/adam.hall/workfiles/agents/plugins/admin"
     },
     {

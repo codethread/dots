@@ -1,17 +1,17 @@
 # Pi shortcuts over home/.local/bin/piw, which owns shared tool defaults.
-alias pih='piw --model openai-codex/gpt-6-astra --thinking xhigh --goals'
-alias pim='piw --model openai-codex/gpt-6.1-sol --thinking high --goals'
+alias pih='piw --model openai-codex/gpt-6-astra --thinking xhigh --goals --mcp'
+alias pio='piw --model anthropic/claude-opus-5-5 --thinking high --goals --mcp'
+alias pim='piw --model openai-codex/gpt-6.1-sol --thinking high --goals --mcp'
+alias pif='piw --model deepseek/deepseek-flash --thinking max'
+alias pil='piw --model openai-codex/gpt-6-luna --thinking xhigh'
 # Resolve per invocation: checkouts under $HOME/pb use Sonnet; elsewhere Sol.
 pis() {
   if [[ $PWD == $HOME/pb || $PWD == $HOME/pb/* ]]; then
-    piw --model anthropic/claude-sonnet-5-5 --thinking high --goals "$@"
+    piw --model anthropic/claude-sonnet-5-5 --thinking high --goals --mcp "$@"
   else
-    piw --model openai-codex/gpt-6.1-sol --thinking xhigh --goals "$@"
+    piw --model openai-codex/gpt-6.1-sol --thinking xhigh --goals --mcp "$@"
   fi
 }
-alias pil='piw --model openai-codex/gpt-6-luna --thinking xhigh'
-alias pio='piw --model anthropic/claude-opus-5-5 --thinking high --goals'
-alias pif='piw --model deepseek/deepseek-flash --thinking max'
 
 # Interactive conveniences over home/.local/bin/cl, which owns the defaults
 # and override flags shared with other tooling.
