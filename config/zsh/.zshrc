@@ -117,6 +117,9 @@ zstyle ':completion:*' menu select
 # shuck: source=./ai.zsh
 source "$DOTFILES/config/zsh/ai.zsh"
 
+# Work-only config, linked from the private workfiles repo when present.
+[[ -r ~/.config/zsh/work/work.zsh ]] && source ~/.config/zsh/work/work.zsh
+
 #: }}}
 #: keybindings {{{
 autoload -z edit-command-line
