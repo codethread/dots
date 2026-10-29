@@ -93,7 +93,9 @@ source "$DOTFILES/config/zsh/helpers.zsh"
 source "$DOTFILES/config/zsh/completion-path.zsh"
 
 # TODO: move to comp
-eval "$(honeycomb shell-init zsh)"
+if (( $+commands[honeycomb] )); then
+  eval "$(honeycomb shell-init zsh)"
+fi
 
 mkdir -p "$XDG_CACHE_HOME/zsh"
 autoload -Uz compinit bashcompinit
@@ -128,6 +130,8 @@ source "$HOMEBREW_PREFIX/opt/antidote/share/antidote/antidote.zsh"
 cache_zsh_init() {
   local name="$1"
   shift
+
+  (( $+commands[$name] )) || return 0
 
   local bin="${commands[$name]:A}"
   local init="$XDG_CACHE_HOME/zsh/$name-init.zsh"

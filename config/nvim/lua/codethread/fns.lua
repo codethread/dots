@@ -38,17 +38,6 @@ function M.save_buffer()
 				require('plugins.notes.backup').update_and_push('renames', path)
 			end
 		end)
-
-		-- too annoying as it alters jump list
-		-- elseif vim.tbl_contains({ 'typescript', 'typescriptreact', 'javascript' }, ft) then
-		-- 	require('vtsls').commands.remove_unused_imports(
-		-- 		vim.api.nvim_get_current_buf(),
-		-- 		function() vim.cmd.w() end,
-		-- 		function(e)
-		-- 			dd(e)
-		-- 			vim.cmd.w()
-		-- 		end
-		-- 	)
 	else
 		vim.cmd.w()
 	end

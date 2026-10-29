@@ -155,26 +155,14 @@ return {
 						},
 					},
 					biome = {},
-					vtsls = {
-						-- nvim-lspconfig provides excellent defaults in lsp/vtsls.lua
-						-- We only override settings here, letting it handle cmd, filetypes, and root_dir
+					tsc = {
+						-- Native TypeScript 7 LSP; TypeScript is installed by mise.
+						mason = false,
 						settings = {
-							vtsls = {
-								autoUseWorkspaceTsdk = true,
-								experimental = {
-									completion = {
-										enableServerSideFuzzyMatch = true,
-									},
-								},
-							},
-							typescript = {
+							['js/ts'] = {
 								preferences = {
 									importModuleSpecifier = 'non-relative',
 									preferTypeOnlyAutoImports = true,
-									includePackageJsonAutoImports = 'on',
-								},
-								tsserver = {
-									maxTsServerMemory = 8192,
 								},
 							},
 						},
@@ -339,7 +327,8 @@ return {
 			end
 
 			-- Setup mason-lspconfig
-			mlsp.setup { ensure_installed = ensure_installed }
+			-- Enable only the servers declared above, not leftover Mason installs.
+			mlsp.setup { ensure_installed = ensure_installed, automatic_enable = false }
 
 			-- Enable all configured servers
 			for _, server in ipairs(servers_to_enable) do

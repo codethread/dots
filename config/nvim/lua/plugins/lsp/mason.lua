@@ -57,24 +57,6 @@ return {
 			start_delay = 3000, -- Delay before starting installation (ms)
 			debounce_hours = 24, -- Only check for updates once per day
 		},
-		config = function(_, opts)
-			require('mason-tool-installer').setup(opts)
-
-			-- Verify installations completed successfully
-			vim.api.nvim_create_autocmd('User', {
-				pattern = 'MasonToolsUpdateCompleted',
-				callback = function()
-					-- Optional: verify critical tools are installed
-					local vtsls_installed = vim.fn.executable('vtsls') == 1
-					if not vtsls_installed then
-						vim.notify(
-							'vtsls installation may have failed. Check :Mason',
-							vim.log.levels.WARN,
-							{ title = 'Mason' }
-						)
-					end
-				end,
-			})
-		end,
+		config = function(_, opts) require('mason-tool-installer').setup(opts) end,
 	},
 }

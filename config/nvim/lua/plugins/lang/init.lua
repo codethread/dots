@@ -2,11 +2,7 @@ if vim.g.vscode then return {} end
 
 return U.flatten {
 	require 'plugins.lang.go',
-	-- require 'plugins.lang.typescript',
-	-- require 'plugins.lang.typescript-tools',
-	-- require 'plugins.lang.typescript-tools',
 	require 'plugins.lang.rust',
-	require 'plugins.lang.ts',
 
 	{
 		-- https://github.com/nushell/tree-sitter-nu/blob/main/installation/neovim.md
