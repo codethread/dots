@@ -1,6 +1,10 @@
 local projects = require("projects")
 local config = (os.getenv("XDG_CONFIG_HOME") or os.getenv("HOME") .. "/.config") .. "/rex"
 local terminal = "com.superlogical.terminal"
+local data = os.getenv("XDG_DATA_HOME") or os.getenv("HOME") .. "/.local/share"
+dofile(data .. "/nvim/lazy/smart-splits-backend-rex/rex/lua/smart-splits-rex/init.lua").setup({
+	resize_amount = 3,
+})
 
 local function cwd(ctx)
 	local process = assert(rex.block.call(terminal, "process", { block_id = ctx.block_id }))
@@ -136,6 +140,36 @@ action("dots_close_other_tabs", "Close Other Tabs", function()
 	end
 end)
 
+local function split(ctx, direction, ratio)
+	return assert(rex.session.new_split({
+		anchor_id = ctx.block_id,
+		direction = direction,
+		side = "after",
+		ratio = ratio,
+		focus = true,
+		layout = shell({ cwd = cwd(ctx) }),
+	}))
+end
+
+action("dots_split", "Split Pane in Current Directory", function(ctx, args)
+	return split(ctx, args.direction, 0.5)
+end, { direction = "string" })
+
+action("dots_split_or_zoom", "Split Single Pane or Toggle Zoom", function(ctx)
+	for _, window in ipairs(assert(rex.session.view({})).windows) do
+		for _, layer in ipairs(window.layers) do
+			for _, block in ipairs(layer.blocks) do
+				if block.block_id == ctx.block_id then
+					if layer.kind == "tiled" and #layer.blocks == 1 then
+						return split(ctx, "horizontal", 0.6)
+					end
+					return assert(rex.session.zoom_block({ block_id = ctx.block_id }))
+				end
+			end
+		end
+	end
+end)
+
 bind("ctrl+a", "pane.send_key", { key = "ctrl+a" })
 bind("r", "client.config.reload")
 bind("ctrl+r", "client.config.reload")
@@ -164,3 +198,13 @@ rex.bind("ctrl+alt+z", "client.tab.previous")
 rex.bind("ctrl+alt+x", "client.tab.next")
 rex.bind("ctrl+alt+left", "client.tab.move", { direction = "backward" })
 rex.bind("ctrl+alt+right", "client.tab.move", { direction = "forward" })
+
+bind("shift+\\", "dots_split", { direction = "horizontal" })
+bind("-", "dots_split", { direction = "vertical" })
+bind("space", "dots_split_or_zoom")
+bind("x", "pane.close")
+for key, direction in pairs({ h = "left", j = "down", k = "up", l = "right" }) do
+	rex.bind("ctrl+" .. key, "smart_splits_focus", { direction = direction, key = "ctrl+" .. key })
+	rex.bind("alt+" .. key, "smart_splits_resize", { direction = direction, key = "alt+" .. key })
+	bind("shift+" .. key, "pane.resize", { direction = direction, amount = 2 })
+end
