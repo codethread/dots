@@ -1,14 +1,8 @@
 # Rex trial
 
-Session and window controls ported from `config/tmux/tmux.conf`. Project defaults, hostname/environment profiles and discovery roots come from `~/.config/tmux/sessions.toml`. Rex keeps its own mutable path list in `~/.local/cache/rex-slots`: lines 1–9 are slots 1–9, line 10 is slot 0, and later lines are appended projects. Assignments capture the focused terminal's current directory. Sessions are reused by directory basename, with dots replaced by underscores, just like `tmux-session`.
+Session and window controls ported from `config/tmux/tmux.conf`. Project defaults, hostname/environment profiles and discovery roots come from `~/.config/tmux/sessions.toml`. Rex keeps its own mutable path list in `${XDG_CACHE_HOME:-~/.local/cache}/rex-slots`: lines 1–9 are slots 1–9, line 10 is slot 0, and later lines are appended projects. Assignments capture the focused terminal's current directory. Sessions are reused by directory basename, with dots replaced by underscores, just like `tmux-session`.
 
 The prefix is **Ctrl+A**. Escape cancels an unfinished sequence.
-
-**Ctrl+A h** enters the one-shot slot mode. Press a number to assign the focused terminal's directory, or a/e/l/r for the slot actions below. The mode exits after the action; Escape, q, or Ctrl+C cancels it.
-
-Project discovery and every slot operation run through `session.sh` and `session.lua` in a floating terminal on the selected session host. They use that host's `~/.config/tmux/sessions.toml` and `~/.local/cache/rex-slots`, including when config Lua runs on an attached client. Assigning, editing and jumping therefore share one host-side file. Client shortcut overrides can take precedence over the config bindings.
-
-The host-side helper lists and creates sessions on its own server, then asks the source terminal's owning client to select the result. No client filesystem paths or connection IDs are passed into the host helper.
 
 | After prefix          | Action                                               |
 | --------------------- | ---------------------------------------------------- |
@@ -56,4 +50,4 @@ rex config check
 rex config reload
 ```
 
-`rex keymap` checks the effective bindings against the connected client. Lua modules and the session helper script are linked by dotty with `init.lua`.
+`rex keymap` checks the effective bindings against the connected client. Lua modules and the picker script are linked by dotty with `init.lua`.
