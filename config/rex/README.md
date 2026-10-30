@@ -8,6 +8,8 @@ The prefix is **Ctrl+A**. Escape cancels an unfinished sequence.
 
 The trial hardcodes home-relative configuration and slot paths. Lua expands `~` where it reads or writes files; picker and editor commands expand it in the session terminal's shell. This avoids passing a different machine's username into the terminal. It does not synchronize files between machines. Client shortcut overrides can take precedence over the config bindings.
 
+Project sessions are listed and created on the action's target server (`ctx.server` when supplied), so the selected session ID belongs to that server.
+
 | After prefix          | Action                                               |
 | --------------------- | ---------------------------------------------------- |
 | Ctrl+A                | Send Ctrl+A to terminal                              |

@@ -49,11 +49,12 @@ local function picker(ctx, rows, name, prompt)
 	}))
 end
 
-action("dots_project", "Open Project Session", function(_, args)
+action("dots_project", "Open Project Session", function(ctx, args)
+	local server = ctx.server and rex.server(ctx.server) or rex
 	local path = args.value
 	local name = assert(path:match("([^/]+)/?$")):gsub("%.", "_")
 	local id
-	for _, session in ipairs(assert(rex.call("session.list")).sessions) do
+	for _, session in ipairs(assert(server.call("session.list")).sessions) do
 		if session.label == name then
 			assert(not id, "Multiple sessions named " .. name)
 			id = session.session_id
@@ -61,7 +62,7 @@ action("dots_project", "Open Project Session", function(_, args)
 	end
 	if not id then
 		projects.exec({ "test", "-d", path })
-		id = assert(rex.call(
+		id = assert(server.call(
 			"session.create",
 			{ label = name, initial_windows = {
 				{ window_label = "main", layout = shell({ cwd = path }) },
