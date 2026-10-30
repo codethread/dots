@@ -1,4 +1,5 @@
 local projects = require("projects")
+local panes = require("panes")
 local config = (os.getenv("XDG_CONFIG_HOME") or os.getenv("HOME") .. "/.config") .. "/rex"
 local terminal = "com.superlogical.terminal"
 local data = os.getenv("XDG_DATA_HOME") or os.getenv("HOME") .. "/.local/share"
@@ -112,6 +113,65 @@ action("dots_close_other_tabs", "Close Other Tabs", function()
 	end
 end)
 
+action("dots_swap_pane", "Swap Pane", panes.swap, {
+	type = "object",
+	required = { "offset" },
+	additionalProperties = false,
+	properties = { offset = { type = "integer", enum = { -1, 0, 1 } } },
+})
+action("dots_layout", "Arrange Main Pane Layout", panes.layout, {
+	type = "object",
+	required = { "mode" },
+	additionalProperties = false,
+	properties = { mode = { type = "string", enum = { "tall", "fat", "toggle" } } },
+})
+action("dots_swap_selected", "Swap with Picked Pane", function(_, args)
+	local source, target = args.value:match("^(%S+) (%S+)$")
+	assert(source and target, "Expected two pane IDs")
+	assert(rex.session.swap_blocks({ block_id = source, other_block_id = target }))
+	return assert(rex.session.focus_block({ block_id = source }))
+end, { value = "string" })
+action("dots_panes", "Pick Pane to Swap", function(ctx)
+	local rows = {}
+	for i, window in ipairs(assert(rex.session.view({})).windows) do
+		for _, layer in ipairs(window.layers) do
+			for j, block in ipairs(layer.blocks) do
+				if block.block_id ~= ctx.block_id then
+					rows[#rows + 1] = string.format(
+						"%s %s\t%d.%d  %s  %s",
+						ctx.block_id,
+						block.block_id,
+						i,
+						j,
+						window.label,
+						block.label
+					)
+				end
+			end
+		end
+	end
+	if #rows == 0 then
+		return
+	end
+	return picker(ctx, rows, "dots_swap_selected", "Swap pane: ")
+end)
+action("dots_history", "Open Scrollback in Neovim", function(ctx)
+	return assert(rex.session.new_window({
+		window_label = "history",
+		layout = shell({
+			command = {
+				"bash",
+				"-c",
+				[[set -o pipefail
+rex capture -b "$1" --trim --unwrap |
+  nvim -u NONE -R -c 'set clipboard=unnamedplus' -c 'nnoremap q <Cmd>qa!<CR>' -c 'normal! G' -]],
+				"rex-history",
+				ctx.block_id,
+			},
+		}),
+	}))
+end)
+
 local function split(ctx, direction, ratio)
 	return assert(rex.session.new_split({
 		anchor_id = ctx.block_id,
@@ -171,6 +231,22 @@ bind("shift+\\", "dots_split", { direction = "horizontal" })
 bind("-", "dots_split", { direction = "vertical" })
 bind("space", "dots_split_or_zoom")
 bind("x", "pane.close")
+bind("shift+]", "dots_swap_pane", { offset = 1 })
+bind("shift+[", "dots_swap_pane", { offset = -1 })
+bind("m", "dots_swap_pane", { offset = 0 })
+bind("j", "dots_panes")
+bind("b", "pane.move_to_new_tab")
+bind("shift+b", "pane.move_to_tab")
+bind("=", "dots_layout", { mode = "tall" })
+bind("enter", "dots_layout", { mode = "toggle" })
+bind("shift+=", "pane.balance")
+bind("[", "dots_history")
+bind("shift+o", "dots_history")
+bind("shift+s", "dots_history")
+bind("shift+/", "client.palette.toggle")
+bind("/", "client.find.open")
+bind("pageup", "client.prompt.previous")
+bind("pagedown", "client.prompt.next")
 for key, direction in pairs({ h = "left", j = "down", k = "up", l = "right" }) do
 	rex.bind("ctrl+" .. key, "smart_splits_focus", { direction = direction, key = "ctrl+" .. key })
 	rex.bind("alt+" .. key, "smart_splits_resize", { direction = direction, key = "alt+" .. key })
