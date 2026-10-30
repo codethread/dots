@@ -95,12 +95,10 @@ worktree_location = "nested"
 [project.add]
 policy = "origin_default"
 
-# Expensive PB app: keep a fixed pool of prepared worktrees and run local
-# bootstrap when a slot is created or allocated.
+# Deals Light UI: bootstrap normal ad hoc worktrees when they are created.
 [[project]]
 name = "deals ui bootstrap"
 root = "~/pb/app/deals-light-ui"
-pool_size = 12
 copy_mode_default = "symlink"
 copy = [
 	".env",
