@@ -4,6 +4,10 @@ Session and window controls ported from `config/tmux/tmux.conf`. Project default
 
 The prefix is **Ctrl+A**. Escape cancels an unfinished sequence.
 
+**Ctrl+A h** enters the one-shot slot mode. Press a number to assign the focused terminal's directory, or a/e/l/r for the slot actions below. The mode exits after the action; Escape, q, or Ctrl+C cancels it.
+
+Configuration, project discovery and slot storage belong to the Rex **server host**, including when you connect from another machine. A slot stores a host directory, not a path on the attached client. Client shortcut overrides can take precedence over the server's bindings.
+
 | After prefix          | Action                                               |
 | --------------------- | ---------------------------------------------------- |
 | Ctrl+A                | Send Ctrl+A to terminal                              |
