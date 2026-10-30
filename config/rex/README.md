@@ -6,9 +6,9 @@ The prefix is **Ctrl+A**. Escape cancels an unfinished sequence.
 
 **Ctrl+A h** enters the one-shot slot mode. Press a number to assign the focused terminal's directory, or a/e/l/r for the slot actions below. The mode exits after the action; Escape, q, or Ctrl+C cancels it.
 
-The trial hardcodes home-relative configuration and slot paths. Lua expands `~` where it reads or writes files; picker and editor commands expand it in the session terminal's shell. This avoids passing a different machine's username into the terminal. It does not synchronize files between machines. Client shortcut overrides can take precedence over the config bindings.
+Project discovery and every slot operation run through `session.sh` and `session.lua` in a floating terminal on the selected session host. They use that host's `~/.config/tmux/sessions.toml` and `~/.local/cache/rex-slots`, including when config Lua runs on an attached client. Assigning, editing and jumping therefore share one host-side file. Client shortcut overrides can take precedence over the config bindings.
 
-Project sessions are listed and created on the action's target server (`ctx.server` when supplied), so the selected session ID belongs to that server.
+The host-side helper lists and creates sessions on its own server, then asks the source terminal's owning client to select the result. No client filesystem paths or connection IDs are passed into the host helper.
 
 | After prefix          | Action                                               |
 | --------------------- | ---------------------------------------------------- |
@@ -56,4 +56,4 @@ rex config check
 rex config reload
 ```
 
-`rex keymap` checks the effective bindings against the connected client. Lua modules and the picker script are linked by dotty with `init.lua`.
+`rex keymap` checks the effective bindings against the connected client. Lua modules and the session helper script are linked by dotty with `init.lua`.
