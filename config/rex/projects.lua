@@ -1,13 +1,12 @@
 -- Project discovery and mutable slots, ported from tmux-session.
 local M = {}
 local home = assert(os.getenv("HOME"))
-local config = (os.getenv("XDG_CONFIG_HOME") or home .. "/.config")
-M.state = (os.getenv("XDG_CACHE_HOME") or home .. "/.local/cache") .. "/rex-slots"
+local config = "~/.config/tmux/sessions.toml"
+M.state = "~/.local/cache/rex-slots"
 
 function M.exec(argv, opts)
 	-- The GUI server does not inherit the terminal's Homebrew/mise PATH.
-	local command =
-		{ "/bin/sh", "-c", '. "${XDG_CONFIG_HOME:-$HOME/.config}/env/base.sh" || exit; exec "$@"', "rex-env" }
+	local command = { "/bin/sh", "-c", '. ~/.config/env/base.sh || exit; exec "$@"', "rex-env" }
 	for _, arg in ipairs(argv) do
 		command[#command + 1] = arg
 	end
@@ -37,7 +36,7 @@ end
 
 local function settings()
 	local data = assert(rex.json.decode(M.exec({ "fx", "--toml", "JSON.stringify(x)" }, {
-		stdin = read(config .. "/tmux/sessions.toml"),
+		stdin = read(expand(config)),
 	})))
 	local hostname = M.exec({ "hostname" }):gsub("%s+$", "")
 	local environment = {}
@@ -74,20 +73,22 @@ function M.seed()
 end
 
 function M.save(slots)
-	M.exec({ "mkdir", "-p", M.state:match("^(.*)/") })
-	local f = assert(io.open(M.state .. ".tmp", "w"))
+	local path = expand(M.state)
+	M.exec({ "mkdir", "-p", path:match("^(.*)/") })
+	local f = assert(io.open(path .. ".tmp", "w"))
 	assert(f:write(table.concat(slots, "\n") .. "\n"))
 	assert(f:close())
-	assert(os.rename(M.state .. ".tmp", M.state))
+	assert(os.rename(path .. ".tmp", path))
 end
 
 function M.slots()
-	local exists = assert(rex.exec({ "test", "-e", M.state }))
+	local path = expand(M.state)
+	local exists = assert(rex.exec({ "test", "-e", path }))
 	assert(exists.code == 0 or exists.code == 1, exists.stderr)
 	if not exists.ok then
 		return M.seed()
 	end
-	local f = assert(io.open(M.state))
+	local f = assert(io.open(path))
 	local slots = {}
 	for line in f:lines() do
 		slots[#slots + 1] = line

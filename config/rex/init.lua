@@ -1,5 +1,4 @@
 local projects = require("projects")
-local config = (os.getenv("XDG_CONFIG_HOME") or os.getenv("HOME") .. "/.config") .. "/rex"
 local terminal = "com.superlogical.terminal"
 local data = os.getenv("XDG_DATA_HOME") or os.getenv("HOME") .. "/.local/share"
 dofile(data .. "/nvim/lazy/smart-splits-backend-rex/rex/lua/smart-splits-rex/init.lua").setup({
@@ -35,7 +34,16 @@ local function picker(ctx, rows, name, prompt)
 		bounds = { 0.1, 0.15, 0.8, 0.7 },
 		focus = true,
 		layout = shell({
-			command = { "bash", config .. "/picker.sh", path, assert(ctx.client_id), name, prompt },
+			command = {
+				"bash",
+				"-c",
+				'exec bash ~/.config/rex/picker.sh "$@"',
+				"rex-picker",
+				path,
+				assert(ctx.client_id),
+				name,
+				prompt,
+			},
 			shell = "none",
 		}),
 	}))
@@ -113,7 +121,11 @@ action("dots_edit_slots", "Edit Project Slots", function()
 		bounds = { 0.1, 0.1, 0.8, 0.8 },
 		focus = true,
 		layout = shell({
-			command = { "env", "NVIM_APPNAME=minimal-nvim", os.getenv("EDITOR") or "nvim", projects.state },
+			command = {
+				"bash",
+				"-c",
+				'exec env NVIM_APPNAME=minimal-nvim "${EDITOR:-nvim}" ~/.local/cache/rex-slots',
+			},
 		}),
 	}))
 end)

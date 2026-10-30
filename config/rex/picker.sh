@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # fzf runs inside a Rex floating terminal; arguments are passed without eval.
 set -euo pipefail
-source "${XDG_CONFIG_HOME:-$HOME/.config}/env/base.sh"
+source ~/.config/env/base.sh
 input=$1
 client=$2
 action=$3

@@ -1,12 +1,12 @@
 # Rex trial
 
-Session and window controls ported from `config/tmux/tmux.conf`. Project defaults, hostname/environment profiles and discovery roots come from `~/.config/tmux/sessions.toml`. Rex keeps its own mutable path list in `${XDG_CACHE_HOME:-~/.local/cache}/rex-slots`: lines 1–9 are slots 1–9, line 10 is slot 0, and later lines are appended projects. Assignments capture the focused terminal's current directory. Sessions are reused by directory basename, with dots replaced by underscores, just like `tmux-session`.
+Session and window controls ported from `config/tmux/tmux.conf`. Project defaults, hostname/environment profiles and discovery roots come from `~/.config/tmux/sessions.toml`. Rex keeps its own mutable path list in `~/.local/cache/rex-slots`: lines 1–9 are slots 1–9, line 10 is slot 0, and later lines are appended projects. Assignments capture the focused terminal's current directory. Sessions are reused by directory basename, with dots replaced by underscores, just like `tmux-session`.
 
 The prefix is **Ctrl+A**. Escape cancels an unfinished sequence.
 
 **Ctrl+A h** enters the one-shot slot mode. Press a number to assign the focused terminal's directory, or a/e/l/r for the slot actions below. The mode exits after the action; Escape, q, or Ctrl+C cancels it.
 
-Configuration, project discovery and slot storage belong to the Rex **server host**, including when you connect from another machine. A slot stores a host directory, not a path on the attached client. Client shortcut overrides can take precedence over the server's bindings.
+The trial hardcodes home-relative configuration and slot paths. Lua expands `~` where it reads or writes files; picker and editor commands expand it in the session terminal's shell. This avoids passing a different machine's username into the terminal. It does not synchronize files between machines. Client shortcut overrides can take precedence over the config bindings.
 
 | After prefix          | Action                                               |
 | --------------------- | ---------------------------------------------------- |
