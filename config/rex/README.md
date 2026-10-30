@@ -1,31 +1,30 @@
 # Rex trial
 
-Session and window controls ported from `config/tmux/tmux.conf`. Project defaults, hostname/environment profiles and discovery roots come from `~/.config/tmux/sessions.toml`. Rex keeps its own mutable path list in `${XDG_CACHE_HOME:-~/.local/cache}/rex-slots`: lines 1–9 are slots 1–9, line 10 is slot 0, and later lines are appended projects. Assignments capture the focused terminal's current directory. Sessions are reused by directory basename, with dots replaced by underscores, just like `tmux-session`.
+Session and window controls ported from `config/tmux/tmux.conf`. Numbered slots and discovery roots are hardcoded in `config/rex/projects.lua` as `~/...` paths. Slots no longer read or write a cache file or load tmux's TOML profiles; edit the Lua table and reload Rex to change them. Paths expand against the Lua runtime's home directory when used. Sessions are reused by directory basename, with dots replaced by underscores.
 
 The prefix is **Ctrl+A**. Escape cancels an unfinished sequence.
 
-| After prefix          | Action                                               |
-| --------------------- | ---------------------------------------------------- |
-| Ctrl+A                | Send Ctrl+A to terminal                              |
-| r / Ctrl+R            | Reload config                                        |
-| f                     | Discover projects with fzf and open/select a session |
-| p / s                 | Pick from active Rex sessions                        |
-| 0–9                   | Open/select project slot                             |
-| N                     | New Rex session                                      |
-| Tab                   | Previous session in Rex's ordering                   |
-| Shift+Backspace       | Close session                                        |
-| h, then 0–9           | Assign current directory to slot                     |
-| h, then a / e / l / r | Append / edit / pick / reseed slots                  |
-| n                     | New tab in current directory                         |
-| R                     | Rename tab                                           |
-| '                     | fzf tab picker                                       |
-| Shift+Tab             | Previous tab in Rex's ordering                       |
-| Backspace             | Close tab                                            |
-| o                     | Close all other tabs                                 |
-| \| / -                | Split right / below in current directory             |
-| Space                 | Split a single pane (60/40), otherwise toggle zoom   |
-| H / J / K / L         | Resize pane left / down / up / right                 |
-| x                     | Close pane                                           |
+| After prefix    | Action                                               |
+| --------------- | ---------------------------------------------------- |
+| Ctrl+A          | Send Ctrl+A to terminal                              |
+| r / Ctrl+R      | Reload config                                        |
+| f               | Discover projects with fzf and open/select a session |
+| p / s           | Pick from active Rex sessions                        |
+| 0–9             | Open/select project slot                             |
+| N               | New Rex session                                      |
+| Tab             | Previous session in Rex's ordering                   |
+| Shift+Backspace | Close session                                        |
+| h, then l       | Pick a configured slot                               |
+| n               | New tab in current directory                         |
+| R               | Rename tab                                           |
+| '               | fzf tab picker                                       |
+| Shift+Tab       | Previous tab in Rex's ordering                       |
+| Backspace       | Close tab                                            |
+| o               | Close all other tabs                                 |
+| \| / -          | Split right / below in current directory             |
+| Space           | Split a single pane (60/40), otherwise toggle zoom   |
+| H / J / K / L   | Resize pane left / down / up / right                 |
+| x               | Close pane                                           |
 
 Without the prefix, **Ctrl+Alt+Z/X** selects the previous/next tab; **Ctrl+Alt+Left/Right** reorders the current tab.
 
@@ -39,7 +38,7 @@ While a Neovim pane is zoomed with **Ctrl+A Space**, navigation stays within Neo
 
 Tab and Shift+Tab use ordered navigation because Rex does not expose tmux's last-used session/window history. Tall/fat layouts, pane swapping, worktree picking, work launchers, agent switching and the status line are outside this trial.
 
-The config uses dots' shared `config/env/base.sh` environment for subprocesses, including the GUI server's Homebrew/mise PATH. It needs `fx`, `fd`, `fzf`, Zsh, and the configured editor (default `nvim`). Pickers run in floating terminals; Escape or Ctrl+C cancels them. Editing uses `NVIM_APPNAME=minimal-nvim`.
+The config uses dots' shared `config/env/base.sh` environment for subprocesses, including the GUI server's Homebrew/mise PATH. It needs `fd`, `fzf`, and Zsh. Pickers run in floating terminals; Escape or Ctrl+C cancels them.
 
 Link from the dots checkout:
 
