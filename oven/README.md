@@ -35,7 +35,7 @@ mise exec -- bun run build
 mise run verify
 ```
 
-From the repository root, `make build` runs the same `mise -C oven run verify` workflow. The generated wrappers still execute `bun` from PATH; workstation setup provides the mise-managed runtime. Keep this checkout available because wrappers point to its source files.
+From the repository root, `mise run build` changes into `oven/` and runs the same `mise run verify` workflow. The generated wrappers still execute `bun` from PATH; workstation setup provides the mise-managed runtime. Keep this checkout available because wrappers point to its source files.
 
 To update runtimes, edit their exact versions in `mise.toml`, run `mise lock --platform linux-arm64,linux-x64,macos-arm64,macos-x64`, then `mise run verify`. Review and commit both mise files together. Oven's strict lock policy applies only to its runtimes, not inherited workstation tools.
 

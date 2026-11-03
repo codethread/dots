@@ -3,7 +3,7 @@
 - Document ID: SPEC-003
 - Configuration identification: SPEC-003; migrated from `specs/dotty.md`; canonical path `devflow/specs/dotty.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-10-10
+- **Last Updated:** 2026-11-03
 
 ## [SPEC-003-S1] 1. Overview
 
@@ -125,7 +125,7 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 
 ### [SPEC-003-S3.4] Config Resolution
 
-`config.nu` resolves the config path via: `$env.XDG_CONFIG_HOME` (if set) or `~/.config`, then appends `dotty/dotty.toml`. An explicit path argument overrides this (used by Makefile for worktree support).
+`config.nu` resolves the config path via: `$env.XDG_CONFIG_HOME` (if set) or `~/.config`, then appends `dotty/dotty.toml`. An explicit path argument overrides this (used by the mise `link` task for worktree support).
 
 ## [SPEC-003-S4] 4. Interfaces
 
@@ -143,19 +143,19 @@ Global excludes: `**/_?*/**` (underscore-prefixed), `**/.gitignore`, `**/README.
 
 | System | Command | When | Notes |
 | --- | --- | --- | --- |
-| **Makefile** (`make link`) | `DOTFILES=$(ROOT) dotty link --force --no-cache <repo>/config/dotty/dotty.toml`, then `mise dot apply ~ ~/.claude/skills` | Manual rebuild | Exports `DOTFILES` as the current checkout root for worktree support; the targeted mise apply reapplies the native home/skill entries after the dotty link |
+| **Mise task** (`mise run link`) | `DOTFILES=<repo> dotty link --force --no-cache <repo>/config/dotty/dotty.toml`, then `mise dot apply ~ ~/.claude/skills` | Manual rebuild | Exports `DOTFILES` as the current checkout root for worktree support; the targeted mise apply reapplies the native home/skill entries after the dotty link |
 | **Mise bootstrap** (`mise bootstrap`) | `dotty link --no-cache <repo>/config/dotty/dotty.toml` | Bootstrap setup hook | Runs after repository preparation for the remaining projects (`config`, `claude`, `pi`). The native dotfiles phase then applies the `home/` and shared-skill entries before LaunchAgents load. Exports `DOTFILES` as the active checkout, passes its manifest explicitly, and fails on real-file conflicts. |
 | **Neovim** | `dotty link`, `dotty format`, `dotty is-cwd` | Editor events | Auto-links the remaining dotty projects on `BufWritePost`/`BufFilePost`/`VimLeavePre`; mise-owned home/skill changes need `mise dot apply`. Detects dotfiles project via `is-cwd` on git root. |
 
 ### [SPEC-003-S4.3] Worktree / Feature-Branch Support
 
-The Makefile `link` target enables testing dotty from any checkout:
+The mise `link` task enables testing dotty from any checkout:
 
 1. `dotty.toml` uses `${DOTFILES}` for repo-local project origins
-2. The Makefile exports `DOTFILES=$(ROOT)` before invoking Nushell
+2. The task exports `DOTFILES={{ config_root }}` before invoking Nushell
 3. `dotty link --no-cache` receives the checkout's tracked `config/dotty/dotty.toml` directly
 
-The bootstrap setup hook also exports the active checkout as `DOTFILES` and passes its manifest explicitly, so it works before `~/.config/dotty` exists and does not read another checkout's manifest. `make link` additionally reapplies the two mise-owned entries from the active checkout with a targeted `mise dot apply ~ ~/.claude/skills`. Apply user setup from a durable checkout.
+The bootstrap setup hook also exports the active checkout as `DOTFILES` and passes its manifest explicitly, so it works before `~/.config/dotty` exists and does not read another checkout's manifest. `mise run link` additionally reapplies the two mise-owned entries from the active checkout with a targeted `mise dot apply ~ ~/.claude/skills`. Apply user setup from a durable checkout.
 
 ## [SPEC-003-S5] 5. Design Decisions
 
@@ -167,7 +167,7 @@ The bootstrap setup hook also exports the active checkout as `DOTFILES` and pass
 
 - **Per-project caches** — each project gets its own cache file rather than a single global cache. This allows independent invalidation and makes directory-mode transitions clean (file entries are replaced by a single `"."` entry).
 
-- **`--no-cache` as default for automation** — all non-interactive invocations (Makefile and mise) use `--no-cache`. Only the Neovim integration uses cached mode for speed. This ensures automation is always correct at the cost of re-scanning.
+- **`--no-cache` as default for automation** — all non-interactive invocations (mise tasks and bootstrap) use `--no-cache`. Only the Neovim integration uses cached mode for speed. This ensures automation is always correct at the cost of re-scanning.
 
 - **git-ignore awareness** — dotty uses git's own ignore machinery (`git ls-files`, `git check-ignore`) rather than reimplementing glob exclusion. Files that git ignores are never linked, preventing accidental exposure of build artifacts or secrets.
 

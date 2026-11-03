@@ -113,7 +113,7 @@ The switcher uses Bun filesystem APIs and asynchronous subprocesses rather than 
 
 Each terminal reload waits for its own config write, not for macOS automation or the other terminal. Kitty's default-target retry waits for the primary socket attempt to fail. All update branches are awaited before reporting a result; nothing is detached. Terminal reloads remain best effort (including absent applications). Required file or macOS update failures return nonzero after the other branches finish. A failed switch can leave partially applied changes; there is no cross-application rollback.
 
-Run `make build` to install the Oven entrypoint. The Bash source formerly at `home/.local/bin/theme` is removed, not retained as a second implementation. Oven's builder replaces existing executable symlinks rather than writing through them, so an old dotty-managed `theme` link can be migrated safely. For development, run `bun run ./bin/theme.ts` from `oven/`.
+Run `mise run build` to install the Oven entrypoint. The Bash source formerly at `home/.local/bin/theme` is removed, not retained as a second implementation. Oven's builder replaces existing executable symlinks rather than writing through them, so an old dotty-managed `theme` link can be migrated safely. For development, run `bun run ./bin/theme.ts` from `oven/`.
 
 ## [SPEC-007-S3] 3. State Model
 

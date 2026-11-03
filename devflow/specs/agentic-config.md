@@ -76,11 +76,11 @@ Settings merge order: mise globals → project settings → local overrides. Age
 mise bootstrap → packages, declared repositories, native files, and setup applied
 mise dot apply ~/.claude/settings.json → ~/.claude/settings.json rendered
 mise dot apply ~/.config/codex/config.toml/shared → shared Codex keys merged
-make link    →  dotty link + targeted mise apply → assets, home files, shared skills
-make build   →  bun verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
+mise run link  →  dotty link + targeted mise apply → assets, home files, shared skills
+mise run build →  Oven mise run verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
 ```
 
-`make` (default target `all`) runs `boot`, which invokes `mise bootstrap`. Bootstrap applies packages, declared repositories, native files, and services; its setup hook installs agent CLIs, links dotfiles, prepares the shell, and verifies/builds Oven.
+`mise run` executes the root default task, which invokes `mise bootstrap --skip-dirty`. Bootstrap applies packages, declared repositories, native files, and services; its setup hook installs agent CLIs, links dotfiles, prepares the shell, and installs/builds Oven. Full development verification remains a separate `mise run build` task.
 
 ### [SPEC-001-S2.2] Package Provisioning
 
@@ -179,7 +179,7 @@ All remaining feature flags and skill overrides are preserved in the template. P
 
 **Shared personal (`home/.agents/skills/` → both `~/.agents/skills/` and `~/.claude/skills/`):**
 
-Root mise entries use `symlink-each`: the home mapping supplies the first destination, and a second entry supplies Claude’s. Both keep destination directories real and preserve unmanaged files, including Claude’s `synced/` and `.trash/`. Existing-file edits are immediate; additions/removals require `make link` or `mise dot apply ~ ~/.claude/skills` from dots. Destination-only skills are not copied back into the repository. Plugin skills remain plugin-owned.
+Root mise entries use `symlink-each`: the home mapping supplies the first destination, and a second entry supplies Claude’s. Both keep destination directories real and preserve unmanaged files, including Claude’s `synced/` and `.trash/`. Existing-file edits are immediate; additions/removals require `mise run link` or `mise dot apply ~ ~/.claude/skills` from dots. Destination-only skills are not copied back into the repository. Plugin skills remain plugin-owned.
 
 | Skill      | Purpose                                            |
 | ---------- | -------------------------------------------------- |

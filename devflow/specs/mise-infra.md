@@ -2,7 +2,7 @@
 
 - Document ID: SPEC-006
 - **Status:** Implemented
-- **Last Updated:** 2026-10-10
+- **Last Updated:** 2026-11-03
 
 ## Ownership
 
@@ -16,7 +16,7 @@ There are two configuration scopes—project bootstrap and global tools—not fo
 
 | Location | Loading and purpose |
 | --- | --- |
-| `mise.toml`, `mise.<profile>.toml` | Project entrypoints: mise loads the base and selected profile. The base owns shared bootstrap resources, hooks, and explicit maintenance tasks (`llm:update`, `brew:cleanup`); profiles add machine-specific resources. `mise.work.toml` deliberately contains only `brew:glab` and the final workfiles handoff. |
+| `mise.toml`, `mise.<profile>.toml` | Project entrypoints: mise loads the base and selected profile. The base owns shared bootstrap resources, hooks, repository tasks (`default`, `link`, `build`), and explicit maintenance tasks (`llm:update`, `brew:cleanup`); profiles add machine-specific resources. `mise.work.toml` deliberately contains only `brew:glab` and the final workfiles handoff. |
 | `.mise/conf.d/*.toml` | Reusable entrypoints only: `tools.toml` and `tools.dev.toml` symlink to global tool sources; `services.dev.toml` symlinks to the dev-only service source; `botlake-ui.dev.toml` and `botlake-ui.work.toml` symlink to the shared UI source. Environment-suffixed entries load only for the selected environment with `env_conf_d` enabled. |
 | `.mise/dev-services.toml` | Reusable dev-service source, not automatically discovered. The `.mise/conf.d/services.dev.toml` symlink loads its cc-notify and Git-maintenance declarations; workfiles declares the work equivalents in its own repository. |
 | `.mise/botlake-ui.toml` | Shared dev/work Botlake UI daemon and setup flag, loaded only through its environment-suffixed symlinks. The Botlake supervisor and both clone resources remain in root `mise.toml`. |
@@ -45,7 +45,7 @@ Root `mise.toml` sets `dotfiles.root = "home"` and deploys that tree to `~` thro
 
 The entries walk the source tree, including new files not yet in Git’s index. Existing linked-file edits are visible immediately; additions and removals need another apply. Mise records ownership in its state directory so deleted source files remove only their managed links. Destination-only files are neither removed nor imported into the source. Keep workfiles’ `work_home` targets disjoint from dots’ home files.
 
-From the checkout, preview with `mise dot apply --dry-run ~ ~/.claude/skills`, then apply the same targets. `make link` runs the remaining Dotty projects and this targeted mise apply. Dotty’s editor hooks no longer deploy new home files; run `make link` after adding or removing them. Native bootstrap deploys both entries in its dotfiles phase before LaunchAgents.
+From the checkout, preview with `mise dot apply --dry-run ~ ~/.claude/skills`, then apply the same targets. `mise run link` runs the remaining Dotty projects and this targeted mise apply. Dotty’s editor hooks no longer deploy new home files; run `mise run link` after adding or removing them. Native bootstrap deploys both entries in its dotfiles phase before LaunchAgents.
 
 ## Codex settings
 
@@ -56,17 +56,21 @@ Preview with `mise dot diff ~/.config/codex/config.toml/shared`, then apply that
 ## Commands
 
 ```nu
-mise bootstrap --dry-run       # Preview without running hooks or installing
-mise bootstrap                 # Apply the workstation
+mise tasks                     # List repository tasks
+mise run                       # Apply setup, skipping dirty repos
+mise bootstrap --skip-dirty --dry-run # Preview the same setup without hooks/installing
+mise bootstrap                 # Apply the workstation, rejecting dirty repos
 mise bootstrap status          # Inspect declarative state
 mise bootstrap --update        # Also update declared repositories/package metadata
+mise run link                  # Relink Dotty assets and native home/skill entries
+mise run build                 # Run Oven's full development verification
 mise run llm:update            # Explicit agent CLI updates
 mise run brew:cleanup --dry-run # Preview Homebrew cleanup
 mise run brew:cleanup          # Remove old Homebrew versions and stale downloads
 mise self-update               # Update the mise executable
 ```
 
-`make` delegates to `mise bootstrap --skip-dirty`; `make plan` previews the same policy, while `make update` remains strict about dirty repositories; `make help` lists setup, preview, status, update, linking, and build commands with profile selection. Zsh's `mise-packages`, `mise-services`, and `mise-dot-diff` inspect this checkout from any directory. Native subcommands also apply individual resources; narrow applies must select their own prerequisites, so use full bootstrap for initial setup.
+`mise run` executes the root default task, which delegates to `mise bootstrap --skip-dirty`. Preview the same policy with native `mise bootstrap --skip-dirty --dry-run`; `mise bootstrap --update` remains strict about dirty repositories. `mise tasks` lists repository workflows; `mise bootstrap --help` lists native convergence commands. Preview/status use native commands rather than task wrappers so they cannot install task tools first. The `build` task changes into Oven before starting its `mise run verify`, preserving early config discovery. Zsh's `mise-packages`, `mise-services`, and `mise-dot-diff` inspect this checkout from any directory. Native subcommands also apply individual resources; narrow applies must select their own prerequisites, so use full bootstrap for initial setup.
 
 Plain bootstrap clones missing repositories but does not pull unpinned existing branches. `--update` fast-forwards declared repositories; dirty checkouts, origin conflicts, and divergent history fail visibly. Resolve them rather than forcing a reset. Dependencies are installed from their committed lockfiles. No packages are pruned or upgraded implicitly. `brew:cleanup` explicitly runs `brew cleanup` and forwards arguments to Homebrew; it requires the real `brew` executable and never runs during bootstrap. Cleanup removes old formula versions and stale downloads, not packages missing from the mise configuration. It does not clear mise's separate download cache or run `brew autoremove`.
 
@@ -80,11 +84,11 @@ Native bootstrap installs package-manager plugins first, then applies built-in p
 2. **Post-repos:** `boot/setup.sh` installs missing agent CLIs and Playwright; builds Todoist/Honeycomb; links the remaining Dotty assets (including Pi); generates shell caches with `boot/shell.sh`; installs/builds Oven; installs service dependencies and prepares Git-maintenance registrations. It also installs Botlake's locked Bun dependencies and Go CLIs, builds the UI on dev/work, and registers dots-owned daemons with Pitchfork without starting them. Only then can the later native dotfiles and LaunchAgent phases run.
 3. **Post-tools:** explicitly start `botlake-supervisor` through mise/Pitchfork after native LaunchAgents load. Registration alone does not start it in an already-running Pitchfork supervisor. This waits for readiness without restarting an already-running daemon; `boot_start` still handles subsequent logins.
 
-Agent CLI setup, Playwright, Todoist, and Oven installation/build failures print warnings and allow setup to continue. A setup-exit summary repeats these failures. VS Code extension failures instead fail visibly through native package convergence. Agent installers still refuse to overwrite custom launchers. Bootstrap does not run Oven tests, typechecking, automatic fixes, or documentation generation; `make build` remains the development verification path. System/PAM checks, dotfile conflicts, required shell dependencies, and service dependency preparation remain blocking.
+Agent CLI setup, Playwright, Todoist, and Oven installation/build failures print warnings and allow setup to continue. A setup-exit summary repeats these failures. VS Code extension failures instead fail visibly through native package convergence. Agent installers still refuse to overwrite custom launchers. Bootstrap does not run Oven tests, typechecking, automatic fixes, or documentation generation; `mise run build` remains the development verification path. System/PAM checks, dotfile conflicts, required shell dependencies, and service dependency preparation remain blocking.
 
 Log directories and the cc-notify checkout are declarative resources. Secrets stay in cc-notify's local `.env`, not TOML or generated plists. Bootstrap warns about missing credential names without printing their values and continues. Missing credentials fail cc-notify at runtime without blocking other services; inspect its launchd state and logs after bootstrap. Home files and shared skills link, Claude settings render, and Codex settings merge in the native dotfiles phase; `/tmp/claude` is prepared in the files phase.
 
-Hooks run on every selected bootstrap and stop on failure; completed phases are not rolled back. A dry run prints hooks but cannot prove their runtime success. `make` opts into `--skip-dirty`: it skips dirty repository convergence, not the later setup hook's installs/builds against those local checkouts. Direct `mise bootstrap` remains strict unless given the flag.
+Hooks run on every selected bootstrap and stop on failure; completed phases are not rolled back. A dry run prints hooks but cannot prove their runtime success. `mise run` opts into `--skip-dirty`: it skips dirty repository convergence, not the later setup hook's installs/builds against those local checkouts. Direct `mise bootstrap` remains strict unless given the flag.
 
 ## System and user configuration
 
