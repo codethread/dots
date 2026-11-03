@@ -130,6 +130,10 @@ if.app-id = 'net.kovidgoyal.kitty'
 run = 'move-node-to-workspace primary'
 
 [[on-window-detected]]
+if.app-id = 'com.superlogical.rex'
+run = 'move-node-to-workspace primary'
+
+[[on-window-detected]]
 if.app-id = 'com.openai.codex'
 run = 'move-node-to-workspace ide'
 
@@ -156,6 +160,10 @@ run = 'move-node-to-monitor next'
 
 [[on-window-detected]]
 if.app-id = 'com.figma.Desktop'
+run = 'move-node-to-workspace figma'
+
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome.app.idjkdmlmgpidlfkjodmhibhadbkeefbi'
 run = 'move-node-to-workspace figma'
 
 [[on-window-detected]]
