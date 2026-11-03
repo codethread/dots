@@ -1,0 +1,11 @@
+# Shared personal tooling on dev and work hosts, not the personal laptop.
+[vars]
+botlake_ui_enabled = "true"
+
+[daemons.botlake-ui]
+init = 'export PATH="$HOME/.local/bin:$PATH"; botlake lake start --workspace "$HOME/dev/projects/botlake"'
+run = 'export PATH="$HOME/.local/bin:$PATH"; cd "$HOME/dev/projects/botlake-ui" && exec pnpm start --workspace "$HOME/dev/projects/botlake" --host 127.0.0.1 --port 4173'
+depends = ["botlake-supervisor"]
+ready_http = "http://127.0.0.1:4173/api/health"
+retry = true
+boot_start = true

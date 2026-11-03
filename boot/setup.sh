@@ -55,6 +55,22 @@ optional 'Workspace installation/Oven build' /bin/bash -ec '
   mise exec -- bun run build
 ' _ "$DOTFILES"
 
+# Prepare workstation-owned Botlake daemons before registering boot startup.
+(
+  cd "$HOME/dev/projects/botlake"
+  bun install --frozen-lockfile
+  GOBIN="$HOME/.local/bin" go -C cli install ./cmd/botlake ./cmd/bl
+)
+if [ "$BOTLAKE_UI_ENABLED" = true ]; then
+  (
+    cd "$HOME/dev/projects/botlake-ui"
+    pnpm install --frozen-lockfile
+    pnpm build
+  )
+fi
+# Registration persists across logins without starting/restarting any daemon.
+( cd "$DOTFILES" && mise daemons register )
+
 # launchd loads later in native bootstrap, after the gitwatch dotfile is linked.
 # Check its real execution PATH; gitwatch itself is linked in the next phase.
 for cmd in bash git fswatch greadlink; do

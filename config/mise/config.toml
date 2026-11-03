@@ -24,3 +24,6 @@ rust = "stable"
 # Devflow's terminal DAG renderer. Aqua/GitHub release binary; no Perl or CPAN.
 mermaid-ascii = "latest"
 pitchfork = "2.29.0"
+
+[settings]
+experimental = true

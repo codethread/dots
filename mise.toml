@@ -7,6 +7,7 @@ dotfiles.root = "home"
 # .mise/conf.d/ only reuses global tools and dev/work services.
 [vars]
 git_maintenance_repositories = ""
+botlake_ui_enabled = "false"
 claude_enable_notify = false
 syncengine_path = "{{ env.HOME }}/.local/bin:/opt/homebrew/opt/coreutils/libexec/gnubin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin"
 
@@ -24,6 +25,7 @@ post-repos = '''
 DOTFILES="{{ config_root }}" \
 GIT_MAINTENANCE_REPOSITORIES="{{ vars.git_maintenance_repositories }}" \
 SYNCENGINE_PATH="{{ vars.syncengine_path }}" \
+BOTLAKE_UI_ENABLED="{{ vars.botlake_ui_enabled }}" \
 mise exec -- "{{ config_root }}/boot/setup.sh"
 '''
 
@@ -178,6 +180,8 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 # Pi's repo-owned settings already load this checkout as a local package.
 "~/dev/projects/agents" = { url = "git@github.com:codethread/agents.git" }
 "~/dev/projects/hive" = { url = "git@github.com:codethread/hive.git" }
+"~/dev/projects/botlake" = { url = "git@github.com:codethread/botlake.git" }
+"~/dev/projects/botlake-ui" = { url = "git@github.com:codethread/botlake-ui.git" }
 
 # Preserve the API-compatible codethread fork, not Homebrew's upstream CLI.
 [bootstrap.repos."~/dev/vendor/todoist"]
@@ -270,6 +274,13 @@ ShowRemovableMediaOnDesktop = true
 
 [bootstrap.macos.defaults."com.apple.universalaccess"]
 reduceMotion = true
+
+# Botlake's host supervisor belongs to the workstation, not its source checkout.
+[daemons.botlake-supervisor]
+run = 'export PATH="$HOME/.local/bin:$PATH"; exec botlake start'
+ready_cmd = 'export PATH="$HOME/.local/bin:$PATH"; botlake status'
+retry = true
+boot_start = true
 
 # One shared supervisor; projects register their own daemon definitions.
 [bootstrap.directories."~/.local/state/com.codethread.pitchfork"]
