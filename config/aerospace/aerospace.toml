@@ -163,7 +163,7 @@ if.app-id = 'com.figma.Desktop'
 run = 'move-node-to-workspace figma'
 
 [[on-window-detected]]
-if.app-id = 'com.google.Chrome.app.idjkdmlmgpidlfkjodmhibhadbkeefbi'
+if.app-name-regex-substring = '^Botlake$'
 run = 'move-node-to-workspace figma'
 
 [[on-window-detected]]
