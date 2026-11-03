@@ -104,3 +104,6 @@ scratch.nu
 
 # beads
 .beads/.br-wal-index-*/
+
+# mise
+mise.local.toml
