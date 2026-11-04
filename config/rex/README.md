@@ -1,6 +1,6 @@
 # Rex trial
 
-Session and window controls ported from `config/tmux/tmux.conf`. Numbered slots and discovery roots are hardcoded in `config/rex/projects.lua` as `~/...` paths. Slots no longer read or write a cache file or load tmux's TOML profiles; edit the Lua table and reload Rex to change them. Paths expand against the Lua runtime's home directory when used. Sessions are reused by directory basename, with dots replaced by underscores.
+Session and window controls ported from `config/tmux/tmux.conf`. Default slots and discovery roots live in `config/rex/projects.lua` as `~/...` paths. Each session host keeps its mutable slots and saved projects in `${XDG_STATE_HOME:-~/.local/state}/rex/projects.json`, seeded on first use from those Lua defaults. It does not load tmux's TOML profiles. Sessions are reused by directory basename, with dots replaced by underscores. Basenames must be distinct across projects; duplicate Rex session labels or a known session belonging to a different directory fail visibly.
 
 The prefix is **Ctrl+A**. Escape cancels an unfinished sequence.
 
@@ -14,7 +14,11 @@ The prefix is **Ctrl+A**. Escape cancels an unfinished sequence.
 | N                 | New Rex session                                      |
 | Tab               | Previous session in Rex's ordering                   |
 | Shift+Backspace   | Close session                                        |
-| h, then l         | Pick a configured slot                               |
+| h, then 0–9       | Assign current session project to that slot          |
+| h, then a         | Append current session project if missing            |
+| h, then l         | fzf numbered slots and appended projects             |
+| h, then e         | Edit saved state in a host-side editor popup         |
+| h, then r         | Reset slots/list to Lua defaults                     |
 | n                 | New tab in current directory                         |
 | R                 | Rename tab                                           |
 | '                 | fzf tab picker                                       |
@@ -54,7 +58,25 @@ Rex exposes no tmux-style copy-mode action. **[**, **O**, and **S** open capture
 
 Tab and Shift+Tab use ordered navigation because Rex does not expose tmux's last-used session/window history. Worktree picking, work launchers, agent switching, fingers hints and the tmux status line remain tmux-specific.
 
+## Project sessionizer
+
+**Ctrl+A p/s** uses Rex's native session switcher. **Ctrl+A f** discovers projects on demand and opens fzf in a floating terminal. **Ctrl+A h** enters an exclusive, one-shot project mode; Escape, q, or Ctrl+C cancels. Its actions mirror the tmux slot workflow above. **Ctrl+A 0–9** jumps to the project with that explicit index, regardless of array order. Projects without an index appear in **h l** without a numbered shortcut. **h a** deduplicates by path or session name.
+
+The state file contains `version: 2`, `entries`, and a `sessions` map. A numbered entry is `{ "index": 1, "name": "dots", "path": "/absolute/server/path" }`. Indexes must be unique integers from 0 to 9; duplicates raise a Rex action error naming both projects. Array order does not assign shortcuts. Omit an entry to leave a slot empty, or omit its `index` to keep a project only in the picker. **h 0–9** replaces the matching index or creates it if absent; **h a** adds an unindexed project. The picker sorts numbered slots as 1–9, 0, followed by unindexed projects alphabetically.
+
+The session map remembers the directory used when opening a project, so changing a pane's directory does not change later assignments. Rex has no tmux `session_path` field: a manual or pre-existing session is adopted from the source terminal's directory on its first assign/add. No Git-root inference is used. Resetting the slots preserves these live-session directory associations.
+
+### Home server versus session host
+
+Rex's home supplies shortcuts and runs their Lua callbacks. The viewed session can belong to a different server. In that case `ctx.server` forwards Rex API calls, but `io.open`, home expansion, and subprocesses still run on the shortcut server. Merely forwarding `session.create` would therefore mix one machine's paths with another machine's sessions.
+
+The sessionizer instead forwards the entire operation to a registered `dots_host_*` action on the session host using `client.action`. That host reads/writes state, expands paths, discovers directories, creates sessions, and runs picker/editor terminals. The originating app receives `session.select`; a picker callback targets that same app's host-side client connection and retains the source session and pane IDs. It does not infer the intended viewer from pane ownership.
+
+Install this Rex config on both the shortcut home and each session host. A laptop can drive a host's slots without owning or synchronizing its state file; no home-server change is required. A missing host action fails rather than using the shortcut server's filesystem. Programmatic writes use a host-local lock and atomic replacement; a busy lock or malformed JSON fails visibly. Avoid editing the file while assigning slots from another client. **h e** can repair malformed JSON. A lock left by a terminated writer must be removed only after confirming no writer is active.
+
 The config uses dots' shared `config/env/base.sh` environment for subprocesses, including the GUI server's Homebrew/mise PATH. It needs `fd`, `fzf`, Zsh, and `nvim` for the scrollback viewer. Pickers run in floating terminals; Escape or Ctrl+C cancels them.
+
+See Rex's [Lua API](https://www.superlogical.com/rex/docs/reference/lua.md) and [custom actions](https://www.superlogical.com/rex/docs/customize/actions.md) references.
 
 Link from the dots checkout:
 
@@ -65,4 +87,4 @@ rex config check
 rex config reload
 ```
 
-`rex keymap` checks the effective bindings against the connected client. Lua modules and the picker script are linked by dotty with `init.lua`.
+`rex keymap` reports the server's bindings; validating client action names and arguments requires `--request` with the client's action declarations. Lua modules and the picker script are linked by dotty with `init.lua`.

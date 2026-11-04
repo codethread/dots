@@ -27,45 +27,70 @@ local function bind(key, name, args)
 	rex.bind("ctrl+a>" .. key, name, args)
 end
 
+-- A home-server callback may target a session on another server. Forward the
+-- entire operation, not just its Rex calls: io/exec must run on the session host.
+local function host_action(name, title, run, args)
+	action("dots_host_" .. name, title .. " (Host)", run, args)
+	action("dots_" .. name, title, function(ctx, values)
+		if not ctx.server then
+			return run(ctx, values)
+		end
+		local reply = assert(rex.call("client.action", {
+			action = "dots_host_" .. name,
+			session_id = ctx.session_id,
+			block_id = ctx.block_id,
+			args = values,
+		}))
+		for _, queued in ipairs(reply.client_actions or {}) do
+			rex.client.queue(queued.action, queued.args)
+		end
+		return reply.result
+	end, args)
+end
+
 local function picker(ctx, rows, name, prompt)
+	if #rows == 0 then
+		return
+	end
+	local source = assert(rex.session.describe_block({ block_id = ctx.block_id })).block
 	local path = projects.exec({ "mktemp", "/tmp/rex-picker.XXXXXX" }):gsub("%s+$", "")
 	local f = assert(io.open(path, "w"))
 	assert(f:write(table.concat(rows, "\n") .. "\n"))
 	assert(f:close())
-	return assert(rex.session.new_layer({
+	local layer, err = rex.session.new_layer({
+		window_id = assert(source.window_id),
 		bounds = { 0.1, 0.15, 0.8, 0.7 },
 		focus = true,
 		layout = shell({
-			command = { "bash", config .. "/picker.sh", path, assert(ctx.client_id), name, prompt },
+			command = {
+				"/bin/bash",
+				config .. "/picker.sh",
+				path,
+				assert(ctx.client_id),
+				assert(ctx.session_id),
+				assert(ctx.block_id),
+				name,
+				prompt,
+			},
 			shell = "none",
 		}),
-	}))
+	})
+	if not layer then
+		assert(os.remove(path))
+		error(err)
+	end
+	return layer
 end
 
-action("dots_project", "Open Project Session", function(_, args)
-	local path = projects.expand(args.value)
-	local name = assert(path:match("([^/]+)/?$")):gsub("%.", "_")
-	local id
-	for _, session in ipairs(assert(rex.call("session.list")).sessions) do
-		if session.label == name then
-			assert(not id, "Multiple sessions named " .. name)
-			id = session.session_id
-		end
-	end
-	if not id then
-		projects.exec({ "test", "-d", path })
-		id = assert(rex.call(
-			"session.create",
-			{ label = name, initial_windows = {
-				{ window_label = "main", layout = shell({ cwd = path }) },
-			} }
-		)).session_id
-	end
-	rex.client.queue("session.select", { session_id = id })
-	return { session_id = id }
+host_action("project", "Open Project Session", function(ctx, args)
+	assert(ctx.client_id, "A Rex app client is required to select a project session")
+	local opened = projects.open(args.value)
+	-- Creating a session does not display it; select it on the invoking app.
+	rex.client.queue("session.select", opened)
+	return opened
 end, { value = "string" })
 
-action("dots_projects", "Pick Project Session", function(ctx)
+host_action("projects", "Pick Project Session", function(ctx)
 	local rows = {}
 	for _, path in ipairs(projects.paths()) do
 		rows[#rows + 1] = path .. "\t" .. path
@@ -73,22 +98,55 @@ action("dots_projects", "Pick Project Session", function(ctx)
 	return picker(ctx, rows, "dots_project", "Project: ")
 end)
 
-action("dots_slot", "Jump to Project Slot", function(_, args)
-	local path = projects.slots[args.slot]
-	assert(path, "Slot " .. args.slot .. " is not configured in rex/projects.lua")
-	return assert(rex.invoke("dots_project", { value = path }))
-end, { slot = "integer" })
+host_action("slot", "Jump to Project Slot", function(_, args)
+	local saved = projects.slot(args.slot)
+	return assert(rex.invoke("dots_project", { value = saved.path }))
+end, {
+	type = "object",
+	required = { "slot" },
+	additionalProperties = false,
+	properties = { slot = { type = "integer", minimum = 0, maximum = 9 } },
+})
 
-action("dots_slots", "Pick Project Slot", function(ctx)
-	local rows = {}
-	for i = 1, 10 do
-		local slot = i % 10
-		local path = projects.slots[slot]
-		if path then
-			rows[#rows + 1] = path .. "\t" .. slot .. "  " .. path
+host_action("slots", "Pick Saved Project", function(ctx)
+	local rows, saved_projects = {}, projects.state().entries
+	table.sort(saved_projects, function(a, b)
+		local ai, bi = a.index == 0 and 10 or a.index or 11, b.index == 0 and 10 or b.index or 11
+		if ai ~= bi then
+			return ai < bi
 		end
+		if a.name ~= b.name then
+			return a.name < b.name
+		end
+		return a.path < b.path
+	end)
+	for _, saved in ipairs(saved_projects) do
+		local index = saved.index == nil and "-" or tostring(saved.index)
+		rows[#rows + 1] = saved.path .. "\t" .. index .. "  " .. saved.name .. "  " .. saved.path
 	end
 	return picker(ctx, rows, "dots_project", "Slot: ")
+end)
+
+host_action("assign", "Assign Current Project to Slot", function(ctx, args)
+	return projects.assign(ctx, args.slot)
+end, { slot = "integer" })
+host_action("add", "Append Current Project", function(ctx)
+	return projects.add(ctx)
+end)
+host_action("seed", "Reset Project Slots to Defaults", function()
+	return projects.seed()
+end)
+host_action("edit_slots", "Edit Project Slots on Session Host", function(ctx)
+	local path = projects.edit_file()
+	local source = assert(rex.session.describe_block({ block_id = ctx.block_id })).block
+	return assert(rex.session.new_layer({
+		window_id = assert(source.window_id),
+		bounds = { 0.1, 0.1, 0.8, 0.8 },
+		focus = true,
+		layout = shell({
+			command = { "env", "NVIM_APPNAME=minimal-nvim", os.getenv("EDITOR") or "nvim", path },
+		}),
+	}))
 end)
 
 action("dots_new_tab", "New Tab in Current Directory", function(ctx)
@@ -97,7 +155,7 @@ end)
 action("dots_focus_tab", "Focus Picked Tab", function(_, args)
 	return assert(rex.session.focus_window({ window_id = args.value }))
 end, { value = "string" })
-action("dots_tabs", "Pick Tab", function(ctx)
+host_action("tabs", "Pick Tab", function(ctx)
 	local rows = {}
 	for i, window in ipairs(assert(rex.session.view({})).windows) do
 		rows[#rows + 1] = window.window_id .. "\t" .. i .. "  " .. window.label
@@ -131,7 +189,7 @@ action("dots_swap_selected", "Swap with Picked Pane", function(_, args)
 	assert(rex.session.swap_blocks({ block_id = source, other_block_id = target }))
 	return assert(rex.session.focus_block({ block_id = source }))
 end, { value = "string" })
-action("dots_panes", "Pick Pane to Swap", function(ctx)
+host_action("panes", "Pick Pane to Swap", function(ctx)
 	local rows = {}
 	for i, window in ipairs(assert(rex.session.view({})).windows) do
 		for _, layer in ipairs(window.layers) do
@@ -216,7 +274,18 @@ bind("shift+backspace", "session.close")
 for slot = 0, 9 do
 	bind(tostring(slot), "dots_slot", { slot = slot })
 end
-bind("h>l", "dots_slots")
+rex.mode("projects", { exclusive = true })
+bind("h", "client.mode.enter", { name = "projects", once = true })
+for slot = 0, 9 do
+	rex.bind("projects/" .. slot, "dots_assign", { slot = slot })
+end
+rex.bind("projects/a", "dots_add")
+rex.bind("projects/e", "dots_edit_slots")
+rex.bind("projects/l", "dots_slots")
+rex.bind("projects/r", "dots_seed")
+for _, key in ipairs({ "q", "escape", "ctrl+c" }) do
+	rex.bind("projects/" .. key, "client.mode.exit")
+end
 bind("n", "dots_new_tab")
 bind("'", "dots_tabs")
 bind("shift+tab", "client.tab.previous")
