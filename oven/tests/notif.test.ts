@@ -1,11 +1,5 @@
 import {describe, expect, test} from "bun:test";
-import {
-	ghosttyPayload,
-	parseNotifArgs,
-	terminalProtocol,
-	tmuxIsAway,
-	wrapTmuxPassthrough,
-} from "../bin/notif";
+import {parseNotifArgs, rexPayload, terminalProtocol, tmuxIsAway, wrapTmuxPassthrough} from "../bin/notif";
 
 describe("notif", () => {
 	test.each([
@@ -28,17 +22,16 @@ describe("notif", () => {
 	test.each<[NodeJS.ProcessEnv, ReturnType<typeof terminalProtocol>]>([
 		[{}, undefined],
 		[{TMUX: "/tmp/tmux", TERM_PROGRAM: "tmux", TERM: "tmux-256color"}, undefined],
-		[{TERM_PROGRAM: "ghostty"}, "ghostty"],
-		[{TERM: "xterm-ghostty"}, "ghostty"],
-		[{GHOSTTY_RESOURCES_DIR: "/ghostty", TERM_PROGRAM: "tmux", TMUX: "/tmp/tmux"}, "ghostty"],
+		[{TERM_PROGRAM: "rex"}, "rex"],
+		[{REX_BLOCK: "block:example", TERM_PROGRAM: "tmux", TMUX: "/tmp/tmux"}, "rex"],
 		[{KITTY_WINDOW_ID: "1"}, "kitty"],
 		[{KITTY_WINDOW_ID: "1", TMUX: "/tmp/tmux"}, "kitty"],
 	])("detects the terminal protocol from %j", (env, expected) => {
 		expect(terminalProtocol(env)).toBe(expected);
 	});
 
-	test("encodes Ghostty title/details without allowing delimiter or control injection", () => {
-		const payload = ghosttyPayload({title: "Build; done", details: 'Quotes " ; 雪\nnext\x07\x1b\\\x00'});
+	test("encodes Rex title/details without allowing delimiter or control injection", () => {
+		const payload = rexPayload({title: "Build; done", details: 'Quotes " ; 雪\nnext\x07\x1b\\\x00'});
 		expect(payload).toBe('\x1b]777;notify;Build； done;Quotes " ; 雪\nnext\\\x1b\\');
 		expect(wrapTmuxPassthrough(payload)).toBe(
 			'\x1bPtmux;\x1b\x1b]777;notify;Build； done;Quotes " ; 雪\nnext\\\x1b\x1b\\\x1b\\',

@@ -20,7 +20,7 @@ The core JSON files reference Pi's published schemas for editor validation and c
 
 `config/env/base.sh` defaults `PI_CLIPBOARD_OSC52=1`, so Pi also sends clipboard writes to the attached terminal after its local clipboard write, even when a remote tmux attach leaves no SSH markers. Set it to `0` to disable this forced emission (Pi still emits OSC 52 for detected remote sessions).
 
-Tmux's `set-clipboard on` accepts application copies and forwards them to the terminal. Its built-in `xterm*` clipboard feature covers both `xterm-ghostty` and `xterm-kitty`. Ghostty permits clipboard writes by default; Kitty explicitly permits them with `clipboard_control write-clipboard write-primary no-append`. No clipboard-read permissions or TERM overrides are needed.
+Tmux's `set-clipboard on` accepts application copies and forwards them to the terminal. Its built-in `xterm*` clipboard feature covers Rex's `xterm-rex` (or `xterm-256color` before terminfo setup) and Kitty's `xterm-kitty`. Kitty explicitly permits writes with `clipboard_control write-clipboard write-primary no-append`. No clipboard-read permissions or TERM overrides are needed.
 
 The environment change takes effect in new login shells and new tmux servers; restart Pi/Pies after refreshing the environment. Existing shells and running Pi processes retain their old environment.
 

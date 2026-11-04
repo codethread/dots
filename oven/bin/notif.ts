@@ -18,8 +18,8 @@ Options:
 Delivery, in order of preference:
   1. CC Notify, inside tmux after ${AWAY_AFTER_SECONDS} seconds without input across all attached
      clients on that server, or immediately when all clients are detached.
-  2. Terminal escape codes for Kitty (KITTY_WINDOW_ID) or Ghostty (GHOSTTY_RESOURCES_DIR,
-     TERM_PROGRAM or TERM), with tmux passthrough when needed. Inside tmux they are
+  2. Terminal escape codes for Kitty (KITTY_WINDOW_ID) or Rex (REX_BLOCK or
+     TERM_PROGRAM=rex), with tmux passthrough when needed. Inside tmux they are
      written to the pane's tty, so headless shells in a pane can notify.
   3. AppleScript, otherwise, including outside tmux without a controlling terminal.
 
@@ -28,7 +28,7 @@ CC Notify requires the local cc-notify service. Failures are reported without
 switching delivery channels.
 
 Notification duration follows system preferences. No buttons or click responses.
-Ghostty title semicolons are displayed as fullwidth semicolons.
+Rex title semicolons are displayed as fullwidth semicolons.
 
 Examples:
   notif "Build finished" "All checks passed"
@@ -41,7 +41,7 @@ export interface Notification {
 	details: string;
 }
 
-type TerminalProtocol = "kitty" | "ghostty";
+type TerminalProtocol = "kitty" | "rex";
 
 const AWAY_AFTER_SECONDS = 180;
 
@@ -68,7 +68,7 @@ export async function notifLib(notification: Notification): Promise<void> {
 		return;
 	}
 	try {
-		const payload = protocol === "kitty" ? await kittyPayload(notification) : ghosttyPayload(notification);
+		const payload = protocol === "kitty" ? await kittyPayload(notification) : rexPayload(notification);
 		writeFileSync(tty, inTmux ? wrapTmuxPassthrough(payload) : payload);
 	} finally {
 		closeSync(tty);
@@ -104,9 +104,7 @@ export function tmuxIsAway(clientActivity: string, nowSeconds = Date.now() / 100
 
 export function terminalProtocol(env: NodeJS.ProcessEnv): TerminalProtocol | undefined {
 	if (env.KITTY_WINDOW_ID) return "kitty";
-	if (env.GHOSTTY_RESOURCES_DIR || env.TERM_PROGRAM === "ghostty" || env.TERM === "xterm-ghostty") {
-		return "ghostty";
-	}
+	if (env.REX_BLOCK || env.TERM_PROGRAM === "rex") return "rex";
 }
 
 // Headless shells, such as agent tool calls, have no controlling terminal: /dev/tty fails with ENXIO.
@@ -129,7 +127,7 @@ async function kittyPayload({title, details}: Notification): Promise<string> {
 	return $`kitten notify --only-print-escape-code -- ${title} ${details}`.quiet().text();
 }
 
-export function ghosttyPayload({title, details}: Notification): string {
+export function rexPayload({title, details}: Notification): string {
 	// OSC 777 has no escaping for the title delimiter or terminal control characters.
 	const text = (value: string) =>
 		value.replace(/\p{Cc}/gu, (char) => (char === "\n" || char === "\t" ? char : ""));

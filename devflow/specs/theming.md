@@ -3,13 +3,13 @@
 - Document ID: SPEC-007
 - Configuration identification: SPEC-007; migrated from `specs/theming.md`; canonical path `devflow/specs/theming.md`.
 - **Status:** Partially Implemented
-- **Last Updated:** 2026-10-02
+- **Last Updated:** 2026-11-04
 
 ## [SPEC-007-S1] 1. Overview
 
 ### [SPEC-007-S1.1] Purpose
 
-Shared light/dark and theme-family control for the interactive desktop and terminal stack. The current implementation coordinates macOS appearance, desktop wallpaper, Kitty and Ghostty colors, Nushell syntax/table colors, `LS_COLORS`, and Neovim colors from one small state contract.
+Shared light/dark and theme-family control for the interactive desktop and terminal stack. The current implementation coordinates macOS appearance, desktop wallpaper, Kitty and Rex colors, Nushell syntax/table colors, `LS_COLORS`, and Neovim colors from one small state contract.
 
 Most terminal applications are expected to follow the active theme through the combined terminal palette, shell color config, and `LS_COLORS`. Neovim is the main app with explicit extra theme integration; LazyGit has a small adjustment to prefer terminal defaults. Additional app-specific handling should be added only when inheritance is not enough.
 
@@ -21,12 +21,12 @@ The system is intentionally narrow for now. Linux desktop theming is not control
 - Preserve the chosen theme family while toggling light/dark.
 - Support at least `tokyonight` and `rose-pine`.
 - Keep terminals and editor config reading the same state.
-- Reload live Kitty and Ghostty windows without restarting them.
+- Update live Kitty and Rex windows without restarting them.
 - Avoid scattering plugin-specific theme choices throughout the Neovim config.
 
 ### [SPEC-007-S1.3] Non-Goals
 
-- Declarative provisioning of theme state or assets.
+- Declarative provisioning of active theme state.
 - Linux desktop theme switching.
 - Per-application theme tables by default. Most terminal apps should inherit from Kitty, Nushell, and `LS_COLORS`.
 - Dynamic reload inside already-running Neovim instances.
@@ -56,7 +56,7 @@ theme light|dark|toggle [--family tokyonight|rose-pine]
     |  +- macOS wallpaper on every desktop
     |  +- shared mode/family state files
     |  +- Kitty: write active config -> reload live windows
-    |  +- Ghostty: write active config -> SIGUSR2 live windows
+    |  +- Rex: probe connected apps without autostart -> set mode -> import palette
     |
     +- Await all branches, then report success or failure
 ```
@@ -65,7 +65,7 @@ theme light|dark|toggle [--family tokyonight|rose-pine]
 
 ```
 oven/bin/theme.ts
-    Bun/TypeScript theme switcher. Writes shared state, controls macOS, and updates Kitty and Ghostty.
+    Bun/TypeScript theme switcher. Writes shared state, controls macOS, and updates Kitty and Rex.
 
 oven/bin/manifest.json
     Registers theme for installation to ~/.local/bin/theme through the Oven build.
@@ -85,11 +85,12 @@ config/kitty/themes/
 $XDG_CONFIG_HOME/kitty/themes/active.conf
     Written by theme switcher; not tracked in git to avoid noisy history.
 
-config/ghostty/config
-    Includes the generated active-theme.conf.
-
-$XDG_CONFIG_HOME/ghostty/active-theme.conf
-    Written by theme switcher; not tracked in git to avoid noisy history.
+config/rex/themes/
+    TokyoNight Day
+    TokyoNight Moon
+    Rose Pine Dawn
+    Rose Pine Moon
+    Self-contained palettes imported directly into Rex; linked into ~/.config/rex/themes.
 
 config/nushell/config.nu
     Reads color-theme and selects the light/dark Nushell color config.
@@ -111,7 +112,7 @@ config/nvim/lua/plugins/ui.lua
 
 The switcher uses Bun filesystem APIs and asynchronous subprocesses rather than shell pipelines. Independent work runs concurrently without a worker limit: state resolution, asset preflight, appearance, wallpaper, state writes, and each terminal's update chain. Explicit `light`/`dark` skips the system appearance query. Wallpaper selection retains exact-theme-before-default and JPG-before-PNG priority even though existence checks run concurrently.
 
-Each terminal reload waits for its own config write, not for macOS automation or the other terminal. Kitty's default-target retry waits for the primary socket attempt to fail. All update branches are awaited before reporting a result; nothing is detached. Terminal reloads remain best effort (including absent applications). Required file or macOS update failures return nonzero after the other branches finish. A failed switch can leave partially applied changes; there is no cross-application rollback.
+Kitty's reload waits for its own config write, not for macOS automation or Rex. Kitty's default-target retry waits for the primary socket attempt to fail. Rex independently probes connected apps with auto-start disabled, then sets the requested appearance and imports a checked-in palette. All update branches are awaited before reporting a result; nothing is detached. Kitty reloads remain best effort. An unavailable Rex CLI/server or a server without a connected app is skipped; updates to a connected Rex app must succeed. Required file, Rex action, or macOS update failures return nonzero after the other branches finish. A failed switch can leave partially applied changes; there is no cross-application rollback.
 
 Run `make build` to install the Oven entrypoint. The Bash source formerly at `home/.local/bin/theme` is removed, not retained as a second implementation. Oven's builder replaces existing executable symlinks rather than writing through them, so an old dotty-managed `theme` link can be migrated safely. For development, run `bun run ./bin/theme.ts` from `oven/`.
 
@@ -124,13 +125,14 @@ Run `make build` to install the Oven entrypoint. The Bash source formerly at `ho
 | `$XDG_STATE_HOME/color-theme` | `light`, `dark` | `theme` | `theme`, Nushell, Neovim |
 | `$XDG_STATE_HOME/color-theme-family` | `tokyonight`, `rose-pine` | `theme` | `theme`, Nushell `LS_COLORS`, Neovim |
 | `$XDG_CONFIG_HOME/kitty/themes/active.conf` | Kitty color config | `theme` | Kitty |
-| `$XDG_CONFIG_HOME/ghostty/active-theme.conf` | Ghostty theme selection | `theme` | Ghostty |
+
+Rex's own preferences store its imported palettes and selected light/dark themes. The switcher imports from the checked-in files under `$XDG_CONFIG_HOME/rex/themes`; it does not generate a second active-config file.
 
 `$XDG_STATE_HOME` defaults to `~/.local/state` and `$XDG_CONFIG_HOME` defaults to `~/.config` when unset.
 
 ### [SPEC-007-S3.2] Theme Mapping
 
-| Family       | Mode    | Kitty theme       | Ghostty theme     | Neovim style/variant | vivid theme       |
+| Family       | Mode    | Kitty theme       | Rex palette       | Neovim style/variant | vivid theme       |
 | ------------ | ------- | ----------------- | ----------------- | -------------------- | ----------------- |
 | `tokyonight` | `light` | `tokyonight-day`  | `TokyoNight Day`  | `day`                | `tokyonight-day`  |
 | `tokyonight` | `dark`  | `tokyonight-moon` | `TokyoNight Moon` | `moon`               | `tokyonight-moon` |
@@ -180,14 +182,16 @@ Implemented by `oven/bin/theme.ts` and `config/kitty/kitty.conf`.
 - Primary remote socket is `unix:/tmp/mykitty`; fallback is Kitty's default remote target.
 - `allow_remote_control yes` and `listen_on unix:/tmp/mykitty` must remain enabled.
 
-### [SPEC-007-S4.4] Ghostty
+### [SPEC-007-S4.4] Rex
 
-Implemented by `oven/bin/theme.ts` and `config/ghostty/config`.
+Implemented by `oven/bin/theme.ts` and `config/rex/themes/`.
 
-- `config` optionally includes `$XDG_CONFIG_HOME/ghostty/active-theme.conf`.
-- The switcher writes the selected built-in Ghostty theme to that file.
-- Live reload uses Ghostty's supported `SIGUSR2` mechanism.
-- Before the first switch, Ghostty defaults to the Tokyo Night light/dark pair and follows system appearance.
+- `rex --autostart=false client ls --json` checks for a connected app before any theme mutation. Missing CLI/server and headless/disconnected clients are skipped.
+- `client.appearance.switch_mode` selects the requested light/dark mode.
+- `client.theme.import` imports the selected local palette file directly; no other terminal application or export command is required.
+- Stable palette filenames let repeated imports reuse the same named custom theme.
+- Set `REX_CLIENT` when more than one app is connected. Run on the Mac running that app, since palette import reads a local file.
+- Update failures from a connected app are reported, not silently ignored.
 
 ### [SPEC-007-S4.5] Nushell
 
@@ -216,7 +220,7 @@ Neovim reads state at startup. A running instance needs restart or manual reload
 | macOS appearance      | Implemented       | Dark/light only, via AppleScript                    |
 | macOS wallpaper       | Implemented       | External image directory, not managed by repo       |
 | Kitty config          | Implemented       | File include plus remote live reload                |
-| Ghostty config        | Implemented       | File include plus SIGUSR2 live reload               |
+| Rex palettes          | Implemented       | Checked-in files imported through the Rex CLI       |
 | Nushell UI colors     | Implemented       | Mode-aware, not family-specific                     |
 | Nushell `LS_COLORS`   | Implemented       | Mode and family aware, generated by vivid           |
 | Neovim theme plugins  | Implemented       | Tokyo Night and Rose Pine                           |
@@ -231,7 +235,7 @@ Most CLI/TUI applications should be covered by terminal colors, shell colors, an
 
 Known areas outside the current shared flow:
 
-- WezTerm, if used instead of Kitty or Ghostty.
+- WezTerm, if used instead of Kitty or Rex.
 - Zellij, if terminal inheritance is not enough.
 - GUI editors such as Zed and VS Code.
 - minimal Neovim.
@@ -240,7 +244,7 @@ Known areas outside the current shared flow:
 
 - **Tiny state contract** - plain files under `$XDG_STATE_HOME` are easy for Bash, Nushell, Lua, and future system activation scripts to share.
 - **Imperative runtime switcher** - day/night switching should not require a system-layer apply.
-- **Generated terminal theme configs** - active Kitty and Ghostty theme files under `$XDG_CONFIG_HOME` keep startup simple while allowing live reload. They are stored outside the repo to avoid git churn on every theme switch.
+- **Terminal-owned runtime state** - Kitty's generated active config stays outside the repo to avoid git churn. Rex imports checked-in palettes and owns its runtime selection; no export helper or other terminal installation is required.
 - **Family and mode are separate** - toggling light/dark preserves the user's preferred family.
 - **Neovim owns plugin-specific details** - external state picks family/mode; `codethread.theme` translates that into plugin options and custom highlight palettes.
 - **Terminal apps inherit first** - the default approach is terminal palette plus shell color config plus `LS_COLORS`; add app-specific theme config only when inheritance fails.

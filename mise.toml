@@ -130,7 +130,6 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "brew-cask:font-symbols-only-nerd-font" = { os = "macos" }
 
 "brew-cask:kitty" = { os = "macos" }
-"brew-cask:ghostty" = { os = "macos" }
 "brew-cask:nikitabobko/tap/aerospace" = { os = "macos" }
 "brew-cask:alfred" = { os = "macos" }
 "brew-cask:spotify" = { os = "macos" }

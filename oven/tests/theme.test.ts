@@ -6,11 +6,12 @@ import {parseThemeArgs, type ThemeRuntime, themeLib} from "../bin/theme";
 
 const cleanupPaths: string[] = [];
 const ok = {exitCode: 0, stdout: "", stderr: ""};
+const noRexApp = {...ok, stdout: '{"clients":[]}'};
 const variants = [
-	{family: "tokyonight", mode: "light", kitty: "tokyonight-day", ghostty: "TokyoNight Day"},
-	{family: "tokyonight", mode: "dark", kitty: "tokyonight-moon", ghostty: "TokyoNight Moon"},
-	{family: "rose-pine", mode: "light", kitty: "rose-pine-dawn", ghostty: "Rose Pine Dawn"},
-	{family: "rose-pine", mode: "dark", kitty: "rose-pine", ghostty: "Rose Pine Moon"},
+	{family: "tokyonight", mode: "light", kitty: "tokyonight-day", rex: "TokyoNight Day"},
+	{family: "tokyonight", mode: "dark", kitty: "tokyonight-moon", rex: "TokyoNight Moon"},
+	{family: "rose-pine", mode: "light", kitty: "rose-pine-dawn", rex: "Rose Pine Dawn"},
+	{family: "rose-pine", mode: "dark", kitty: "rose-pine", rex: "Rose Pine Moon"},
 ] as const;
 
 afterEach(async () => {
@@ -25,12 +26,13 @@ async function fixture(platform = "linux"): Promise<ThemeRuntime> {
 		stateDir: join(dir, "state"),
 		configDir: join(dir, "config"),
 		backgroundsDir: join(dir, "backgrounds with spaces"),
-		run: async () => ok,
+		run: async (args) => (args[0] === "rex" ? noRexApp : ok),
 	};
 	await Promise.all(
-		variants.map(({kitty}) =>
+		variants.flatMap(({kitty, rex}) => [
 			Bun.write(join(runtime.configDir, "kitty", "themes", `${kitty}.conf`), `# ${kitty}\n`),
-		),
+			Bun.write(join(runtime.configDir, "rex", "themes", rex), `# ${rex}\n`),
+		]),
 	);
 	return runtime;
 }
@@ -72,23 +74,96 @@ describe("theme CLI", () => {
 	});
 });
 
-describe("theme switching", () => {
-	test.each([...variants])("writes $family $mode and reloads only after config writes", async (variant) => {
+describe("Rex theme integration", () => {
+	const probe = ["rex", "--autostart=false", "client", "ls", "--json"];
+	const running = {
+		...ok,
+		stdout: JSON.stringify({clients: [{info: {kind: "app"}, connection_state: "connected"}]}),
+	};
+
+	test.each([...variants])("imports the checked-in $family $mode Rex palette", async (variant) => {
+		const runtime = await fixture();
+		const calls: string[][] = [];
+		let importedConfig: string | undefined;
+		runtime.run = async (args) => {
+			calls.push(args);
+			if (args.includes("client.theme.import")) {
+				importedConfig = await Bun.file(args.at(-1)!.slice("path=".length)).text();
+			}
+			return args[0] === "rex" && args.includes("ls") ? running : ok;
+		};
+		await themeLib(variant, runtime);
+		expect(importedConfig).toBe(`# ${variant.rex}\n`);
+		expect(calls.filter((args) => args[0] === "rex")).toEqual([
+			probe,
+			["rex", "--autostart=false", "do", "client.appearance.switch_mode", `mode=${variant.mode}`],
+			[
+				"rex",
+				"--autostart=false",
+				"do",
+				"client.theme.import",
+				`path=${join(runtime.configDir, "rex", "themes", variant.rex)}`,
+			],
+		]);
+	});
+
+	test.each([
+		{label: "CLI missing", exitCode: 127, stdout: ""},
+		{label: "server stopped", exitCode: 1, stdout: ""},
+		{label: "no clients", exitCode: 0, stdout: '{"clients":[]}'},
+		{
+			label: "no connected app",
+			exitCode: 0,
+			stdout: JSON.stringify({
+				clients: [
+					{info: {kind: "cli"}, connection_state: "connected"},
+					{connection_state: "connected"},
+					{info: {kind: "app"}, connection_state: "disconnected"},
+				],
+			}),
+		},
+	])("skips Rex mutations when $label", async ({exitCode, stdout}) => {
 		const runtime = await fixture();
 		const calls: string[][] = [];
 		runtime.run = async (args) => {
 			calls.push(args);
-			const path = args[0] === "kitty" ? "kitty/themes/active.conf" : "ghostty/active-theme.conf";
-			const expected = args[0] === "kitty" ? `# ${variant.kitty}\n` : `theme = ${variant.ghostty}\n`;
-			expect(await Bun.file(join(runtime.configDir, path)).text()).toBe(expected);
-			return ok;
+			return args[0] === "rex" ? {exitCode, stdout, stderr: ""} : ok;
+		};
+		expect(await themeLib({mode: "dark"}, runtime)).toBe("Theme: tokyonight dark");
+		expect(calls.filter((args) => args[0] === "rex")).toEqual([probe]);
+	});
+
+	test.each([
+		"client.appearance.switch_mode",
+		"client.theme.import",
+	])("reports %s failures after detecting a running app", async (action) => {
+		const runtime = await fixture();
+		runtime.run = async (args) => {
+			if (args[0] === "rex" && args.includes("ls")) return running;
+			return args.includes(action) ? {...ok, exitCode: 1, stderr: "Rex update failed"} : ok;
+		};
+		await expect(themeLib({mode: "light"}, runtime)).rejects.toThrow("Rex update failed");
+	});
+});
+
+describe("theme switching", () => {
+	test.each([...variants])("writes $family $mode and reloads only after config writes", async (variant) => {
+		const runtime = await fixture();
+		const calls: string[][] = [];
+		let configAtReload: string | undefined;
+		runtime.run = async (args) => {
+			calls.push(args);
+			if (args[0] === "kitty") {
+				configAtReload = await Bun.file(join(runtime.configDir, "kitty/themes/active.conf")).text();
+			}
+			return args[0] === "rex" ? noRexApp : ok;
 		};
 		expect(await themeLib(variant, runtime)).toBe(`Theme: ${variant.family} ${variant.mode}`);
+		expect(configAtReload).toBe(`# ${variant.kitty}\n`);
 		expect(await read(runtime, "color-theme")).toBe(`${variant.mode}\n`);
 		expect(await read(runtime, "color-theme-family")).toBe(`${variant.family}\n`);
 		expect(calls).toHaveLength(2);
 		expect(calls).toContainEqual(["kitty", "@", "--to", "unix:/tmp/mykitty", "load-config"]);
-		expect(calls).toContainEqual(["pkill", "-USR2", "-x", "ghostty"]);
 	});
 
 	test("status defaults without writes; toggle preserves saved family", async () => {
@@ -149,7 +224,7 @@ describe("theme switching", () => {
 		const calls: {args: string[]; stdin?: string}[] = [];
 		runtime.run = async (args, stdin) => {
 			calls.push({args, stdin});
-			return ok;
+			return args[0] === "rex" ? noRexApp : ok;
 		};
 		await themeLib({mode: "light"}, runtime);
 		expect(calls).toContainEqual({
@@ -191,9 +266,10 @@ describe("theme switching", () => {
 		const started = new Set<string>();
 		const completed = new Set<string>();
 		runtime.run = async (args) => {
+			if (args[0] === "rex") return noRexApp;
 			const name = args[0] === "osascript" ? args[1] : args[0];
 			started.add(name);
-			if (started.size === 4) gate.resolve();
+			if (started.size === 3) gate.resolve();
 			if (fail && name === "-e") return {...ok, exitCode: 1, stderr: "appearance denied"};
 			await gate.promise;
 			completed.add(name);
@@ -202,8 +278,8 @@ describe("theme switching", () => {
 		const switching = themeLib({mode: "light"}, runtime);
 		const result = await switching.catch((error: Error) => error.message);
 		expect(result).toEqual(fail ? expect.stringContaining("appearance denied") : "Theme: tokyonight light");
-		expect(started.size).toBe(4);
-		expect(completed.size).toBe(fail ? 3 : 4);
+		expect(started.size).toBe(3);
+		expect(completed.size).toBe(fail ? 2 : 3);
 		expect(await read(runtime, "color-theme")).toBe("light\n");
 	});
 });

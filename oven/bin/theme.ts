@@ -42,12 +42,12 @@ export interface ThemeRuntime {
 
 const THEMES = {
 	tokyonight: {
-		light: {kitty: "tokyonight-day", ghostty: "TokyoNight Day"},
-		dark: {kitty: "tokyonight-moon", ghostty: "TokyoNight Moon"},
+		light: {kitty: "tokyonight-day", rex: "TokyoNight Day"},
+		dark: {kitty: "tokyonight-moon", rex: "TokyoNight Moon"},
 	},
 	"rose-pine": {
-		light: {kitty: "rose-pine-dawn", ghostty: "Rose Pine Dawn"},
-		dark: {kitty: "rose-pine", ghostty: "Rose Pine Moon"},
+		light: {kitty: "rose-pine-dawn", rex: "Rose Pine Dawn"},
+		dark: {kitty: "rose-pine", rex: "Rose Pine Moon"},
 	},
 };
 
@@ -115,7 +115,7 @@ export async function themeLib(options: ThemeOptions, runtime = defaultRuntime()
 		writeConfig(join(runtime.stateDir, "color-theme"), `${mode}\n`),
 		writeConfig(join(runtime.stateDir, "color-theme-family"), `${family}\n`),
 		updateKitty(runtime, kittyConfig),
-		updateGhostty(runtime, theme.ghostty),
+		updateRex(runtime, theme.rex, mode),
 	];
 	if (wallpaper !== undefined) {
 		jobs.push(
@@ -200,9 +200,30 @@ async function updateKitty(runtime: ThemeRuntime, config: string): Promise<void>
 	}
 }
 
-async function updateGhostty(runtime: ThemeRuntime, theme: string): Promise<void> {
-	await writeConfig(join(runtime.configDir, "ghostty", "active-theme.conf"), `theme = ${theme}\n`);
-	await runtime.run(["pkill", "-USR2", "-x", "ghostty"]);
+async function updateRex(runtime: ThemeRuntime, theme: string, mode: Mode): Promise<void> {
+	// Rex is optional. Probe without starting a server; a headless server isn't an app.
+	const result = await runtime.run(["rex", "--autostart=false", "client", "ls", "--json"]);
+	if (result.exitCode !== 0) return;
+	const {clients} = JSON.parse(result.stdout) as {
+		clients: {info?: {kind?: string}; connection_state: string}[];
+	};
+	if (!clients.some((client) => client.info?.kind === "app" && client.connection_state === "connected")) {
+		return;
+	}
+	await runRequired(runtime, [
+		"rex",
+		"--autostart=false",
+		"do",
+		"client.appearance.switch_mode",
+		`mode=${mode}`,
+	]);
+	await runRequired(runtime, [
+		"rex",
+		"--autostart=false",
+		"do",
+		"client.theme.import",
+		`path=${join(runtime.configDir, "rex", "themes", theme)}`,
+	]);
 }
 
 async function runRequired(runtime: ThemeRuntime, args: string[], stdin?: string): Promise<void> {
