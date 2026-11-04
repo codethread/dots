@@ -32,6 +32,8 @@ The four palettes are linked into `~/.config/rex/themes` on each machine. Each m
 
 ## Sources
 
+Color values mirror the customized counterparts in `config/kitty/themes/`, not the stock upstream presets. This includes foreground/background, cursor, selection, ANSI colors, and configured extended colors. Kitty-only tab, border, opacity, and contrast settings are not translated.
+
 - **TokyoNight Day / Moon:** [Tokyo Night](https://github.com/folke/tokyonight.nvim), by Folke Lemaitre. [Upstream license](LICENSE-tokyonight).
 - **Rose Pine Dawn / Moon:** Rosé Pine, by the Rosé Pine contributors. [Upstream license](LICENSE-rose-pine).
 
