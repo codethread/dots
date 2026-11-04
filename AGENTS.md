@@ -2,7 +2,7 @@
 
 ## Bootstrap Flow
 
-New machine → `boot/boot.sh`: install Homebrew/mise, clone dots, initialize the shared environment, run `mise bootstrap`, then check Full Disk Access and sync Neovim plugins. Existing machine → `mise bootstrap` (also `make`). Preview with `mise bootstrap --dry-run`; inspect with `mise bootstrap status`. `MISE_ENV` selects the machine profile, `-E` overrides it, and `boot.sh -p` sets it explicitly.
+New machine → `boot/boot.sh`: install Homebrew/mise, clone dots, initialize the shared environment, run `mise bootstrap`, then check Full Disk Access and sync Neovim plugins. Existing machine → `mise run` (skips dirty repos) or strict `mise bootstrap`. Preview with `mise bootstrap --dry-run`; inspect with `mise bootstrap status`. `MISE_ENV` selects the machine profile, `-E` overrides it, and `boot.sh -p` sets it explicitly.
 
 Mise itself comes from the official `https://mise.run` installer at `~/.local/bin/mise` and updates with `mise self-update`. Do not add it to Homebrew packages. Shells and LaunchAgents use this stable user-owned executable.
 
@@ -26,9 +26,9 @@ Runtime application ownership is per file: mixed personal/shared and work config
 - **devflow/** - Planning workspace. Root specs live in `devflow/specs/`; RFCs in `devflow/rfcs/`; active feature work in `devflow/feat/`.
 - **pdx/** - pandoras-box configs (pithos) for personal machines
 
-### Makefile (Root)
+### Root mise tasks
 
-Run `make help` for commands and profile selection. Plain `make` runs native mise bootstrap; `make build` installs, checks, fixes, builds, and syncs Oven docs through `mise -C oven run verify`.
+Run `mise tasks` for available tasks. Plain `mise run` runs `mise bootstrap --skip-dirty`; `mise run build` changes into Oven and runs its `verify` task. Use native `mise bootstrap --skip-dirty --dry-run`, `mise bootstrap status`, and `mise bootstrap --update` for preview, state, and updates; preview/status avoid task-time tool installation.
 
 ## Tool Development Workflow
 
@@ -44,12 +44,12 @@ Nushell tooling is deprecated. Choose between two forms for new utilities:
     - Location: `home/.local/bin/`
     - Use for simple command composition and tools needed on PATH.
     - Add a `:module:` description and `-h` or `--help` output.
-    - `make link` links executables into `~/.local/bin/`.
+    - `mise run link` links executables into `~/.local/bin/`.
 
 2. **TypeScript/Bun in Oven**
     - Use for complex logic, dependencies, async control, shared code, or behavior that needs tests.
     - Declare entrypoints in `oven/bin/manifest.json`.
-    - `make build` builds the declared tools into `~/.local/bin/` and runs the development checks.
+    - `mise run build` builds the declared tools into `~/.local/bin/` and runs the development checks.
 
 ### Script Evolution Path
 

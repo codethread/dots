@@ -76,7 +76,7 @@ Connected Unix-local app clients are candidates. A remote viewer is never chosen
 
 After local success, a configured `REX_SERVER` is queried through `whoami`. Compare native `host_id` and account with the local identity to detect endpoint aliases of the same host/account. A separate host receives raw `client.action` for `dots_theme`, without a session or app target. The payload always includes resolved `light`/`dark` and family, never `toggle`.
 
-Configuration callbacks execute on their server; standalone `rex do` scripts execute on the CLI machine. The receiver therefore uses a configuration callback to run the same Oven command with `--host`. That path applies local state and its own Rex app, prints JSON, and cannot forward again. Both caller and host need current Oven/configuration/palette files. Reload Rex configuration after installing the receiver.
+Configuration callbacks execute on their server; standalone `rex do` scripts execute on the CLI machine. The receiver therefore uses a configuration callback to run the same Oven command with `--host`. That path applies local state and its own Rex app, prints JSON, and cannot forward again. Both caller and host need current Oven/configuration/palette files. Run `mise run build` to rebuild Oven and `mise run link` to link the new module/palettes, then reload Rex configuration.
 
 Each machine imports its own palette from its own filesystem. Remote app theme-name selection, one-time remote imports, and palette transfer are not needed. Other viewers are not modified.
 

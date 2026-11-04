@@ -66,7 +66,7 @@ Author shared personal skills in `home/.agents/skills/`. Mise links that source 
 | repo-setup | Set up repository agent scaffolding                |
 | socrates   | Inspect knowledge sources and assumptions          |
 
-Existing linked-file edits are visible immediately. After adding or removing source files, run `make link`, or from the dots checkout:
+Existing linked-file edits are visible immediately. After adding or removing source files, run `mise run link`, or from the dots checkout:
 
 ```nu
 mise dot apply ~ ~/.claude/skills

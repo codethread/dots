@@ -41,6 +41,26 @@ set -e
 /usr/bin/killall Dock >/dev/null 2>&1 || true
 """
 
+# Native bootstrap owns preview/status/update; tasks cover repo-specific workflows.
+[tasks.default]
+description = "Apply full workstation setup, skipping dirty repos"
+run = "mise bootstrap --skip-dirty"
+
+[tasks.link]
+description = "Relink Dotty assets and mise-managed home files/skills"
+env.DOTFILES = "{{ config_root }}"
+run = [
+  '''
+  nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --force --no-cache ($env.DOTFILES | path join "config/dotty/dotty.toml") | ignore'
+  ''',
+  'mise dot apply "$HOME" "$HOME/.claude/skills"',
+]
+
+[tasks.build]
+description = "Install, test, typecheck, fix, and build Oven tools/docs"
+dir = "{{ config_root }}/oven"
+run = "mise run verify"
+
 # Explicit maintenance only; never run cleanup as part of bootstrap.
 [tasks."brew:cleanup"]
 description = "Remove old Homebrew versions and stale downloads (preview with --dry-run)"

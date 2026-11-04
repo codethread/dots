@@ -1,6 +1,6 @@
 # Carapace completions
 
-CLIs use their generated Bash completion wrappers through Carapace's Bash bridge. Dotty links the spec and isolated Bash rcfile into `~/.config/carapace`; `make link` installs them on another machine.
+CLIs use their generated Bash completion wrappers through Carapace's Bash bridge. Dotty links the spec and isolated Bash rcfile into `~/.config/carapace`; `mise run link` installs them on another machine.
 
 The registration file is saved once. Each Tab runs Bash and asks `br` for context-aware candidates; it does not run `br completions bash` again.
 

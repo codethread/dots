@@ -3,7 +3,7 @@
 - Document ID: SPEC-008
 - Configuration identification: SPEC-008; migrated from `specs/worktree-concurrency.md`; canonical path `devflow/specs/worktree-concurrency.md`.
 - **Status:** Planned
-- **Last Updated:** 2026-04-27
+- **Last Updated:** 2026-11-03
 
 ## [SPEC-008-S1] 1. Overview
 
@@ -32,7 +32,7 @@ This system defines how this dotfiles repo can be tested and developed from mult
 ## [SPEC-008-S2] 2. Design Decisions
 
 - **Decision:** `$DOTFILES` is the authoritative source checkout for all worktree tests.
-    - **Rationale:** The repo already uses `$DOTFILES` in dotty config, Nushell module paths, tmux sessions, and Makefile commands. Enforcing it as the first-class root lets a worktree be tested without rewriting config files.
+    - **Rationale:** The repo already uses `$DOTFILES` in dotty config, Nushell module paths, tmux sessions, and mise tasks. Enforcing it as the first-class root lets a worktree be tested without rewriting config files.
 
 - **Decision:** Test isolation is environment-based first, symlink-based second.
     - **Rationale:** Many tools already respect `HOME` and XDG variables. A temp-home harness avoids touching the real user profile; dotty symlinks can then be tested inside that temp home when integration coverage needs the linked layout.
@@ -78,7 +78,7 @@ config/tmux/
   tmux.conf
   sessions.toml            Audit session paths, socket handling, and DOTFILES expansion
 
-Makefile                   Add safe test targets that export DOTFILES=$(ROOT)
+mise.toml                  Add safe test tasks that export DOTFILES={{ config_root }}
 devflow/specs/worktree-concurrency.md
 ```
 
@@ -87,7 +87,7 @@ devflow/specs/worktree-concurrency.md
 ```text
 agent shell in worktree
   |
-  | make test-worktree / ct test worktree / dots-test-sandbox <command>
+  | mise run test:worktree / ct test worktree / dots-test-sandbox <command>
   v
 resolve current checkout root
   |
@@ -196,15 +196,17 @@ Behavior:
 | `ct test agents`   | Smoke agent config loading without using live host config dirs              |
 | `ct test worktree` | Run the default safe suite: env, nu, dotty, nvim, tmux, oven                |
 
-### [SPEC-008-S5.3] Make targets
+### [SPEC-008-S5.3] Planned mise tasks
 
-| Target               | Description                                               |
-| -------------------- | --------------------------------------------------------- |
-| `make test-worktree` | Default safe concurrent suite, exports `DOTFILES=$(ROOT)` |
-| `make test-nu`       | Nushell syntax/config checks only                         |
-| `make test-nvim`     | Headless Neovim startup/config checks only                |
-| `make test-dotty`    | Isolated dotty link checks only                           |
-| `make test-tmux`     | Isolated tmux smoke only                                  |
+These tasks remain planned; the root mise task migration does not implement this sandbox suite.
+
+| Task                     | Description                                                         |
+| ------------------------ | ------------------------------------------------------------------- |
+| `mise run test:worktree` | Default safe concurrent suite, exports `DOTFILES={{ config_root }}` |
+| `mise run test:nu`       | Nushell syntax/config checks only                                   |
+| `mise run test:nvim`     | Headless Neovim startup/config checks only                          |
+| `mise run test:dotty`    | Isolated dotty link checks only                                     |
+| `mise run test:tmux`     | Isolated tmux smoke only                                            |
 
 ### [SPEC-008-S5.4] Tool-specific smoke contracts
 
@@ -216,7 +218,7 @@ Behavior:
 | tmux | `tmux -S <sandbox>/tmux.sock -f $DOTFILES/config/tmux/tmux.conf new-session -d -s dots-test -c $DOTFILES` then list/kill session |
 | dotty | `dotty link --no-cache $DOTFILES/config/dotty/test-dotty.toml` under sandbox HOME/XDG, then verify symlink targets stay under `$DOTFILES` |
 | oven | `cd $DOTFILES/oven && bun test` with cache/temp vars redirected |
-| Mise | `mise -C $DOTFILES -E dev tasks validate --errors-only` and `mise -C $DOTFILES -E dev config`; never run bootstrap or native apply commands against the real host |
+| Mise | `cd "$DOTFILES" && mise -E dev tasks validate --errors-only` and `mise -E dev config`; never run bootstrap or native apply commands against the real host |
 
 ## [SPEC-008-S6] 6. Implementation Phases
 
@@ -229,7 +231,7 @@ Behavior:
 
 ### [SPEC-008-S6.2] Phase 2: Safe per-tool smoke commands (1-2 days)
 
-- [ ] Add `ct test nu` and `make test-nu`.
+- [ ] Add `ct test nu` and `mise run test:nu`.
 - [ ] Add `ct test dotty` and make `config/dotty/test-dotty.toml` target the sandbox, not real home.
 - [ ] Add `ct test nvim` with isolated XDG roots and headless startup.
 - [ ] Add `ct test tmux` with unique socket and cleanup.
@@ -238,7 +240,7 @@ Behavior:
 ### [SPEC-008-S6.3] Phase 3: Default concurrent suite (1 day)
 
 - [ ] Add `ct test worktree` orchestration.
-- [ ] Add `make test-worktree` that exports `DOTFILES=$(ROOT)`.
+- [ ] Add `mise run test:worktree` that exports `DOTFILES={{ config_root }}`.
 - [ ] Ensure each suite command can run in parallel from two sibling git worktrees.
 - [ ] Document expected runtime and failure artifact locations.
 
@@ -251,22 +253,22 @@ Behavior:
 
 ## [SPEC-008-S7] 7. Code Locations
 
-| File                                    | Change                                                         |
-| --------------------------------------- | -------------------------------------------------------------- |
-| `home/.local/bin/dots-test-sandbox`     | New: Bash sandbox harness for isolated command execution       |
-| `config/nushell/scripts/ct/test/mod.nu` | New: Nushell test command module                               |
-| `config/nushell/scripts/ct/core/mod.nu` | Modify if needed to expose test module aliases/imports         |
-| `config/dotty/test-dotty.toml`          | Modify: make test targets sandbox-aware                        |
-| `Makefile`                              | Modify: add safe worktree test targets with `DOTFILES=$(ROOT)` |
-| `config/nvim/`                          | Modify as audit finds hard-coded state paths or non-XDG writes |
-| `config/tmux/`                          | Modify as audit finds socket/session/path assumptions          |
-| `oven/package.json` / `oven/tests/`     | Modify only if cache isolation or test wrappers are needed     |
-| `devflow/README.md`                     | Modify: register this spec                                     |
+| File | Change |
+| --- | --- |
+| `home/.local/bin/dots-test-sandbox` | New: Bash sandbox harness for isolated command execution |
+| `config/nushell/scripts/ct/test/mod.nu` | New: Nushell test command module |
+| `config/nushell/scripts/ct/core/mod.nu` | Modify if needed to expose test module aliases/imports |
+| `config/dotty/test-dotty.toml` | Modify: make test tasks sandbox-aware |
+| `mise.toml` | Modify: add safe worktree test tasks with `DOTFILES={{ config_root }}` |
+| `config/nvim/` | Modify as audit finds hard-coded state paths or non-XDG writes |
+| `config/tmux/` | Modify as audit finds socket/session/path assumptions |
+| `oven/package.json` / `oven/tests/` | Modify only if cache isolation or test wrappers are needed |
+| `devflow/README.md` | Modify: register this spec |
 
 ## [SPEC-008-S8] 8. Open Questions
 
 - Should the harness default to `source` mode for speed, or `linked` mode for closer-to-installed behavior?
 - Should `ct test worktree` run Neovim plugin installation/update steps, or only validate startup with existing dependencies?
 - Should sandbox leak detection be strict enough to fail on any absolute real-home path in logs, or only on writes/symlinks?
-- Should worktree post-create hooks automatically run `make test-worktree`, or leave tests explicit to avoid expensive branch creation?
+- Should worktree post-create hooks automatically run `mise run test:worktree`, or leave tests explicit to avoid expensive branch creation?
 - Should mise task/config validation be part of the default safe suite, or stay a focused pre-commit check?
