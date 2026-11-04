@@ -49,7 +49,7 @@ local function host_action(name, title, run, args)
 	end, args)
 end
 
-local function picker(ctx, rows, name, prompt)
+local function picker(ctx, rows, name, prompt, mode)
 	if #rows == 0 then
 		return
 	end
@@ -72,6 +72,7 @@ local function picker(ctx, rows, name, prompt)
 				assert(ctx.block_id),
 				name,
 				prompt,
+				mode or "",
 			},
 			shell = "none",
 		}),
@@ -97,6 +98,43 @@ host_action("projects", "Pick Project Session", function(ctx)
 		rows[#rows + 1] = path .. "\t" .. path
 	end
 	return picker(ctx, rows, "dots_project", "Project: ")
+end)
+
+host_action("worktrees", "Pick Git Worktree", function(ctx)
+	local directory = cwd(ctx)
+	local listed = projects.exec({ "git", "-C", directory, "worktree", "list", "--porcelain", "-z" })
+	local worktrees, branch_width, name_width = {}, 0, 0
+	for record in listed:gmatch("(.-%z)%z") do
+		if not record:find("%zbare%z") then
+			local path = assert(record:match("^worktree ([^%z]+)"))
+			assert(not path:find("[\r\n\t]"), "Worktree paths cannot contain tabs or newlines")
+			local branch = record:match("%zbranch refs/heads/([^%z]+)") or "(detached)"
+			local basename = assert(path:match("([^/]+)/?$"))
+			worktrees[#worktrees + 1] = {
+				path = path,
+				branch = branch,
+				basename = basename,
+				head = assert(record:match("%zHEAD ([^%z]+)")),
+			}
+			branch_width = math.max(branch_width, #branch)
+			name_width = math.max(name_width, #basename)
+		end
+	end
+	local rows = {}
+	for _, worktree in ipairs(worktrees) do
+		local history = projects.exec({ "git", "-C", directory, "show", "-s", "--format=%ct%x09%cr", worktree.head })
+		local timestamp, age = history:gsub("%s+$", ""):match("^(%d+)\t(.+)$")
+		assert(timestamp and age, "Expected a Git commit timestamp and relative age")
+		rows[#rows + 1] = string.format(
+			"%s\t%s\t%-" .. branch_width .. "s  %-" .. name_width .. "s  %s",
+			worktree.path,
+			timestamp,
+			worktree.branch,
+			worktree.basename,
+			age
+		)
+	end
+	return picker(ctx, rows, "dots_project", "Worktree A-Z> ", "worktrees")
 end)
 
 host_action("slot", "Jump to Project Slot", function(_, args)
@@ -278,6 +316,7 @@ bind("shift+r", "client.tab.rename")
 bind("s", "session.switch")
 bind("p", "session.switch")
 bind("f", "dots_projects")
+bind("g", "dots_worktrees")
 bind("shift+n", "session.new")
 -- Rex currently exposes ordered navigation rather than last-used history.
 bind("tab", "session.previous")

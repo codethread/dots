@@ -9,6 +9,7 @@ The prefix is **Ctrl+A**. Escape cancels an unfinished sequence.
 | Ctrl+A            | Send Ctrl+A to terminal                              |
 | r / Ctrl+R        | Reload config                                        |
 | f                 | Discover projects with fzf and open/select a session |
+| g                 | fzf Git worktrees in the current terminal's repo     |
 | p / s             | Pick from active Rex sessions                        |
 | 0–9               | Open/select project slot                             |
 | N                 | New Rex session                                      |
@@ -56,11 +57,11 @@ Rex's native **b** action selects the new tab; tmux's binding left it in the bac
 
 Rex exposes no tmux-style copy-mode action. **[**, **O**, and **S** open captured scrollback in Neovim at the bottom. Use `/` to search, `y` to copy, `:w! ~/filename` to save, and `q` to close the history tab. Clipboard and saved files belong to the machine running Neovim.
 
-Tab and Shift+Tab use ordered navigation because Rex does not expose tmux's last-used session/window history. Worktree picking, work launchers, agent switching, fingers hints and the tmux status line remain tmux-specific.
+Tab and Shift+Tab use ordered navigation because Rex does not expose tmux's last-used session/window history. Work launchers, agent switching, fingers hints and the tmux status line remain tmux-specific.
 
 ## Project sessionizer
 
-**Ctrl+A p/s** uses Rex's native session switcher. **Ctrl+A f** discovers projects on demand and opens fzf in a floating terminal. **Ctrl+A h** enters an exclusive, one-shot project mode; Escape, q, or Ctrl+C cancels. Its actions mirror the tmux slot workflow above. **Ctrl+A 0–9** jumps to the project with that explicit index, regardless of array order. Projects without an index appear in **h l** without a numbered shortcut. **h a** deduplicates by path or session name.
+**Ctrl+A p/s** uses Rex's native session switcher. **Ctrl+A f** discovers projects on demand and opens fzf in a floating terminal. **Ctrl+A g** lists Git worktrees for the current terminal's directory on its session host, showing aligned branch, directory-basename and last-commit-age columns. The age comes from each worktree's HEAD commit, not uncommitted file edits. **Tab** toggles between branch-name order (the default) and newest commit first; the prompt shows the active order. It uses the same floating fzf picker and project-session logic to open or select the chosen directory. **Ctrl+A h** enters an exclusive, one-shot project mode; Escape, q, or Ctrl+C cancels. Its actions mirror the tmux slot workflow above. **Ctrl+A 0–9** jumps to the project with that explicit index, regardless of array order. Projects without an index appear in **h l** without a numbered shortcut. **h a** deduplicates by path or session name.
 
 The state file contains `version: 2`, `entries`, and a `sessions` map. A numbered entry is `{ "index": 1, "name": "dots", "path": "/absolute/server/path" }`. Indexes must be unique integers from 0 to 9; duplicates raise a Rex action error naming both projects. Array order does not assign shortcuts. Omit an entry to leave a slot empty, or omit its `index` to keep a project only in the picker. **h 0–9** replaces the matching index or creates it if absent; **h a** adds an unindexed project. The picker sorts numbered slots as 1–9, 0, followed by unindexed projects alphabetically.
 
