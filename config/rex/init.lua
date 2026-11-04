@@ -215,17 +215,27 @@ host_action("panes", "Pick Pane to Swap", function(ctx)
 	return picker(ctx, rows, "dots_swap_selected", "Swap pane: ")
 end)
 action("dots_history", "Open Scrollback in Neovim", function(ctx)
+	local source = assert(rex.session.describe_block({ block_id = ctx.block_id })).block
 	return assert(rex.session.new_window({
 		window_label = "history",
+		focus = false,
 		layout = shell({
 			command = {
 				"bash",
 				"-c",
-				[[set -o pipefail
+				[[set -euo pipefail
+rex -C "$2" do -e '
+local pane = assert(rex.session.describe_block({ block_id = rex.block_id })).block
+rex.client.queue("session.select", { session_id = rex.session_id, window_id = pane.window_id })
+'
 rex capture -b "$1" --trim --unwrap |
-  nvim -u NONE -R -c 'set clipboard=unnamedplus' -c 'nnoremap q <Cmd>qa!<CR>' -c 'normal! G' -]],
+  nvim -u NONE -R -c 'set clipboard=unnamedplus' -c 'nnoremap q <Cmd>qa!<CR>' -c 'normal! G' -
+rex focus -s "$REX_SESSION" "$1"
+rex -C "$2" do session.select session_id="$REX_SESSION" window_id="$3"]],
 				"rex-history",
 				ctx.block_id,
+				assert(ctx.client_id),
+				assert(source.window_id),
 			},
 		}),
 	}))
