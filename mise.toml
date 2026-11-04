@@ -277,6 +277,15 @@ ShowRemovableMediaOnDesktop = true
 [bootstrap.macos.defaults."com.apple.universalaccess"]
 reduceMotion = true
 
+# Refresh independently of tmux. Pitchfork serializes scheduled runs.
+[daemons.codex-usage]
+run = 'export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH" CODEX_HOME="${CODEX_HOME:-$HOME/.config/codex}"; exec home/.local/bin/codex-usage-refresh'
+# Pitchfork cron includes seconds: run at second zero of every minute.
+cron = "0 * * * * *"
+oneshot = true
+boot_start = true
+retry = false
+
 # Botlake's host supervisor belongs to the workstation, not its source checkout.
 [daemons.botlake-supervisor]
 run = 'export PATH="$HOME/.local/bin:$PATH"; exec botlake start'

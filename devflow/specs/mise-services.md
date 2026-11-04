@@ -4,12 +4,12 @@
 
 Native `mise bootstrap` prepares and applies user LaunchAgents. Use a durable checkout in a logged-in macOS GUI session, without sudo: generated jobs reference that checkout's absolute path.
 
-| Owner              | Agents                                                       |
-| ------------------ | ------------------------------------------------------------ |
-| Dots, all profiles | syncengine, pitchfork; Botlake supervisor via Pitchfork      |
-| Dots, dev/work     | Botlake UI via Pitchfork                                     |
-| Dots, dev only     | cc-notify, hourly/daily/weekly Git maintenance, backup-notes |
-| Workfiles          | cc-notify, hourly/daily/weekly Git maintenance               |
+| Owner              | Agents                                                                  |
+| ------------------ | ----------------------------------------------------------------------- |
+| Dots, all profiles | syncengine, pitchfork; Botlake supervisor and Codex usage via Pitchfork |
+| Dots, dev/work     | Botlake UI via Pitchfork                                                |
+| Dots, dev only     | cc-notify, hourly/daily/weekly Git maintenance, backup-notes            |
+| Workfiles          | cc-notify, hourly/daily/weekly Git maintenance                          |
 
 Syncengine is declared in root `mise.toml`. The dev entrypoint `.mise/conf.d/services.dev.toml` links to `.mise/dev-services.toml`; `.miserc.toml` enables that environment-suffixed entrypoint. Workfiles owns its work-machine services in `.mise/conf.d/services.toml`, including its repository list and preparation hooks. It reuses the generic `~/.local/bin/git-maintenance` helper installed by dots. The existing `dev.mise.*` labels and schedules are preserved, so the ownership move does not introduce a second scheduler.
 
@@ -59,6 +59,18 @@ Do not also run `pitchfork boot enable`: startup has one owner. Its `boot status
 **Botlake:** common bootstrap clones `~/dev/projects/botlake` and `~/dev/projects/botlake-ui`. Post-repos setup installs Botlake's locked Bun dependencies and Go CLIs into `~/.local/bin`; dev/work also install the UI's locked pnpm dependencies and build its production assets. Setup then registers dots' daemons without starting or restarting them. After native LaunchAgents load, the common post-tools hook runs `mise daemons start botlake-supervisor`, so `make` starts Botlake even when Pitchfork was already running before registration. Startup waits for `botlake status` readiness and leaves an already-running daemon alone. Both daemons retain `boot_start` and retry on failure through the existing Pitchfork supervisor. The UI waits for `botlake status`, starts the Botlake checkout's lake, and serves its production build at `http://127.0.0.1:4173`, with `/api/health` readiness. It has no authentication: keep its loopback binding. Dev's final bootstrap hook configures Tailscale Serve's tailnet-only HTTPS root on port 443 to proxy `http://127.0.0.1:4173`, preserving other Serve ports. Tailscale must already be installed, running and authenticated, with its CLI at `/usr/local/bin/tailscale`; Serve's background configuration persists across restarts, so no extra proxy daemon is needed. Work runs the UI locally without this route. The personal profile does not register or build the UI.
 
 Inspect these daemons with `mise daemons status` and `mise daemons logs botlake-supervisor` / `botlake-ui` from dots under the host's profile. Do not switch a registered checkout between profiles while its daemons are active.
+
+**Codex usage:** the shared `codex-usage` mise daemon runs `home/.local/bin/codex-usage-refresh` once per minute through Pitchfork cron, with an initial run at supervisor boot. It runs as a one-shot job, probes Codex in an isolated tmux server with hooks disabled for this status-only invocation (without changing normal Codex hook trust), and atomically publishes the weekly percentage to `/tmp/tmux-codex-usage.${UID}.cache`, independent of tmux status redraws. The existing `tmux-codex-usage` status helper only reads and colours that cache; no tmux configuration change is needed. Before the first successful refresh it shows nothing; failed refreshes leave the last successful value visible and report an error in `mise daemons logs codex-usage`. Low-allowance notifications are sent only on the `dev` profile (`MISE_ENV=dev`); `work` and `personal` refresh the same status cache without notifying. Notification threshold tracking remains in the worker; state stays under `${XDG_STATE_HOME:-$HOME/.local/state}/tmux-codex-usage`. The daemon explicitly includes Homebrew on `PATH` and uses `${CODEX_HOME:-$HOME/.config/codex}`, matching the shared shell environment; it does not rely on login-shell initialization. Codex must already be installed and authenticated.
+
+Normal bootstrap registers the schedule with the existing supervisor. To enable just this change without a full bootstrap, run from the durable dots checkout:
+
+```sh
+mise daemons start codex-usage
+mise daemons status codex-usage --json
+mise daemons logs codex-usage
+```
+
+This one-shot daemon normally reports `completed` between runs. Do not add a second LaunchAgent or tmux-triggered refresh.
 
 **cc-notify (dev):** launchd starts the official mise executable at `~/.local/bin/mise` in the dots checkout with the explicit profile, then `mise exec -- bun run --cwd <cc-notify> src/main.ts`. Workfiles owns its equivalent work configuration. Starting mise in its checkout loads early `.miserc.toml` settings; `mise -C` from the application directory misses those early settings in mise 2026.9.15 and can load other profiles' fragments. Bun still selects the application's working directory and `.env`; no hidden foreground task or shell activation is needed. KeepAlive is unconditional.
 

@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+# :module: Refresh the Codex weekly usage cache for tmux (scheduled by mise).
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: codex-usage-refresh [-h|--help]
+
+Query Codex in an isolated tmux PTY, atomically update
+/tmp/tmux-codex-usage.${UID}.cache, and notify at low-usage thresholds.
+Mise schedules this command once per minute; tmux only reads the cache.
+Notifications are sent only when MISE_ENV=dev (not work or personal).
+EOF
+}
+
+case "${1:-}" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  "") ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
+
+umask 077
+cache_file="/tmp/tmux-codex-usage.${UID}.cache"
+cache_tmp=""
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/tmux-codex-usage"
+previous_file="$state_dir/previous-percent"
+captured_percentage=""
+
+# Socket of the in-flight usage probe, cleaned up by the EXIT/signal trap so a
+# killed invocation cannot leak its tmux server and socket file.
+usage_socket=""
+
+# tmux kill-server leaves the socket file behind, so remove it explicitly.
+stop_usage_server() {
+  tmux -L "$1" kill-server 2>/dev/null || true
+  rm -f "${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/$1"
+}
+
+# The probe runs in this shell so signals can always clean up its tmux server.
+cleanup() {
+  [[ -n "$usage_socket" ]] && stop_usage_server "$usage_socket"
+  usage_socket=""
+  [[ -z "$cache_tmp" ]] || rm -f "$cache_tmp"
+}
+
+capture_percentage() {
+  local cmd
+  for cmd in codex tmux; do
+    command -v "$cmd" >/dev/null 2>&1 || {
+      printf 'Codex usage probe requires %s on PATH (%s)\n' "$cmd" "$PATH" >&2
+      return 1
+    }
+  done
+
+  local socket="codex-usage-${UID}-$$"
+  usage_socket="$socket"
+  local output=""
+  local work_dir="$state_dir/workdir"
+  mkdir -p "$work_dir" || return 1
+  # This status-only probe must not run hooks or block on hook approval.
+  # Keep its temporary tmux environment out of the shared agent daemon.
+  tmux -L "$socket" -f /dev/null new-session -d -x 160 -y 50 -c "$work_dir" "$(command -v codex) --no-daemon --disable hooks" || return 1
+
+  local trust_sent=0
+  for _ in {1..25}; do
+    sleep 1
+    output=$(tmux -L "$socket" capture-pane -p -J -S -100 2>/dev/null) || break
+    if [[ "$output" =~ weekly[[:space:]]+([0-9]+)%[[:space:]]+left ]]; then
+      stop_usage_server "$socket"
+      usage_socket=""
+      local percentage="${BASH_REMATCH[1]}"
+      (( percentage >= 0 && percentage <= 100 )) || return 1
+      captured_percentage="$percentage"
+      return 0
+    fi
+    # The answered trust dialog stays in the transcript, so send the
+    # keystroke only once and keep polling for the usage footer.
+    if (( ! trust_sent )) && [[ "$output" == *"Trust this folder?"* ]]; then
+      tmux -L "$socket" send-keys 1 Enter || return 1
+      trust_sent=1
+    fi
+  done
+
+  printf 'Codex probe did not produce a weekly percentage. Last screen:\n%s\n' "$output" >&2
+  stop_usage_server "$socket"
+  usage_socket=""
+  return 1
+}
+
+run_cc_notify() {
+  local title="$1"
+  if command -v cc-notify >/dev/null 2>&1; then
+    cc-notify --at "$(date +%s)" "$title"
+  elif [[ -x "$HOME/dev/projects/cc-notify/scripts/cc-notify.js" ]]; then
+    "$HOME/dev/projects/cc-notify/scripts/cc-notify.js" --at "$(date +%s)" "$title"
+  else
+    return 1
+  fi
+}
+
+notify_if_needed() {
+  local current="$1"
+  local previous=""
+  local notify=0
+
+  mkdir -p "$state_dir"
+  if [[ -f "$previous_file" ]]; then
+    previous=$(<"$previous_file")
+    [[ "$previous" =~ ^[0-9]+$ ]] || previous=""
+  fi
+
+  if [[ -z "$previous" ]]; then
+    (( current == 50 || current == 20 || current == 10 || current <= 8 )) && notify=1
+  elif (( current < previous )); then
+    if (( current <= 8 || (previous > 10 && current <= 10) || (previous > 20 && current <= 20) || (previous > 50 && current <= 50) )); then
+      notify=1
+    fi
+  fi
+
+  if (( notify )); then
+    if ! printf 'Codex has %s%% of its weekly allowance remaining.\n' "$current" \
+      | run_cc_notify "Codex weekly usage: ${current}% left"; then
+      printf 'Could not send Codex usage notification\n' >&2
+      return 1
+    fi
+  fi
+
+  printf '%s\n' "$current" > "$previous_file.tmp"
+  mv "$previous_file.tmp" "$previous_file"
+}
+
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+
+if ! capture_percentage; then
+  printf '[%s] Could not read Codex weekly usage\n' "$(date -Iseconds)" >&2
+  exit 1
+fi
+
+cache_tmp=$(mktemp "${cache_file}.XXXXXX")
+printf '%s\n' "$captured_percentage" > "$cache_tmp"
+mv "$cache_tmp" "$cache_file"
+cache_tmp=""
+if [[ "${MISE_ENV:-}" == dev ]]; then
+  notify_if_needed "$captured_percentage"
+fi
