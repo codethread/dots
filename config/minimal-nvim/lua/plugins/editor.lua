@@ -49,13 +49,22 @@ return {
 			treesitter.install(treesitter_parsers):wait(300000)
 		end,
 		config = function()
+			-- Build hooks alone don't ensure parsers exist on this machine.
+			require('nvim-treesitter').install(treesitter_parsers)
 			vim.api.nvim_create_autocmd('FileType', {
+				group = vim.api.nvim_create_augroup('MinimalTreesitter', { clear = true }),
 				pattern = {
 					'bash', 'sh', 'lua', 'javascript', 'typescript', 'json', 'yaml',
 					'markdown', 'python', 'toml', 'vim', 'help', 'html', 'css', 'nix',
 					'diff', 'gitrebase', 'gitcommit',
 				},
-				callback = function() vim.treesitter.start() end,
+				callback = function(ev)
+					local lang = vim.treesitter.language.get_lang(vim.bo[ev.buf].filetype)
+					-- Installation is asynchronous. Keep normal syntax until the parser
+					-- exists, but don't suppress load errors from an installed parser.
+					if #vim.api.nvim_get_runtime_file('parser/' .. lang .. '.*', false) == 0 then return end
+					vim.treesitter.start(ev.buf, lang)
+				end,
 			})
 		end,
 	},
