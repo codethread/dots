@@ -9,7 +9,7 @@ git_maintenance_repositories = "~/dev/projects/notes/vault"
 
 # Tailscale persists this tailnet-only route; no second proxy daemon is needed.
 [bootstrap.hooks]
-final = "/usr/local/bin/tailscale serve --bg --https 443 --set-path / --yes http://127.0.0.1:4173"
+final = "/usr/local/bin/tailscale serve --bg --https 443 --set-path / --yes http://127.0.0.1:4174"
 
 # Configure Apple's SSH server; Remote Login stays manual in System Settings.
 [bootstrap.files."/etc/ssh/sshd_config.d/090-dots.conf"]
