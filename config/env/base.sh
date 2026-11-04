@@ -173,6 +173,8 @@ if [ "$ct_os" = Darwin ]; then
   ct_path_append /opt/homebrew/opt/ruby@3.1/bin
   ct_path_append /opt/homebrew/lib/ruby/gems/3.1.0/bin
   ct_path_append "/Applications/kitty.app/Contents/MacOS"
+  # GUI-server callbacks do not inherit a terminal's REX_BIN_DIR.
+  ct_path_append "$HOME/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app/Contents/MacOS"
   ct_path_append "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
   ct_path_append "/Applications/Cursor.app/Contents/Resources/app/bin"
 fi

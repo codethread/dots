@@ -1,5 +1,6 @@
 local projects = require("projects")
 local panes = require("panes")
+require("theme")
 local config = (os.getenv("XDG_CONFIG_HOME") or os.getenv("HOME") .. "/.config") .. "/rex"
 local terminal = "com.superlogical.terminal"
 local data = os.getenv("XDG_DATA_HOME") or os.getenv("HOME") .. "/.local/share"

@@ -9,250 +9,167 @@
 
 ### [SPEC-007-S1.1] Purpose
 
-Shared light/dark and theme-family control for the interactive desktop and terminal stack. The current implementation coordinates macOS appearance, desktop wallpaper, Kitty and Rex colors, Nushell syntax/table colors, `LS_COLORS`, and Neovim colors from one small state contract.
+Apply a mode/family change first on the machine executing `theme`, then forward the same explicit state to a separately selected Rex host. Each machine updates its own state files, desktop, Kitty, and local Rex app. Neovim and shell applications read the state where they execute.
 
-Most terminal applications are expected to follow the active theme through the combined terminal palette, shell color config, and `LS_COLORS`. Neovim is the main app with explicit extra theme integration; LazyGit has a small adjustment to prefer terminal defaults. Additional app-specific handling should be added only when inheritance is not enough.
-
-The system is intentionally narrow for now. Linux desktop theming is not controlled by this flow.
+There is no all-client broadcast. Other Rex viewers may intentionally remain different. A laptop displaying a remote shell does not make the CLI laptop-local: a command in a Mini-hosted pane executes on the Mini.
 
 ### [SPEC-007-S1.2] Goals
 
-- One command to switch between light and dark mode.
-- Preserve the chosen theme family while toggling light/dark.
-- Support at least `tokyonight` and `rose-pine`.
-- Keep terminals and editor config reading the same state.
-- Update live Kitty and Rex windows without restarting them.
-- Avoid scattering plugin-specific theme choices throughout the Neovim config.
+- One command for light/dark and `tokyonight`/`rose-pine` family selection.
+- Resolve `toggle` once from caller-local state, then send explicit mode/family.
+- Apply once when caller and selected host are the same host/account.
+- Share one TypeScript local-apply implementation between caller and receiving host.
+- Identify partial failures without reverting already-applied caller state.
 
 ### [SPEC-007-S1.3] Non-Goals
 
-- Declarative provisioning of active theme state.
-- Linux desktop theme switching.
-- Per-application theme tables by default. Most terminal apps should inherit from Kitty, Nushell, and `LS_COLORS`.
-- Dynamic reload inside already-running Neovim instances.
-- Theme package installation or wallpaper provisioning.
+- Broadcasting to other connected viewers or synchronizing every Rex server.
+- A client listener, reconnect watcher, or background theme service.
+- Signaling, refreshing, or injecting commands into running Neovim instances.
+- Guaranteed live reload in arbitrary applications.
+- Linux desktop theming, wallpaper provisioning, or terminal package installation.
 
 ## [SPEC-007-S2] 2. Architecture
 
 ### [SPEC-007-S2.1] Control Flow
 
-```
-theme light|dark|toggle [--family tokyonight|rose-pine]
+```text
+theme [mode] [--family FAMILY]
     |
-    +- Resolve mode
-    |  +- macOS appearance, when available
-    |  +- $XDG_STATE_HOME/color-theme
-    |  +- dark fallback
+    +- Resolve from caller-local saved mode/family
+    |  +- status request -> display; no writes or Rex calls
     |
-    +- Resolve family
-    |  +- --family argument
-    |  +- $XDG_STATE_HOME/color-theme-family
-    |  +- tokyonight fallback
+    +- Preflight local palette/Kitty/wallpaper assets
+    +- Apply local state, desktop and Kitty
+    +- Discover local Rex with inherited remote routing cleared
+    |  +- absent -> continue without a local app update
+    |  +- present -> update the caller's local app only
     |
-    +- Preflight Kitty theme and macOS wallpaper concurrently
+    +- --host, or no REX_SERVER -> finish locally
     |
-    +- Apply independent branches concurrently
-    |  +- macOS system dark/light appearance
-    |  +- macOS wallpaper on every desktop
-    |  +- shared mode/family state files
-    |  +- Kitty: write active config -> reload live windows
-    |  +- Rex: probe connected apps without autostart -> set mode -> import palette
+    +- Query selected Rex host identity
+    |  +- same host/account -> finish; do not apply twice
+    |  +- different -> client.action dots_theme(mode, family)
+    |     +- receiver runs theme --host with explicit values
+    |     +- receiver applies locally and never forwards
     |
-    +- Await all branches, then report success or failure
+    +- Report success, or partial failure with explicit-mode retry guidance
 ```
 
 ### [SPEC-007-S2.2] Component Layout
 
-```
-oven/bin/theme.ts
-    Bun/TypeScript theme switcher. Writes shared state, controls macOS, and updates Kitty and Rex.
-
-oven/bin/manifest.json
-    Registers theme for installation to ~/.local/bin/theme through the Oven build.
-
-oven/tests/theme.test.ts
-    State, mapping, preflight, reload ordering, and concurrent update coverage.
-
-config/kitty/kitty.conf
-    Includes $XDG_CONFIG_HOME/kitty/themes/active.conf and enables remote control.
-
-config/kitty/themes/
-    rose-pine.conf
-    rose-pine-dawn.conf
-    tokyonight-day.conf
-    tokyonight-moon.conf
-
-$XDG_CONFIG_HOME/kitty/themes/active.conf
-    Written by theme switcher; not tracked in git to avoid noisy history.
-
-config/rex/themes/
-    TokyoNight Day
-    TokyoNight Moon
-    Rose Pine Dawn
-    Rose Pine Moon
-    Self-contained palettes imported directly into Rex; linked into ~/.config/rex/themes.
-
-config/nushell/config.nu
-    Reads color-theme and selects the light/dark Nushell color config.
-
-config/nushell/scripts/ct/themes.nu
-    Defines the Nushell light and dark color records.
-
-config/nushell/scripts/ct/ls-colors.nu
-    Reads color-theme and color-theme-family, then generates LS_COLORS with vivid.
-
-config/nvim/lua/codethread/theme.lua
-    Neovim theme source of truth: active mode, family, palette, and plugin options.
-
-config/nvim/lua/plugins/ui.lua
-    Enables the active Neovim theme plugin and applies its colorscheme.
-```
+- `oven/bin/theme.ts`: CLI parsing, local state/asset/desktop engine, own-app targeting, host identity comparison, and forwarding.
+- `oven/bin/manifest.json`: installs the `theme` wrapper through Oven.
+- `oven/tests/theme.test.ts`: state resolution, local app targeting, caller-before-host ordering, deduplication, no-loop behavior, and failure coverage.
+- `config/rex/theme.lua`: `dots_theme` receiver, accepting explicit mode/family and invoking `theme --host` on its server.
+- `config/rex/init.lua`: loads the theme action.
+- `config/rex/themes/`: four self-contained Rex palettes, licenses, and usage notes.
+- `config/kitty/themes/`: Kitty-specific source themes; the generated active file stays outside git.
+- `config/nushell/config.nu`, `ct/themes.nu`, `ct/ls-colors.nu`: execution-local shell colors and `LS_COLORS`.
+- `config/nvim/lua/codethread/theme.lua`, `plugins/ui.lua`: execution-local Neovim configuration, read at startup.
 
 ### [SPEC-007-S2.3] Execution and Installation
 
-The switcher uses Bun filesystem APIs and asynchronous subprocesses rather than shell pipelines. Independent work runs concurrently without a worker limit: state resolution, asset preflight, appearance, wallpaper, state writes, and each terminal's update chain. Explicit `light`/`dark` skips the system appearance query. Wallpaper selection retains exact-theme-before-default and JPG-before-PNG priority even though existence checks run concurrently.
+Rex's default CLI server is local; `REX_HOME` controls hosts/shortcuts, while `REX_SERVER` selects a command target. Local discovery uses `env -u` to clear inherited `REX_SERVER`, `REX_CLIENT`, `REX_SESSION`, and `REX_BLOCK`, with `--autostart=false`. Subsequent local app commands explicitly target the discovered local endpoint and full app ID. No platform-specific socket path is hardcoded.
 
-Kitty's reload waits for its own config write, not for macOS automation or Rex. Kitty's default-target retry waits for the primary socket attempt to fail. Rex independently probes connected apps with auto-start disabled, then sets the requested appearance and imports a checked-in palette. All update branches are awaited before reporting a result; nothing is detached. Kitty reloads remain best effort. An unavailable Rex CLI/server or a server without a connected app is skipped; updates to a connected Rex app must succeed. Required file, Rex action, or macOS update failures return nonzero after the other branches finish. A failed switch can leave partially applied changes; there is no cross-application rollback.
+Connected Unix-local app clients are candidates. A remote viewer is never chosen in place of a missing local app. More than one local app requires an explicit `REX_CLIENT`, resolved by Rex and checked against the local candidate list. The selector cannot redirect the local phase to another machine.
 
-Run `make build` to install the Oven entrypoint. The Bash source formerly at `home/.local/bin/theme` is removed, not retained as a second implementation. Oven's builder replaces existing executable symlinks rather than writing through them, so an old dotty-managed `theme` link can be migrated safely. For development, run `bun run ./bin/theme.ts` from `oven/`.
+After local success, a configured `REX_SERVER` is queried through `whoami`. Compare native `host_id` and account with the local identity to detect endpoint aliases of the same host/account. A separate host receives raw `client.action` for `dots_theme`, without a session or app target. The payload always includes resolved `light`/`dark` and family, never `toggle`.
+
+Configuration callbacks execute on their server; standalone `rex do` scripts execute on the CLI machine. The receiver therefore uses a configuration callback to run the same Oven command with `--host`. That path applies local state and its own Rex app, prints JSON, and cannot forward again. Both caller and host need current Oven/configuration/palette files. Reload Rex configuration after installing the receiver.
+
+Each machine imports its own palette from its own filesystem. Remote app theme-name selection, one-time remote imports, and palette transfer are not needed. Other viewers are not modified.
 
 ## [SPEC-007-S3] 3. State Model
 
-### [SPEC-007-S3.1] Shared State Files
+### [SPEC-007-S3.1] State Files
+
+These paths belong to each **execution machine**. A separate host receives the same explicit values after the caller has applied them.
 
 | File | Values | Writer | Readers |
 | --- | --- | --- | --- |
-| `$XDG_STATE_HOME/color-theme` | `light`, `dark` | `theme` | `theme`, Nushell, Neovim |
-| `$XDG_STATE_HOME/color-theme-family` | `tokyonight`, `rose-pine` | `theme` | `theme`, Nushell `LS_COLORS`, Neovim |
-| `$XDG_CONFIG_HOME/kitty/themes/active.conf` | Kitty color config | `theme` | Kitty |
+| `$XDG_STATE_HOME/color-theme` | `light`, `dark` | local engine | `theme`, Nushell, Neovim |
+| `$XDG_STATE_HOME/color-theme-family` | `tokyonight`, `rose-pine` | local engine | `theme`, Nushell `LS_COLORS`, Neovim |
+| `$XDG_CONFIG_HOME/kitty/themes/active.conf` | Kitty color config | local engine | Kitty |
 
-Rex's own preferences store its imported palettes and selected light/dark themes. The switcher imports from the checked-in files under `$XDG_CONFIG_HOME/rex/themes`; it does not generate a second active-config file.
-
-`$XDG_STATE_HOME` defaults to `~/.local/state` and `$XDG_CONFIG_HOME` defaults to `~/.config` when unset.
+`XDG_STATE_HOME` defaults to `~/.local/state`; `XDG_CONFIG_HOME` defaults to `~/.config`. Rex owns its app's imported palettes and runtime appearance preferences. No second generated Rex active-config file is written.
 
 ### [SPEC-007-S3.2] Theme Mapping
 
-| Family       | Mode    | Kitty theme       | Rex palette       | Neovim style/variant | vivid theme       |
-| ------------ | ------- | ----------------- | ----------------- | -------------------- | ----------------- |
-| `tokyonight` | `light` | `tokyonight-day`  | `TokyoNight Day`  | `day`                | `tokyonight-day`  |
-| `tokyonight` | `dark`  | `tokyonight-moon` | `TokyoNight Moon` | `moon`               | `tokyonight-moon` |
-| `rose-pine`  | `light` | `rose-pine-dawn`  | `Rose Pine Dawn`  | `dawn`               | `rose-pine-dawn`  |
-| `rose-pine`  | `dark`  | `rose-pine`       | `Rose Pine Moon`  | `moon`               | `rose-pine-moon`  |
-
-Note: the Kitty dark Rose Pine file is `rose-pine.conf`, while vivid and Neovim refer to the dark variant as `rose-pine-moon`.
+| Family       | Mode    | Kitty theme       | Rex palette       | Neovim variant | vivid theme       |
+| ------------ | ------- | ----------------- | ----------------- | -------------- | ----------------- |
+| `tokyonight` | `light` | `tokyonight-day`  | `TokyoNight Day`  | `day`          | `tokyonight-day`  |
+| `tokyonight` | `dark`  | `tokyonight-moon` | `TokyoNight Moon` | `moon`         | `tokyonight-moon` |
+| `rose-pine`  | `light` | `rose-pine-dawn`  | `Rose Pine Dawn`  | `dawn`         | `rose-pine-dawn`  |
+| `rose-pine`  | `dark`  | `rose-pine`       | `Rose Pine Moon`  | `moon`         | `rose-pine-moon`  |
 
 ### [SPEC-007-S3.3] Defaults
 
-- Default family: `tokyonight`
-- Default mode: current macOS appearance when readable, then state file, then `dark`
-- Neovim family override: `CT_THEME_FAMILY`
+- Family: saved local state, otherwise `tokyonight`.
+- Mode: saved local state, otherwise `dark`.
+- Explicit CLI arguments override their respective saved values.
+- `toggle` flips the caller's saved mode exactly once.
+- macOS appearance follows the resolved local mode; it is not read as the authority.
+- Neovim retains its existing `CT_THEME_FAMILY` override.
 
 ## [SPEC-007-S4] 4. Interfaces
 
 ### [SPEC-007-S4.1] CLI
 
-| Command                           | Action                                             |
-| --------------------------------- | -------------------------------------------------- |
-| `theme`                           | Print current family/mode and usage                |
-| `theme light`                     | Switch active mode to light, keep current family   |
-| `theme dark`                      | Switch active mode to dark, keep current family    |
-| `theme toggle`                    | Toggle between light and dark, keep current family |
-| `theme --family rose-pine`        | Switch family, keep current mode                   |
-| `theme --family tokyonight light` | Switch family and mode together                    |
-| `mac-dark-toggle`                 | Nushell alias for `theme toggle`                   |
+| Command                           | Action                                                              |
+| --------------------------------- | ------------------------------------------------------------------- |
+| `theme`                           | Print caller-local mode/family and usage, with no Rex calls         |
+| `theme light` / `theme dark`      | Apply locally, then send explicit state to a separate `REX_SERVER`  |
+| `theme toggle`                    | Toggle caller-local state once, then follow the same flow           |
+| `theme --family rose-pine`        | Change family, preserve caller-local mode                           |
+| `theme --family tokyonight light` | Set both values                                                     |
+| `theme --host light`              | Apply locally including its own Rex app; JSON result; no forwarding |
+| `mac-dark-toggle`                 | Nushell alias for `theme toggle`                                    |
+
+Rex is never auto-started. Without local Rex, local state/desktop/Kitty can still change. A configured host that cannot be reached fails after the caller phase; it is not silently ignored. The receiving host must have `dots_theme` installed.
 
 ### [SPEC-007-S4.2] macOS
 
-Implemented in `oven/bin/theme.ts`.
-
-- Reads current system appearance through `osascript`.
-- Sets system dark mode through `System Events`.
-- Sets every desktop wallpaper to an image under `$CT_BACKGROUNDS_DIR` (defaults to `~/sync/images/backgrounds`, a git-synced images project watched by `syncengine` on macOS machines).
-- Wallpaper lookup first tries the exact theme name, then falls back to `default` image in the backgrounds directory.
-
-On non-macOS systems these steps are no-ops.
+On each execution machine, set system dark mode and every desktop wallpaper through `osascript`. Images come from `CT_BACKGROUNDS_DIR`, defaulting to `~/sync/images/backgrounds`. Exact-theme images precede defaults; JPG precedes PNG. Non-macOS machines omit desktop steps.
 
 ### [SPEC-007-S4.3] Kitty
 
-Implemented by `oven/bin/theme.ts` and `config/kitty/kitty.conf`.
-
-- `kitty.conf` includes `$XDG_CONFIG_HOME/kitty/themes/active.conf`.
-- The switcher copies the selected theme file to `$XDG_CONFIG_HOME/kitty/themes/active.conf`; this file is not tracked in git.
-- Live reload uses `kitty @ load-config` so all theme options are reapplied.
-- Primary remote socket is `unix:/tmp/mykitty`; fallback is Kitty's default remote target.
-- `allow_remote_control yes` and `listen_on unix:/tmp/mykitty` must remain enabled.
+Copy the selected source theme to `kitty/themes/active.conf` before reloading. Primary socket: `unix:/tmp/mykitty`; on failure try Kitty's default target. Reloads remain best effort, including absent Kitty. Managed remote reload requires `allow_remote_control yes` and `listen_on unix:/tmp/mykitty`.
 
 ### [SPEC-007-S4.4] Rex
 
-Implemented by `oven/bin/theme.ts` and `config/rex/themes/`.
+Use local CLI discovery and local `client.list`, then send `client.appearance.switch_mode` and `client.theme.import` only to the chosen local app. Import uses that machine's local palette file. CLI, disconnected, unidentified, and remote viewer connections are not automatic candidates.
 
-- `rex --autostart=false client ls --json` checks for a connected app before any theme mutation. Missing CLI/server and headless/disconnected clients are skipped.
-- `client.appearance.switch_mode` selects the requested light/dark mode.
-- `client.theme.import` imports the selected local palette file directly; no other terminal application or export command is required.
-- Stable palette filenames let repeated imports reuse the same named custom theme.
-- Set `REX_CLIENT` when more than one app is connected. Run on the Mac running that app, since palette import reads a local file.
-- Update failures from a connected app are reported, not silently ignored.
+A separate selected host receives `dots_theme` with explicit mode/family. The receiving action rejects `toggle`, applies through `--host`, and does not forward or broadcast. Its own local app updates through the same TypeScript local workflow.
 
 ### [SPEC-007-S4.5] Nushell
 
-Implemented by `config/nushell/config.nu`, `ct/themes.nu`, and `ct/ls-colors.nu`.
-
-- Shell UI colors are selected only by mode: `light` uses `$themes.light`, everything else uses `$themes.dark`.
-- `LS_COLORS` is selected by mode and family using `vivid generate`.
-- This is evaluated when Nushell starts; existing shells do not live-reload.
+Read execution-local mode for syntax/table colors and local mode/family for `vivid`-generated `LS_COLORS`. Existing shells do not automatically reload. The state-file contract is unchanged.
 
 ### [SPEC-007-S4.6] Neovim
 
-Implemented by `config/nvim/lua/codethread/theme.lua` and consumers.
+Read mode/family on the execution host when loading the configured theme. No signals, refresh commands, RPC injections, or editor changes are part of this flow. Restart Neovim to pick up its host's state. Other applications may or may not respond live.
 
-- `codethread.theme.mode()` reads `color-theme`.
-- `codethread.theme.family()` reads `CT_THEME_FAMILY`, then `color-theme-family`, then defaults to `tokyonight`.
-- `plugins/ui.lua` enables exactly one theme plugin: `folke/tokyonight.nvim` or `rose-pine/neovim`.
-- `theme.lua` centralizes palettes for statusline, notes, Telescope, Snacks, Flash, whitespace, ToggleTerm, and syntax overrides.
-- `kitty+page.lua` uses `theme.lazy_plugin_dir()` so Kitty scrollback paging loads the active theme plugin.
+## [SPEC-007-S5] 5. Failure Semantics
 
-Neovim reads state at startup. A running instance needs restart or manual reload to fully change family/style.
+Host-local independent updates run concurrently and are drained before returning. Local state may already be written when a desktop or app update fails. Stop before forwarding if the caller phase fails. If forwarding fails, retain the caller's applied state and identify the failed host phase.
 
-## [SPEC-007-S5] 5. Implemented Coverage
+There is no transaction or rollback across machines. Retry an explicit mode to reapply intent; another toggle would reverse the caller's current state. Unsupported/refused app actions and ambiguous local instances are visible errors, not reasons to choose another viewer.
 
-| Area                  | Status            | Notes                                               |
-| --------------------- | ----------------- | --------------------------------------------------- |
-| macOS appearance      | Implemented       | Dark/light only, via AppleScript                    |
-| macOS wallpaper       | Implemented       | External image directory, not managed by repo       |
-| Kitty config          | Implemented       | File include plus remote live reload                |
-| Rex palettes          | Implemented       | Checked-in files imported through the Rex CLI       |
-| Nushell UI colors     | Implemented       | Mode-aware, not family-specific                     |
-| Nushell `LS_COLORS`   | Implemented       | Mode and family aware, generated by vivid           |
-| Neovim theme plugins  | Implemented       | Tokyo Night and Rose Pine                           |
-| Neovim shared palette | Implemented       | Central Lua module consumed by plugin config        |
-| LazyGit               | Partially aligned | Small config adjustment to prefer terminal defaults |
+## [SPEC-007-S6] 6. Outside the Shared Flow
 
-## [SPEC-007-S6] 6. Not Yet Implemented
-
-### [SPEC-007-S6.3] Other Applications
-
-Most CLI/TUI applications should be covered by terminal colors, shell colors, and `LS_COLORS` without direct integration. Extra per-app config should be added as problems appear, not pre-emptively.
-
-Known areas outside the current shared flow:
-
-- WezTerm, if used instead of Kitty or Rex.
-- Zellij, if terminal inheritance is not enough.
-- GUI editors such as Zed and VS Code.
-- minimal Neovim.
+Other viewers, separate unselected servers, GUI editor themes, minimal Neovim, and Linux desktop styling are not automatically synchronized. A remote-hosted shell cannot update the viewing laptop's local files or desktop without separate client-side machinery, which is deliberately deferred.
 
 ## [SPEC-007-S7] 7. Design Decisions
 
-- **Tiny state contract** - plain files under `$XDG_STATE_HOME` are easy for Bash, Nushell, Lua, and future system activation scripts to share.
-- **Imperative runtime switcher** - day/night switching should not require a system-layer apply.
-- **Terminal-owned runtime state** - Kitty's generated active config stays outside the repo to avoid git churn. Rex imports checked-in palettes and owns its runtime selection; no export helper or other terminal installation is required.
-- **Family and mode are separate** - toggling light/dark preserves the user's preferred family.
-- **Neovim owns plugin-specific details** - external state picks family/mode; `codethread.theme` translates that into plugin options and custom highlight palettes.
-- **Terminal apps inherit first** - the default approach is terminal palette plus shell color config plus `LS_COLORS`; add app-specific theme config only when inheritance fails.
+- **Caller-first:** the CLI's execution machine is the initiating authority.
+- **Explicit forwarding:** mode/family, not a second toggle, cross the host boundary.
+- **Identity-based deduplication:** endpoint aliases do not require a second apply on the same host/account.
+- **Terminal receiver:** `--host` cannot forward or loop back to the caller.
+- **No broadcast:** other viewers may intentionally retain a different theme.
+- **Applications own refresh:** propagate state/actions without editor reload machinery.
 
 ## [SPEC-007-S8] 8. Open Questions
 
-- Should `theme` be the long-term cross-platform switcher, or should Linux/macOS implementations split behind a common interface?
-- Should Nushell prompt/table colors become family-specific, or is light/dark enough?
-- Should active Neovim instances get a command/autocmd for runtime theme reload?
-- Should wallpapers eventually be provisioned automatically from the synced images project?
-- Should `vivid generate` output be cached under `$XDG_STATE_HOME` to avoid shell-start cost?
+- Should later work add explicit client-side execution support for remote-hosted panes?
+- Should wallpapers be provisioned automatically from the synced images project?

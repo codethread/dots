@@ -1,4 +1,4 @@
-// :module: Switch macOS and terminal color theme
+// :module: Apply a local theme and forward explicit state to a Rex host
 
 import {mkdir} from "node:fs/promises";
 import {homedir} from "node:os";
@@ -6,21 +6,27 @@ import {dirname, join} from "node:path";
 import {parseArgs} from "node:util";
 import {report, reportError} from "../shared/report";
 
-const HELP = `theme - Switch macOS and terminal color theme
+const HELP = `theme - Apply a local theme and forward explicit state to a Rex host
 
 Usage: theme [--family tokyonight|rose-pine] [light|dark|toggle]
-       theme                         # show current theme
+       theme                         # show this machine's theme
        theme --family rose-pine      # switch family, keep current mode
 
 Options:
   --family <family>  Select tokyonight or rose-pine
-  --help, -h         Show this help`;
+  --host            Apply locally only; never forward (JSON result)
+  --help, -h        Show this help
+
+Toggle resolves once on the machine executing this command. Apply locally,
+then send explicit mode/family to a separate REX_SERVER. The same host/account
+is applied once. Other viewers are unchanged. No applications are refreshed.`;
 
 type Mode = "light" | "dark";
 type Family = "tokyonight" | "rose-pine";
 interface ThemeOptions {
 	mode?: Mode | "toggle";
 	family?: Family;
+	host?: boolean;
 	help?: boolean;
 }
 
@@ -30,15 +36,45 @@ interface CommandResult {
 	stderr: string;
 }
 
+export interface ThemeState {
+	family: Family;
+	mode: Mode;
+	palette: string;
+	palettePath: string;
+}
+
 type RunCommand = (args: string[], stdin?: string) => Promise<CommandResult>;
+
+interface RexIdentity {
+	host_id: string;
+	account: string;
+	endpoint: string;
+}
 
 export interface ThemeRuntime {
 	platform: string;
 	stateDir: string;
 	configDir: string;
 	backgroundsDir: string;
+	rexServer?: string;
+	rexClient?: string;
 	run: RunCommand;
 }
+
+// Clear inherited terminal routing; selected hosts are always explicit arguments.
+const REX = [
+	"env",
+	"-u",
+	"REX_SERVER",
+	"-u",
+	"REX_CLIENT",
+	"-u",
+	"REX_SESSION",
+	"-u",
+	"REX_BLOCK",
+	"rex",
+	"--autostart=false",
+];
 
 const THEMES = {
 	tokyonight: {
@@ -63,7 +99,11 @@ end run`;
 async function main() {
 	try {
 		const options = parseThemeArgs(Bun.argv.slice(2));
-		report(await themeLib(options));
+		if (options.host && !options.help) {
+			report((await themeLocalLib(options)).state, {format: "json"});
+		} else {
+			report(await themeLib(options));
+		}
 	} catch (error) {
 		reportError(error);
 		process.exitCode = 1;
@@ -73,7 +113,11 @@ async function main() {
 export function parseThemeArgs(args: string[]): ThemeOptions {
 	const {values, positionals} = parseArgs({
 		args,
-		options: {family: {type: "string"}, help: {type: "boolean", short: "h"}},
+		options: {
+			family: {type: "string"},
+			host: {type: "boolean"},
+			help: {type: "boolean", short: "h"},
+		},
 		allowPositionals: true,
 	});
 	if (values.help) return {help: true};
@@ -86,36 +130,82 @@ export function parseThemeArgs(args: string[]): ThemeOptions {
 	if (family !== undefined && family !== "tokyonight" && family !== "rose-pine") {
 		throw new Error(`Unsupported theme family: ${family}`);
 	}
-	return {mode, family};
+	return {mode, family, ...(values.host ? {host: true} : {})};
 }
 
 export async function themeLib(options: ThemeOptions, runtime = defaultRuntime()): Promise<string> {
 	if (options.help) return HELP;
+	const {state, rex} = await themeLocalLib(options, runtime);
+	if ((options.mode || options.family) && !options.host && runtime.rexServer) {
+		try {
+			const command = [...REX, "--server", runtime.rexServer];
+			const reply = await runRequired(runtime, [...command, "whoami", "--json"]);
+			const selected = parseRexIdentity(reply.stdout);
+			if (!rex || rex.host_id !== selected.host_id || rex.account !== selected.account) {
+				await runRequired(runtime, [
+					...command,
+					"api",
+					"call",
+					"client.action",
+					JSON.stringify({action: "dots_theme", args: {mode: state.mode, family: state.family}}),
+				]);
+			}
+		} catch (error) {
+			throw new Error(
+				`Local theme is now ${state.family} ${state.mode}; Rex host update failed: ${error}. Retry with 'theme ${state.mode}', not toggle.`,
+			);
+		}
+	}
+	return options.mode || options.family
+		? `Theme: ${state.family} ${state.mode}`
+		: `Current: ${state.family} ${state.mode}\n${HELP}`;
+}
+
+// Used both by the caller and by the receiving server's --host command.
+// --host is deliberately terminal: it cannot forward or loop back to the caller.
+export async function themeLocalLib(
+	options: ThemeOptions,
+	runtime = defaultRuntime(),
+): Promise<{state: ThemeState; rex: RexIdentity | null}> {
+	const state = await themeHostLib(options, runtime);
+	if (!options.mode && !options.family) return {state, rex: null};
+	try {
+		return {state, rex: await updateLocalRex(runtime, state)};
+	} catch (error) {
+		throw new Error(
+			`Local state is now ${state.family} ${state.mode}; local Rex update failed: ${error}. Retry with 'theme ${state.mode}', not toggle.`,
+		);
+	}
+}
+
+// Pure host-side workflow: state, assets, Kitty, and desktop updates.
+export async function themeHostLib(options: ThemeOptions, runtime = defaultRuntime()): Promise<ThemeState> {
 	const [family, current] = await Promise.all([
 		options.family ?? currentFamily(runtime),
 		options.mode === "light" || options.mode === "dark" ? options.mode : currentMode(runtime),
 	]);
-	if (!options.mode && !options.family) return `Current: ${family} ${current}\n${HELP}`;
 	const mode = options.mode === "toggle" ? (current === "dark" ? "light" : "dark") : current;
 	const theme = THEMES[family][mode];
+	const state = {
+		family,
+		mode,
+		palette: theme.rex,
+		palettePath: join(runtime.configDir, "rex", "themes", theme.rex),
+	};
+	if (!options.mode && !options.family) return state;
 	const kittySource = join(runtime.configDir, "kitty", "themes", `${theme.kitty}.conf`);
-	// Preflight all required assets before changing anything. Read the Kitty source once.
 	const [kittyConfig, wallpaper] = await Promise.all([
-		Bun.file(kittySource)
-			.text()
-			.catch((error) => {
-				throw new Error(`Cannot read kitty theme: ${kittySource}: ${error}`);
-			}),
+		Bun.file(kittySource).text(),
 		runtime.platform === "darwin" ? findWallpaper(runtime.backgroundsDir, theme.kitty) : undefined,
 	]);
+	if (!(await Bun.file(state.palettePath).exists())) {
+		throw new Error(`Missing Rex palette: ${state.palettePath}`);
+	}
 
-	// Each branch starts immediately; only a terminal's own config write gates its reload.
-	// Drain every branch on failure too, so no work outlives the reported result.
-	const jobs = [
+	const jobs: Promise<unknown>[] = [
 		writeConfig(join(runtime.stateDir, "color-theme"), `${mode}\n`),
 		writeConfig(join(runtime.stateDir, "color-theme-family"), `${family}\n`),
 		updateKitty(runtime, kittyConfig),
-		updateRex(runtime, theme.rex, mode),
 	];
 	if (wallpaper !== undefined) {
 		jobs.push(
@@ -127,12 +217,89 @@ export async function themeLib(options: ThemeOptions, runtime = defaultRuntime()
 			runRequired(runtime, ["osascript", "-", wallpaper], WALLPAPER_SCRIPT),
 		);
 	}
+	await finishUpdates(jobs);
+	return state;
+}
+
+function parseRexIdentity(text: string): RexIdentity {
+	const identity = JSON.parse(text) as RexIdentity;
+	if (
+		!identity ||
+		typeof identity.host_id !== "string" ||
+		typeof identity.account !== "string" ||
+		typeof identity.endpoint !== "string"
+	) {
+		throw new Error("Rex did not report a valid host/account identity");
+	}
+	return identity;
+}
+
+async function updateLocalRex(runtime: ThemeRuntime, state: ThemeState): Promise<RexIdentity | null> {
+	// Rex's default server is local. Strip terminal/remote routing without changing
+	// the parent environment; never hardcode a socket or start a missing server.
+	const probe = await runtime.run([...REX, "whoami", "--json"]);
+	if (probe.exitCode !== 0) return null;
+	const local = parseRexIdentity(probe.stdout);
+	const command = [...REX, "--server", local.endpoint];
+	const reply = await runRequired(runtime, [...command, "client", "ls", "--json"]);
+	const {clients} = JSON.parse(reply.stdout) as {
+		clients: {
+			client_id: string;
+			info?: {kind?: string};
+			principal?: {transport?: string};
+			connection_state: string;
+		}[];
+	};
+	const apps = clients.filter(
+		(client) =>
+			client.info?.kind === "app" &&
+			client.connection_state === "connected" &&
+			client.principal?.transport === "unix",
+	);
+	let client: string;
+	if (runtime.rexClient) {
+		const inspected = await runRequired(runtime, [
+			...command,
+			"client",
+			"inspect",
+			runtime.rexClient,
+			"--json",
+		]);
+		client = JSON.parse(inspected.stdout).client.client_id;
+		if (!apps.some((app) => app.client_id === client)) {
+			throw new Error("REX_CLIENT must identify a connected app local to this machine");
+		}
+	} else {
+		if (apps.length === 0) return local;
+		if (apps.length > 1)
+			throw new Error("Multiple local Rex apps are connected; set REX_CLIENT to a local app ID or label");
+		client = apps[0].client_id;
+	}
+	await runRequired(runtime, [
+		...command,
+		"-C",
+		client,
+		"do",
+		"client.appearance.switch_mode",
+		`mode=${state.mode}`,
+	]);
+	await runRequired(runtime, [
+		...command,
+		"-C",
+		client,
+		"do",
+		"client.theme.import",
+		`path=${state.palettePath}`,
+	]);
+	return local;
+}
+
+async function finishUpdates(jobs: Promise<unknown>[]): Promise<void> {
 	const results = await Promise.allSettled(jobs);
 	const errors = results.flatMap((result) => (result.status === "rejected" ? [result.reason] : []));
 	if (errors.length) {
 		throw new AggregateError(errors, `Theme switch failed: ${errors.map(String).join("; ")}`);
 	}
-	return `Theme: ${family} ${mode}`;
 }
 
 function defaultRuntime(): ThemeRuntime {
@@ -142,6 +309,8 @@ function defaultRuntime(): ThemeRuntime {
 		stateDir: process.env.XDG_STATE_HOME || join(home, ".local", "state"),
 		configDir: process.env.XDG_CONFIG_HOME || join(home, ".config"),
 		backgroundsDir: process.env.CT_BACKGROUNDS_DIR || join(home, "sync", "images", "backgrounds"),
+		rexServer: process.env.REX_SERVER || undefined,
+		rexClient: process.env.REX_CLIENT || undefined,
 		run: runCommand,
 	};
 }
@@ -152,25 +321,11 @@ async function currentFamily(runtime: ThemeRuntime): Promise<Family> {
 }
 
 async function currentMode(runtime: ThemeRuntime): Promise<Mode> {
-	const [system, state] = await Promise.all([
-		runtime.platform === "darwin"
-			? runtime.run([
-					"osascript",
-					"-e",
-					'tell app "System Events" to tell appearance preferences to get dark mode',
-				])
-			: undefined,
-		readState(join(runtime.stateDir, "color-theme")),
-	]);
-	if (system?.exitCode === 0) {
-		if (system.stdout.trim() === "true") return "dark";
-		if (system.stdout.trim() === "false") return "light";
-	}
-	return state === "light" ? "light" : "dark";
+	return (await readState(join(runtime.stateDir, "color-theme"))) === "light" ? "light" : "dark";
 }
 
 async function readState(path: string): Promise<string> {
-	// Missing, unreadable or invalid state falls back to the documented defaults.
+	// Missing, unreadable or invalid state uses the documented host defaults.
 	return Bun.file(path)
 		.text()
 		.then((text) => text.replace(/\s/g, ""))
@@ -195,42 +350,14 @@ async function writeConfig(path: string, content: string): Promise<void> {
 async function updateKitty(runtime: ThemeRuntime, config: string): Promise<void> {
 	await writeConfig(join(runtime.configDir, "kitty", "themes", "active.conf"), config);
 	const result = await runtime.run(["kitty", "@", "--to", "unix:/tmp/mykitty", "load-config"]);
-	if (result.exitCode !== 0 && result.exitCode !== 127) {
-		await runtime.run(["kitty", "@", "load-config"]);
-	}
+	if (result.exitCode !== 0 && result.exitCode !== 127) await runtime.run(["kitty", "@", "load-config"]);
 }
 
-async function updateRex(runtime: ThemeRuntime, theme: string, mode: Mode): Promise<void> {
-	// Rex is optional. Probe without starting a server; a headless server isn't an app.
-	const result = await runtime.run(["rex", "--autostart=false", "client", "ls", "--json"]);
-	if (result.exitCode !== 0) return;
-	const {clients} = JSON.parse(result.stdout) as {
-		clients: {info?: {kind?: string}; connection_state: string}[];
-	};
-	if (!clients.some((client) => client.info?.kind === "app" && client.connection_state === "connected")) {
-		return;
-	}
-	await runRequired(runtime, [
-		"rex",
-		"--autostart=false",
-		"do",
-		"client.appearance.switch_mode",
-		`mode=${mode}`,
-	]);
-	await runRequired(runtime, [
-		"rex",
-		"--autostart=false",
-		"do",
-		"client.theme.import",
-		`path=${join(runtime.configDir, "rex", "themes", theme)}`,
-	]);
-}
-
-async function runRequired(runtime: ThemeRuntime, args: string[], stdin?: string): Promise<void> {
+async function runRequired(runtime: ThemeRuntime, args: string[], stdin?: string): Promise<CommandResult> {
 	const result = await runtime.run(args, stdin);
-	if (result.exitCode !== 0) {
+	if (result.exitCode !== 0)
 		throw new Error(`${args.join(" ")} exited ${result.exitCode}: ${result.stderr.trim()}`);
-	}
+	return result;
 }
 
 async function runCommand(args: string[], stdin?: string): Promise<CommandResult> {
@@ -249,6 +376,4 @@ async function runCommand(args: string[], stdin?: string): Promise<CommandResult
 	return {exitCode, stdout, stderr};
 }
 
-if (import.meta.main) {
-	void main();
-}
+if (import.meta.main) void main();

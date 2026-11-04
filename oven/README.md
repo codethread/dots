@@ -62,7 +62,7 @@ To update runtimes, edit their exact versions in `mise.toml`, run `mise lock --p
 - **notif** - Send desktop notifications, or CC Notify when away from tmux
 - **prepend-comment** - Add or update module documentation comments
 - **strip-markdown** - Strip markdown formatting from text, optimized for text-to-speech or plain text output.
-- **theme** - Switch macOS and terminal color theme
+- **theme** - Apply a local theme and forward explicit state to a Rex host
 - **tts** - Basic OpenAI text-to-speech wrapper
 
 ### Quick Usage
