@@ -30,6 +30,13 @@ return {
 		-- trial
 		'esmuellert/codediff.nvim',
 		cmd = 'CodeDiff',
+		opts = {
+			keymaps = {
+				view = {
+					toggle_stage = '<leader>c',
+				},
+			},
+		},
 	},
 	{
 		'dlyongemallo/diffview-plus.nvim',
