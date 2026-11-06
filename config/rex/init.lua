@@ -1,3 +1,13 @@
+--[[
+Rex terminology (what you see -> API term):
+- Session group, e.g. "dots" -> session.
+- Tab in the sidebar, e.g. "main" or "history" -> session window.
+- Terminal pane inside a tab -> block; splitting adds blocks, not tabs.
+- Connected Rex app instance -> client; it can contain multiple GUI windows.
+- macOS GUI window -> client-side window (client.window.* actions).
+"Window" is overloaded: session windows are tabs, client-side windows are GUI windows.
+]]
+
 local projects = require("projects")
 local panes = require("panes")
 require("theme")
