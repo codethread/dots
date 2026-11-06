@@ -20,7 +20,7 @@ Formats:
     plain - Basic markdown removal without TTS optimizations
 
 Examples:
-    cat README.md | strip-markdown | speak
+    cat README.md | strip-markdown > README.txt
     strip-markdown --format plain < document.md > document.txt
     echo "**bold** and *italic*" | strip-markdown
 

@@ -86,7 +86,7 @@ existing domains:
 2. **Help documentation format**
     - **CRITICAL**: The first line of help output MUST be `toolname - description`
     - This format is required for the `sync-docs` script to extract tool descriptions
-    - Example: `cc-speak - Advanced text-to-speech tool with file and section reading support`
+    - Example: `tts - Basic OpenAI text-to-speech wrapper`
     - The description appears in README.md automatically when you run `bun run sync-docs`
     - Without this format, your tool won't be documented properly
 

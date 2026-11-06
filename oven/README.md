@@ -51,7 +51,6 @@ To update runtimes, edit their exact versions in `mise.toml`, run `mise lock --p
 - **bra** - Git branch switcher with fzf
 - **cc-hook--context-injector** - Claude Code hook that provides project context at session start
 - **cc-hook--npm-redirect** - Claude Code hook that redirects npm/npx/node commands to detected package manager
-- **cc-speak** - Advanced text-to-speech tool with file and section reading support
 - **cc-statusline** - Process Claude Code statusline data and display custom status
 - **cindex** - Generate an index of files in the current project
 - **ghub** - Open GitHub/GitLab repository in browser

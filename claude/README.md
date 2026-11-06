@@ -79,7 +79,6 @@ Files created only in a destination are not imported into the repository. Keep s
 | Command            | Purpose                                   |
 | ------------------ | ----------------------------------------- |
 | /github \<number\> | Read GitHub issues/PRs with image support |
-| /ct:speak [msg]    | Audio communication via cc-speak TTS      |
 | /ct:bonkai [plan]  | Architect role with subagent delegation   |
 | /ct:socrates       | Self-introspection on knowledge sources   |
 
@@ -92,7 +91,6 @@ Shared defaults are configured in `templates/claude-settings.json.tera`: claude-
 | Tool                    | Source                             | Purpose                                    |
 | ----------------------- | ---------------------------------- | ------------------------------------------ |
 | cc-statusline           | oven/bin/                          | Status line formatter                      |
-| cc-speak                | oven/bin/                          | TTS with file/section reading              |
 | cindex                  | oven/bin/                          | Project file index generator               |
 | cc-logs--extract-agents | home/.local/bin/                   | Extract agent IDs for session resumption   |
 | honeycomb               | ~/dev/projects/hive/lib/honeycomb/ | Git worktree lifecycle; see `honeycomb -h` |

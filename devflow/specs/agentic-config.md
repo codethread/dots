@@ -195,7 +195,6 @@ Root mise entries use `symlink-each`: the home mapping supplies the first destin
 | github      | Issue/PR reading via `gh --json`, PR creation with HEREDOC         |
 | ct/bonkai   | Architect role with subagent delegation (disable-model-invocation) |
 | ct/socrates | Self-introspection on knowledge sources                            |
-| ct/speak    | Audio communication via cc-speak TTS                               |
 
 ### [SPEC-001-S4.5] Global rules (`claude/CLAUDE.md` → `~/.claude/CLAUDE.md`)
 
@@ -269,7 +268,6 @@ Direct `pi` invocation with shared repo-aware configuration:
 | Tool | Source | Purpose |
 | --- | --- | --- |
 | cc-statusline | oven/bin/cc-statusline.ts | Process Claude Code status line data |
-| cc-speak | oven/bin/cc-speak.ts | TTS with markdown stripping, file/section reading |
 | cindex | oven/bin/cindex.ts | Project file index generator for context injection |
 | cc-logs--extract-agents | home/.local/bin/ (bash) | Extract agent IDs with prompts/models for session resumption |
 

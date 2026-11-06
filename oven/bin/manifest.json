@@ -3,7 +3,6 @@
 		{"bin": "bra", "entry": "bra.ts"},
 		{"bin": "cc-hook--context-injector", "entry": "cc-hook--context-injector.ts"},
 		{"bin": "cc-hook--npm-redirect", "entry": "cc-hook--npm-redirect.ts"},
-		{"bin": "cc-speak", "entry": "cc-speak.ts"},
 		{"bin": "cc-statusline", "entry": "cc-statusline.ts"},
 		{"bin": "cindex", "entry": "cindex.ts"},
 		{"bin": "ghub", "entry": "ghub.ts"},

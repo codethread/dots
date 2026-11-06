@@ -24,7 +24,6 @@ Examples:
     echo "# Hello **world**" | tts
     tts "Read this out loud"
     cat README.md | tts --out /tmp/readme.mp3
-    cat README.md | tts | speak
 `);
 }
 
