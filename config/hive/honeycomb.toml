@@ -104,6 +104,8 @@ copy = [
 	".env",
 	".rgignore",
 	".pi",
+	".botlake",
+	".codex",
 	".claude/settings.local.json",
 	"mise.toml",
 	"AGENTS.md",
