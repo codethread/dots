@@ -28,9 +28,8 @@ SYNCENGINE_PATH="{{ vars.syncengine_path }}" \
 BOTLAKE_UI_ENABLED="{{ vars.botlake_ui_enabled }}" \
 mise exec -- "{{ config_root }}/boot/setup.sh"
 '''
-# Registration alone does not start Botlake in an already-running Pitchfork.
-# Start after native LaunchAgents load; leave an already-running daemon alone.
-post-tools = "mise daemons start botlake-supervisor"
+# Start after native LaunchAgents load; warn and skip externally owned Botlake.
+post-tools = '"{{ config_root }}/boot/start-botlake.sh"'
 
 # Defaults values are literal; use the hook for the user's screenshot path.
 post-defaults = """
