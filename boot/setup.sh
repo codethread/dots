@@ -1,5 +1,5 @@
 #!/bin/bash
-# :module: Repo-specific setup after mise provisions packages, tools, files, and repos.
+# :module: Repo-specific setup after mise provisions tools, packages, files, and repos.
 set -euo pipefail
 
 case "${1:-}" in

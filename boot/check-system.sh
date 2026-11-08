@@ -2,8 +2,14 @@
 # :module: Check the macOS sudo prerequisites before bootstrap writes managed files.
 set -euo pipefail
 
+check_pam_reattach=true
 case "${1:-}" in
-  -h|--help) echo 'Usage: boot/check-system.sh (also run by mise bootstrap)'; exit 0 ;;
+  -h|--help)
+    echo 'Usage: boot/check-system.sh [--pre-packages]'
+    echo '  --pre-packages  validate system safety before packages and managed files'
+    exit 0
+    ;;
+  --pre-packages) check_pam_reattach=false ;;
   '') ;;
   *) echo "Unexpected argument: $1" >&2; exit 2 ;;
 esac
@@ -18,4 +24,6 @@ fi
   echo 'Stock sudo_local include missing from /etc/pam.d/sudo; inspect the PAM stack before applying' >&2
   exit 1
 }
-[ -f /opt/homebrew/lib/pam/pam_reattach.so ] || { echo 'Missing pam-reattach; apply bootstrap packages first' >&2; exit 1; }
+if $check_pam_reattach; then
+  [ -f /opt/homebrew/lib/pam/pam_reattach.so ] || { echo 'Missing pam-reattach; apply bootstrap packages first' >&2; exit 1; }
+fi

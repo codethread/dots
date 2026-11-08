@@ -35,6 +35,8 @@ mise exec -- ./bin/<command>.ts  # Run a source entrypoint directly
 
 The entrypoint filename without `.ts` is the public command name. The wildcard dotfile declaration discovers it during full bootstrap; also add the exact `~/.local/bin/<command>` target to root `tasks.link` so the narrowed link workflow deploys it.
 
+Ordinary wildcard entries do not receive dotfile-group orphan reconciliation. To remove or rename a command, first run `mise dot unapply ~/.local/bin/<old-command>` while the old source still exists. Then remove or rename the source, remove the old exact target from `tasks.link`, add the new exact target when renaming, and run `mise run link` to deploy the new command. Do not leave a stale cleanup target in the task.
+
 **Short Format:**
 
 - `<name>`: concise, potentially ambiguous

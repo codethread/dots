@@ -17,10 +17,14 @@ ruby = "4.0"
 
 # Native bootstrap owns convergence. Hooks handle only repo-specific setup.
 [bootstrap.hooks]
-# Cask status checks need Ruby before the packages phase can install anything.
-pre-packages = "mise install ruby"
-# Raw LaunchAgents load before mise's normal tools phase, so install tools early.
-post-packages = ["mise install", '"{{ config_root }}/boot/check-system.sh"']
+# Cask status checks need Ruby, and PAM safety must be validated before files.
+# Install the remaining tools after built-in packages but before repositories,
+# dependency preparation, dotfiles, and raw LaunchAgents.
+pre-packages = [
+  "mise install ruby",
+  '"{{ config_root }}/boot/check-system.sh" --pre-packages',
+]
+pre-repos = "mise install"
 post-repos = '''
 DOTFILES="{{ config_root }}" \
 GIT_MAINTENANCE_REPOSITORIES="{{ vars.git_maintenance_repositories }}" \
