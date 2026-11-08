@@ -55,5 +55,10 @@
   "pies": {
     "excludeExtensions": []
   },
-  "autocompleteMaxVisible": 10
+  "autocompleteMaxVisible": 10,
+  "extensionChangelogVersions": {
+    "{\"source\":\"npm:@narumitw/pi-goal\",\"scope\":\"user\"}": "0.54.17",
+    "{\"source\":\"npm:@narumitw/pi-btw\",\"scope\":\"user\"}": "0.63.5",
+    "{\"source\":\"npm:@narumitw/pi-typesafe-compact\",\"scope\":\"user\"}": "0.1.3"
+  }
 }
