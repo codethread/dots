@@ -1,0 +1,40 @@
+{
+  "name": "dots-lake",
+  "private": true,
+  "type": "module",
+  "botlake": {
+    "name": "dots",
+    "extensions": [
+      "@botlake/extension-batteries",
+      "@botlake/extension-identity",
+      "./.botlake/src/flags.ts",
+      "./.botlake/src/references.ts",
+      "./.botlake/src/agents.ts",
+      "./.botlake/src/priming.ts",
+      "./.botlake/src/work.ts",
+      "./.botlake/src/work-agents.ts"
+    ]
+  },
+  "dependencies": {
+    "@botlake/core": "file:../../projects/botlake/packages/core",
+    "@botlake/native-session": "file:../../projects/botlake/packages/native-session",
+    "@botlake/extension-batteries": "file:../../projects/botlake/extensions/batteries",
+    "@botlake/extension-identity": "file:../../projects/botlake/extensions/identity",
+    "@botlake/extension-flags": "file:../../projects/botlake/extensions/flags",
+    "@botlake/extension-references": "file:../../projects/botlake/extensions/references",
+    "@botlake/extension-agents": "file:../../projects/botlake/extensions/agents",
+    "@botlake/extension-work": "file:../../projects/botlake/extensions/work",
+    "@botlake/extension-work-agents": "file:../../projects/botlake/extensions/work-agents",
+    "ct-config": "file:../../projects/botlake/extensions/ct-config"
+  },
+  "overrides": {
+    "@botlake/core": "file:../../projects/botlake/packages/core",
+    "@botlake/native-session": "file:../../projects/botlake/packages/native-session",
+    "@botlake/extension-identity": "file:../../projects/botlake/extensions/identity",
+    "@botlake/extension-flags": "file:../../projects/botlake/extensions/flags",
+    "@botlake/extension-references": "file:../../projects/botlake/extensions/references",
+    "@botlake/extension-agents": "file:../../projects/botlake/extensions/agents",
+    "@botlake/extension-work": "file:../../projects/botlake/extensions/work",
+    "@botlake/extension-work-agents": "file:../../projects/botlake/extensions/work-agents"
+  }
+}

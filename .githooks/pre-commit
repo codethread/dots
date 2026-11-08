@@ -1,11 +1,2 @@
 #!/usr/bin/env sh
-# beeswax:begin tracker-validation v2
-"$(git rev-parse --git-path beeswax/cli)" system hooks validate || exit $?
-# beeswax:end tracker-validation
-
-# Tracker snapshots need no application dependencies.
-if "$(git rev-parse --git-path beeswax/cli)" system hooks is-tracker-snapshot; then
-  exit 0
-fi
-
 exec "$(git rev-parse --show-toplevel)/.githooks/format-staged" "$@"

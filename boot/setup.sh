@@ -55,6 +55,8 @@ optional 'Workspace installation/Oven build' /bin/bash -ec '
   bun install --frozen-lockfile
   GOBIN="$HOME/.local/bin" go -C cli install ./cmd/botlake ./cmd/bl
 )
+# The independent lake package resolves shared configuration from that checkout.
+( cd "$DOTFILES" && bun install --cwd .botlake )
 if [ "$BOTLAKE_UI_ENABLED" = true ]; then
   (
     cd "$HOME/dev/projects/botlake-ui"

@@ -1,7 +1,7 @@
 {
 	"name": "dots",
 	"private": true,
-	"workspaces": ["oven", ".workflows"],
+	"workspaces": ["oven"],
 	"scripts": {
 		"fmt": "oxfmt --disable-nested-config '**/*.{md,markdown}'",
 		"fmt:check": "oxfmt --check --disable-nested-config '**/*.{md,markdown}'"

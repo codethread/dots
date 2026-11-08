@@ -78,7 +78,7 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 # Shared CLI packages.
 # python-yq is the jq wrapper; tree-sitter-cli is the parser generator.
 "brew:nushell" = { os = "macos" }
-# Scripts such as qlock require Bash 5+; macOS ships Bash 3.2.
+# Staged-format hooks use Bash namerefs; macOS ships Bash 3.2.
 "brew:bash" = { os = "macos" }
 "brew:git" = { os = "macos" }
 "brew:luarocks" = { os = "macos" }
@@ -132,7 +132,7 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "brew:flock" = { os = "macos" }
 "brew:clojure" = { os = "macos" }
 
-"brew:dicklesworthstone/tap/bv" = { os = "macos" }
+"brew:codethread/wktree/wktree" = { os = "macos" }
 "brew:morantron/tmux-fingers/tmux-fingers" = { os = "macos" }
 "brew:BRO3886/tap/ical" = { os = "macos" }
 "brew:ical-buddy" = { os = "macos" }
@@ -212,8 +212,6 @@ ref = "5d1c6df1a86729b193840d988fb38fa654b93bb9"
 root = "."
 target = "~"
 mode = "symlink-each"
-# Hive installs qlock; do not replace its launcher with the older dots helper.
-exclude = [".local/bin/qlock"]
 
 [dotfiles."~/.claude/skills"]
 source = "home/.agents/skills"

@@ -58,8 +58,8 @@ $env.config.menus ++= $menus
 # Register mise's PWD and pre-prompt hooks. The optional work config below
 # appends its own hooks without replacing these. Interactive only; env.nu generates it.
 use (if $nu.is-interactive { ($nu.default-config-dir | path join mise.nu) } else { null })
-# Honeycomb supplies the interactive `wk` picker; use `honeycomb` for lifecycle commands.
-use (if $nu.is-interactive { ($nu.default-config-dir | path join honeycomb.nu) } else { null }) wk
+# Wktree supplies the interactive `wk` picker; use `wktree` for lifecycle commands.
+use (if $nu.is-interactive { ($nu.default-config-dir | path join wktree.nu) } else { null }) wk
 
 if $nu.is-interactive {
     $env.STARSHIP_SHELL = "nu"

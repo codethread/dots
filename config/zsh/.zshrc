@@ -81,8 +81,6 @@ for n in {0..9}; do
   alias "cd$n=cd \"\$(tmux-session --print $n)\""
 done
 
-alias hc='honeycomb'
-
 # shuck: source=./helpers.zsh
 source "$DOTFILES/config/zsh/helpers.zsh"
 
@@ -91,11 +89,6 @@ source "$DOTFILES/config/zsh/helpers.zsh"
 
 # shuck: source=./completion-path.zsh
 source "$DOTFILES/config/zsh/completion-path.zsh"
-
-# TODO: move to comp
-if (( $+commands[honeycomb] )); then
-  eval "$(honeycomb shell-init zsh)"
-fi
 
 mkdir -p "$XDG_CACHE_HOME/zsh"
 autoload -Uz compinit bashcompinit
@@ -127,6 +120,9 @@ zle -N edit-command-line
 bindkey "^X^E" edit-command-line
 #: }}}
 #: init {{{
+
+# Worktree picker and current-shell directory handoff.
+eval "$(wktree shell-init zsh)"
 
 source "$HOMEBREW_PREFIX/opt/antidote/share/antidote/antidote.zsh"
 
@@ -160,8 +156,6 @@ cache_zsh_init starship init zsh
 cache_zsh_init fzf --zsh
 # Atuin loads after fzf so its history widget owns Ctrl-R.
 cache_zsh_init atuin init zsh
-# Cobra shim; suggestions are queried from `honeycomb __complete` at tab time.
-cache_zsh_init honeycomb completions zsh
 # Embedded completion for both CLIs; bl discovers lake commands at Tab time.
 cache_zsh_init botlake completions zsh
 # The standalone mise install supplies completions through its CLI.

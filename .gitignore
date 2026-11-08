@@ -1,10 +1,8 @@
 .private
 /mise.local.toml
 /mise.*.local.toml
-/.beads/
-!/.bv/
-/.bv/*
-!/.bv/recipes.yaml
+/.botlake/world.db*
+/.botlake/bun.lock
 .config/exercism
 .config/yarn
 

@@ -1,5 +1,5 @@
 # Generate and install Bash completions through Carapace.
-# Examples: setup completions br; setup completions gh
+# Examples: setup completions gh; setup completions uv generate-shell-completion bash
 export def --wrapped "setup completions" [
     binary: string
     ...generation_args: string # Optional override for an unusual generation command
@@ -43,7 +43,8 @@ export def --wrapped "setup completions" [
     }
 
     let origin = $env.DOTFILES | path join config carapace | path expand
-    let destination = $env.XDG_CONFIG_HOME? | default ($nu.home-dir | path join .config)
+    let destination = $env.XDG_CONFIG_HOME?
+    | default ($nu.home-dir | path join .config)
     | path join carapace
     | path expand
     let files = [

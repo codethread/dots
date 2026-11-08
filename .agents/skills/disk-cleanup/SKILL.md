@@ -10,7 +10,7 @@ Reclaim measurable space without losing source, durable application data, or wor
 ## Establish scope and measure
 
 1. Confirm the user's authorization: inspection only, regenerable cleanup, or explicitly approved source/data removal. Protect the current checkout by default and treat named active projects as exclusions, including their dependencies, builds, nested worktrees and symlink targets. Discover additional active projects; ask before ambiguous project deletion. Resolve ambiguous paths against the actual filesystem rather than guessing.
-2. For cleanup execution, load the repository's [Hive skill](../hive/SKILL.md) for tracking. Reuse or create a cleanup bead and a child for uncertain candidates needing user decisions. A read-only space-usage question needs no bookkeeping task. Do not turn uncertain candidates into deletions merely to finish the parent.
+2. For cleanup execution, run `bl prime work` and reuse or create a cleanup task. Record uncertain candidates in a separate HITL task with shared group context when needed. A read-only space-usage question needs no bookkeeping task. Do not turn uncertain candidates into deletions merely to finish the parent.
 3. Record filesystem free space with `df -h` and inventory existing roots with `du` or `dust`. Inspect `~/dev/vendor`, `~/dev/projects`, and the current checkout without assuming every machine has them.
 4. Resolve `${XDG_CACHE_HOME:-$HOME/.cache}`, `${XDG_STATE_HOME:-$HOME/.local/state}` and `${XDG_DATA_HOME:-$HOME/.local/share}`. Also inspect existing `~/.local/cache`, `~/.local/state`, `~/.local/share`, `~/.bun/install/cache` and platform-native developer caches when distinct. Discover tool homes/configuration rather than assuming default locations.
 5. Check running processes, services, executable symlink targets and tool versions. A project omitted from the user's active list may still host a running service: preserve its dependencies and flag it. Record container daemon/VM state before any lifecycle change.
@@ -31,7 +31,7 @@ Explicitly authorized and outside protected scope?
 
 - Search inactive repositories for `node_modules`, Rust `target`, virtual environments, compiler/LSP caches and framework outputs such as `.next`, `dist` or `.build`. Prune traversal at protected roots, symlinks, `.git` and managed worktree directories; inspect worktrees separately only when explicitly in scope.
 - Names are not proof: repositories can track fixtures called `target` or `node_modules`. For each candidate, identify its owning repository, check `git ls-files -- <relative-path>` and `git check-ignore`, and inspect build/configuration ownership. Remove only understood generated content with no tracked source. Preserve unexplained or locally customized content for review.
-- For version-pinned vendor clones (often `name@version`), require a clean checkout including untracked/ignored content, a known origin and recoverable pinned revision. Inspect local branches/tags, stashes and worktree registrations; preserve unique local work. A clean working tree alone does not prove every local ref is published. Use Honeycomb instructions for managed worktree operations, not raw directory deletion.
+- For version-pinned vendor clones (often `name@version`), require a clean checkout including untracked/ignored content, a known origin and recoverable pinned revision. Inspect local branches/tags, stashes and worktree registrations; preserve unique local work. A clean working tree alone does not prove every local ref is published. Use `wktree` instructions for managed worktree operations, not raw directory deletion.
 - Whole unversioned source clones and personal forks are a separate approval decision. Do not broaden permission to remove build outputs into permission to delete source checkouts.
 
 ### Caches and installed tooling
@@ -45,7 +45,7 @@ Read installed command help before choosing flags; package-manager behavior and 
 
 ### State is not a cache
 
-Inspect the owning project's README and targeted source when a large state tree is unfamiliar. Delegate bounded read-only lookups through Bee when useful; a failed delegate does not justify guessing.
+Inspect the owning project's README and targeted source when a large state tree is unfamiliar. Delegate bounded read-only lookups through Botlake Agents when useful; a failed delegate does not justify guessing.
 
 - Keep databases, task graphs, queues, recovery directories, migration/cutover snapshots, rollback copies, transcripts and editor undo unless explicitly approved for removal. Runtime-looking directories can contain the only durable data.
 - Millstrand-like systems illustrate the distinction: content-addressed fetched spool sources can be caches, while per-workspace weaver directories can contain durable SQLite graphs. Confirm the installed/source version's lifecycle; do not generalize from a directory name or an older implementation.
@@ -65,5 +65,5 @@ Inspect the owning project's README and targeted source when a large state tree 
 - Keep a deletion/trim log outside paths being cleaned. Record relevant tracked-source status before/after; verify protected dependencies, retained executables, services and databases. Source edits already present belong to the user, not this cleanup.
 - Verify removed clones, stores and obsolete versions are absent. Small freshly recreated caches are expected; verify their current size and purpose instead of repeatedly deleting them to force absence. Check retained JSONL tails parse and preserve original file permissions.
 - Re-measure `df` and the major roots. Report actual free-space change, the largest cleanup categories and anything that will need downloading/rebuilding next time. No project test suite is needed solely to delete proven caches; use focused tool/runtime checks instead.
-- In the uncertainty child, list exact remaining paths, sizes, why deletion might be safe, what could be lost and the approval needed. Keep it unassigned unless instructed otherwise. Separate candidate approval from a fresh live-reference/local-work audit before any later deletion.
-- Close completed execution work with evidence. Keep review work open for user decisions; do not claim the whole task is closed while its review child remains open. Follow repository policy for local tracker updates/publication; cleanup permission is not permission to commit or push.
+- In the uncertainty task, list exact remaining paths, sizes, why deletion might be safe, what could be lost and the approval needed. Keep it unassigned unless instructed otherwise. Separate candidate approval from a fresh live-reference/local-work audit before any later deletion.
+- Close completed execution work with evidence. Keep review work open for user decisions; do not claim the whole task is closed while its review task remains open. Follow repository policy for local Work updates; cleanup permission is not permission to commit or push.

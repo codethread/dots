@@ -59,12 +59,11 @@ The plugin opt-in is independent of daemon ownership. Prepare/apply the daemon w
 
 Author shared personal skills in `home/.agents/skills/`. Mise links that source into both `~/.agents/skills/` (as part of the `home/` mapping) and `~/.claude/skills/` using `symlink-each`. It links individual files, leaving Claude’s `synced/`, `.trash/`, and other destination-only files untouched.
 
-| Skill      | Purpose                                            |
-| ---------- | -------------------------------------------------- |
-| attention  | Get the user’s attention after a long-running task |
-| github     | Work with GitHub issues and pull requests          |
-| repo-setup | Set up repository agent scaffolding                |
-| socrates   | Inspect knowledge sources and assumptions          |
+| Skill     | Purpose                                            |
+| --------- | -------------------------------------------------- |
+| attention | Get the user’s attention after a long-running task |
+| github    | Work with GitHub issues and pull requests          |
+| socrates  | Inspect knowledge sources and assumptions          |
 
 Existing linked-file edits are visible immediately. After adding or removing source files, run `mise run link`, or from the dots checkout:
 
@@ -88,12 +87,12 @@ Shared defaults are configured in `templates/claude-settings.json.tera`: claude-
 
 ## Supporting Tools
 
-| Tool                    | Source                             | Purpose                                    |
-| ----------------------- | ---------------------------------- | ------------------------------------------ |
-| cc-statusline           | oven/bin/                          | Status line formatter                      |
-| cindex                  | oven/bin/                          | Project file index generator               |
-| cc-logs--extract-agents | home/.local/bin/                   | Extract agent IDs for session resumption   |
-| honeycomb               | ~/dev/projects/hive/lib/honeycomb/ | Git worktree lifecycle; see `honeycomb -h` |
+| Tool                    | Source                               | Purpose                                  |
+| ----------------------- | ------------------------------------ | ---------------------------------------- |
+| cc-statusline           | oven/bin/                            | Status line formatter                    |
+| cindex                  | oven/bin/                            | Project file index generator             |
+| cc-logs--extract-agents | home/.local/bin/                     | Extract agent IDs for session resumption |
+| wktree                  | Homebrew: `codethread/wktree/wktree` | Git worktree lifecycle; see `wktree -h`  |
 
 ## Hook Development
 

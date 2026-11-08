@@ -1,6 +1,6 @@
 # Oven Workspace
 
-Bun workspace package for managing TypeScript/JavaScript executables. Entrypoints listed in `bin/manifest.json` are built to `~/.local/bin/*`.
+Oven is the only package in the repository-root Bun workspace. It manages TypeScript/JavaScript executables: entrypoints listed in `bin/manifest.json` are built to `~/.local/bin/*`.
 
 ## Structure
 
@@ -11,7 +11,7 @@ Bun workspace package for managing TypeScript/JavaScript executables. Entrypoint
 
 ## Tooling and commands
 
-Mise manages Bun and Node through `mise.toml` and `mise.lock`, with locked downloads for macOS and Linux (arm64/x64). The project-local `settings.enable_tools` allowlist limits mise activation and installation to those runtimes; parent/global workstation tools remain available outside Oven. Add future mise-managed task tools to this allowlist too. Biome and TypeScript are declared in this package's `package.json` and resolved by the repository-root `bun.lock`, not global tools. One `bun install --frozen-lockfile` from the repository root installs the root tools, Oven, and Busy Bee workflow dependencies. Git must be available on PATH (provided by the workstation's host packages).
+Mise manages Bun and Node through `mise.toml` and `mise.lock`, with locked downloads for macOS and Linux (arm64/x64). The project-local `settings.enable_tools` allowlist limits mise activation and installation to those runtimes; parent/global workstation tools remain available outside Oven. Add future mise-managed task tools to this allowlist too. Biome and TypeScript are declared in this package's `package.json` and resolved by the repository-root `bun.lock`, not global tools. One `bun install --frozen-lockfile` from the repository root installs the root tools and Oven. The `.botlake/` lake package is independent of this workspace, resolves its dependencies from the bootstrap-managed Botlake checkout and shared `ct-config`, and installs with `bun install --cwd .botlake`. Git must be available on PATH (provided by the workstation's host packages).
 
 Run from `oven/`:
 
@@ -19,7 +19,7 @@ Run from `oven/`:
 # Review and trust this project's configuration once
 mise trust mise.toml
 
-# Install the pinned runtimes and frozen dependencies for the whole dots workspace
+# Install the pinned runtimes and frozen dependencies for Oven and root tooling
 mise run install
 
 # Format and lint all code with the project-local Biome

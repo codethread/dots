@@ -1,4 +1,4 @@
-#:schema /Users/ct/dev/projects/wktree/wktree.schema.json
+#:schema https://raw.githubusercontent.com/codethread/wktree/main/wktree.schema.json
 # Worktree project bootstrap hooks.
 #
 # `root` must match the canonical/root worktree path for the repo.
@@ -59,11 +59,11 @@ delete_branch = true
 # PRs, not by local merges to main.
 [[rule]]
 root_glob = "~/pb/**"
-pre_remote_check = "scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware honeycomb operations' >&2; exit 1; }"
+pre_remote_check = "scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware wktree operations' >&2; exit 1; }"
 
 [[rule]]
 root_glob = "~/pb/app/deals-light-ui*/**"
-pre_remote_check = "git remote prune origin && scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware honeycomb operations' >&2; exit 1; }"
+pre_remote_check = "git remote prune origin && scutil --dns | grep -q 'perkbox.internal' || { printf '%s\\n' 'worktree: connect the work VPN before running remote-aware wktree operations' >&2; exit 1; }"
 
 
 [rule.finish]

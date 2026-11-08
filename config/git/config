@@ -62,5 +62,3 @@
 	path = ~/pb/.gitconfig
 [include] # work-wide settings from workfiles; skipped when absent
 	path = ~/.config/git/work.gitconfig
-[beads]
-	role = maintainer

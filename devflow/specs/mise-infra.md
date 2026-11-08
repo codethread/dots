@@ -2,11 +2,13 @@
 
 - Document ID: SPEC-006
 - **Status:** Implemented
-- **Last Updated:** 2026-11-03
+- **Last Updated:** 2026-11-08
 
 ## Ownership
 
 Mise owns the Apple Silicon macOS workstation: packages, managed files, repositories, defaults, user settings, and LaunchAgents. Mise renders Claude settings, merges shared Codex settings, and links `home/` plus shared skills. Dotty links the remaining `config/`, `claude/` (except settings and skills), and `pi/` assets. Shells activate mise natively. The checkout requires mise 2026.10.4 or newer for native structured dotfile merges.
+
+The root Bun workspace contains only `oven`. The `.botlake/` lake package is independent: its dependencies resolve from the bootstrap-managed Botlake checkout and shared `ct-config`, and bootstrap installs them with `bun install --cwd .botlake` after preparing Botlake's source and CLIs.
 
 The official installer at `https://mise.run` owns `~/.local/bin/mise`; Homebrew does not manage mise. Update it with `mise self-update`. The shared shell environment puts `~/.local/bin` on PATH, and LaunchAgents use that stable executable path. Dots also provisions the shared Pitchfork supervisor at login; projects register their own daemon definitions during their bootstrap. Zsh caches `mise completion zsh` through its existing CLI-init helper.
 
@@ -31,7 +33,7 @@ If the checkout is absent and `glab` is not authenticated for GitLab, the handof
 
 Workfiles owns the moved work-specific packages, Vault and cargo-lambda global tools, `work_home`/`deals` dotty configuration, work VS Code extensions, cc-notify, and work Git-maintenance jobs. Dots retains the generic Git-maintenance helper and all-profile syncengine. The shared Claude template remains a generic base that optionally merges `~/.config/claude/settings-overlay.json`; workfiles renders that overlay and, after its dotfiles phase, rerenders dots' one shared `~/.claude/settings.json` with targeted `mise dot apply ~/.claude/settings.json`, not a whole dots bootstrap. Work plugins/marketplaces and Microsoft 365/Atlassian allowances live in the overlay rather than a duplicate complete template.
 
-Runtime application ownership follows whole files, not individual work references. Mixed Pi, Git, Honeycomb/worktree, environment, and tmux settings stay in dots. The wholly work-specific Nushell `ct/config/hooks.nu` and `ct/onepassword.nu` modules live in workfiles' home tree and load through the existing optional `~/.work.nu` entrypoint. Work hooks append to the existing PWD hooks so mise activation is retained; common Nushell startup does not require either work module.
+Runtime application ownership follows whole files, not individual work references. Mixed Pi, Git, wktree, environment, and tmux settings stay in dots. The wholly work-specific Nushell `ct/config/hooks.nu` and `ct/onepassword.nu` modules live in workfiles' home tree and load through the existing optional `~/.work.nu` entrypoint. Work hooks append to the existing PWD hooks so mise activation is retained; common Nushell startup does not require either work module.
 
 Root `mise.toml` owns shared bootstrap resources: host packages, VS Code extensions, the pinned Todoist repo, workstation directories/repos, Claude and Codex settings, macOS preferences, the login shell and sudo extension, and the all-profile syncengine and Pitchfork agents. Profile overlays contain machine-specific packages, variables, files, and agents.
 
@@ -41,7 +43,7 @@ Keep bootstrap resources project-local: global tool configuration loads in other
 
 ## Home and shared skills
 
-Root `mise.toml` sets `dotfiles.root = "home"` and deploys that tree to `~` through `[dotfile_groups.home]` with `mode = "symlink-each"`. A separate `[dotfiles]` entry maps `home/.agents/skills/` a second time to `~/.claude/skills/`. The native group avoids the first-apply legacy scan of the entire home directory that an ungrouped `~` entry performs. Each source file gets a link; destination directories remain real directories. Claude’s `synced/`, `.trash/`, and other unmanaged neighbors stay local. Hive owns the live `~/.local/bin/qlock` launcher, so that path is excluded from the home mapping rather than replaced by the older dots helper.
+Root `mise.toml` sets `dotfiles.root = "home"` and deploys that tree to `~` through `[dotfile_groups.home]` with `mode = "symlink-each"`. A separate `[dotfiles]` entry maps `home/.agents/skills/` a second time to `~/.claude/skills/`. The native group avoids the first-apply legacy scan of the entire home directory that an ungrouped `~` entry performs. Each source file gets a link; destination directories remain real directories. Claude’s `synced/`, `.trash/`, and other unmanaged neighbors stay local.
 
 The entries walk the source tree, including new files not yet in Git’s index. Existing linked-file edits are visible immediately; additions and removals need another apply. Mise records ownership in its state directory so deleted source files remove only their managed links. Destination-only files are neither removed nor imported into the source. Keep workfiles’ `work_home` targets disjoint from dots’ home files.
 
@@ -81,8 +83,8 @@ Plain bootstrap clones missing repositories but does not pull unpinned existing 
 Native bootstrap installs package-manager plugins first, then applies built-in packages before managed files and repositories, followed by dotfiles, defaults, LaunchAgents, login shell, and tools. Plugin-managed packages (including VS Code extensions) apply after tools, so the host application is ready. Three repo-specific hooks fill the gaps:
 
 1. **Post-packages:** install mise tools early, then run `boot/check-system.sh` before any managed PAM file is written. Raw LaunchAgents occur before mise's normal tools phase, so the early tool install is deliberate; the later native tools phase is an unchanged-state check.
-2. **Post-repos:** `boot/setup.sh` installs missing agent CLIs and Playwright; builds Todoist/Honeycomb; links the remaining Dotty assets (including Pi); generates shell caches with `boot/shell.sh`; installs/builds Oven; installs service dependencies and prepares Git-maintenance registrations. It also installs Botlake's locked Bun dependencies and Go CLIs, builds the UI on dev/work, and registers dots-owned daemons with Pitchfork without starting them. Only then can the later native dotfiles and LaunchAgent phases run.
-3. **Post-tools:** explicitly start `botlake-supervisor` through mise/Pitchfork after native LaunchAgents load. Registration alone does not start it in an already-running Pitchfork supervisor. This waits for readiness without restarting an already-running daemon; `boot_start` still handles subsequent logins.
+2. **Post-repos:** `boot/setup.sh` installs missing agent CLIs and Playwright; builds Todoist; links the remaining Dotty assets (including Pi); generates shell caches with `boot/shell.sh`; installs/builds Oven; installs service dependencies and prepares Git-maintenance registrations. It prepares Botlake's source checkout and installs its Go CLIs into `~/.local/bin`, then installs the dots lake's Bun dependencies with `bun install --cwd .botlake`; dev/work also installs the UI's dependencies and builds it. It registers dots-owned daemons with Pitchfork without starting them. Only then can the later native dotfiles and LaunchAgent phases run.
+3. **Post-tools:** `boot/start-botlake.sh` starts the dots lake after native LaunchAgents load. It starts the mise-managed `botlake-supervisor` when needed and leaves an externally owned supervisor running, without stopping, restarting, or adopting it. Registration alone does not start that supervisor in an already-running Pitchfork; `boot_start` still handles subsequent logins.
 
 Agent CLI setup, Playwright, Todoist, and Oven installation/build failures print warnings and allow setup to continue. A setup-exit summary repeats these failures. VS Code extension failures instead fail visibly through native package convergence. Agent installers still refuse to overwrite custom launchers. Bootstrap does not run Oven tests, typechecking, automatic fixes, or documentation generation; `mise run build` remains the development verification path. System/PAM checks, dotfile conflicts, required shell dependencies, and service dependency preparation remain blocking.
 

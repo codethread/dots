@@ -3,7 +3,7 @@
 - Document ID: SPEC-001
 - Configuration identification: SPEC-001; migrated from `specs/agentic-config.md`; canonical path `devflow/specs/agentic-config.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-10-10
+- **Last Updated:** 2026-11-08
 
 ## [SPEC-001-S1] 1. Overview
 
@@ -181,12 +181,11 @@ All remaining feature flags and skill overrides are preserved in the template. P
 
 Root mise entries use `symlink-each`: the home mapping supplies the first destination, and a second entry supplies Claude’s. Both keep destination directories real and preserve unmanaged files, including Claude’s `synced/` and `.trash/`. Existing-file edits are immediate; additions/removals require `mise run link` or `mise dot apply ~ ~/.claude/skills` from dots. Destination-only skills are not copied back into the repository. Plugin skills remain plugin-owned.
 
-| Skill      | Purpose                                            |
-| ---------- | -------------------------------------------------- |
-| attention  | Get the user’s attention after a long-running task |
-| github     | Work with GitHub issues and pull requests          |
-| repo-setup | Set up repository agent scaffolding                |
-| socrates   | Inspect knowledge sources and assumptions          |
+| Skill     | Purpose                                            |
+| --------- | -------------------------------------------------- |
+| attention | Get the user’s attention after a long-running task |
+| github    | Work with GitHub issues and pull requests          |
+| socrates  | Inspect knowledge sources and assumptions          |
 
 ### [SPEC-001-S4.4] Commands (`claude/commands/` → `~/.claude/commands/`)
 

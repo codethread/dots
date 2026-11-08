@@ -2,12 +2,11 @@
 
 CLIs use their generated Bash completion wrappers through Carapace's Bash bridge. Dotty links the spec and isolated Bash rcfile into `~/.config/carapace`; `mise run link` installs them on another machine.
 
-The registration file is saved once. Each Tab runs Bash and asks `br` for context-aware candidates; it does not run `br completions bash` again.
+The registration file is saved once. Each Tab runs Bash and asks the target CLI for context-aware candidates; it does not regenerate its completion wrapper.
 
 Generate or refresh completions in an interactive Nushell:
 
 ```nu
-setup completions br
 setup completions gh
 # For a CLI with a different generation command:
 setup completions uv generate-shell-completion bash

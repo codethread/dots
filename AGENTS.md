@@ -21,7 +21,7 @@ Runtime application ownership is per file: mixed personal/shared and work config
 - **boot/** - System setup scripts. Go here to bootstrap a new machine.
 - **claude/** - Global Claude Code configurations and agent documentation. Go here for multi-agent specs and hooks.
 - **config/** - Application dotfiles (vim, kitty, nushell, etc). Go here to modify tool configurations.
-- **home/** - Mise links this tree into `~` with `symlink-each`; it also links `home/.agents/skills/` into `~/.claude/skills/`, preserving Claude-owned metadata. Dotty owns only `config/`, `claude/` (except settings and skills), and `pi/`. Hive owns the live `qlock` launcher, excluded from the home mapping.
+- **home/** - Mise links this tree into `~` with `symlink-each`; it also links `home/.agents/skills/` into `~/.claude/skills/`, preserving Claude-owned metadata. Dotty owns only `config/`, `claude/` (except settings and skills), and `pi/`.
 - **oven/** - TypeScript/Bun workspace for CLI tools. Go here for active development.
 - **devflow/** - Planning workspace. Root specs live in `devflow/specs/`; RFCs in `devflow/rfcs/`; active feature work in `devflow/feat/`.
 - **pdx/** - pandoras-box configs (pithos) for personal machines
@@ -34,7 +34,7 @@ Run `mise tasks` for available tasks. Plain `mise run` runs `mise bootstrap --sk
 
 ### JavaScript workspace
 
-The root `package.json` explicitly includes `oven` and `.workflows` as Bun workspace members. Run `bun install --frozen-lockfile` from the repository root to install all three packages using the single root `bun.lock`. Keep dependency declarations in their owning package; do not add nested lockfiles or package-manager pins. Application configuration manifests under `config/` are not workspace members. Bun is both the package manager and Oven's runtime/test runner; pnpm remains available for other repositories, not for installing dots.
+The root `package.json` explicitly includes `oven` as its Bun workspace member. Run `bun install --frozen-lockfile` from the repository root to install both packages using the single root `bun.lock`. Keep dependency declarations in their owning package; do not add nested lockfiles or package-manager pins. Application configuration manifests under `config/` and the independent `.botlake/` lake package are not workspace members. Bun is both the package manager and Oven's runtime/test runner; pnpm remains available for other repositories, not for installing dots.
 
 ### Development Hierarchy
 
@@ -59,13 +59,13 @@ Start with a small Zsh helper and move it into `oven/` when it exceeds this scop
 
 This repo defines Claude Code configurations such as commands and agents at `claude/`. These include hooks, commands and agents, and the `claude/README.md` gives a comprehensive overview of all aspects, including the dependencies on any scripts from the `oven` module.
 
-## Hive integration
+## Botlake
 
-`.hive/beeswax/config.toml` and `.hive/beeswax/meta/lock.json` define the portable Beeswax contract. Run `beeswax sync` in each checkout to bind the accepted installed release. Keep the existing `.githooks` integration: bootstrap sets `core.hooksPath` to `.githooks`, and Beeswax uses `bootstrap.hooks = "none"`. When configuring a checkout without bootstrap, also run `git config --local core.hooksPath .githooks`.
+`.botlake/package.json` selects the shared `ct-config` from the bootstrap-managed Botlake checkout. Install lake dependencies with `bun install --cwd .botlake`; start it with `botlake lake start` after the workstation supervisor is running. Linked worktrees share the main checkout's lake and local database. Restart the lake after configuration changes; `botlake lake info` reports the loaded extension snapshot.
 
-Generated Claude, Codex and Pi adapters load `beeswax prime`, tracker alerts and Scent identity; keep one onboarding and identity route per harness. Install the matching Hive suite, including `scent`, before `beeswax update --yes`; review and commit generated adapters, then restart the harness and review/trust its hooks or extensions. Do not add source-path Scent hooks, explicit Pi Scent registrations or the retired Codex Scent plugin alongside these adapters. Machine-specific tracker selection lives in ignored `mise.local.toml` and `.codex/config.toml`, never in the committed contract.
+Track implementation with `bl` Work operations. Run `bl prime work` before tracking and `bl prime agent` before delegating; use command help for unfamiliar operations. Preserve caller identity, existing assignments and human decisions. Importing historical context does not authorize execution or reassignment. Use `wktree` for worktree lifecycle operations.
 
-The permanent `.worktrees/tracker--state` checkout owns the native Beads database and snapshot history. Preserve it during worktree cleanup, and never merge `tracker/state` into a code branch. New clones may bootstrap only after accepted `origin/tracker/state` history exists; do not initialize a replacement tracker to bypass missing history.
+Keep `core.hooksPath = .githooks`: bootstrap sets it, or run `git config --local core.hooksPath .githooks` when configuring a checkout directly. The pre-commit hook formats staged Markdown and Nushell files.
 
 ## Verification
 
@@ -106,9 +106,3 @@ Given the monorepo nature of this repo, we want to exercise discretion, to that 
     - where apparent, we would remove this dependency
     - where difficult, discuss alternatives or fallbacks
 - finally commit in one single commit with convention `GOODBYE <tool>\n\n<Reason and details if needed>`, this makes it easy to dig out old features at a later date to revisit
-
-## Beads / br
-
-Track implementation work and steps with native `br`, using the selected `BEADS_DB` in the permanent tracker rather than harness todo lists. Run tracker commands from the repository root; use `mise exec -- br ...` when the session has not loaded the local tracker environment.
-
-Use `qlock exec -w 240` for the normal four-minute queue admission budget. Hive 0.9.1 requires this flag explicitly and does not read a qlock configuration file. This queue budget is separate from Beads' five-minute native tracker lock wait; keep the admitted command alive while Beads waits.
