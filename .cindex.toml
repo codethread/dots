@@ -8,12 +8,12 @@ iglobs = [
 
 # Top-level directory descriptions
 [descriptions]
-config = "All application configuration files and dotfiles"
-oven = "Custom TypeScript/Bun utilities and scripts"
-devflow = "Planning workspace: specs, RFCs, active features, and archive"
-claude = "Claude AI agents, commands, and integration tools"
-home = "User home directory configurations and local binaries"
-boot = "System bootstrap and initialization scripts"
+config = "Application configuration deployed by native mise dotfile groups"
+oven = "Tested TypeScript/Bun commands with generated CLI reference"
+claude = "Claude assets deployed separately from rendered settings and shared skills"
+pi = "Pi bootstrap assets; runtime state and extensions remain application-owned"
+home = "Home-directory links, shared skills, and small standalone commands"
+boot = "Repository setup and external-owner handoff scripts"
 
 [[subdivisions]]
 dir = "config"
@@ -25,14 +25,15 @@ dir = "home"
 dir = "claude"
 
 [subdivisions.descriptions]
-nvim = "Neovim configuration with extensive custom plugins, LSP setup, and keybindings (see claude.lua for AI integration)"
-kitty = "Kitty terminal emulator configuration with custom actions and session management"
-nushell = "Nushell modern shell configuration with custom scripts and commands"
-zsh = "Minimal ZDOTDIR compatibility shim; interactive shell config lives in nushell"
-bash = "Minimal bash compatibility shims and redirected history state"
-tmux = "Terminal multiplexer configuration for session management"
-aerospace = "MacOS window manager configuration"
-git = "Git version control configuration with aliases and ignore patterns"
+nvim = "Full Neovim configuration; plugin data is restored separately from deployed config"
+minimal-nvim = "Small fallback Neovim configuration with independent behavior"
+kitty = "Kitty configuration and repository-owned terminal integrations"
+rex = "Rex bindings and defaults; mutable session state stays under XDG state"
+zsh = "Zsh adapter for the shared environment and interactive shell contracts"
+bash = "Bash adapter for the shared environment and interactive shell contracts"
+tmux = "Tmux configuration and session workflows with runtime state outside the repo"
+aerospace = "macOS window-manager configuration"
+git = "Git configuration, aliases, and ignore policy"
 
 # Key file descriptions for cross-referencing
 [files]
@@ -41,11 +42,6 @@ git = "Git version control configuration with aliases and ignore patterns"
 "oven/bin/cindex.ts" = "Project indexer CLI - generates this project summary you're reading"
 
 # Summarize patterns to reduce noise
-[[summarise]]
-dir = "devflow/specs"
-pattern = "^devflow/specs/.*\\.md$"
-desc = "[summary] Canonical devflow specification documents"
-
 [[summarise]]
 dir = "home/Library"
 desc = "[summary] MacOS Library symlinks (Application Support, Preferences, etc.)"

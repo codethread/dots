@@ -78,9 +78,9 @@ Config file format (.cindex.toml):
 
   # Summarise many files into one line
   [[summarise]]
-  dir = "devflow/specs"
-  pattern = "^devflow/specs/.*\\\\.md$"  # Optional regex filter
-  desc = "[summary] spec files"
+  dir = "config/nvim/lua/plugins"
+  pattern = "^config/nvim/lua/plugins/.*\\\\.lua$"  # Optional regex filter
+  desc = "[summary] Neovim plugin configuration"
 
 Examples:
   cindex                    # Index current directory with default config
