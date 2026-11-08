@@ -82,6 +82,39 @@ description = "Install, test, typecheck, fix, and sync Oven docs"
 dir = "{{ config_root }}/oven"
 run = "mise run verify"
 
+[tasks."test:nvim-smoke"]
+description = "Run the isolated Neovim configuration smoke"
+shell = "bash -c"
+run = '''
+set -euo pipefail
+root="{{ config_root }}"
+state="$(mktemp -d "${TMPDIR:-/tmp}/dots-nvim-smoke.XXXXXX")"
+trap 'rm -rf "$state"' EXIT
+
+mkdir -p "$state"/{home,cache,config,data,state,tmp,deps/mini.nvim/lua/mini}
+curl -fsSL \
+  https://raw.githubusercontent.com/nvim-mini/mini.test/0d0c3257cf799a6a1869fdb4bdda8f330bb63e03/lua/mini/test.lua \
+  -o "$state/deps/mini.nvim/lua/mini/test.lua"
+printf '%s  %s\n' \
+  afc2dc8d38a9f061325c1f57bd5451154d3c5ed29ca777216a09c4e467c7466a \
+  "$state/deps/mini.nvim/lua/mini/test.lua" | shasum -a 256 -c -
+
+env -i \
+  HOME="$state/home" \
+  PATH="$PATH" \
+  TMPDIR="$state/tmp" \
+  XDG_CACHE_HOME="$state/cache" \
+  XDG_CONFIG_HOME="$state/config" \
+  XDG_DATA_HOME="$state/data" \
+  XDG_STATE_HOME="$state/state" \
+  NVIM_LOG_FILE="$state/nvim.log" \
+  NVIM_SMOKE_CONFIG="$root/config/nvim" \
+  NVIM_SMOKE_DEP="$state/deps/mini.nvim" \
+  NVIM_SMOKE_TEST="$root/tests/nvim/test_config_smoke.lua" \
+  nvim --headless --noplugin -u "$root/tests/nvim/minimal_init.lua" \
+    -c 'lua MiniTest.run()'
+'''
+
 # Explicit maintenance only; never run cleanup as part of bootstrap.
 [tasks."brew:cleanup"]
 description = "Remove old Homebrew versions and stale downloads (preview with --dry-run)"
