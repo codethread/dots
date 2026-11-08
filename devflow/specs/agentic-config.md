@@ -88,7 +88,7 @@ mise run build →  Oven mise run verify   →  oven/bin/*.ts compiled to ~/.loc
 - `mise.toml` provides the `llm:update` task, while `boot/setup.sh` invokes `home/.local/bin/mise-llm install` during bootstrap for official Claude, Codex, Pi, and [Pi-Bolt](https://pi-bolt.opensec.in/docs/installation.html) installers. Pi-Bolt installs noninteractively into `~/.pi-bolt` with a `~/.local/bin/pi-bolt` link, without adding optional OpenSec extensions or replacing custom launchers. `llm:update` updates all four CLIs and both Pi and Pi-Bolt extensions, stopping on failure.
 - Pi installs missing `npm:pi-nvim` and `npm:@narumitw/pi-goal` extensions from `pi/agent/settings.json`.
 
-`boot/setup.sh` invokes `home/.local/bin/mise-llm install` in the bootstrap post-repos hook. `~/.local/bin` precedes `$PI_CODING_AGENT_DIR/bin` and mise shims, preserving the custom Pi wrapper. Use `mise run llm:update` for explicit updates.
+`boot/setup.sh` invokes `home/.local/bin/mise-llm install` in the bootstrap post-repos hook. Mise manages `~/.local/bin/pi` as a symlink to `~/.local/bin/pi-bolt`, applied by bootstrap or `mise run link`. `~/.local/bin` precedes `$PI_CODING_AGENT_DIR/bin`, so `pi` runs Pi-Bolt while the official Pi launcher remains available at `$PI_CODING_AGENT_DIR/bin/pi` for maintenance. Use `mise run llm:update` for explicit updates.
 
 - `config/dotty/dotty.toml` links the tracked `pi/` directory into `~/.pi/agent`
 - Most mutable Pi config now lives in `https://github.com/codethread/agents`; this repo keeps the `pi/agent.njk` template plus minimal bootstrap files and symlinks that make Pi consume the shared prompt/config layout

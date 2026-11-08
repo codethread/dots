@@ -52,7 +52,7 @@ run = [
   '''
   nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --force --no-cache ($env.DOTFILES | path join "config/dotty/dotty.toml") | ignore'
   ''',
-  'mise dot apply "$HOME" "$HOME/.claude/skills"',
+  'mise dot apply "$HOME" "$HOME/.claude/skills" "$HOME/.local/bin/pi"',
 ]
 
 [tasks.build]
@@ -66,7 +66,7 @@ description = "Remove old Homebrew versions and stale downloads (preview with --
 run = "brew cleanup"
 
 [tasks."llm:update"]
-description = "Update Claude, Codex, Pi, and Pi npm extensions"
+description = "Update Claude, Codex, Pi, Pi-Bolt, and their extensions"
 env.DOTFILES = "{{ config_root }}"
 run = '"{{ config_root }}/home/.local/bin/mise-llm" update'
 
@@ -220,6 +220,11 @@ exclude = [".local/bin/qlock"]
 [dotfiles."~/.claude/skills"]
 source = "home/.agents/skills"
 mode = "symlink-each"
+
+# Keep the official Pi launcher available for maintenance; use Pi-Bolt on PATH.
+[dotfiles."~/.local/bin/pi"]
+source = "~/.local/bin/pi-bolt"
+mode = "symlink"
 
 [dotfiles."~/.local/bin/gitwatch"]
 source = "~/dev/vendor/gitwatch/gitwatch.sh"

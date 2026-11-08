@@ -25,7 +25,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf -- "$tmp"' EXIT
 
 # Vendor installers replace launchers. Refuse to overwrite custom launchers;
-# Pi is deliberately installed elsewhere so the pies wrapper stays untouched.
+# Pi is installed separately so mise's pi -> pi-bolt alias stays untouched.
 check_launcher() {
   local binary=$1 root=$2 target
   if [[ -e "$binary" || -L "$binary" ]]; then
