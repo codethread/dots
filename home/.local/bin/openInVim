@@ -1,4 +1,72 @@
-#!/usr/bin/env bash
-# :module: Quick Vim file opening utility
+#!/usr/bin/env zsh
+# :module: Open a selected file[:line[:column]] in this window's Neovim pane.
+set -euo pipefail
+setopt extendedglob
 
-nu -l -c "tmux open-link $@"
+case "${1:-}" in
+  -h|--help) print 'Usage: openInVim <file[:line[:column]]>'; exit 0 ;;
+  '') print -u2 'Usage: openInVim <file[:line[:column]]>'; exit 2 ;;
+esac
+
+selected=${*//│/}
+selected=${${selected##[[:space:]]#}%%[[:space:]]#}
+file_path=$selected
+line=''
+column=1
+if [[ $selected =~ '^(.*):([0-9]+):([0-9]+)$' ]]; then
+  file_path=$match[1]
+  line=$((10#${match[2]}))
+  column=$((10#${match[3]}))
+elif [[ $selected =~ '^(.*):([0-9]+)$' ]]; then
+  file_path=$match[1]
+  line=$((10#${match[2]}))
+fi
+
+panes=$(tmux list-panes -F $'#{pane_id}\t#{pane_current_command}\t#{pane_active}\t#{pane_last}\t#{pane_current_path}')
+editor_pane=''
+active_command=''
+source_cwd=''
+last_cwd=''
+while IFS=$'\t' read -r pane_id pane_command active last_active pane_cwd; do
+  if [[ -z $editor_pane && $pane_command == nvim ]]; then
+    editor_pane=$pane_id
+  fi
+  if [[ $active == 1 ]]; then
+    active_command=$pane_command
+    source_cwd=$pane_cwd
+  fi
+  if [[ $last_active == 1 ]]; then
+    last_cwd=$pane_cwd
+  fi
+done <<< "$panes"
+
+if [[ -z $editor_pane ]]; then
+  print -u2 'openInVim: no Neovim pane in this window'
+  exit 1
+fi
+if [[ $active_command == nvim ]]; then
+  source_cwd=$last_cwd
+fi
+
+case "$file_path" in
+  '~/'*) file_path="$HOME/${file_path#\~/}" ;;
+  /*) ;;
+  *) file_path="${source_cwd:?No source pane available}/$file_path" ;;
+esac
+file_path=${file_path:a}
+
+# Encode the Vim string separately from escaping its filename for :edit.
+vim_path=${file_path//\\/\\\\}
+vim_path=${vim_path//\"/\\\"}
+vim_path=${vim_path//$'\n'/\\n}
+vim_path=${vim_path//$'\r'/\\r}
+vim_path=${vim_path//$'\t'/\\t}
+edit_command=":execute 'edit ' . fnameescape(\"$vim_path\")"
+if [[ -n $line ]]; then
+  edit_command+=" | call cursor($line, $column)"
+fi
+
+tmux send-keys -t "$editor_pane" Escape
+tmux send-keys -l -t "$editor_pane" "$edit_command"
+tmux send-keys -t "$editor_pane" Enter
+tmux select-pane -t "$editor_pane"

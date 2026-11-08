@@ -1,0 +1,39 @@
+#!/usr/bin/env zsh
+# :module: Run tmux-fingers on a watch process, previous pane, or non-editor pane.
+set -euo pipefail
+
+case "${1:-}" in
+  -h|--help) print 'Usage: tmux-finger-other-pane'; exit 0 ;;
+  '') ;;
+  *) print -u2 'Usage: tmux-finger-other-pane'; exit 2 ;;
+esac
+
+if [[ $(tmux display-message -p '#{window_zoomed_flag}') == 1 ]]; then
+  tmux display-message 'Not available in zoomed pane'
+  exit 0
+fi
+
+panes=$(tmux list-panes -F $'#{pane_id}\t#{pane_current_command}\t#{pane_last}')
+watch_pane=''
+last_pane=''
+other_pane=''
+while IFS=$'\t' read -r pane_id pane_command last_active; do
+  if [[ -z $watch_pane && ($pane_command == node || $pane_command == cargo-watch) ]]; then
+    watch_pane=$pane_id
+  fi
+  if [[ -z $last_pane && $last_active == 1 ]]; then
+    last_pane=$pane_id
+  fi
+  if [[ -z $other_pane && $pane_command != nvim ]]; then
+    other_pane=$pane_id
+  fi
+done <<< "$panes"
+
+target=${watch_pane:-${last_pane:-$other_pane}}
+if [[ -z $target ]]; then
+  tmux display-message 'no-match'
+  exit 0
+fi
+
+tmux-fingers start "$target" --main-action 'xargs openInVim'
+tmux select-pane -t 1

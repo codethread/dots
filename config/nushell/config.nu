@@ -3,7 +3,6 @@ use ct/themes.nu themes
 use ct/ls-colors.nu
 use ct/config [keybindings menus]
 use ct/core *
-use ct/tmux
 use ct/macos.nu *
 use ct/git *
 use ct/homebrew.nu *

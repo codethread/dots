@@ -1,0 +1,35 @@
+#!/usr/bin/env zsh
+# :module: Switch tmux sessions with an fzf preview.
+set -euo pipefail
+
+case "${1:-}" in
+  -h|--help) print 'Usage: tmux-switch'; exit 0 ;;
+  '') ;;
+  *) print -u2 'Usage: tmux-switch'; exit 2 ;;
+esac
+
+current=$(tmux display-message -p '#{session_name}')
+all_sessions=$(tmux list-sessions -F '#{session_name}')
+sessions=()
+for session in "${(@f)all_sessions}"; do
+  if [[ $session != "$current" ]]; then
+    sessions+=("$session")
+  fi
+done
+
+if (( ${#sessions} == 0 )); then
+  tmux display-message 'No other tmux sessions'
+  exit 0
+fi
+
+preview="$HOME/.config/tmux/plugins/tmux-fzf/scripts/.preview"
+if target=$(printf '%s\n' "${sessions[@]}" | fzf-tmux -p -w 80% -h 70% \
+  --preview "${(q)preview} {}" --preview-window 'right,70%,follow,border-left'); then
+  exec tmux switch-client -t "=$target"
+else
+  picker_exit=$?
+  case "$picker_exit" in
+    1|130) exit 0 ;;
+    *) exit "$picker_exit" ;;
+  esac
+fi

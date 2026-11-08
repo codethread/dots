@@ -68,7 +68,7 @@ alias ga='git add'
 alias gc='git commit'
 alias gco='git checkout'
 
-alias l="nu -c 'ls -a'"
+alias l='ls -la'
 
 alias ai='mill bin run agent --fzf'
 

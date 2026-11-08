@@ -1,0 +1,21 @@
+#!/usr/bin/env zsh
+# :module: Pick a note and open it in a tmux Neovim popup.
+set -euo pipefail
+
+case "${1:-}" in
+  -h|--help) print 'Usage: tmux-notes'; exit 0 ;;
+  '') ;;
+  *) print -u2 'Usage: tmux-notes'; exit 2 ;;
+esac
+
+cd -- "${CT_NOTES:?Set CT_NOTES to the notes directory}"
+if selected=$(rg --files-with-matches . | fzf-tmux -p -w 80% -h 70%); then
+  exec tmux display-popup -e "CT_NOTES=$CT_NOTES" \
+    -S 'fg=cyan' -E -w 80% -h 70% -d "$CT_NOTES" nvim -- "$selected"
+else
+  picker_exit=$?
+  case "$picker_exit" in
+    1|130) exit 0 ;;
+    *) exit "$picker_exit" ;;
+  esac
+fi
