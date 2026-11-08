@@ -1,25 +1,6 @@
-## Kitty Configuration
+# Kitty configuration
 
-This directory contains configuration for the Kitty terminal emulator.
-
-**Context:** When working in this directory, use `/teach-kitty` to load comprehensive Kitty documentation if not already shared.
-
-**Structure:**
-
-- `kitty.conf` - Main terminal-emulator configuration
-- `keys.macos.conf` / `keys.linux.conf` - Terminal-level keyboard bindings
-- `bin/menu.sh` - Small kitty-only action menu for opacity/debug/key inspection
-- `themes/` - Color schemes
-
-## Config Style
-
-- tmux owns multiplexing/session behavior; kitty keybindings should stay terminal-focused unless explicitly requested
-- use vim fold markers for grouping config sections:
-
-    ```
-    #: section_name {{{
-
-    content here
-
-    #: }}}
-    ```
+- Kitty owns terminal rendering and terminal-level input; tmux owns sessions, panes, and multiplexing behavior.
+- Preserve the existing fold markers when adding grouped configuration: `#: name {{{` opens a section and `#: }}}` closes it.
+- Keep `bin/menu.sh` limited to Kitty-specific actions; cross-application orchestration belongs with its runtime owner.
+- Use the Kitty checks in [the verification guide](../../docs/verification.md#themes-and-desktop-integration); report syntax as untested when no parser is available rather than reloading the live terminal.
