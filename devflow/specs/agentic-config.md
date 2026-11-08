@@ -85,7 +85,7 @@ mise run build →  Oven mise run verify   →  oven/bin/*.ts compiled to ~/.loc
 ### [SPEC-001-S2.2] Package Provisioning
 
 - Mise provides the Node runtime; root `mise.toml` installs the user-prefix Playwright CLI with that runtime.
-- `mise.toml` provides the `llm:update` task, while `boot/setup.sh` invokes `home/.local/bin/mise-llm install` during bootstrap for official Claude, Codex, and Pi installers. `llm:update` updates them and Pi's npm extensions, stopping on failure.
+- `mise.toml` provides the `llm:update` task, while `boot/setup.sh` invokes `home/.local/bin/mise-llm install` during bootstrap for official Claude, Codex, Pi, and [Pi-Bolt](https://pi-bolt.opensec.in/docs/installation.html) installers. Pi-Bolt installs noninteractively into `~/.pi-bolt` with a `~/.local/bin/pi-bolt` link, without adding optional OpenSec extensions or replacing custom launchers. `llm:update` updates all four CLIs and both Pi and Pi-Bolt extensions, stopping on failure.
 - Pi installs missing `npm:pi-nvim` and `npm:@narumitw/pi-goal` extensions from `pi/agent/settings.json`.
 
 `boot/setup.sh` invokes `home/.local/bin/mise-llm install` in the bootstrap post-repos hook. `~/.local/bin` precedes `$PI_CODING_AGENT_DIR/bin` and mise shims, preserving the custom Pi wrapper. Use `mise run llm:update` for explicit updates.
@@ -279,7 +279,7 @@ Disables Ctrl+A in Global context.
 
 - **Mise as settings source of truth.** `templates/claude-settings.json.tera` renders to a regular `~/.claude/settings.json`; an optional `~/.config/claude/settings-overlay.json` supplies separately owned machine policy. Applying settings requires no system-layer change. Manual edits to the output are overwritten on apply; use project-local or local override settings for overrides.
 
-- **One owner per agent CLI.** Official vendor installers own Claude, Codex, and Pi; bootstrap setup installs them and the `llm:update` task updates them. Node remains mise-managed, Playwright is npm-managed in `~/.local`, and Pi uses its official locked Node/npm installation. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
+- **One owner per agent CLI.** Official vendor installers own Claude, Codex, Pi, and Pi-Bolt; bootstrap setup installs them and the `llm:update` task updates them. Node remains mise-managed, Playwright is npm-managed in `~/.local`, and Pi uses its official locked Node/npm installation. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
 
 - **One owner per asset path.** Mise links `home/` and exposes its shared skills to both agent locations with `symlink-each`; Dotty links other agents, commands, and rules, excluding Claude settings and skills. Real destination directories preserve application-owned metadata. Existing linked-file edits remain immediate, while new or removed files require another apply. Global settings are managed separately by mise.
 

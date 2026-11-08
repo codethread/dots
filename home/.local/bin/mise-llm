@@ -18,6 +18,7 @@ fi
 : "${DOTFILES:?Run through mise bootstrap or mise run llm:update}"
 local_bin="$HOME/.local/bin"
 pi_bin="$PI_CODING_AGENT_DIR/bin/pi"
+pi_bolt_bin="$local_bin/pi-bolt"
 node_bin=$(dirname "$(node -p 'process.execPath')")
 system_path="$node_bin:/usr/bin:/bin:/usr/sbin:/sbin"
 tmp=$(mktemp -d)
@@ -38,6 +39,7 @@ check_launcher() {
 check_launcher "$local_bin/claude" "$HOME/.local/share/claude/versions"
 check_launcher "$local_bin/codex" "$CODEX_HOME/packages/standalone"
 check_launcher "$local_bin/codex-code-mode-host" "$CODEX_HOME/packages/standalone"
+check_launcher "$pi_bolt_bin" "$HOME/.pi-bolt"
 
 run_installer() {
   local name=$1 url=$2 installer_path=$3
@@ -77,7 +79,16 @@ if [[ $action == update ]]; then
   env -u PI_OFFLINE "$pi_bin" update --all
 fi
 
-for binary in "$local_bin/claude" "$local_bin/codex" "$pi_bin"; do
+if [[ ! -x "$pi_bolt_bin" ]]; then
+  PIBOLT_INSTALL="$HOME/.pi-bolt" PIBOLT_BIN_DIR="$local_bin" \
+    PIBOLT_YES=1 PIBOLT_EXTENSIONS=no \
+    run_installer pi-bolt https://pi-bolt.opensec.in/install.sh "$local_bin:$system_path"
+fi
+if [[ $action == update ]]; then
+  env -u PI_OFFLINE "$pi_bolt_bin" update --all
+fi
+
+for binary in "$local_bin/claude" "$local_bin/codex" "$pi_bin" "$pi_bolt_bin"; do
   printf '\n%s\n' "$binary"
   "$binary" --version
 done
