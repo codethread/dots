@@ -6,129 +6,142 @@ description: >-
 
 # mise
 
-Use mise as two related systems:
-
-- `[tools]`, `[env]`, and `[tasks]` define project or user development environments.
-- `mise bootstrap` converges workstation resources such as packages, files, repositories, dotfiles, shell setup, services, and macOS settings.
-
-Do not imply that mise provides transactional rollback or complete operating-system management.
-
-## Start from the required surface
+Use mise's native surfaces before adding scripts:
 
 ```text
-Need versioned CLI/runtime? --> [tools]
-Need project command? ------> [tasks]
-Need process environment? --> [env]
-Need OS package/app? -------> [bootstrap.packages]
-Need managed config file? --> [dotfiles] or [bootstrap.files]
-Need machine convergence? --> mise bootstrap
-Need macOS user service? --> [bootstrap.macos.launchd.agents]
+Versioned CLI/runtime? --> [tools]
+Project command? ------> [tasks]
+Process environment? --> [env]
+Host package/app? -----> [bootstrap.packages]
+User-owned config? ----> [dotfiles] / [dotfile_groups]
+Privileged file? ------> [bootstrap.files]
+Background process? ---> [bootstrap.services] or platform service
+Machine convergence? --> mise bootstrap
 ```
 
-Before editing, inspect the effective state:
+Mise bootstrap is ordered convergence, not a transaction or a complete operating-system manager.
+
+## Establish the version and effective config
+
+Run from the project directory so early `.miserc.toml` discovery settings apply:
 
 ```sh
 mise --version
 mise config
 mise ls --current
 mise doctor
+mise tasks validate --errors-only
 ```
 
-Read the relevant vendored source before relying on remembered syntax. The checkout at `/Users/ct/dev/vendor/mise` is stable on this machine:
+Treat the installed CLI's `--help` and behavior as version-specific evidence. This repository currently requires mise 2026.10.4+. The local checkout at `/Users/ct/dev/vendor/mise` is useful source material only after checking its `Cargo.toml` version and revision; it may be older or newer than the installed binary.
 
-- [configuration](file:///Users/ct/dev/vendor/mise/docs/configuration.md)
-- [configuration environments](file:///Users/ct/dev/vendor/mise/docs/configuration/environments.md)
-- [dev tools](file:///Users/ct/dev/vendor/mise/docs/dev-tools/index.md)
-- [lockfiles](file:///Users/ct/dev/vendor/mise/docs/dev-tools/mise-lock.md)
-- [environments](file:///Users/ct/dev/vendor/mise/docs/environments/index.md)
-- [tasks](file:///Users/ct/dev/vendor/mise/docs/tasks/index.md)
-- [bootstrap](file:///Users/ct/dev/vendor/mise/docs/bootstrap.md)
-- [macOS LaunchAgents](file:///Users/ct/dev/vendor/mise/docs/bootstrap/launchd.md)
-- [user services](file:///Users/ct/dev/vendor/mise/docs/bootstrap/services.md)
-- [dotfiles](file:///Users/ct/dev/vendor/mise/docs/dotfiles.md)
-- [bootstrap packages](file:///Users/ct/dev/vendor/mise/docs/bootstrap/packages/index.md)
-- [Homebrew packages](file:///Users/ct/dev/vendor/mise/docs/bootstrap/packages/brew.md)
-- [Docker cookbook](file:///Users/ct/dev/vendor/mise/docs/mise-cookbook/docker.md)
-- [trust](file:///Users/ct/dev/vendor/mise/docs/cli/trust.md)
+Prefer current primary sources:
 
-Use <https://mise.jdx.dev/> and current release notes when the vendored checkout may be stale, especially before concluding a feature is missing. Match the installed version to the checkout; this repo now requires 2026.10.4+. The config schema is <https://mise.jdx.dev/schema/mise.json>.
+- [configuration and hierarchy](https://mise.jdx.dev/configuration.html)
+- [config environments](https://mise.jdx.dev/configuration/environments.html)
+- [tasks](https://mise.jdx.dev/tasks/)
+- [bootstrap and run order](https://mise.jdx.dev/bootstrap.html)
+- [dotfiles](https://mise.jdx.dev/dotfiles.html)
+- [dotfile groups](https://mise.jdx.dev/dotfiles/groups.html)
+- [dotfile edits](https://mise.jdx.dev/dotfiles/edits.html)
+- [packages](https://mise.jdx.dev/bootstrap/packages/)
+- [npm backend](https://mise.jdx.dev/dev-tools/backends/npm.html)
+- [user services](https://mise.jdx.dev/bootstrap/services.html)
+- [macOS LaunchAgents](https://mise.jdx.dev/bootstrap/launchd.html)
+- [schema](https://mise.jdx.dev/schema/mise.json)
+- [releases](https://github.com/jdx/mise/releases)
 
-## Compose configuration deliberately
+Current website documentation can describe releases newer than the installed binary. Confirm materially important syntax against the installed CLI or a disposable config before requiring it.
 
-Prefer a checked-in TOML config. Add a hard `min_version` when syntax or behavior requires it.
+## Compose config deliberately
+
+Use checked-in TOML and set `min_version` to the oldest release actually needed by the config:
 
 ```toml
-min_version = "2026.9.0"
+min_version = "2026.10.4"
 
 [tools]
 node = "24"
-bun = "latest"
 
 [env]
 NODE_ENV = "development"
 
 [tasks.verify]
-description = "Verify the managed environment"
-run = "node --version && bun --version"
+run = "node --version"
 ```
 
-Use exact versions plus a committed `mise.lock` when reproducibility matters. Enable lockfile creation with `[settings] lockfile = true`, generate it with `mise lock`, and install with `mise install --locked`. A lockfile can still require network access and credentials.
+Use exact versions plus a committed `mise.lock` when reproducibility matters. A request such as `node = "24"` is a moving prefix; the lockfile records its resolution. Validate locked installs with `mise install --locked`.
 
-Use the normal hierarchy rather than duplicating whole profiles:
+### Discovery and profiles
 
-- `~/.config/mise/config.toml`: shared user baseline.
-- `~/.config/mise/config.personal.toml`, `config.work.toml`, `config.dev.toml`: global environment overlays.
-- project `mise.toml`: repository baseline.
-- project `mise.<env>.toml`: project overlay.
-- `mise.local.toml` and `mise.<env>.local.toml`: uncommitted machine overrides.
+Mise combines system config, global config, parent project config, and the nearest project config; later and nearer files win according to the documented hierarchy. Use:
 
-For modular project configuration, use `.mise/conf.d/*.toml`: mise automatically loads these full-schema fragments, while root `mise.toml` and its profile overlays remain available. Prefer plain hyphenated names such as `cc-notify.toml`; environment-suffixed fragment names require the separate `env_conf_d` opt-in during its rollout. `config_root` for recognized project fragments remains the project root; `config_source` identifies the actual file. Keep an agent's full declaration in one fragment because duplicate agent names replace whole declarations. After splitting, verify `mise config`, task metadata, and unchanged generated agent state before applying.
+- `mise.toml` for the shared project baseline.
+- `mise.<env>.toml` for a selected project environment.
+- `mise.local.toml` and `mise.<env>.local.toml` for uncommitted overrides.
+- `~/.config/mise/config.toml` and `config.<env>.toml` for global equivalents.
+- `mise/conf.d/*.toml`, `.mise/conf.d/*.toml`, or `.config/mise/conf.d/*.toml` for full-schema fragments.
 
-Select overlays explicitly with `mise -E work …`, `MISE_ENV=work`, or a reviewed `.miserc.toml`. Multiple environments are ordered; the last wins. Run `mise -E work config` to verify the loaded files. Do not depend on automatic platform files unless `.miserc.toml` explicitly sets `auto_env = true`; the feature is currently disabled by default and in rollout.
+Select environments with `mise -E work …`, `MISE_ENV=work`, or `.miserc.toml`. With several environments, later names win among files of the same kind; local files still outrank shared environment files. Verify with `mise -E work config`.
 
-Use `os` filters where that section supports them, or platform environment files such as `mise.macos.toml` and `mise.linux.toml` with `auto_env` explicitly configured. Do not assume every table accepts `os`.
+Discovery settings such as `env`, `auto_env`, and `env_conf_d` must be in `.miserc.toml` or the process environment because `mise.toml` loads too late. In 2026.10.4, platform environments and environment-suffixed `conf.d` fragments remain opt-in. Prefer hyphenated fragment names; dotted fragment names are in a staged migration.
 
-Idiomatic files such as `.nvmrc` are disabled by default. Enable only the tools intended to read them; prefer explicit `mise.toml` declarations for a mise-owned setup.
+A single-file `conf.d/*.toml` fragment keeps the surrounding project's `config_root`. A `conf.d/<name>/mise.toml` folder fragment is its own config root. Relative sources, task directories, and `{{ config_root }}` follow that distinction.
 
-## Choose the correct installation mechanism
+Layering is section-specific, not a recursive TOML merge. Tool and environment values merge by their documented keys; tasks, portable services, and LaunchAgents with the same name are documented as higher-precedence replacements of the declaration. Check the installed release's documentation or effective output for other named sections, including experimental daemons, before relying on replacement or field-wise merge behavior.
 
-| Requirement | Default choice | Notes |
+## Choose native ownership
+
+| Requirement | Native owner | Guidance |
 | --- | --- | --- |
-| Node or Bun | Core `node` / `bun` tool | Prefer over Homebrew for version switching. |
-| npm CLI | `"npm:<package>"` in `[tools]` | Declare Node when the installed executable needs it. Scoped names must be quoted. |
-| Standalone binary | Registry shorthand, then `aqua:`, then `github:` | Check with `mise registry <tool>` and `mise ls-remote <tool>`. |
-| Homebrew formula/cask | `"brew:<formula>"` / `"brew-cask:<cask>"` in `[bootstrap.packages]` | Machine package, not a shimmed versioned tool. |
-| Application dependency | Ecosystem manifest and package manager | Do not use the npm backend for project libraries. |
+| Node, Bun, Python, or another versioned runtime | `[tools]` | Prefer core/registry backends over Homebrew when version switching matters. |
+| Ordinary user CLI published to npm | `"npm:<package>"` in `[tools]` | Appropriate for tools such as Playwright when mise should own the version; add Node when the CLI needs it at runtime. |
+| CLI with an official vendor installer/updater | repository bootstrap integration | Preserve the declared vendor owner rather than replacing it with `npm:` merely because the implementation uses Node. In this repository, `mise-llm` owns Claude, Codex, Pi, and Pi-Bolt installation and updates. |
+| Project library | ecosystem manifest | Keep application dependencies in `package.json`, not the mise npm backend. |
+| Host formula or cask | `[bootstrap.packages]` | Use `brew:` / `brew-cask:` for machine packages. |
+| User config tree | `[dotfiles]` or `[dotfile_groups]` | Prefer native links, copies, templates, groups, manifests, and edits. |
+| Cross-platform user process | `[bootstrap.services]` | Set `scope = "user"`; use `requires_tools = true` when it invokes `[tools]`. |
+| macOS-specific schedule or launchd feature | `[bootstrap.macos.launchd.agents]` | Use native argument vectors and launchd fields. |
 
-Do not introduce `ubi:`; it is deprecated. Avoid new asdf/vfox plugins when a curated or release backend exists.
+The npm backend uses embedded aube by default and does not need npm or Node to install a package, but most Node CLIs still need Node to execute. Use it only where mise is the selected owner. Preserve official vendor installers where the repository assigns them ownership; do not infer ownership from the package ecosystem. Review and narrowly approve supply-chain failures with `allow_builds`, `allow_low_downloads`, `allow_exotic_deps`, or `trust_policy_excludes` only after inspecting the named package/version.
 
-The npm backend uses embedded aube by default. Review lifecycle-script or reputation failures rather than silently switching installers. Approve only the named build or dependency after inspection. Read [npm backend](file:///Users/ct/dev/vendor/mise/docs/dev-tools/backends/npm.md) for `allow_builds`, `allow_low_downloads`, and locking behavior.
+## Use native dotfile deployment
 
-Homebrew bootstrap installs directly into `/opt/homebrew` on Apple Silicon macOS and `/home/linuxbrew/.linuxbrew` on Linux; it does not require or invoke `brew` for `homebrew/core`. Add the prefix's `bin` directory to `PATH`. Use `[tools]` instead when per-project switching is the goal. Linux cask support is limited mostly to fonts; mark macOS-only casks with `os = ["macos"]`.
+For a few explicit targets, use `[dotfiles]`. For a source tree with selectable machine/profile sets, use `[dotfile_groups]` and select groups with `[bootstrap].dotfile_groups`.
 
-## Bootstrap workstations safely
+```toml
+[dotfile_groups.config]
+root = "config"
+target = "~/.config"
+mode = "symlink-each"
+manifest = "git"
 
-Bootstrap is ordered convergence, not a transaction. Earlier phases remain applied if a later phase fails. Hooks and the `bootstrap` task run on every apply and must be repeatable.
+[bootstrap]
+dotfile_groups = ["config"]
+```
 
-For an existing machine:
+Key semantics verified in 2026.10.4:
+
+- `symlink` links one target to one source; `symlink-each` walks a directory and manages entries beneath an existing target tree.
+- Directory `copy` is additive; `symlink-each` reconciles links it recorded while preserving unmanaged neighbors.
+- `manifest = "git"` uses `git ls-files` from a directory source and is valid with directory `copy` or `symlink-each`. Only indexed paths are selected; `exclude` filters them further.
+- Glob sources require corresponding target wildcards so each source maps uniquely. Installed 2026.10.4 maps captures positionally and can change the suffix: `source = "scripts/*.ts"` with target `"~/.local/bin/*"` deploys extensionless names.
+- Removing an ordinary declaration does not remove its deployed path. Run `mise dot unapply` while it is still declared. Group orphans can be removed with reviewed `mise dot apply --prune`.
+- Existing conflicting real paths block symlink deployment unless `--force` is explicitly used. Copy and template entries can replace changed content without `--force`.
+
+Preview and inspect with:
 
 ```sh
-mise trust
-mise bootstrap --dry-run
-mise bootstrap status --missing
-mise bootstrap plan --detailed-exitcode
-mise bootstrap --only packages,dotfiles,tools --dry-run
+mise dot diff
+mise dot apply --dry-run
+mise dot status --json
 ```
 
-Review the plan, then apply the same narrowed selection without `--dry-run`. Do not use `--force-dotfiles`, package pruning, or broad `--yes` until the exact ownership and removal scope is understood. Pruning is subsystem-specific.
+Do not introduce a custom linker, manifest walker, or profile-switch cleanup when groups, Git manifests, and native reconciliation express the ownership.
 
-Use declarative resources when mise can inspect their state. Reserve `[tasks.bootstrap]` and hooks for setup that has no declarative representation. Dotfile conflicts should fail visibly; do not overwrite them by default.
+### Structured edits
 
-For a repository bootstrap, use `mise bootstrap --from <url>`. Use `--adopt <url>` only when the repository is intended to become the global mise configuration or tracked-history source. Review remote configuration before trusting it.
-
-## Share application-written config files
-
-For JSON, TOML, or YAML files that an application also writes, mise 2026.10.4+ supports native structured merge edits:
+On installed 2026.10.4, use a merge edit when mise owns keys inside application-written JSON, TOML, or YAML:
 
 ```toml
 [dotfiles."~/.config/codex/config.toml/shared"]
@@ -136,57 +149,52 @@ source = "templates/codex-config.toml"
 merge = true
 ```
 
-The final path segment is the edit id, not part of the target filename. Tables merge recursively; target-only keys remain local. Arrays replace wholesale, source-key removals do not remove target keys, and edits do not sync back into the source. TOML/YAML preserve untouched formatting and comments. Use `mise dot diff TARGET/ID` before applying. `mise dot status -J` lists these under `edits`, not `files`. Add `template = "tera"` only if the source needs rendering; do not combine merge edits with whole-file `mode`.
+The final path segment is the edit id, not part of the target path. In 2026.10.4, object/table keys merge recursively, target-only keys remain, and arrays from the source replace the target array wholesale. Removing a key from the source does not delete that target key. Edits are one-way deployment; application changes do not sync back to the source. `mise dot status --json` reports them under `edits`.
 
-## Deploy macOS services
+Installed 2026.10.4 accepts only `merge = true`; it rejects `merge = "missing"`, JSONC targets, INI targets, and the newer `format` override. Those capabilities appear in newer website documentation/schema and require a coordinated minimum-version upgrade plus disposable verification before use. On 2026.10.4, use a whole-file copy/template when the entire file is owned, or another native edit form when the format supports it. Preview the target with `mise dot diff <target-or-edit>` before apply.
 
-For macOS-only services, prefer `[bootstrap.macos.launchd.agents]` when calendar scheduling, explicit arguments, or log paths matter. mise creates native launchd jobs; no extra supervisor or shell activation is needed. `[bootstrap.services]` with `scope = "user"` is another option, but do not declare the same name in both tables.
+## Preserve bootstrap ordering
 
-Read [macOS service deployment](references/macos-services.md) before migrating or applying jobs. It covers the verified bootstrap-order trap, stable executable/config paths, credentials, old-service handoff, and health checks. The crucial ordering: **prepare tools, checkout, dependencies, and log directories before applying raw LaunchAgents**. A final bootstrap task runs too late.
+Read `mise bootstrap --help` and the [documented run order](https://mise.jdx.dev/bootstrap.html#how-it-runs) before moving setup between phases. In 2026.10.4 the important sequence is:
 
-## Use noninteractive execution in automation
+1. pre-package files and `pre-packages`
+2. built-in packages; `post-packages` runs here when no package-plugin package is active
+3. ordinary files and services not requiring tools
+4. repositories and dotfiles
+5. shell/defaults/LaunchAgents/user settings
+6. `pre-tools`, tools, `post-tools`
+7. plugin packages; when any are active, installed 2026.10.4 defers `post-packages` until after them; then services with `requires_tools = true`
+8. `bootstrap` task and `final` hook
 
-Use activation only in interactive shell startup:
+Hooks and the bootstrap task run on every bootstrap; make them repeatable. Earlier changes remain when a later phase fails.
+
+Use declarative resources when mise can inspect their state. Place each dependency in the earliest native phase that satisfies its consumer: pre-package files for package prerequisites, repositories before dotfiles, declarative directories before services, and `requires_tools = true` for portable user services that invoke `[tools]`. A final `bootstrap` task is too late to prepare a raw LaunchAgent because LaunchAgents load before tools and the task. Remove custom preparation hooks when native resources or correctly ordered services make them redundant.
+
+For this repository, retain the PAM/system prerequisite checks because they protect privileged file convergence, not because they are existing hooks. Re-evaluate every other preparation hook against the phase graph and replace stopgaps with native resources where the observable ordering remains correct.
+
+## Deploy services
+
+Read [macOS service deployment](references/macos-services.md) before changing service ownership. Launchd jobs receive a minimal environment, not interactive shell activation. Use durable absolute executable paths, explicit environment, and a durable checkout/config root.
+
+Prefer `[bootstrap.services]` for one foreground command across platforms. Prefer raw LaunchAgents for calendar schedules, queue directories, launch events, process type, or explicit launchd controls. A name cannot appear in both because both own `dev.mise.<name>`.
+
+Deleting a declaration leaves the installed user service or LaunchAgent in place. Remove it explicitly with `mise bootstrap services remove <name>` or keep a portable user service declaration with `state = "absent"` for a managed retirement.
+
+## Validate without accidental host mutation
+
+Use direct read-only commands rather than wrapping them in a task that may auto-install tools:
 
 ```sh
-eval "$(mise activate zsh)"
-```
-
-Use `mise exec -- <command>` or `mise run <task>` in scripts, containers, editors, and CI. Prefer the explicit `mise run` spelling in documentation so task names cannot be confused with future CLI commands.
-
-For conventional OCI builds, follow the [Docker cookbook](file:///Users/ct/dev/vendor/mise/docs/mise-cookbook/docker.md):
-
-1. Install mise into an explicit shared directory.
-2. Copy `mise.toml`, `mise.lock`, and install-time inputs before the rest of the source for layer caching.
-3. Run `mise install --locked` when a lockfile is committed.
-4. Put mise shims on `PATH`, but use `mise exec` in `RUN`, `CMD`, and CI.
-5. Use `mise install --system` when a runtime-mounted home directory would hide image-built installs.
-6. Exclude credentials and dotenv files from the build context.
-
-`mise oci` is experimental, Linux-host/target-architecture constrained, and not the default for a portable proof of concept.
-
-## Verify observable behavior
-
-Validate syntax and task metadata before expensive installation when possible:
-
-```sh
-mise config
 mise tasks validate --errors-only
-mise lock --dry-run
-mise install
-mise ls --installed
-mise exec -- <tool> --version
+mise bootstrap --dry-run
+mise bootstrap status
+mise bootstrap plan --detailed-exitcode
+mise dot diff
+mise dot status --json
 ```
 
-For bootstrap work, also run the relevant `status`, `--dry-run`, and post-apply verification commands. Invoke a direct bootstrap `--dry-run` for read-only planning: wrapping it in `mise run` can install declared tools before the task executes. For services, inspect process/application health as well as loaded definitions, then verify an unchanged second apply does not restart the process. In containers, build with the requested engine and execute every promised CLI, not merely `mise ls`.
+`bootstrap plan` covers declarative resources only; it does not cover dotfiles, repos, shell activation, macOS defaults, LaunchAgents, tools, hooks, or the bootstrap task. Use the full dry run for those. To verify phase placement on a specific release, inspect the ordered headings from that installed binary's `mise bootstrap --dry-run`; do not promote newer website wording to installed-version evidence. Dotfile templates and some bootstrap file templates can execute trusted template functions during status/diff; read the source before treating those commands as inert.
 
-Fail loudly on malformed config, missing required tools, unreviewed trust decisions, and unsupported platform packages. For a proof of concept, do not add retries, fallback installers, or broad exception handling; report the concrete limitation instead.
+For automation and services, use `mise exec -- <command>` or `mise run <task>`. Reserve `eval "$(mise activate …)"` for interactive shell startup.
 
-## Keep these distinctions visible
-
-- Activation changes an interactive shell; `exec` scopes one child process.
-- `[tools]` installs versioned development tools; `[bootstrap.packages]` installs host packages.
-- A version request such as `"24"` is not an exact pin; the lockfile records resolution.
-- `mise trust --all` is a security decision, not a routine fix for automation.
-- Secrets placed in config or resolved OCI image environment are inspectable; inject secrets at runtime.
-- `mise bootstrap --dry-run` does not prove an apply will be transactional or that external downloads will succeed.
+Fail visibly on malformed config, missing required tools, unsupported packages, or unreviewed trust decisions. Do not hide a native limitation behind fallback installers, compatibility wrappers, or custom deployment state.

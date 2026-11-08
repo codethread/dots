@@ -1,65 +1,83 @@
 # macOS service deployment with mise
 
-Use this reference when deploying macOS user services. Verified with Homebrew mise 2026.9.15 in September 2026; consult current [launchd](https://mise.jdx.dev/bootstrap/launchd.html), [services](https://mise.jdx.dev/bootstrap/services.html), and [bootstrap order](https://mise.jdx.dev/bootstrap.html#how-it-runs) docs before assuming the same behavior in another version.
+Use this reference when declaring or migrating macOS user services. Version-check against the installed CLI and current [LaunchAgent](https://mise.jdx.dev/bootstrap/launchd.html), [service](https://mise.jdx.dev/bootstrap/services.html), and [bootstrap order](https://mise.jdx.dev/bootstrap.html#how-it-runs) documentation. The behavior below was checked with mise 2026.10.4.
 
-## Choose the declaration
+## Choose one owner
 
-- `[bootstrap.macos.launchd.agents.<name>]`: native argument vectors, working directory, environment, explicit log paths, KeepAlive, intervals, and calendar arrays. Appropriate for scheduled jobs and services needing macOS-specific controls.
-- `[bootstrap.services.<name>]` with `scope = "user"`: generic background service lifecycle, including `state = "absent"` and `requires_tools = true`. On macOS, `restart = "always"` corresponds to unconditional KeepAlive; the default is only on failure. `requires_tools` controls installation order, not automatic mise environment wrapping.
-- Neither needs pitchfork. A foreground `mise run` task can be launched by launchd, but tasks alone do not provide login persistence.
+| Need | Declaration |
+| --- | --- |
+| One foreground command across macOS, Linux, and Windows | `[bootstrap.services.<name>]` with `scope = "user"` |
+| Calendar schedule, launch events, queue directories, process type, or other launchd controls | `[bootstrap.macos.launchd.agents.<name>]` |
 
-Both tables produce labels `dev.mise.<name>` and must not use the same name. User agents need a GUI launchd domain and run as the logged-in user; they are not root LaunchDaemons.
+Both produce `~/Library/LaunchAgents/dev.mise.<name>.plist`; a name cannot appear in both.
 
-## Prepare, then apply
+A portable user service defaults to restart on failure. Set `requires_tools = true` when its command uses `[tools]`; this changes full-bootstrap ordering but does not wrap the command in mise or activate a shell. Use an absolute executable path or invoke the stable mise executable with `mise exec`/`mise run`.
 
-In the verified bootstrap order, raw LaunchAgents are loaded **before** `[tools]` installation and the final `bootstrap` task. Generic user services with `requires_tools = true` wait for tools, but still precede the final task. Do not install application dependencies in a final task and assume the service will wait.
+Raw LaunchAgents support argument vectors, working directory, environment, log paths, KeepAlive variants, intervals, calendar arrays, queue directories, launch events, priority, and kickstart. They load in the logged-in user's `gui/<uid>` domain and are not root LaunchDaemons.
 
-Use explicit preparation and apply tasks with a dependency, or another ordering that demonstrably completes prerequisites before service loading:
+## Satisfy prerequisites before load
 
-1. Install tools and ensure the intended checkout exists.
-2. Install application dependencies using its lockfile.
-3. Check required credentials without printing their values. Keep secrets in the application's existing local file or runtime environment, not rendered plists.
-4. Create log/state directories. mise creates the LaunchAgents directory, not arbitrary application log directories.
-5. Retire any previous owner, then apply the agents.
+In 2026.10.4, ordinary services run before repositories and dotfiles; raw LaunchAgents run after repositories/dotfiles but before `[tools]`; services with `requires_tools = true` run after tools and plugin packages. The final `bootstrap` task runs after all of them.
 
-Run the direct command for a genuinely non-installing preview, using the intended profile:
+Therefore:
 
-```nu
+- Use `requires_tools = true` for a portable service whose only late prerequisite is `[tools]`.
+- Prepare raw LaunchAgent prerequisites in earlier declarative resources or hooks. A final bootstrap task is too late.
+- If a workload needs a repository, dependencies, credentials, or log directories, place each prerequisite in a native phase that completes before its service loads. Replace preparation hooks when declarative directories, repositories, dotfiles, or a `requires_tools` user service provide the same ordering.
+- Retain this repository's PAM/system checks because privileged convergence depends on them; do not treat unrelated existing hooks as constraints.
+- Apply from a durable checkout because generated jobs can embed `{{ config_root }}`.
+
+Preview the intended profile directly:
+
+```sh
 mise -E dev bootstrap macos launchd-agents apply --dry-run
+mise -E dev bootstrap services apply --dry-run
 ```
 
-A task containing that command can still install `[tools]` before the dry run begins. `status --missing` checks definitions/load state, not readiness.
+A task that runs these commands may auto-install its own tools before the preview starts, so use the direct commands for a non-installing plan.
 
-## Executables, config, and working directory
+## Write launchd-safe commands
 
-LaunchAgents inherit launchd's minimal environment, not shell activation. Use a durable executable path, explicit HOME/PATH where needed, and `mise exec` or a foreground task for mise-managed tools. Use Homebrew's stable mise symlink rather than a versioned Cellar binary. Use the host's actual installation prefix.
+LaunchAgents inherit launchd's minimal environment, not shell activation or terminal `MISE_ENV`.
 
-A service launched with `mise -C <dotfiles> -E <profile> run <task>` can load tools from the dotfiles project while the task's `dir` selects the application checkout. This was verified with Bun and an app-local `.env`. Plain `mise -C <dotfiles> exec` changes the child's working directory too; do not assume a plist `working_directory` overrides it.
+- Use the stable user-owned mise executable path configured by this repository, not a versioned package-manager Cellar path.
+- Set required environment variables explicitly. Keep secrets in the application's established protected runtime source; do not render them into a plist.
+- Select config environments explicitly in the command (`-E`) when the job depends on one.
+- Use `{{ config_root }}` for a durable declaring project root and `{{ config_source }}` when the declaring file itself matters.
+- `program` and `args` are an argument vector, not a shell command. Invoke a shell or script explicitly for pipelines and redirection.
+- String values are Tera templates. Documented path fields expand `~`; prefer templates or absolute values in arguments rather than relying on shell expansion.
+- Create application log/state directories before launchd writes to them.
 
-`{{ config_root }}` refers to the declaring config's logical project root and becomes an absolute path in the generated plist. Recognized project locations such as `.mise/conf.d/*.toml` normalize back to the project root, not the fragment directory; `config_source` identifies the actual config file. Apply production jobs from a durable checkout, not a worktree you intend to remove. Select profiles explicitly; login jobs do not inherit your terminal's `MISE_ENV`.
+A single-file `conf.d/*.toml` fragment retains the surrounding project root. A `conf.d/<name>/mise.toml` folder fragment has its own config root. Confirm the effective root before embedding paths.
 
-Path fields such as `program`, `working_directory`, and log paths expand `~/`. `args` do **not** expand tilde or shell variables: use templates for those values. Shell pipelines require an explicitly invoked shell or script.
+## Hand off old ownership
 
-## Hand off ownership and verify lifecycle
+Applying a mise job does not stop a differently labelled Git, Homebrew, or custom scheduler job. Before migration:
 
-Git's own scheduler and mise use different labels: applying mise does not stop earlier jobs. Inspect live labels and plists before switching. Refuse an apply that would leave two copies active. Prefer handing off from the previous owner first; user-domain disable/bootout is a scoped alternative when authorized, not permission to alter unrelated system services.
+1. Inspect the old label, process, and plist.
+2. Stop/remove the old owner in its own supported way.
+3. Apply the mise declaration.
+4. Confirm only one workload instance is active.
 
-Deleting a mise declaration does not prune its installed job. Remove explicitly, or use `state = "absent"` with the generic user-service API. Treat cleanup separately from applying new definitions.
+Deleting a mise declaration does not remove the installed job. Use:
 
-Check these observable outcomes:
+```sh
+mise bootstrap services remove <name>
+```
 
-- Generated plists pass `plutil -lint`; schedules, log paths, executable paths, and environment match the intended source.
-- The old labels are absent, and the new labels are loaded. For scheduled jobs, idle is normal; run one and inspect its last exit code and logs.
-- The application is actually ready: health endpoint, socket, or another meaningful probe. A successful apply can return before a Bun server writes its port file or starts listening.
-- Shutdown is also asynchronous. An immediate process/sentinel check after `bootout` can still see the exiting child. Confirm cleanup has completed before starting the replacement, rather than treating one immediate snapshot as a leak.
-- For raw LaunchAgents, an unchanged second apply preserves the running PID. Updating source or a runtime without changing the plist requires an explicit restart; reapplying an unchanged definition is not a restart. `kickstart = true` requests an immediate run when an agent is applied, not a forced restart of an already-loaded unchanged job. Generic built-in services can have different lifecycle behavior; consult their docs.
+This removes either kind of mise-owned user job, declared or not. For a portable service, `state = "absent"` can retain declarative retirement state.
 
-Use observable bounded readiness checks for automation, not an arbitrary sleep or unbounded polling. Do not send real notifications merely to test a notification server when its health endpoint suffices.
+## Verify behavior, not only files
 
-## Native tool boundaries
+After an authorized apply, verify:
 
-A macOS-only runner can use `/usr/bin/git` and `/bin/bash`; first verify the required flags against the installed versions. Preserve workload-specific policy such as filtered repository lists and private Git configuration rather than assuming `git maintenance start` is equivalent.
+- `plutil -lint` accepts the generated plist.
+- Program, arguments, environment, working directory, schedule, and log paths match the declaration.
+- `launchctl print gui/$(id -u)/dev.mise.<name>` shows the intended loaded job and useful last-exit state.
+- The old label is absent and no duplicate process remains.
+- The application passes a meaningful health check or scheduled test run.
+- An unchanged second apply does not unexpectedly restart a healthy process.
 
-For manual Git-maintenance validation, use disposable repositories with a committed, packed object. Native Git's daily incremental repack can fail on an empty repository with "no pack files to index"; distinguish a poor fixture from a regression.
+`kickstart = true` requests `launchctl kickstart -k` after loading; use it deliberately because `-k` can replace a running instance. Reapplying a changed definition unloads the old job and stops its process before loading the replacement. Service shutdown and application readiness can be asynchronous, so use bounded observable checks rather than a fixed sleep.
 
-An installed Homebrew cask can still fail `brew info` when its tap is untrusted. Report that separately from mise failures; do not broaden tap trust just to make an unrelated verification command pass.
+Deleting a declaration or changing profiles can leave a previously installed job behind. Include explicit retirement in the migration plan instead of assuming profile selection prunes it.
