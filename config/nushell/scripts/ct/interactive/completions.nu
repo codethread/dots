@@ -1,4 +1,4 @@
-# Generate and install Bash completions through Carapace.
+# Generate Bash completions and Carapace specs for mise deployment.
 # Examples: setup completions gh; setup completions uv generate-shell-completion bash
 export def --wrapped "setup completions" [
     binary: string
@@ -43,24 +43,6 @@ export def --wrapped "setup completions" [
     }
 
     let origin = $env.DOTFILES | path join config carapace | path expand
-    let destination = $env.XDG_CONFIG_HOME?
-    | default ($nu.home-dir | path join .config)
-    | path join carapace
-    | path expand
-    let files = [
-        "bridge/bash/.bashrc"
-        $"bridge/bash/($binary).bash"
-        $"specs/($binary).yaml"
-    ]
-    let links = $files | each {|file|
-        {source: ($origin | path join $file), target: ($destination | path join $file)}
-    }
-    for link in $links {
-        if ($link.target | path exists --no-symlink) and (($link.target | path expand) != ($link.source | path expand)) {
-            error make {msg: $"Refusing to replace unrelated config: ($link.target)"}
-        }
-    }
-
     mkdir ($origin | path join bridge bash) ($origin | path join specs)
     let wrapper = $origin | path join $"bridge/bash/($binary).bash"
     let spec = $origin | path join $"specs/($binary).yaml"
@@ -75,14 +57,5 @@ export def --wrapped "setup completions" [
         }
     } | to yaml | save --force $spec
 
-    for link in $links {
-        if not ($link.target | path exists --no-symlink) {
-            mkdir ($link.target | path dirname)
-            let linked = ^ln -s $link.source $link.target | complete
-            if $linked.exit_code != 0 {
-                error make {msg: $"Could not link ($link.target): ($linked.stderr | str trim)"}
-            }
-        }
-    }
     {binary: $binary, bash: $wrapper, spec: $spec}
 }
