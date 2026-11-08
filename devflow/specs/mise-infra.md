@@ -10,7 +10,7 @@ Mise owns the Apple Silicon macOS workstation: packages, managed files, reposito
 
 The root Bun workspace contains only `oven`. The `.botlake/` lake package is independent: its dependencies resolve from the bootstrap-managed Botlake checkout and shared `ct-config`, and bootstrap installs them with `bun install --cwd .botlake` after preparing Botlake's source and CLIs.
 
-The official installer at `https://mise.run` owns `~/.local/bin/mise`; Homebrew does not manage mise. Update it with `mise self-update`. The shared shell environment puts `~/.local/bin` on PATH, and LaunchAgents use that stable executable path. Dots also provisions the shared Pitchfork supervisor at login; projects register their own daemon definitions during their bootstrap. Zsh caches `mise completion zsh` through its existing CLI-init helper.
+The official installer at `https://mise.run` owns `~/.local/bin/mise`; Homebrew does not manage mise. Update it with `mise self-update`. The shared shell environment puts `~/.local/bin` on PATH, and LaunchAgents use that stable executable path. Dots also provisions the shared Pitchfork supervisor at login; projects register their own daemon definitions during their bootstrap. Interactive Zsh evaluates `mise completion zsh` directly so in-place mise updates take effect on the next shell.
 
 ## Configuration locations
 

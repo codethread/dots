@@ -126,42 +126,15 @@ eval "$(wktree shell-init zsh)"
 
 source "$HOMEBREW_PREFIX/opt/antidote/share/antidote/antidote.zsh"
 
-cache_zsh_init() {
-  local name="$1"
-  shift
-
-  (($+commands[$name])) || return 0
-
-  local bin="${commands[$name]:A}"
-  local init="$XDG_CACHE_HOME/zsh/$name-init.zsh"
-  local stamp="$XDG_CACHE_HOME/zsh/$name-path"
-
-  if [[ ! -r "$init" || ! -s "$init" || ! -r "$stamp" || "$(< "$stamp")" != "$bin" ]]; then
-    local tmp
-    tmp=$(mktemp -d "$XDG_CACHE_HOME/zsh/.$name-init.XXXXXXXX") || return
-    {
-      # Publish only complete, successful output; a failed generator must retry.
-      "$bin" "$@" >| "$tmp/init" || return
-      print -r -- "$bin" >| "$tmp/stamp" || return
-      mv -f -- "$tmp/init" "$init" || return
-      mv -f -- "$tmp/stamp" "$stamp" || return
-    } always {
-      rm -rf -- "$tmp"
-    }
-  fi
-  source "$init"
-}
-
-cache_zsh_init starship init zsh
-cache_zsh_init fzf --zsh
+eval "$(starship init zsh)"
+eval "$(fzf --zsh)"
 # Atuin loads after fzf so its history widget owns Ctrl-R.
-cache_zsh_init atuin init zsh
+eval "$(atuin init zsh)"
 # Embedded completion for both CLIs; bl discovers lake commands at Tab time.
-cache_zsh_init botlake completions zsh
-cache_zsh_init wktree completions zsh
+eval "$(botlake completions zsh)"
+eval "$(wktree completions zsh)"
 # The standalone mise install supplies completions through its CLI.
-cache_zsh_init mise completion zsh
-unfunction cache_zsh_init
+eval "$(mise completion zsh)"
 
 #: }}}
 #: plugins {{{

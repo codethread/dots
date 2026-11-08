@@ -96,7 +96,7 @@ Interactive shells use `compinit -C`: completion discovery and security checks h
 
 Nushell sources Atuin and Carapace init files generated into `~/.local/cache/dots/shell`, and imports the mise activation module generated at interactive startup ([SPEC-009-S3c]). Interactive Bash and Zsh evaluate the native mise hook. The `mise-llm` helper, `boot/shell.sh`, and Carapace bridge all preserve the environment supplied by their caller rather than sourcing the base.
 
-Starship, fzf, and Atuin init scripts are cached separately by resolved executable path. Startup generates into temporary files and publishes the init script and path stamp only after the generator succeeds. A failed generator returns failure without sourcing partial output or replacing the previous cache, so the next launch retries. Empty init caches are regenerated as well.
+Interactive Zsh generates Starship, fzf, Atuin, Botlake, wktree, and mise initialization directly from the current executables on every startup. This keeps in-place executable updates and generator argument changes immediately visible; the generated scripts are not cached. The separately prepared `compinit` dump retains its explicit security audit and bootstrap lifecycle above.
 
 ## [SPEC-009-S6] Validation
 
