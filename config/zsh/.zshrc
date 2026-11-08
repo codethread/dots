@@ -130,7 +130,7 @@ cache_zsh_init() {
   local name="$1"
   shift
 
-  (( $+commands[$name] )) || return 0
+  (($+commands[$name])) || return 0
 
   local bin="${commands[$name]:A}"
   local init="$XDG_CACHE_HOME/zsh/$name-init.zsh"
@@ -158,6 +158,7 @@ cache_zsh_init fzf --zsh
 cache_zsh_init atuin init zsh
 # Embedded completion for both CLIs; bl discovers lake commands at Tab time.
 cache_zsh_init botlake completions zsh
+cache_zsh_init wktree completions zsh
 # The standalone mise install supplies completions through its CLI.
 cache_zsh_init mise completion zsh
 unfunction cache_zsh_init
