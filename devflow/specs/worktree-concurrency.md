@@ -3,13 +3,13 @@
 - Document ID: SPEC-008
 - Configuration identification: SPEC-008; migrated from `specs/worktree-concurrency.md`; canonical path `devflow/specs/worktree-concurrency.md`.
 - **Status:** Planned
-- **Last Updated:** 2026-11-03
+- **Last Updated:** 2026-11-08
 
 ## [SPEC-008-S1] 1. Overview
 
 ### [SPEC-008-S1.1] Purpose
 
-This system defines how this dotfiles repo can be tested and developed from multiple git worktrees concurrently without changing the host user's active configuration or another agent's workspace. It establishes an isolation contract around `$DOTFILES`, XDG directories, tool state directories, and application-specific entry points so a worktree can validate Neovim, Nushell, tmux, dotty, and agent tooling in a disposable environment.
+This system defines how this dotfiles repo can be tested and developed from multiple git worktrees concurrently without changing the host user's active configuration or another agent's workspace. It establishes an isolation contract around `$DOTFILES`, XDG directories, tool state directories, and application-specific entry points so a worktree can validate Neovim, Nushell, tmux, native dotfiles, and agent tooling in a disposable environment.
 
 ### [SPEC-008-S1.2] Goals
 
@@ -17,7 +17,7 @@ This system defines how this dotfiles repo can be tested and developed from mult
 - Provide a reusable sandbox harness that creates temporary `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME`, and `XDG_STATE_HOME` roots.
 - Allow multiple agents to run tests from different git worktrees at the same time without sharing mutable caches, sockets, history, plugin installs, or generated configs.
 - Support both source-from-worktree tests and link/copy-to-temp tests.
-- Provide concrete smoke tests for high-risk tools: dotty, Nushell config, Neovim config, tmux sessions, and agent/CLI integration.
+- Provide concrete smoke tests for high-risk tools: native dotfile deployment, Nushell config, Neovim config, tmux sessions, and agent/CLI integration.
 - Fail loudly when a test would touch the real home directory or canonical dotfiles clone unexpectedly.
 - Keep full host system-layer applies (`mise bootstrap`) and service loads explicitly outside normal concurrent test runs.
 
@@ -32,16 +32,16 @@ This system defines how this dotfiles repo can be tested and developed from mult
 ## [SPEC-008-S2] 2. Design Decisions
 
 - **Decision:** `$DOTFILES` is the authoritative source checkout for all worktree tests.
-    - **Rationale:** The repo already uses `$DOTFILES` in dotty config, Nushell module paths, tmux sessions, and mise tasks. Enforcing it as the first-class root lets a worktree be tested without rewriting config files.
+    - **Rationale:** The repo already uses `$DOTFILES` in Nushell module paths, tmux sessions, and mise tasks. Enforcing it as the first-class root lets a worktree be tested without rewriting config files.
 
 - **Decision:** Test isolation is environment-based first, symlink-based second.
-    - **Rationale:** Many tools already respect `HOME` and XDG variables. A temp-home harness avoids touching the real user profile; dotty symlinks can then be tested inside that temp home when integration coverage needs the linked layout.
+    - **Rationale:** Many tools already respect `HOME` and XDG variables. A temp-home harness avoids touching the real user profile; mise-managed symlinks can then be tested inside that temp home when integration coverage needs the linked layout.
 
 - **Decision:** The harness must allocate unique temp roots per invocation, not per branch name.
     - **Rationale:** Multiple agents may test the same branch, rerun concurrently, or leave failed runs behind. Unique temp dirs prevent cache and socket collisions.
 
-- **Decision:** Worktree tests must not call bare `dotty link` against the real home.
-    - **Rationale:** Dotty is designed to manage live dotfiles. Concurrent worktree validation must pass an explicit test config or run under an isolated `HOME`/XDG root so it cannot replace the user's active symlinks.
+- **Decision:** Worktree tests must run `mise dot apply` only under an isolated home and state directory.
+    - **Rationale:** Native dotfile groups target the live home directory. Concurrent worktree validation must set isolated `HOME`, XDG, and mise config/data/cache/state roots before starting mise so it cannot replace the user's active symlinks or record test ownership in live state.
 
 - **Decision:** Application tests should prefer native override knobs over generated config mutation.
     - **Rationale:** `nvim -u <file>`, `nu --config/--env-config`, `tmux -f <file>`, and explicit XDG env vars are clearer, easier to debug, and less likely to leak host state than rewriting configs in-place.
@@ -68,9 +68,6 @@ home/.local/bin/
 config/nushell/scripts/ct/test/
   mod.nu                   New Nushell command surface for repo test suites
 
-config/dotty/
-  test-dotty.toml          Extend or replace with temp-target aware sandbox config
-
 config/nvim/
   lua/codethread/...       Audit paths/state that assume real home or canonical clone
 
@@ -94,13 +91,14 @@ resolve current checkout root
   | export DOTFILES=<current worktree>
   | create temp root: /tmp/dots-test.<pid>.<random>/
   | export HOME=<temp>/home
-  | export XDG_*=<temp>/xdg/{config,data,cache,state}
+  | export XDG_* under <temp>/home (.config, .local/{share,cache,state})
+  | export MISE_{CONFIG,DATA,CACHE,STATE}_DIR under those same roots
   | export app-specific state vars
   v
 run selected tool command
   |
   | source from $DOTFILES directly, OR
-  | dotty link/copy into temp HOME/XDG then run app against linked config
+  | mise dot apply into temp HOME/XDG then run app against linked config
   v
 collect logs + exit code
   |
@@ -121,7 +119,7 @@ fail loudly on host-path writes or command failure
     - Bash/zsh: isolated history files and rc/config paths where possible.
     - Bun/oven: isolated cache/temp dirs when running build/test in parallel.
     - Claude/Codex/Pi: isolated config homes unless intentionally testing linked configs.
-5. **Link isolation** — dotty links only into the temp `HOME`/XDG targets during tests.
+5. **Link isolation** — mise links only into the temp `HOME`/XDG targets during tests.
 
 ## [SPEC-008-S4] 4. Data Model
 
@@ -131,13 +129,14 @@ fail loudly on host-path writes or command failure
 | --- | --- | --- |
 | `DOTFILES` | Current git worktree root | Source checkout under test |
 | `HOME` | `<sandbox>/home` | Prevent writes to real home |
-| `XDG_CONFIG_HOME` | `<sandbox>/xdg/config` | Linked/test app config target |
-| `XDG_DATA_HOME` | `<sandbox>/xdg/data` | Plugin, history, and app data target |
-| `XDG_CACHE_HOME` | `<sandbox>/xdg/cache` | Cache target |
-| `XDG_STATE_HOME` | `<sandbox>/xdg/state` | State/history target |
+| `XDG_CONFIG_HOME` | `<sandbox>/home/.config` | Match native dotfile group targets |
+| `XDG_DATA_HOME` | `<sandbox>/home/.local/share` | Plugin, history, and app data target |
+| `XDG_CACHE_HOME` | `<sandbox>/home/.local/cache` | Cache target |
+| `XDG_STATE_HOME` | `<sandbox>/home/.local/state` | State/history target |
+| `MISE_CONFIG_DIR`, `MISE_DATA_DIR`, `MISE_CACHE_DIR`, `MISE_STATE_DIR` | Corresponding sandbox XDG root plus `/mise` | Isolate mise config discovery and link ownership state |
 | `TMPDIR` | `<sandbox>/tmp` | Tool temp files |
-| `HISTFILE` | `<sandbox>/xdg/state/bash/history` | Bash history isolation |
-| `ZDOTDIR` | `<sandbox>/xdg/config/zsh` | Zsh config isolation |
+| `HISTFILE` | `<sandbox>/home/.local/state/bash/history` | Bash history isolation |
+| `ZDOTDIR` | `<sandbox>/home/.config/zsh` | Zsh config isolation |
 | `RIPGREP_CONFIG_PATH` | `$DOTFILES/config/ripgrep/config` or linked equivalent | Avoid host ripgrep config drift |
 | `NU_LIB_DIRS` | Includes `$DOTFILES/config/nushell/scripts` | Nushell module discovery |
 | `TMUX_TMPDIR` / socket flag | `<sandbox>/tmux` | Prevent tmux socket collision |
@@ -149,7 +148,7 @@ fail loudly on host-path writes or command failure
 | Mode | Description | Host mutation risk |
 | --- | --- | --- |
 | `source` | Run tool directly against files in `$DOTFILES` using explicit config flags | Low |
-| `linked` | Run `dotty link` into isolated `HOME`/XDG, then run tool as installed | Low |
+| `linked` | Run `mise run link` into isolated `HOME`/XDG, then run tool as installed | Low |
 | `copied` | Copy selected config subtree into temp XDG before running tool | Low |
 | `host` | Real `mise bootstrap`, service apply, or app preference changes | High; manual opt-in only |
 
@@ -161,8 +160,7 @@ Each integration run should optionally persist, when `--keep` is set:
 <sandbox>/
   env.nuon or env.json       Captured env contract
   logs/<tool>.log            Tool stdout/stderr
-  home/                      Isolated HOME after run
-  xdg/                       Isolated XDG roots after run
+  home/                      Isolated HOME, XDG roots, and mise state after run
   tmux/                      Socket/log artifacts
 ```
 
@@ -191,10 +189,10 @@ Behavior:
 | `ct test nu`       | Validate Nushell config and module importability from the current worktree  |
 | `ct test nvim`     | Start Neovim headlessly against the worktree config with isolated XDG roots |
 | `ct test tmux`     | Start tmux with an isolated socket/config and run a minimal session smoke   |
-| `ct test dotty`    | Link dotfiles into isolated HOME/XDG and verify expected symlinks           |
+| `ct test dotfiles` | Link dotfiles into isolated HOME/XDG and verify expected symlinks           |
 | `ct test oven`     | Run `bun test`/build checks with worktree-local source and isolated caches  |
 | `ct test agents`   | Smoke agent config loading without using live host config dirs              |
-| `ct test worktree` | Run the default safe suite: env, nu, dotty, nvim, tmux, oven                |
+| `ct test worktree` | Run the default safe suite: env, nu, dotfiles, nvim, tmux, oven             |
 
 ### [SPEC-008-S5.3] Planned mise tasks
 
@@ -205,7 +203,7 @@ These tasks remain planned; the root mise task migration does not implement this
 | `mise run test:worktree` | Default safe concurrent suite, exports `DOTFILES={{ config_root }}` |
 | `mise run test:nu`       | Nushell syntax/config checks only                                   |
 | `mise run test:nvim`     | Headless Neovim startup/config checks only                          |
-| `mise run test:dotty`    | Isolated dotty link checks only                                     |
+| `mise run test:dotfiles` | Isolated native dotfile checks only                                 |
 | `mise run test:tmux`     | Isolated tmux smoke only                                            |
 
 ### [SPEC-008-S5.4] Tool-specific smoke contracts
@@ -213,10 +211,10 @@ These tasks remain planned; the root mise task migration does not implement this
 | Tool | Minimum safe smoke |
 | --- | --- |
 | Nushell | `nu --config $DOTFILES/config/nushell/config.nu --env-config $DOTFILES/config/nushell/env.nu -I $DOTFILES/config/nushell/scripts -c 'print ok'` |
-| Shared env | `HOME=<sandbox>/home XDG_*=<sandbox>/xdg/* sh $DOTFILES/config/env/emit.sh --print0` and assert no real-home paths |
+| Shared env | Under the sandbox environment above, `sh "$DOTFILES/config/env/emit.sh" --print0` and assert no real-home paths |
 | Neovim | `nvim --headless -u $DOTFILES/config/nvim/init.lua '+checkhealth' '+qa'` with isolated XDG roots; lighter mode may use `'+lua print("ok")' '+qa'` |
 | tmux | `tmux -S <sandbox>/tmux.sock -f $DOTFILES/config/tmux/tmux.conf new-session -d -s dots-test -c $DOTFILES` then list/kill session |
-| dotty | `dotty link --no-cache $DOTFILES/config/dotty/test-dotty.toml` under sandbox HOME/XDG, then verify symlink targets stay under `$DOTFILES` |
+| Dotfiles | `cd "$DOTFILES"` then `mise run link` under sandbox HOME/XDG/mise state, then verify symlink targets stay under the checkout or sandbox |
 | oven | `cd $DOTFILES/oven && bun test` with cache/temp vars redirected |
 | Mise | `cd "$DOTFILES" && mise -E dev tasks validate --errors-only` and `mise -E dev config`; never run bootstrap or native apply commands against the real host |
 
@@ -224,7 +222,7 @@ These tasks remain planned; the root mise task migration does not implement this
 
 ### [SPEC-008-S6.1] Phase 1: Isolation audit and harness (1 day)
 
-- [ ] Audit repo scripts/configs for writes to `~`, canonical `$HOME/dev/dots`, global XDG paths, fixed tmux sockets, fixed plugin directories, or unguarded `dotty link`.
+- [ ] Audit repo scripts/configs for writes to `~`, canonical `$HOME/dev/dots`, global XDG paths, fixed tmux sockets, fixed plugin directories, or unguarded native dotfile applies.
 - [ ] Add `home/.local/bin/dots-test-sandbox` with the environment contract above.
 - [ ] Add `--keep` support and clear failure output.
 - [ ] Add host-path leak checks for common real-home paths in generated symlinks/logs where practical.
@@ -232,7 +230,7 @@ These tasks remain planned; the root mise task migration does not implement this
 ### [SPEC-008-S6.2] Phase 2: Safe per-tool smoke commands (1-2 days)
 
 - [ ] Add `ct test nu` and `mise run test:nu`.
-- [ ] Add `ct test dotty` and make `config/dotty/test-dotty.toml` target the sandbox, not real home.
+- [ ] Add `ct test dotfiles` with isolated HOME/XDG/mise state and the current checkout’s native dotfile groups.
 - [ ] Add `ct test nvim` with isolated XDG roots and headless startup.
 - [ ] Add `ct test tmux` with unique socket and cleanup.
 - [ ] Add `ct test oven` with isolated cache/temp variables.
@@ -258,7 +256,6 @@ These tasks remain planned; the root mise task migration does not implement this
 | `home/.local/bin/dots-test-sandbox` | New: Bash sandbox harness for isolated command execution |
 | `config/nushell/scripts/ct/test/mod.nu` | New: Nushell test command module |
 | `config/nushell/scripts/ct/core/mod.nu` | Modify if needed to expose test module aliases/imports |
-| `config/dotty/test-dotty.toml` | Modify: make test tasks sandbox-aware |
 | `mise.toml` | Modify: add safe worktree test tasks with `DOTFILES={{ config_root }}` |
 | `config/nvim/` | Modify as audit finds hard-coded state paths or non-XDG writes |
 | `config/tmux/` | Modify as audit finds socket/session/path assumptions |

@@ -82,10 +82,9 @@ See Rex's [Lua API](https://www.superlogical.com/rex/docs/reference/lua.md) and 
 Link from the dots checkout:
 
 ```sh
-DOTFILES="$PWD" nu -n -I "$PWD/config/nushell/scripts" -c \
-  'use ct/dotty; dotty link --no-cache ($env.DOTFILES | path join "config/dotty/dotty.toml")'
+mise run link
 rex config check
 rex config reload
 ```
 
-`rex keymap` reports the server's bindings; validating client action names and arguments requires `--request` with the client's action declarations. Lua modules and the picker script are linked by dotty with `init.lua`.
+`rex keymap` reports the server's bindings; validating client action names and arguments requires `--request` with the client's action declarations. Lua modules and the picker script are linked by mise with `init.lua`.

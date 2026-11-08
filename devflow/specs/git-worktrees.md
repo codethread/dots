@@ -15,7 +15,7 @@ This spec covers only the dotfiles wiring and local policy, not a second CLI con
 
 | Location | Responsibility |
 | --- | --- |
-| `config/wktree.toml`, `config/dotty/dotty.toml` | Dotty's `config` project links the global policy to `~/.config/wktree.toml`. |
+| `config/wktree.toml`, `mise.toml` | Mise’s native `config` group links the global policy to `~/.config/wktree.toml`. |
 | `config/nushell/env.nu`, `config/nushell/config.nu` | Generate and import `wktree shell-init nu` as `wktree.nu` for interactive shells. Noninteractive shells neither generate nor import the module. |
 | `config/zsh/.zshrc` | Evaluate `wktree shell-init zsh` to provide the `wk` picker. |
 | `config/tmux/tmux.conf` | Bind prefix + `g` to wktree's interactive picker with `--open`, scoped to the current pane's directory. |

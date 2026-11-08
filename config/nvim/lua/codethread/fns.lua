@@ -33,7 +33,6 @@ function M.save_buffer()
 			if err then
 				vim.notify(err, vim.log.levels.ERROR, { title = 'Oil' })
 			else
-				require('codethread.dotty').dotty_link()
 				local path = string.gsub(vim.fn.expand '%', 'oil://', '')
 				require('plugins.notes.backup').update_and_push('renames', path)
 			end

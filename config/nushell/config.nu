@@ -4,7 +4,6 @@ use ct/ls-colors.nu
 use ct/config [keybindings menus]
 use ct/core *
 use ct/tmux
-use ct/dotty
 use ct/cursor.nu *
 use ct/macos.nu *
 use ct/git *

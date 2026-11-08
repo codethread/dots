@@ -182,7 +182,7 @@ async function generateWrapper(entry: BinEntry) {
 		const wrapper = `#!/usr/bin/env bash\nexec bun run "${srcPath}" "$@"\n`;
 		await Bun.write(temporaryPath, wrapper);
 		await chmod(temporaryPath, 0o755);
-		// Replace old dotty symlinks rather than overwriting their Bash source targets.
+		// Replace the destination atomically without following existing symlinks.
 		await rename(temporaryPath, destPath);
 		return {entry: entry.entry, destName, success: true};
 	} catch (error) {

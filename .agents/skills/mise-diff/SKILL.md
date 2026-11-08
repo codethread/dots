@@ -27,7 +27,7 @@ Requires mise 2026.10.4+, Bun, `patch`, and `diff`. Run the helper directly: a r
 
 ## Scope and stopping rules
 
-Use the requested target/profile; otherwise use no target and the current environment. Keep that selection unchanged through preview and any authorized apply. This checks native `[dotfiles]` entries, not dotty links or every bootstrap resource.
+Use the requested target/profile; otherwise use no target and the current environment. Keep that selection unchanged through preview and any authorized apply. This checks explicit native `[dotfiles]` entries, not every dotfile group or bootstrap resource.
 
 ```text
 Run helper

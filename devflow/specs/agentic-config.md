@@ -15,7 +15,7 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 
 - Single source of truth for global Claude settings in `templates/claude-settings.json.tera`, rendered by mise
 - Mise provisions native Codex/Claude CLIs, Node-based Pi, and Playwright CLI; Pi owns its npm extensions
-- Agent assets version-controlled and symlinked into place: mise owns shared personal skills; Dotty owns other agent assets
+- Agent assets version-controlled and symlinked into place: mise owns all asset and shared-skill links
 - Type-safe hook contracts shared across TypeScript and Bash implementations
 - Context-aware shell wrappers that inject environment-specific prompts
 - Plugin extensibility via local and remote marketplaces
@@ -25,7 +25,6 @@ Declarative configuration system for Claude Code, OpenAI Codex, Pi, and related 
 
 - Plugin implementation details — plugins live in `~/dev/projects/claude-code-plugins` (separate repo)
 - cc-notify daemon internals — external project at `~/dev/projects/cc-notify`
-- Dotty implementation — dotty is a general-purpose symlink manager, not agentic-specific
 - Project-local `.claude/` config authoring beyond the shared Pi compatibility shim
 
 ## [SPEC-001-S2] 2. Architecture
@@ -50,10 +49,10 @@ Four configuration layers compose at runtime:
 │ Layer 2: Symlinked assets                          │
 │   mise: home/.agents/skills/                        │
 │     → ~/.agents/skills/ and ~/.claude/skills/       │
-│   dotty: claude/ → ~/.claude/                      │
+│   mise: claude/ → ~/.claude/                       │
 │     agents/, commands/,                            │
 │     CLAUDE.md, keybindings.json                     │
-│   pi/ → ~/.pi/agent/                                │
+│   pi/agent/ → ~/.pi/agent/                          │
 │     agent.njk, README.md, settings.json             │
 │     (appended system prompt + shared defaults)       │
 │   config/codex/ → ~/.config/codex/                  │
@@ -76,11 +75,11 @@ Settings merge order: mise globals → project settings → local overrides. Age
 mise bootstrap → packages, declared repositories, native files, and setup applied
 mise dot apply ~/.claude/settings.json → ~/.claude/settings.json rendered
 mise dot apply ~/.config/codex/config.toml/shared → shared Codex keys merged
-mise run link  →  dotty link + targeted mise apply → assets, home files, shared skills
+mise run link  →  targeted mise dot apply → assets, home files, shared skills
 mise run build →  Oven mise run verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
 ```
 
-`mise run` executes the root default task, which invokes `mise bootstrap --skip-dirty`. Bootstrap applies packages, declared repositories, native files, and services; its setup hook installs agent CLIs, links dotfiles, prepares the shell, and installs/builds Oven. Full development verification remains a separate `mise run build` task.
+`mise run` executes the root default task, which invokes `mise bootstrap --skip-dirty`. Bootstrap applies packages, declared repositories, native files, and services; its setup hook installs agent CLIs, prepares the shell, and installs/builds Oven; the native dotfiles phase deploys links. Full development verification remains a separate `mise run build` task.
 
 ### [SPEC-001-S2.2] Package Provisioning
 
@@ -90,7 +89,7 @@ mise run build →  Oven mise run verify   →  oven/bin/*.ts compiled to ~/.loc
 
 `boot/setup.sh` invokes `home/.local/bin/mise-llm install` in the bootstrap post-repos hook. Mise manages `~/.local/bin/pi` as a symlink to `~/.local/bin/pi-bolt`, applied by bootstrap or `mise run link`. `~/.local/bin` precedes `$PI_CODING_AGENT_DIR/bin`, so `pi` runs Pi-Bolt while the official Pi launcher remains available at `$PI_CODING_AGENT_DIR/bin/pi` for maintenance. Use `mise run llm:update` for explicit updates.
 
-- `config/dotty/dotty.toml` links the tracked `pi/` directory into `~/.pi/agent`
+- The native `pi` group in `mise.toml` links indexed files from `pi/` into `~/.pi`, including `pi/agent/` → `~/.pi/agent/`
 - Most mutable Pi config now lives in `https://github.com/codethread/agents`; this repo keeps the `pi/agent.njk` template plus minimal bootstrap files and symlinks that make Pi consume the shared prompt/config layout
 
 ## [SPEC-001-S3] 3. Data Model
@@ -131,22 +130,17 @@ Legacy compat fields (`decision`, `reason`) also exist at the top level for olde
 
 I/O protocol: JSON on stdin (HookInput), JSON on stdout (HookOutput), exit code 2 to block. Some hooks (e.g., `cc-hook--context-injector`) output plain text to stdout instead of JSON — Claude Code accepts both.
 
-### [SPEC-001-S3.2] Dotty Config (`config/dotty/dotty.toml`)
+### [SPEC-001-S3.2] Native dotfile groups (`mise.toml`)
 
-The `claude` project definition:
+The `claude` group maps `claude/` to `~/.claude/` with `mode = "symlink-each"` and `manifest = "git"`. It excludes underscore-prefixed trees, `.gitignore`, `README.md`, `settings.json`, `settings.local.json`, and `skills/`. Separate entries own rendered settings and shared skills.
 
-- Origin: `~/dev/dots/claude/`
-- Target: `~/.claude/`
-- Excludes: `**/settings.json`, `**/settings.local.json`, `**/skills/**`
-- Linked paths cached at `~/.local/data/dotty-cache-claude.nuon`; home files and shared skills are mise-owned
-
-The `config` project covers `config/codex/` → `~/.config/codex/` as part of the broader `config/ → ~/.config/` mapping.
+The `config` group covers `config/codex/` → `~/.config/codex/` within `config/` → `~/.config/`. The `pi` group maps `pi/` → `~/.pi/`. Both use the same indexed-file selection and general exclusions. Mise records link ownership in its state directory and preserves unmanaged destination files. Stage new assets before `mise run link`; rerun it after additions, renames, or deletions.
 
 ## [SPEC-001-S4] 4. Interfaces
 
 ### [SPEC-001-S4.1] Settings Generation (`templates/claude-settings.json.tera`)
 
-Mise owns `~/.claude/settings.json` as a rendered regular file via root `mise.toml`; dotty excludes it. Apply with `mise dot apply ~/.claude/settings.json`. `/tmp/claude` is declared in root `mise.toml` and prepared by the native files phase, not `mise dot apply`. See [Claude README](../../claude/README.md) for the apply workflow.
+Mise owns `~/.claude/settings.json` as a rendered regular file via root `mise.toml`; the `claude` group excludes it. Apply with `mise dot apply ~/.claude/settings.json`. `/tmp/claude` is declared in root `mise.toml` and prepared by the native files phase, not `mise dot apply`. See [Claude README](../../claude/README.md) for the apply workflow.
 
 **Permissions:** The shared template owns the common allow/deny lists, `acceptEdits` default mode, and additional directories (`~/.local`, `~/.claude`, `~/dev`). Workfiles' JSON overlay adds the work directory and Microsoft 365/Atlassian allowances; the template unions overlay `permissions` lists (`allow`, `ask`, `deny`, `additionalDirectories`) with its own, so the overlay lists only additions. Secret-file reads, plan/worktree/cron tools, and other unwanted tools remain denied.
 
@@ -229,8 +223,8 @@ Direct `pi` invocation with shared repo-aware configuration:
 
 - `templates/codex-config.toml`: shared model, reasoning, TUI, plugin, marketplace, and skill settings. Root `mise.toml` owns these keys via a native `merge = true` edit at `~/.config/codex/config.toml/shared` (mise 2026.10.4+). The destination follows this repo's `CODEX_HOME`, not Codex's default `~/.codex`.
 - Tables merge recursively; target-only settings such as trusted projects, MCP servers, and application state remain local. Comments and untouched TOML formatting survive. Arrays, including `skills.config`, replace wholesale. Removing a source key does not delete it from the target. Live edits are not synchronized back into the source.
-- Preview with `mise dot diff ~/.config/codex/config.toml/shared`; apply with `mise dot apply ~/.config/codex/config.toml/shared`. Dotty's former structured-template option and cache are no longer used.
-- `config/codex/AGENTS.md`: global instruction for conciseness, still symlinked by dotty.
+- Preview with `mise dot diff ~/.config/codex/config.toml/shared`; apply with `mise dot apply ~/.config/codex/config.toml/shared`.
+- `config/codex/AGENTS.md`: global instruction for conciseness, symlinked by mise’s `config` group.
 
 ### [SPEC-001-S4.9] Agent CLI Packages
 
@@ -280,7 +274,7 @@ Disables Ctrl+A in Global context.
 
 - **One owner per agent CLI.** Official vendor installers own Claude, Codex, Pi, and Pi-Bolt; bootstrap setup installs them and the `llm:update` task updates them. Node remains mise-managed, Playwright is npm-managed in `~/.local`, and Pi uses its official locked Node/npm installation. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
 
-- **One owner per asset path.** Mise links `home/` and exposes its shared skills to both agent locations with `symlink-each`; Dotty links other agents, commands, and rules, excluding Claude settings and skills. Real destination directories preserve application-owned metadata. Existing linked-file edits remain immediate, while new or removed files require another apply. Global settings are managed separately by mise.
+- **One owner per asset path.** Mise links `home/`, other agent assets, and shared skills through native `symlink-each` groups and entries. The `claude` group excludes separately managed settings and skills. Real destination directories preserve application-owned metadata. Existing linked-file edits remain immediate, while new or removed files require another apply. Global settings are managed separately by mise.
 
 - **x-agents/ prefix convention.** Disabled agents live in `claude/x-agents/` — the prefix keeps them out of Claude's discovery path while keeping them version-controlled for re-enablement.
 
@@ -304,4 +298,3 @@ Disables Ctrl+A in Global context.
 ## [SPEC-001-S7] 7. Open Questions
 
 - The `x-agents/` convention works but is undocumented outside `claude/README.md` — should disabled agents use a more formal mechanism?
-- Codex config shares the dotty `config` project with all other XDG configs. If Codex needs more files, a dedicated dotty project may be cleaner.

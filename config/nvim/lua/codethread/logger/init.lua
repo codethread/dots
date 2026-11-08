@@ -9,7 +9,7 @@ M.loggers = {}
 
 ---Logger for debugging my own config. Builds on plenary log but is controlled
 ---through `Log` ex command to change at runtime or startup
----Also supports env_var `DEBUG_CT_ ..config.plugin`, e.g `DEBUG_CT_DOTTY`
+---Also supports env_var `DEBUG_CT_ ..config.plugin`, e.g `DEBUG_CT_POMO`
 ---@param opts ct.LogConfig
 ---@return ct.Logger
 function M.new(opts)

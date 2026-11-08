@@ -1,6 +1,6 @@
 # Claude Code Global Settings
 
-Dotty links this directory’s assets into `~/.claude`, except settings and skills, which mise manages separately. Destination directories remain real directories so Claude can keep its own state.
+Mise links this directory’s indexed assets into `~/.claude`, with separate entries for rendered settings and shared skills. Destination directories remain real directories so Claude can keep its own state.
 
 Custom directories (those not carrying Claude Code significance like `agents/` or `commands/`) are prefixed with `x-` for clarity and to avoid accidental name collision.
 
@@ -21,7 +21,7 @@ mise dot status
 
 Workfiles' `make` installs `~/.config/claude/settings-overlay.json` and requests a targeted rerender of this shared output. The template deep-merges that optional JSON object; work-specific plugins, marketplaces and permissions live in workfiles rather than dots' profile. Without an installed overlay, the personal/dev defaults are used. Malformed overlays fail rather than silently dropping work settings. `/tmp/claude` is declared in root `mise.toml` and prepared by the native files phase, not `mise dot apply`. Bash is resolved from PATH when rendering.
 
-Other Claude assets except shared skills remain managed by dotty; project-local settings and local overrides are untouched.
+Stage new Claude assets with `git add`, then run `mise run link` after additions, renames, or deletions. Existing linked-file edits are immediate. Project-local settings and local overrides remain application-owned.
 
 ## cc-notify (Push Notifications)
 
