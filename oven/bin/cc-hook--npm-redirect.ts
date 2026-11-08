@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Claude Code hook that redirects npm/npx/node commands to the detected package manager (pnpm, bun, yarn)
 
 import {existsSync} from "fs";

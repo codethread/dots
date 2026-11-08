@@ -8,9 +8,8 @@
 		"fix": "biome check --write --unsafe --log-level=error .",
 		"test": "bun test tests",
 		"typecheck": "tsc --noEmit",
-		"build": "bun run ./scripts/build-bin.ts",
 		"sync-docs": "bun run ./scripts/sync-readme.ts",
-		"verify": "bun run test && bun run typecheck && bun run fix && bun run build && bun run sync-docs"
+		"verify": "bun run test && bun run typecheck && bun run fix && bun run sync-docs"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.15",

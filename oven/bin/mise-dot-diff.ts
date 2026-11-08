@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Preview mise dotfiles and pull JSON template edits into local overlays
 
 import {mkdtemp, rm} from "node:fs/promises";

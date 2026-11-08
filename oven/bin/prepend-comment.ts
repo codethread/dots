@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Tool for adding and updating module-level documentation comments across programming languages
 
 import {readFileSync, writeFileSync} from "fs";

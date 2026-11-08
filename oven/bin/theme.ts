@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Apply a local theme and forward explicit state to a Rex host
 
 import {mkdir} from "node:fs/promises";

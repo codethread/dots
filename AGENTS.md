@@ -50,8 +50,8 @@ Nushell tooling is deprecated. Choose between two forms for new utilities:
 
 2. **TypeScript/Bun in Oven**
     - Use for complex logic, dependencies, async control, shared code, or behavior that needs tests.
-    - Declare entrypoints in `oven/bin/manifest.json`.
-    - `mise run build` builds the declared tools into `~/.local/bin/` and runs the development checks.
+    - Add an executable Bun entrypoint in `oven/bin/`; the wildcard mise dotfile maps it to an extensionless command. Also add that target to root `tasks.link`, whose narrowed apply list is explicit.
+    - `mise run build` runs the Oven development checks and refreshes generated docs.
 
 ### Script Evolution Path
 

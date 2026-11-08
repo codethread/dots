@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Claude Code hook that provides project context at session start
 
 import {existsSync, readFileSync, unlinkSync, writeFileSync} from "fs";

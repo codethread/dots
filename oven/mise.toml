@@ -19,6 +19,6 @@ dir = "{{ config_root }}/.."
 run = "bun install --frozen-lockfile"
 
 [tasks.verify]
-description = "Test, typecheck, fix, build wrappers, and sync Oven docs"
+description = "Test, typecheck, fix, and sync Oven docs"
 depends = ["install"]
 run = "bun run verify"

@@ -1,10 +1,10 @@
 # Oven Workspace
 
-Oven is the only package in the repository-root Bun workspace. It manages TypeScript/JavaScript executables: entrypoints listed in `bin/manifest.json` are built to `~/.local/bin/*`.
+Oven is the only package in the repository-root Bun workspace. Its executable Bun entrypoints in `bin/` are linked into `~/.local/bin/*` by native mise dotfiles.
 
 ## Structure
 
-- `bin/` - Source TypeScript files for CLI tools plus `manifest.json` entrypoint map
+- `bin/` - Executable Bun entrypoints for CLI tools
 - `shared/` - Shared modules used by CLI tools
 - `tests/` - Tests for `bin` files, following rails convention of `bin/myBin.ts` -> `tests/myBin.test.ts`
 - `scripts/` - Build and utility scripts
@@ -28,23 +28,20 @@ mise exec -- bun run fix
 # Check type definitions with the project-local TypeScript
 mise exec -- bun run typecheck
 
-# Build all executables to ~/.local/bin
-mise exec -- bun run build
-
-# Install dependencies, test, typecheck, fix, build, and sync docs
+# Install dependencies, test, typecheck, fix, and sync docs
 mise run verify
 ```
 
-From the repository root, `mise run build` changes into `oven/` and runs the same `mise run verify` workflow. The generated wrappers still execute `bun` from PATH; workstation setup provides the mise-managed runtime. Keep this checkout available because wrappers point to its source files.
+From the repository root, `mise run build` changes into `oven/` and runs the same `mise run verify` workflow. Native mise dotfiles link each executable entrypoint into `~/.local/bin`; the links execute Bun from PATH and resolve imports and dependencies from this checkout.
 
 To update runtimes, edit their exact versions in `mise.toml`, run `mise lock --platform linux-arm64,linux-x64,macos-arm64,macos-x64`, then `mise run verify`. Review and commit both mise files together. Oven's strict lock policy applies only to its runtimes, not inherited workstation tools.
 
 ## Adding New Tools
 
-1. Create a `.ts` entrypoint in `bin/` or a nested folder under `bin/`
-2. Add it to `bin/manifest.json` with explicit `{ "bin": "tool-name", "entry": "path/to/main.ts" }`
-3. Run `mise exec -- bun run fmt` to format the code
-4. Run `mise exec -- bun run build` to create the executable
+1. Create a directly executable `.ts` entrypoint in `bin/` named for the public command
+2. Start it with `#!/usr/bin/env bun` and mark it executable
+3. Add `"$HOME/.local/bin/<name>"` to the root `tasks.link` target list; the wildcard dotfile declaration already maps `bin/<name>.ts` to the extensionless command
+4. Run `mise exec -- bun run fmt` and `mise run verify`
 
 ## Tools Included
 

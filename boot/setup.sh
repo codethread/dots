@@ -41,11 +41,9 @@ optional 'Todoist build' /bin/bash -c 'cd "$HOME/dev/vendor/todoist" && go build
 git -C "$DOTFILES" config core.hooksPath .githooks
 "$DOTFILES/boot/shell.sh"
 # Development verification (including fixes and docs) belongs to mise run build.
-optional 'Workspace installation/Oven build' /bin/bash -ec '
+optional 'Workspace dependency installation' /bin/bash -ec '
   cd "$1"
   mise exec -- bun install --frozen-lockfile
-  cd oven
-  mise exec -- bun run build
 ' _ "$DOTFILES"
 
 # Prepare workstation-owned Botlake daemons before registering boot startup.

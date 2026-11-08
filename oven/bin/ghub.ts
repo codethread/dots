@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: GitHub CLI utility for repository interactions
 
 import {$} from "bun";

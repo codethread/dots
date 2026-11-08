@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Claude Code statusline hook handler
 
 import {$} from "bun";

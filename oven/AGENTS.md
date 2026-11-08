@@ -1,12 +1,12 @@
 # Oven Docs
 
-## Build System
+## Executable deployment
 
-The build process generates thin bash wrapper scripts that `exec bun run <source>`:
+Oven commands are executable Bun source files linked into `~/.local/bin` by native mise dotfiles:
 
-- Outputs to `~/.local/bin` for system-wide PATH availability
-- entrypoints are declared in `oven/bin/manifest.json`
-- during development run code with `mise exec -- bun run ./bin/<entry path>`
+- each public command is a direct `oven/bin/<command>.ts` file with a Bun shebang and executable mode
+- root `mise.toml` uses one wildcard declaration to map `oven/bin/*.ts` to extensionless commands
+- during development run code with `mise exec -- ./bin/<command>.ts`
 - `mise.toml` / `mise.lock` pin Bun and Node; the repository-root `bun.lock` supplies Biome and TypeScript
 - Oven is a member of the root Bun workspace; install all packages with `bun install --frozen-lockfile` from the repository root
 - Git is a host prerequisite
@@ -20,43 +20,36 @@ mise exec -- bun run fmt        # Format code
 mise exec -- bun run lint       # Lint code
 mise exec -- bun run check      # Check formatting and linting
 mise exec -- bun run fix        # Fix issues (quiet by default)
-mise exec -- bun run build      # Build wrappers to ~/.local/bin (use -v for verbose)
 mise exec -- bun run sync-docs  # Update documentation (use -v for verbose)
-mise run verify                 # Install, test, typecheck, fix, build, and sync docs
-mise exec -- bun run ./bin/<entry path>  # Test before building
+mise run verify                 # Install, test, typecheck, fix, and sync docs
+mise exec -- ./bin/<command>.ts  # Run a source entrypoint directly
 ```
 
 ## Package structure
 
 - **Shared modules**: Use `oven/shared/*.ts` for reusable types and utilities
 - **Claude Code hooks**: Import types from `oven/shared/claude-hooks.ts` for hook development
-- **Quiet by default**: Build scripts support `--verbose` flag for detailed output
+- **Public commands**: Keep executable entrypoints directly in `oven/bin/`; use `oven/shared/` for helpers
 
-### Bin manifest and naming convention
+### Command naming convention
 
-Each executable must be listed in `oven/bin/manifest.json`:
-
-```json
-{ "bin": "tool-name", "entry": "tool-name.ts" }
-```
-
-`entry` paths are relative to `oven/bin/`, may be nested, and must not escape `bin/`. Direct `oven/bin/*.ts` files must be listed; nested `.ts` files may be helper modules.
+The entrypoint filename without `.ts` is the public command name. The wildcard dotfile declaration discovers it during full bootstrap; also add the exact `~/.local/bin/<command>` target to root `tasks.link` so the narrowed link workflow deploys it.
 
 **Short Format:**
 
 - `<name>`: concise, potentially ambiguous
 - Use case: extremely common commands (as dictated by user request)
 - Examples:
-    - `{ "bin": "bra", "entry": "bra.ts" }`
-    - `{ "bin": "ghub", "entry": "ghub.ts" }`
+    - `bra.ts`
+    - `ghub.ts`
 
 **Long Format:**
 
 - `<domain>-<contex>--<action>`: clear and scoped,
 - Use case: most scripts
 - Examples:
-    - `{ "bin": "cc-hook--context-injector", "entry": "cc-hook--context-injector.ts" }`
-    - `{ "bin": "cc-logs--analyze-subagents", "entry": "cc-logs--analyze-subagents.ts" }`
+    - `cc-hook--context-injector.ts`
+    - `cc-logs--analyze-subagents.ts`
 
 existing domains:
 
@@ -72,7 +65,7 @@ existing domains:
 - **Formatter**: (`bun fmt`) Biome with 100-character line width, no bracket spacing
 - **Linter**: (`bun check`) Biome with recommended rules, allows `any` types and non-null assertions
 - **Types**: (`bun run typecheck`) Typescript via `tsc`, relatively strict
-- IMPORTANT: when work is complete run `mise run verify` (or root `mise run build`) to install frozen dependencies, validate all checks, build the wrappers and update the docs.
+- IMPORTANT: when work is complete run `mise run verify` (or root `mise run build`) to install frozen dependencies, validate all checks, and update the docs.
 
 ### Best Practices
 
@@ -307,7 +300,7 @@ async function main() {
 			verbose: { type: "boolean", short: "v" },
 			help: { type: "boolean", short: "h" },
 		},
-		strict: false, // Prevent errors from unexpected positionals in compiled executables
+		strict: false, // Prevent errors from unexpected positionals in CLI entrypoints
 	});
 
 	if (values.help) {

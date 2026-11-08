@@ -47,10 +47,34 @@ run = "mise bootstrap --skip-dirty"
 
 [tasks.link]
 description = "Apply repository-managed symlinks"
-run = 'mise dot apply "$HOME" "$HOME/.config" "$HOME/.claude" "$HOME/.pi" "$HOME/.claude/skills" "$HOME/.local/bin/pi" "$HOME/.local/bin/gitwatch"'
+run = '''
+mise dot apply \
+  "$HOME" \
+  "$HOME/.config" \
+  "$HOME/.claude" \
+  "$HOME/.pi" \
+  "$HOME/.claude/skills" \
+  "$HOME/.local/bin/pi" \
+  "$HOME/.local/bin/gitwatch" \
+  "$HOME/.local/bin/bra" \
+  "$HOME/.local/bin/cc-hook--context-injector" \
+  "$HOME/.local/bin/cc-hook--npm-redirect" \
+  "$HOME/.local/bin/cc-statusline" \
+  "$HOME/.local/bin/cindex" \
+  "$HOME/.local/bin/ghub" \
+  "$HOME/.local/bin/git-cleanup" \
+  "$HOME/.local/bin/git-pipeline--await" \
+  "$HOME/.local/bin/gitlab-pipeline-watcher" \
+  "$HOME/.local/bin/mise-dot-diff" \
+  "$HOME/.local/bin/notif" \
+  "$HOME/.local/bin/prepend-comment" \
+  "$HOME/.local/bin/strip-markdown" \
+  "$HOME/.local/bin/theme" \
+  "$HOME/.local/bin/tts"
+'''
 
 [tasks.build]
-description = "Install, test, typecheck, fix, and build Oven tools/docs"
+description = "Install, test, typecheck, fix, and sync Oven docs"
 dir = "{{ config_root }}/oven"
 run = "mise run verify"
 
@@ -239,6 +263,11 @@ mode = "symlink"
 
 [dotfiles."~/.local/bin/gitwatch"]
 source = "~/dev/vendor/gitwatch/gitwatch.sh"
+mode = "symlink"
+
+# Matched wildcards preserve each stem, linking oven/bin/name.ts as name.
+[dotfiles."~/.local/bin/*"]
+source = "oven/bin/*.ts"
 mode = "symlink"
 
 [dotfiles."~/.claude/settings.json"]

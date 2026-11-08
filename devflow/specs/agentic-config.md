@@ -76,7 +76,7 @@ mise bootstrap → packages, declared repositories, native files, and setup appl
 mise dot apply ~/.claude/settings.json → ~/.claude/settings.json rendered
 mise dot apply ~/.config/codex/config.toml/shared → shared Codex keys merged
 mise run link  →  targeted mise dot apply → assets, home files, shared skills
-mise run build →  Oven mise run verify   →  oven/bin/*.ts compiled to ~/.local/bin/ wrappers
+mise run build →  Oven mise run verify   →  tests, typecheck, formatting, generated docs
 ```
 
 `mise run` executes the root default task, which invokes `mise bootstrap --skip-dirty`. Bootstrap applies packages, declared repositories, native files, and services; its setup hook installs agent CLIs, prepares the shell, and installs/builds Oven; the native dotfiles phase deploys links. Full development verification remains a separate `mise run build` task.
@@ -242,7 +242,7 @@ Direct `pi` invocation with shared repo-aware configuration:
 
 ### [SPEC-001-S4.11] Hook Implementations
 
-**TypeScript (oven/bin/, compiled to ~/.local/bin/):**
+**TypeScript (executable oven/bin/ sources linked to ~/.local/bin/ by mise):**
 
 | Hook | Key Behavior |
 | --- | --- |

@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Generate comprehensive file index with advanced filtering and markdown output
 
 import {TOML} from "bun";

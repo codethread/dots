@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: GitLab pipeline status monitoring tool
 
 // GitLab Pipeline Watcher

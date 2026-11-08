@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Branch repository annotation and management tool
 
 // Interactive git branch switcher that uses fzf for easy branch selection

@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Single-shot GitLab pipeline monitor for current branch MR
 
 import {$} from "bun";

@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Command-line markdown text stripping tool
 
 import {parseArgs} from "util";

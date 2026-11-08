@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Notifications through the desktop or CC Notify when away from tmux
 
 import {closeSync, openSync, writeFileSync} from "node:fs";

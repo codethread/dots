@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // :module: Basic OpenAI text-to-speech wrapper
 
 import {tmpdir} from "os";
