@@ -18,6 +18,8 @@ uv = "latest"
 rust = "stable"
 "npm:typescript" = "latest"
 "npm:typescript-language-server" = "latest"
+# Browser automation CLI; the explicit Node runtime above executes its launcher.
+"npm:@playwright/cli" = "latest"
 # No upstream release binary/formula; build the pinned source revision.
 "cargo:https://github.com/nushell/nufmt" = "rev:24023665d1c2661addb22dce384b53d4a839727f"
 

@@ -272,7 +272,7 @@ Disables Ctrl+A in Global context.
 
 - **Mise as settings source of truth.** `templates/claude-settings.json.tera` renders to a regular `~/.claude/settings.json`; an optional `~/.config/claude/settings-overlay.json` supplies separately owned machine policy. Applying settings requires no system-layer change. Manual edits to the output are overwritten on apply; use project-local or local override settings for overrides.
 
-- **One owner per agent CLI.** Official vendor installers own Claude, Codex, Pi, and Pi-Bolt; bootstrap setup installs them and the `llm:update` task updates them. Node remains mise-managed, Playwright is npm-managed in `~/.local`, and Pi uses its official locked Node/npm installation. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
+- **One owner per agent CLI.** Official vendor installers own Claude, Codex, Pi, and Pi-Bolt; bootstrap setup installs them and the `llm:update` task updates them. Mise owns Node and the npm-backed Playwright CLI through the shared global tool declaration, while Pi uses its official locked Node/npm installation. Running Codex as a native binary prevents it from inheriting a project-scoped Node runtime.
 
 - **One owner per asset path.** Mise links `home/`, other agent assets, and shared skills through native `symlink-each` groups and entries. The `claude` group excludes separately managed settings and skills. Real destination directories preserve application-owned metadata. Existing linked-file edits remain immediate, while new or removed files require another apply. Global settings are managed separately by mise.
 

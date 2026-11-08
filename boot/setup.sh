@@ -14,7 +14,7 @@ warn() {
   warnings+=("$1")
   printf 'WARN: %s\n' "$1" >&2
 }
-optional() {
+optional_integration() {
   local label=$1
   shift
   # Call external commands so their own fail-fast behavior stays intact.
@@ -30,21 +30,21 @@ summary() {
 trap summary EXIT
 
 # Official installers own agent CLIs; their updates remain a separate task.
-optional 'Agent CLI setup' "$DOTFILES/home/.local/bin/mise-llm" install
-optional 'Playwright CLI installation' env NPM_CONFIG_PREFIX="$HOME/.local" npm install --global @playwright/cli
+optional_integration 'Agent CLI setup' "$DOTFILES/home/.local/bin/mise-llm" install
 
 # The pinned Todoist fork commits its generated parser; no goyacc step is needed.
-optional 'Todoist build' /bin/bash -c 'cd "$HOME/dev/vendor/todoist" && go build -trimpath -o "$HOME/.local/bin/todoist" .'
+optional_integration 'Todoist build' /bin/bash -c 'cd "$HOME/dev/vendor/todoist" && go build -trimpath -o "$HOME/.local/bin/todoist" .'
 # The agents repo owns its install/build/link steps behind its default mise task.
 ( cd "$HOME/dev/projects/agents" && mise run )
 
 git -C "$DOTFILES" config core.hooksPath .githooks
 "$DOTFILES/boot/shell.sh"
+# Native Oven entrypoints and services require the locked workspace dependencies.
 # Development verification (including fixes and docs) belongs to mise run build.
-optional 'Workspace dependency installation' /bin/bash -ec '
-  cd "$1"
+(
+  cd "$DOTFILES"
   mise exec -- bun install --frozen-lockfile
-' _ "$DOTFILES"
+)
 
 # Prepare workstation-owned Botlake daemons before registering boot startup.
 (
