@@ -72,9 +72,7 @@ agent_label() {
 	local exec=$1
 	local args=$2
 
-	if [[ "$exec" == "agent" ]] || [[ "$args" =~ cursor-agent ]]; then
-		AGENT_LABEL='cursor'
-	elif [[ "$exec" == "pi" || "$exec" == "pim" ]] || [[ "$args" =~ (^|[[:space:]])(pi|pim)([[:space:]]|$) ]]; then
+	if [[ "$exec" == "pi" || "$exec" == "pim" ]] || [[ "$args" =~ (^|[[:space:]])(pi|pim)([[:space:]]|$) ]]; then
 		AGENT_LABEL='pi'
 	elif [[ "$exec" == "codex" || "$exec" == "codex-raw" ]] || [[ "$args" =~ codex ]]; then
 		AGENT_LABEL='codex'
@@ -104,9 +102,7 @@ find_agent_process() {
 
 		if [[ "$exec" =~ ^(claude|cl|codex|codex-raw|pi|pim)$ ]]; then
 			rank=4
-		elif [[ "$exec" == 'agent' ]]; then
-			rank=3
-		elif [[ "$args" =~ $AGENT_REGEX ]] || [[ "$args" =~ cursor-agent ]]; then
+		elif [[ "$args" =~ $AGENT_REGEX ]]; then
 			rank=2
 		else
 			continue

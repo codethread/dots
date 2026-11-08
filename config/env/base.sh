@@ -176,7 +176,6 @@ if [ "$ct_os" = Darwin ]; then
   # GUI-server callbacks do not inherit a terminal's REX_BIN_DIR.
   ct_path_append "$HOME/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app/Contents/MacOS"
   ct_path_append "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
-  ct_path_append "/Applications/Cursor.app/Contents/Resources/app/bin"
 fi
 
 ct_path_append "$HOME/.local/share/nvim/mason/bin"

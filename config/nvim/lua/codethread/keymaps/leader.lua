@@ -147,7 +147,6 @@ Keys.tbl('<leader>', {
 		a = { 'Aerial', Cmd 'AerialToggle! left' },
 		-- if you can't beat 'em
 		-- c = { 'Gui', Cmd 'silent !code %' },
-		-- c = { 'Gui', Cmd 'silent !cursor %' },
 		d = { 'Dir', Cmd 'Oil' },
 		f = { 'Open finder', function() vim.ui.open(vim.fn.expand '%:p:h') end },
 		g = { 'git remote', function() Snacks.gitbrowse.open() end },

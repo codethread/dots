@@ -2,12 +2,6 @@
   "terminal.integrated.enableImages": true,
   // test
   // helps to turn on minimap for this file only
-  // MARK: cursor
-  "cursor.cpp.disabledLanguages": ["yaml", "plaintext", "oil", "vsnetrw"],
-  "cursor.composer.cmdPFilePicker2": true,
-  "cursor.cpp.enablePartialAccepts": true,
-  "cursor.composer.collapsePaneInputBoxPills": true,
-
   // MARK: vscode
   "breadcrumbs.symbolPath": "off",
   "editor.cursorBlinking": "phase",
@@ -93,11 +87,10 @@
   "workbench.editor.customLabels.patterns": {
     "**/index.*": "(${dirname}) ${filename}.${extname}",
   },
-  // these settings get a bit upset between vscode and cursor so sometimes comment out and retry
   "workbench.editor.labelFormat": "short",
   "workbench.fontAliasing": "auto",
   "workbench.iconTheme": "material-icon-theme",
-  "workbench.editor.showTabs": "none", // this hides cursor settings :P so use command pallete
+  "workbench.editor.showTabs": "none",
   "workbench.editor.revealIfOpen": false,
   "workbench.editor.enablePreviewFromQuickOpen": false,
   "workbench.editor.openPositioning": "last",
@@ -473,14 +466,9 @@
   "zig.buildOnSaveArgs": ["check"],
   "zig.path": "zig",
 
-  "yaml.schemas": {
-    "file:///Users/adamhall/.cursor/extensions/atlassian.atlascode-3.8.0/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml",
-  },
   "atlascode.jira.enabled": true,
   "atlascode.bitbucket.enabled": false,
   "git.blame.statusBarItem.enabled": true,
-  "cursor.composer.shouldChimeAfterChatFinishes": true,
-  "cursor.general.enableShadowWorkspace": true,
   "playwright.reuseBrowser": false,
   "playwright.showTrace": true,
   "[typescript]": {},
@@ -498,7 +486,6 @@
   "chat.tools.autoApprove": true,
   "json.schemaDownload.enable": true,
   "go.toolsManagement.autoUpdate": true,
-  "cursor.semanticSearch.includePullRequests": false,
   "auto-close-tag.excludedTags": [
     "area",
     "base",
