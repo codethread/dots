@@ -38,7 +38,6 @@ optional 'Todoist build' /bin/bash -c 'cd "$HOME/dev/vendor/todoist" && go build
 # The agents repo owns its install/build/link steps behind its default mise task.
 ( cd "$HOME/dev/projects/agents" && mise run )
 
-nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --no-cache ($env.DOTFILES | path join "config/dotty/dotty.toml") | ignore'
 git -C "$DOTFILES" config core.hooksPath .githooks
 "$DOTFILES/boot/shell.sh"
 # Development verification (including fixes and docs) belongs to mise run build.

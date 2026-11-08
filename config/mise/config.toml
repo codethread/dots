@@ -1,6 +1,6 @@
 min_version = "2026.9.15"
 
-# Global CLI defaults, linked by dotty. The project loads this same file through
+# Global CLI defaults, linked by mise. The project loads this same file through
 # .mise/conf.d/tools.toml, so tools are also available before the first link.
 # Keep service/bootstrap tasks project-local: they must not run in other repos.
 [tools]

@@ -12,7 +12,7 @@ case "${1:-}" in
 esac
 
 : "${DOTFILES:?Run through mise bootstrap}"
-# Generated init files are mise-owned, separate from dotty-linked configs.
+# Generated init files are mise-owned, separate from source-linked configs.
 cache="$HOME/.local/cache/dots/shell"
 mkdir -p "$cache"
 tmp=$(mktemp -d "$cache/.init.XXXXXXXX")

@@ -6,7 +6,7 @@
 
 ## Ownership
 
-Mise owns the Apple Silicon macOS workstation: packages, managed files, repositories, defaults, user settings, and LaunchAgents. Mise renders Claude settings, merges shared Codex settings, and links `home/` plus shared skills. Dotty links the remaining `config/`, `claude/` (except settings and skills), and `pi/` assets. Shells activate mise natively. The checkout requires mise 2026.10.4 or newer for native structured dotfile merges.
+Mise owns the Apple Silicon macOS workstation: packages, managed files, repositories, defaults, user settings, and LaunchAgents. Mise renders Claude settings, merges shared Codex settings, and deploys all `home/`, `config/`, `claude/`, `pi/`, and shared-skill links through native dotfile groups and entries. Shells activate mise natively. The checkout requires mise 2026.10.4 or newer for native structured dotfile merges.
 
 The root Bun workspace contains only `oven`. The `.botlake/` lake package is independent: its dependencies resolve from the bootstrap-managed Botlake checkout and shared `ct-config`, and bootstrap installs them with `bun install --cwd .botlake` after preparing Botlake's source and CLIs.
 
@@ -22,7 +22,7 @@ There are two configuration scopes—project bootstrap and global tools—not fo
 | `.mise/conf.d/*.toml` | Reusable entrypoints only: `tools.toml` and `tools.dev.toml` symlink to global tool sources; `services.dev.toml` symlinks to the dev-only service source; `botlake-ui.dev.toml` and `botlake-ui.work.toml` symlink to the shared UI source. Environment-suffixed entries load only for the selected environment with `env_conf_d` enabled. |
 | `.mise/dev-services.toml` | Reusable dev-service source, not automatically discovered. The `.mise/conf.d/services.dev.toml` symlink loads its cc-notify and Git-maintenance declarations; workfiles declares the work equivalents in its own repository. |
 | `.mise/botlake-ui.toml` | Shared dev/work Botlake UI daemon and setup flag, loaded only through its environment-suffixed symlinks. The Botlake supervisor and both clone resources remain in root `mise.toml`. |
-| `config/mise/config.toml`, `config/mise/config.dev.toml` | Global tool sources. Dotty links them into `~/.config/mise`, so their tools are available outside dots. Project `tools*.toml` fragment symlinks reuse the same sources before global links exist. |
+| `config/mise/config.toml`, `config/mise/config.dev.toml` | Global tool sources. Mise links them into `~/.config/mise`, so their tools are available outside dots. Project `tools*.toml` fragment symlinks reuse the same sources before global links exist. |
 | `.miserc.toml` | Early discovery settings, not a package/tool list. Enables environment-suffixed fragments with `env_conf_d = true`. |
 
 ## Workfiles handoff
@@ -31,7 +31,7 @@ On work profiles, `mise.work.toml` passes the GitLab host, repository, and check
 
 If the checkout is absent and `glab` is not authenticated for GitLab, the handoff warns and skips without failing dots. An existing checkout is local input: the hook does not authenticate, pull, reset, or clean it; it trusts only that checkout and runs its default `make`, whose errors block visibly. `mise -E work bootstrap --dry-run` prints the final handoff but does not recursively plan workfiles; after the checkout exists, run `make plan` or `make status` from it separately.
 
-Workfiles owns the moved work-specific packages, Vault and cargo-lambda global tools, `work_home`/`deals` dotty configuration, work VS Code extensions, cc-notify, and work Git-maintenance jobs. Dots retains the generic Git-maintenance helper and all-profile syncengine. The shared Claude template remains a generic base that optionally merges `~/.config/claude/settings-overlay.json`; workfiles renders that overlay and, after its dotfiles phase, rerenders dots' one shared `~/.claude/settings.json` with targeted `mise dot apply ~/.claude/settings.json`, not a whole dots bootstrap. Work plugins/marketplaces and Microsoft 365/Atlassian allowances live in the overlay rather than a duplicate complete template.
+Workfiles owns the moved work-specific packages, Vault and cargo-lambda global tools, native work dotfile groups, work VS Code extensions, cc-notify, and work Git-maintenance jobs. Dots retains the generic Git-maintenance helper and all-profile syncengine. The shared Claude template remains a generic base that optionally merges `~/.config/claude/settings-overlay.json`; workfiles renders that overlay and, after its dotfiles phase, rerenders dots' one shared `~/.claude/settings.json` with targeted `mise dot apply ~/.claude/settings.json`, not a whole dots bootstrap. Work plugins/marketplaces and Microsoft 365/Atlassian allowances live in the overlay rather than a duplicate complete template.
 
 Runtime application ownership follows whole files, not individual work references. Mixed Pi, Git, wktree, environment, and tmux settings stay in dots. The wholly work-specific Nushell `ct/config/hooks.nu` and `ct/onepassword.nu` modules live in workfiles' home tree and load through the existing optional `~/.work.nu` entrypoint. Work hooks append to the existing PWD hooks so mise activation is retained; common Nushell startup does not require either work module.
 
@@ -41,19 +41,26 @@ Shared VS Code extensions are `vscode:*` entries in `[bootstrap.packages]`, back
 
 Keep bootstrap resources project-local: global tool configuration loads in other repositories too. Symlinks reuse declarations without creating a second configuration scope or duplicating lists.
 
-## Home and shared skills
+## Dotfile deployment
 
-Root `mise.toml` sets `dotfiles.root = "home"` and deploys that tree to `~` through `[dotfile_groups.home]` with `mode = "symlink-each"`. A separate `[dotfiles]` entry maps `home/.agents/skills/` a second time to `~/.claude/skills/`. The native group avoids the first-apply legacy scan of the entire home directory that an ungrouped `~` entry performs. Each source file gets a link; destination directories remain real directories. Claude’s `synced/`, `.trash/`, and other unmanaged neighbors stay local.
+Root `mise.toml` sets `dotfiles.root = "."` and declares four native groups with `mode = "symlink-each"`:
 
-The entries walk the source tree, including new files not yet in Git’s index. Existing linked-file edits are visible immediately; additions and removals need another apply. Mise records ownership in its state directory so deleted source files remove only their managed links. Destination-only files are neither removed nor imported into the source. Keep workfiles’ `work_home` targets disjoint from dots’ home files.
+| Group | Source | Destination | Selection |
+| --- | --- | --- | --- |
+| `home` | `home/` | `~` | Every source file, including untracked additions |
+| `config` | `config/` | `~/.config` | Git-indexed files, excluding underscore-prefixed trees, `.gitignore`, and `README.md` |
+| `claude` | `claude/` | `~/.claude` | Same selection, also excluding `settings.json`, `settings.local.json`, and `skills/` |
+| `pi` | `pi/` | `~/.pi` | Same selection as `config` |
 
-From the checkout, preview with `mise dot apply --dry-run ~ ~/.claude/skills`, then apply the same targets. `mise run link` runs the remaining Dotty projects and this targeted mise apply. Dotty’s editor hooks no longer deploy new home files; run `mise run link` after adding or removing them. Native bootstrap deploys both entries in its dotfiles phase before LaunchAgents.
+A separate `[dotfiles]` entry maps `home/.agents/skills/` to `~/.claude/skills/`. Each source file gets a link; destination directories remain real directories. Claude’s `synced/`, `.trash/`, and other unmanaged neighbors stay local. Mise records ownership in its state directory so deleted source files remove only their managed links. Destination-only files are neither removed nor imported into the source. Workfiles owns its own native dotfile groups; keep their target files disjoint from dots’ files.
+
+After adding, renaming, or deleting files, run `mise run link` from the durable checkout. Stage new files in `config/`, `claude/`, and `pi/` with `git add` first: their `manifest = "git"` selection uses the index. Edits to existing linked files are visible immediately. Editor saves do not apply new links. The task applies all link targets without rerendering Claude settings or merging Codex settings, and refuses real-file conflicts. Preview its exact operations with `mise dot apply --dry-run ~ ~/.config ~/.claude ~/.pi ~/.claude/skills ~/.local/bin/pi ~/.local/bin/gitwatch`. Full bootstrap deploys these links in its native dotfiles phase before LaunchAgents.
 
 ## Codex settings
 
 `templates/codex-config.toml` supplies the shared keys for the native `merge = true` edit at `~/.config/codex/config.toml/shared`. Mise renders the source with Tera first, so the Harnesses marketplace path uses the current user's `env.HOME`. Mise recursively merges tables and preserves target-only settings, comments, and untouched formatting. It replaces arrays wholesale, including `skills.config`; it does not merge skill records by path. Removed source keys remain in the target, and live edits do not sync back into the source. Keep durable shared changes in the source; machine-local keys can remain in the live file. Invalid TOML fails without overwriting the target.
 
-Preview with `mise dot diff ~/.config/codex/config.toml/shared`, then apply that same target after reviewing. No overlay or dotty template cache is used. Removing dotty's template option leaves any old cache inert; do not delete live configuration as part of the migration.
+Preview with `mise dot diff ~/.config/codex/config.toml/shared`, then apply that same target after reviewing.
 
 ## Commands
 
@@ -64,7 +71,7 @@ mise bootstrap --skip-dirty --dry-run # Preview the same setup without hooks/ins
 mise bootstrap                 # Apply the workstation, rejecting dirty repos
 mise bootstrap status          # Inspect declarative state
 mise bootstrap --update        # Also update declared repositories/package metadata
-mise run link                  # Relink Dotty assets and native home/skill entries
+mise run link                  # Apply all repository-managed symlinks
 mise run build                 # Run Oven's full development verification
 mise run llm:update            # Explicit agent CLI updates
 mise run brew:cleanup --dry-run # Preview Homebrew cleanup
@@ -83,12 +90,12 @@ Plain bootstrap clones missing repositories but does not pull unpinned existing 
 Native bootstrap installs package-manager plugins first, then applies built-in packages before managed files and repositories, followed by dotfiles, defaults, LaunchAgents, login shell, and tools. Plugin-managed packages (including VS Code extensions) apply after tools, so the host application is ready. Three repo-specific hooks fill the gaps:
 
 1. **Post-packages:** install mise tools early, then run `boot/check-system.sh` before any managed PAM file is written. Raw LaunchAgents occur before mise's normal tools phase, so the early tool install is deliberate; the later native tools phase is an unchanged-state check.
-2. **Post-repos:** `boot/setup.sh` installs missing agent CLIs and Playwright; builds Todoist; links the remaining Dotty assets (including Pi); generates shell caches with `boot/shell.sh`; installs/builds Oven; installs service dependencies and prepares Git-maintenance registrations. It prepares Botlake's source checkout and installs its Go CLIs into `~/.local/bin`, then installs the dots lake's Bun dependencies with `bun install --cwd .botlake`; dev/work also installs the UI's dependencies and builds it. It registers dots-owned daemons with Pitchfork without starting them. Only then can the later native dotfiles and LaunchAgent phases run.
+2. **Post-repos:** `boot/setup.sh` installs missing agent CLIs and Playwright; builds Todoist; generates shell caches with `boot/shell.sh`; installs/builds Oven; installs service dependencies and prepares Git-maintenance registrations. It prepares Botlake's source checkout and installs its Go CLIs into `~/.local/bin`, then installs the dots lake's Bun dependencies with `bun install --cwd .botlake`; dev/work also installs the UI's dependencies and builds it. It registers dots-owned daemons with Pitchfork without starting them. Only then can the later native dotfiles and LaunchAgent phases run.
 3. **Post-tools:** `boot/start-botlake.sh` starts the dots lake after native LaunchAgents load. It starts the mise-managed `botlake-supervisor` when needed and leaves an externally owned supervisor running, without stopping, restarting, or adopting it. Registration alone does not start that supervisor in an already-running Pitchfork; `boot_start` still handles subsequent logins.
 
 Agent CLI setup, Playwright, Todoist, and Oven installation/build failures print warnings and allow setup to continue. A setup-exit summary repeats these failures. VS Code extension failures instead fail visibly through native package convergence. Agent installers still refuse to overwrite custom launchers. Bootstrap does not run Oven tests, typechecking, automatic fixes, or documentation generation; `mise run build` remains the development verification path. System/PAM checks, dotfile conflicts, required shell dependencies, and service dependency preparation remain blocking.
 
-Log directories and the cc-notify checkout are declarative resources. Secrets stay in cc-notify's local `.env`, not TOML or generated plists. Bootstrap warns about missing credential names without printing their values and continues. Missing credentials fail cc-notify at runtime without blocking other services; inspect its launchd state and logs after bootstrap. Home files and shared skills link, Claude settings render, and Codex settings merge in the native dotfiles phase; `/tmp/claude` is prepared in the files phase.
+Log directories and the cc-notify checkout are declarative resources. Secrets stay in cc-notify's local `.env`, not TOML or generated plists. Bootstrap warns about missing credential names without printing their values and continues. Missing credentials fail cc-notify at runtime without blocking other services; inspect its launchd state and logs after bootstrap. All asset, home, and shared-skill files link, Claude settings render, and Codex settings merge in the native dotfiles phase; `/tmp/claude` is prepared in the files phase.
 
 Hooks run on every selected bootstrap and stop on failure; completed phases are not rolled back. A dry run prints hooks but cannot prove their runtime success. `mise run` opts into `--skip-dirty`: it skips dirty repository convergence, not the later setup hook's installs/builds against those local checkouts. Direct `mise bootstrap` remains strict unless given the flag.
 

@@ -11,7 +11,7 @@ host=$1
 repo=$2
 checkout=$3
 
-# boot.sh uses repo-backed config until dotty runs. The handoff runs afterwards.
+# boot.sh uses repo-backed config until native dotfiles apply. The handoff runs afterwards.
 if [ "${XDG_CONFIG_HOME:-}" = "${DOTFILES:-}/config" ]; then
   export XDG_CONFIG_HOME="$HOME/.config"
 fi

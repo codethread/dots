@@ -6,7 +6,9 @@ New machine → `boot/boot.sh`: install Homebrew/mise, clone dots, initialize th
 
 Mise itself comes from the official `https://mise.run` installer at `~/.local/bin/mise` and updates with `mise self-update`. Do not add it to Homebrew packages. Shells and LaunchAgents use this stable user-owned executable.
 
-`llm:update` and `brew:cleanup` are explicit maintenance tasks. Preview Homebrew cleanup with `mise run brew:cleanup --dry-run`; cleanup is never part of bootstrap. `mise.toml` owns shared bootstrap resources and hooks; `mise.<profile>.toml` holds machine differences. `.mise/conf.d/` is reserved for reusable entrypoints: `tools.toml` and `tools.dev.toml` symlink to global `config/mise/` sources, while `services.dev.toml` symlinks to `.mise/dev-services.toml`, a source not loaded directly. `.miserc.toml` enables environment-suffixed entrypoints. Global tools are linked by dotty into `~/.config/mise` and reused by project tool fragments before those links exist. Keep bootstrap resources project-local, not in global tool config.
+`llm:update` and `brew:cleanup` are explicit maintenance tasks. Preview Homebrew cleanup with `mise run brew:cleanup --dry-run`; cleanup is never part of bootstrap. `mise.toml` owns shared bootstrap resources and hooks; `mise.<profile>.toml` holds machine differences. `.mise/conf.d/` is reserved for reusable entrypoints: `tools.toml` and `tools.dev.toml` symlink to global `config/mise/` sources, while `services.dev.toml` symlinks to `.mise/dev-services.toml`, a source not loaded directly. `.miserc.toml` enables environment-suffixed entrypoints. Mise links global tools into `~/.config/mise`; project tool fragments reuse those sources before the links exist. Keep bootstrap resources project-local, not in global tool config.
+
+Mise owns all deployed dotfile links. After adding, renaming, or deleting files, run `mise run link` from the durable checkout to update live links; editor saves do not apply them. The `config/`, `claude/`, and `pi/` groups use `manifest = "git"`, so stage new files with `git add` before applying. Edits to already-linked files are visible immediately. Preview file operations with `mise dot apply --dry-run`.
 
 Start mise from the checkout (change directory before launching it) so its early `.miserc.toml` discovery settings load. Do not rely on `mise -C` when invoking dots from outside the checkout; service entrypoints must set their working directory before starting mise too.
 
@@ -21,7 +23,7 @@ Runtime application ownership is per file: mixed personal/shared and work config
 - **boot/** - System setup scripts. Go here to bootstrap a new machine.
 - **claude/** - Global Claude Code configurations and agent documentation. Go here for multi-agent specs and hooks.
 - **config/** - Application dotfiles (vim, kitty, nushell, etc). Go here to modify tool configurations.
-- **home/** - Mise links this tree into `~` with `symlink-each`; it also links `home/.agents/skills/` into `~/.claude/skills/`, preserving Claude-owned metadata. Dotty owns only `config/`, `claude/` (except settings and skills), and `pi/`.
+- **home/** - Mise links this tree into `~` with `symlink-each`; it also links `home/.agents/skills/` into `~/.claude/skills/`, preserving Claude-owned metadata. Other native groups deploy `config/`, `claude/` (except settings and skills), and `pi/`.
 - **oven/** - TypeScript/Bun workspace for CLI tools. Go here for active development.
 - **devflow/** - Planning workspace. Root specs live in `devflow/specs/`; RFCs in `devflow/rfcs/`; active feature work in `devflow/feat/`.
 - **pdx/** - pandoras-box configs (pithos) for personal machines

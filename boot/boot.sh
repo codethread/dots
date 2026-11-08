@@ -71,7 +71,7 @@ if [ ! -e "$DOTFILES/.git" ]; then
   /usr/bin/git clone --branch "$GIT_BRANCH" "$clone_url" "$DOTFILES"
 fi
 
-# Preserve the repo-backed config root until dotty links ~/.config.
+# Preserve the repo-backed config root until mise deploys ~/.config.
 export XDG_CONFIG_HOME="$DOTFILES/config"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_STATE_HOME="$HOME/.local/state"

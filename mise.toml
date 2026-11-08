@@ -1,7 +1,7 @@
 min_version = "2026.10.4"
 
 [settings]
-dotfiles.root = "home"
+dotfiles.root = "."
 
 # Shared bootstrap resources live here; machine differences live in mise.<profile>.toml.
 # .mise/conf.d/ only reuses global tools and dev/work services.
@@ -46,14 +46,8 @@ description = "Apply full workstation setup, skipping dirty repos"
 run = "mise bootstrap --skip-dirty"
 
 [tasks.link]
-description = "Relink Dotty assets and mise-managed home files/skills"
-env.DOTFILES = "{{ config_root }}"
-run = [
-  '''
-  nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --force --no-cache ($env.DOTFILES | path join "config/dotty/dotty.toml") | ignore'
-  ''',
-  'mise dot apply "$HOME" "$HOME/.claude/skills" "$HOME/.local/bin/pi"',
-]
+description = "Apply repository-managed symlinks"
+run = 'mise dot apply "$HOME" "$HOME/.config" "$HOME/.claude" "$HOME/.pi" "$HOME/.claude/skills" "$HOME/.local/bin/pi" "$HOME/.local/bin/gitwatch"'
 
 [tasks.build]
 description = "Install, test, typecheck, fix, and build Oven tools/docs"
@@ -209,9 +203,30 @@ ref = "5d1c6df1a86729b193840d988fb38fa654b93bb9"
 
 # Keep real destination directories so application-owned files remain local.
 [dotfile_groups.home]
-root = "."
+root = "home"
 target = "~"
 mode = "symlink-each"
+
+[dotfile_groups.config]
+root = "config"
+target = "~/.config"
+mode = "symlink-each"
+manifest = "git"
+exclude = ["**/_?*/**", ".gitignore", "README.md"]
+
+[dotfile_groups.claude]
+root = "claude"
+target = "~/.claude"
+mode = "symlink-each"
+manifest = "git"
+exclude = ["**/_?*/**", ".gitignore", "README.md", "settings.json", "settings.local.json", "skills"]
+
+[dotfile_groups.pi]
+root = "pi"
+target = "~/.pi"
+mode = "symlink-each"
+manifest = "git"
+exclude = ["**/_?*/**", ".gitignore", "README.md"]
 
 [dotfiles."~/.claude/skills"]
 source = "home/.agents/skills"
