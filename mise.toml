@@ -128,6 +128,9 @@ run = '"{{ config_root }}/home/.local/bin/mise-llm" update'
 [bootstrap.plugins]
 vscode = "https://github.com/waynehoover/mise-vscode"
 
+[bootstrap.brew.taps]
+"codethread/wktree" = "https://github.com/codethread/wktree"
+
 # Shared macOS host packages. Apply explicitly; never prune during bootstrap.
 [bootstrap.packages]
 # Shared CLI packages.
