@@ -70,6 +70,7 @@ mise run                       # Apply setup, skipping dirty repos
 mise bootstrap --skip-dirty --dry-run # Preview the same setup without hooks/installing
 mise bootstrap                 # Apply the workstation, rejecting dirty repos
 mise bootstrap status          # Inspect declarative state
+mise bootstrap packages status # Inspect effective managed-package state
 mise bootstrap --update        # Also update declared repositories/package metadata
 mise run link                  # Apply all repository-managed symlinks
 mise run build                 # Run Oven's full development verification
@@ -80,6 +81,8 @@ mise self-update               # Update the mise executable
 ```
 
 `mise run` executes the root default task, which delegates to `mise bootstrap --skip-dirty`. Preview the same policy with native `mise bootstrap --skip-dirty --dry-run`; `mise bootstrap --update` remains strict about dirty repositories. `mise tasks` lists repository workflows; `mise bootstrap --help` lists native convergence commands. Preview/status use native commands rather than task wrappers so they cannot install task tools first. The `build` task changes into Oven before starting its `mise run verify`, preserving early config discovery. Zsh's `mise-packages`, `mise-services`, and `mise-dot-diff` inspect this checkout from any directory. Native subcommands also apply individual resources; narrow applies must select their own prerequisites, so use full bootstrap for initial setup.
+
+`mise bootstrap packages status` evaluates the active mise profile and reports whether its declared packages are in the desired state. It is not an inventory of installed-but-unmanaged packages; auditing unmanaged Homebrew formulae, casks, or editor extensions is a separate operation.
 
 Plain bootstrap clones missing repositories but does not pull unpinned existing branches. `--update` fast-forwards declared repositories; dirty checkouts, origin conflicts, and divergent history fail visibly. Resolve them rather than forcing a reset. Dependencies are installed from their committed lockfiles. No packages are pruned or upgraded implicitly. `brew:cleanup` explicitly runs `brew cleanup` and forwards arguments to Homebrew; it requires the real `brew` executable and never runs during bootstrap. Cleanup removes old formula versions and stale downloads, not packages missing from the mise configuration. It does not clear mise's separate download cache or run `brew autoremove`.
 
