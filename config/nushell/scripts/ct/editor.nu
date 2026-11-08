@@ -1,8 +1,5 @@
 # Editor and development environment utilities
 
-# see https://github.com/wbthomason/packer.nvim/issues/180 for MACOSX_DEPLOYMENT_TARGET=10.15
-export alias nvim-boot = MACOSX_DEPLOYMENT_TARGET=10.15 nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync'
-
 export def nvim-md []: string -> nothing {
     $in | nvim - "+set ft=markdown"
 }

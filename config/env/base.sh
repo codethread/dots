@@ -160,18 +160,11 @@ if [ "$ct_os" = Darwin ]; then
   ct_path_append /opt/homebrew/sbin
 fi
 ct_path_append "$CARGO_BIN"
-ct_path_append "$HOME/.bun/bin"
 ct_path_append "$HOME/.luarocks/bin"
-ct_path_append "$HOME/.linkerd2/bin"
-ct_path_append "$HOME/.emacs.d/bin"
-ct_path_append "$XDG_CONFIG_HOME/skein/bin"
-ct_path_append /opt/podman/bin
 
 if [ "$ct_os" = Darwin ]; then
   ct_path_append "$ANDROID_HOME/platform-tools"
   ct_path_append "$ANDROID_HOME/emulator"
-  ct_path_append /opt/homebrew/opt/ruby@3.1/bin
-  ct_path_append /opt/homebrew/lib/ruby/gems/3.1.0/bin
   ct_path_append "/Applications/kitty.app/Contents/MacOS"
   # GUI-server callbacks do not inherit a terminal's REX_BIN_DIR.
   ct_path_append "$HOME/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app/Contents/MacOS"
