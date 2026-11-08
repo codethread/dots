@@ -3,19 +3,18 @@
 - Document ID: SPEC-004
 - Configuration identification: SPEC-004; migrated from `specs/git-worktrees.md`; canonical path `devflow/specs/git-worktrees.md`.
 - **Status:** Implemented
-- **Last Updated:** 2026-11-05
+- **Last Updated:** 2026-11-08
 
 ## Scope
 
 [Honeycomb](https://github.com/codethread/hive/tree/main/lib/honeycomb) owns worktree lifecycle behavior, safety checks, JSON contracts, and shell integration. Use `honeycomb -h` and subcommand help for the command reference; implementation docs and tests live in `~/dev/projects/hive/lib/honeycomb`.
 
-This spec covers only the dotfiles wiring and local policy, not a second CLI contract.
+This spec covers only the dotfiles wiring and local policy, not a second CLI contract. Install Hive separately; dots bootstrap does not clone or build it.
 
 ## Integration
 
 | Location | Responsibility |
 | --- | --- |
-| `mise.toml`, `boot/setup.sh` | Provision `~/dev/projects/hive` and run its default mise task, which builds `~/.local/bin/honeycomb`. |
 | `config/env/base.sh` | Put `~/.local/bin` on the shared PATH. |
 | `config/dotty/dotty.toml`, `config/hive/honeycomb.toml` | Link the local policy to `~/.config/hive/honeycomb.toml`. |
 | `config/nushell/env.nu`, `config/nushell/config.nu` | Generate and import `honeycomb shell-init nu` for interactive shells. Noninteractive shells neither generate nor import the module. |

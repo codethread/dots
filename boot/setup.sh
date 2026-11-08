@@ -35,13 +35,7 @@ optional 'Playwright CLI installation' env NPM_CONFIG_PREFIX="$HOME/.local" npm 
 
 # The pinned Todoist fork commits its generated parser; no goyacc step is needed.
 optional 'Todoist build' /bin/bash -c 'cd "$HOME/dev/vendor/todoist" && go build -trimpath -o "$HOME/.local/bin/todoist" .'
-# Each repo owns its install/build/link steps behind a default mise task.
-# Hive's canonical checkout owns its launchers and tracker, not a feature worktree.
-(
-  cd "$HOME/dev/projects/hive"
-  mise trust mise.toml
-  mise run
-)
+# The agents repo owns its install/build/link steps behind its default mise task.
 ( cd "$HOME/dev/projects/agents" && mise run )
 
 nu -n -I "$DOTFILES/config/nushell/scripts" -c 'use ct/dotty; dotty link --no-cache ($env.DOTFILES | path join "config/dotty/dotty.toml") | ignore'

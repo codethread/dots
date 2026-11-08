@@ -132,7 +132,6 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "brew:flock" = { os = "macos" }
 "brew:clojure" = { os = "macos" }
 
-"brew:dicklesworthstone/tap/br" = { os = "macos" }
 "brew:dicklesworthstone/tap/bv" = { os = "macos" }
 "brew:morantron/tmux-fingers/tmux-fingers" = { os = "macos" }
 "brew:BRO3886/tap/ical" = { os = "macos" }
@@ -200,7 +199,6 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "~/sync/images" = { url = "git@github.com:codethread/images.git" }
 # Pi's repo-owned settings already load this checkout as a local package.
 "~/dev/projects/agents" = { url = "git@github.com:codethread/agents.git" }
-"~/dev/projects/hive" = { url = "git@github.com:codethread/hive.git" }
 "~/dev/projects/botlake" = { url = "git@github.com:codethread/botlake.git" }
 "~/dev/projects/botlake-ui" = { url = "git@github.com:codethread/botlake-ui.git" }
 
