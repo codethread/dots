@@ -37,6 +37,20 @@ return {
 				},
 			},
 		},
+		config = function(_, opts)
+			local codediff = require 'codediff'
+			local function setup()
+				-- Laptop baseline: 199 columns. Only change the default for new views.
+				codediff.setup(vim.tbl_deep_extend('force', opts, {
+					diff = { layout = vim.o.columns <= 199 and 'inline' or 'side-by-side' },
+				}))
+			end
+			setup()
+			vim.api.nvim_create_autocmd('VimResized', {
+				group = vim.api.nvim_create_augroup('CodeDiffLayout', { clear = true }),
+				callback = setup,
+			})
+		end,
 	},
 	{
 		'dlyongemallo/diffview-plus.nvim',
