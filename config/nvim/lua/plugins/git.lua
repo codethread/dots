@@ -4,7 +4,10 @@ return {
 	{
 		'NeogitOrg/neogit',
 		lazy = true,
-		dependencies = { 'dlyongemallo/diffview.nvim' },
+		dependencies = {
+			-- 'dlyongemallo/diffview.nvim' ,
+			'esmuellert/codediff.nvim',
+		},
 		init = function()
 			vim.api.nvim_create_autocmd('User', {
 				pattern = 'NeogitPushComplete',
@@ -17,7 +20,8 @@ return {
 			disable_commit_confirmation = true,
 			integrations = {
 				telescope = true,
-				diffview = true,
+				-- diffview = true,
+				codediff = true,
 			},
 			graph_style = 'unicode',
 			console_timeout = U.machine {
@@ -27,7 +31,6 @@ return {
 		},
 	},
 	{
-		-- trial
 		'esmuellert/codediff.nvim',
 		cmd = 'CodeDiff',
 		opts = {
@@ -54,6 +57,7 @@ return {
 	},
 	{
 		'dlyongemallo/diffview-plus.nvim',
+		enabled = false, -- leaning into CodeDiff more
 		-- lazy = false,
 		version = '*',
 		-- optional: lazy-load on command
