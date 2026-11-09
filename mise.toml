@@ -129,7 +129,9 @@ run = '"{{ config_root }}/home/.local/bin/mise-llm" update'
 vscode = "https://github.com/waynehoover/mise-vscode"
 
 [bootstrap.brew.taps]
+"codethread/qlock" = "https://github.com/codethread/qlock"
 "codethread/wktree" = "https://github.com/codethread/wktree"
+"codethread/chatty" = "https://github.com/codethread/Chatty.app"
 
 # Shared macOS host packages. Apply explicitly; never prune during bootstrap.
 [bootstrap.packages]
@@ -190,6 +192,7 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "brew:flock" = { os = "macos" }
 "brew:clojure" = { os = "macos" }
 
+"brew:codethread/qlock/qlock" = { os = "macos" }
 "brew:codethread/wktree/wktree" = { os = "macos" }
 "brew:morantron/tmux-fingers/tmux-fingers" = { os = "macos" }
 "brew:BRO3886/tap/ical" = { os = "macos" }
@@ -205,6 +208,7 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "brew-cask:font-victor-mono" = { os = "macos" }
 "brew-cask:font-symbols-only-nerd-font" = { os = "macos" }
 
+"brew-cask:codethread/chatty/chatty" = { os = "macos" }
 "brew-cask:kitty" = { os = "macos" }
 "brew-cask:nikitabobko/tap/aerospace" = { os = "macos" }
 "brew-cask:alfred" = { os = "macos" }
