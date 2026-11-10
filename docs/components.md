@@ -20,6 +20,8 @@ The [home group](../mise.toml) includes untracked filesystem entries; Git-manife
 
 Keep destination directories real so application-owned credentials, sessions, and metadata survive deployment.
 
+[Global agent instructions](../templates/agents/README.md) share a Markdown base rendered by mise. `mise run link` applies the three generated global files alongside symlinks; Pi keeps its session-dependent Nunjucks rules in place.
+
 Settings have deliberately different ownership:
 
 - [Claude](../templates/claude-settings.json.tera) renders the whole owned file. Workfiles overlays override ordinary keys, but permission lists are unioned: overlays can add permissions, not revoke base permissions. Malformed overlays fail.

@@ -1,0 +1,5 @@
+{{ read_file(path="templates/agents/common.md") | trim }}
+
+## Ways of working
+
+- Set `TMPDIR` to `/tmp/claude`.

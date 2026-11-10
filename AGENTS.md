@@ -7,5 +7,5 @@
 - Keep `core.hooksPath = .githooks`; staged Markdown and Nushell are formatted at commit.
 - Run full suites through `qlock exec --lock /tmp/agent-cpu.lock -w 180 -- <command>`.
 - Use `wktree` for worktree lifecycle operations.
-- Repository instructions use canonical `AGENTS.md` with a relative sibling `CLAUDE.md -> AGENTS.md` symlink. `claude/CLAUDE.md`, `config/codex/AGENTS.md`, and `pi/agent/agent.njk` are deployed global policy, not contribution guides.
+- Repository instructions use canonical `AGENTS.md` with a relative sibling `CLAUDE.md -> AGENTS.md` symlink. `templates/agents/` and `pi/agent/agent.njk` are deployed global policy, not contribution guides.
 - Tool removal includes owned documentation and direct consumers in one `GOODBYE <tool>` commit, with the reason in its body.

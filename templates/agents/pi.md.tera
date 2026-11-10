@@ -1,0 +1,2 @@
+{# Session-dependent rules stay in pi/agent/agent.njk. #}
+{{ read_file(path="templates/agents/common.md") | trim }}

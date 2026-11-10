@@ -52,7 +52,7 @@ description = "Apply full workstation setup, skipping dirty repos"
 run = "mise bootstrap --skip-dirty"
 
 [tasks.link]
-description = "Apply repository-managed symlinks"
+description = "Apply repository-managed symlinks and global agent instructions"
 run = '''
 mise dot apply \
   "$HOME" \
@@ -60,6 +60,9 @@ mise dot apply \
   "$HOME/.claude" \
   "$HOME/.pi" \
   "$HOME/.claude/skills" \
+  "$HOME/.claude/CLAUDE.md" \
+  "$HOME/.config/codex/AGENTS.md" \
+  "$HOME/.pi/agent/APPEND_SYSTEM.md" \
   "$HOME/.local/bin/pi" \
   "$HOME/.local/bin/gitwatch" \
   "$HOME/.local/bin/bra" \
@@ -282,14 +285,14 @@ root = "config"
 target = "~/.config"
 mode = "symlink-each"
 manifest = "git"
-exclude = ["**/_?*/**", ".gitignore", "README.md"]
+exclude = ["**/_?*/**", ".gitignore", "README.md", "codex/AGENTS.md", "codex/CLAUDE.md"]
 
 [dotfile_groups.claude]
 root = "claude"
 target = "~/.claude"
 mode = "symlink-each"
 manifest = "git"
-exclude = ["**/_?*/**", ".gitignore", "README.md", "settings.json", "settings.local.json", "skills"]
+exclude = ["**/_?*/**", ".gitignore", "README.md", "settings.json", "settings.local.json", "skills", "CLAUDE.md"]
 
 [dotfile_groups.pi]
 root = "pi"
@@ -315,6 +318,18 @@ mode = "symlink"
 [dotfiles."~/.local/bin/*"]
 source = "oven/bin/*.ts"
 mode = "symlink"
+
+[dotfiles."~/.claude/CLAUDE.md"]
+source = "templates/agents/claude.md.tera"
+mode = "template"
+
+[dotfiles."~/.config/codex/AGENTS.md"]
+source = "templates/agents/codex.md.tera"
+mode = "template"
+
+[dotfiles."~/.pi/agent/APPEND_SYSTEM.md"]
+source = "templates/agents/pi.md.tera"
+mode = "template"
 
 [dotfiles."~/.claude/settings.json"]
 source = "templates/claude-settings.json.tera"
