@@ -226,8 +226,6 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "brew-cask:ungoogled-chromium" = { os = "macos" }
 "brew-cask:visual-studio-code" = { os = "macos" }
 "brew-cask:zed" = { os = "macos" }
-# agent tools
-"brew-cask:terminal-browser" = { os = "macos" }
 
 # Shared VS Code extensions; VS Code owns updates, mise installs missing entries.
 "vscode:cunbidun.flash-vscode" = { os = "macos" }

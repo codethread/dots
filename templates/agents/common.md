@@ -9,4 +9,4 @@
 
 ## Skills
 
-See `bunx skillbox agent` to when adding or editing skills
+See `skillbox skills list` to when adding or editing skills
