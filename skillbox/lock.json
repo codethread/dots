@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "align-agent-instructions": {
+      "source": "./skillbox",
+      "sourceType": "local",
+      "computedHash": "bfe18fd93afbd126da21efe6b14a6c30075c2a6d0e757aab51ed17b84960305c",
+      "installMode": "copy"
+    },
+    "disk-cleanup": {
+      "source": "./skillbox",
+      "sourceType": "local",
+      "computedHash": "16f404e6b758eb060a7bb555eff04ce7b8a9f59671418b49cbdd3b2f60a4e93b",
+      "installMode": "copy"
+    },
+    "mise": {
+      "source": "./skillbox",
+      "sourceType": "local",
+      "computedHash": "6575632da9c421b46aa470986182d4773cb6d4846ba7f7b5e49e05ed404d0dc3",
+      "installMode": "copy"
+    },
+    "mise-diff": {
+      "source": "./skillbox",
+      "sourceType": "local",
+      "computedHash": "d4e25b53d41428e8b35a115379ea6054e2dd5d1d885eb8d8bb8edcbecbaca5d2",
+      "installMode": "copy"
+    },
+    "neovim": {
+      "source": "./skillbox",
+      "sourceType": "local",
+      "computedHash": "ccca11cce1eecfad41493ffb006cce8882ee4f36bfb1c7cef3012b99e38ace3b",
+      "installMode": "copy"
+    },
+    "pi-agent-instructions": {
+      "source": "./skillbox",
+      "sourceType": "local",
+      "computedHash": "ee8f22422dfd8c6e83becf25e33180b6742d0e322a1516a361f0c9ffc9790710",
+      "installMode": "copy"
+    }
+  }
+}

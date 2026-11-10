@@ -1,0 +1,10 @@
+{
+  "sources": [
+    {
+      "source": ".",
+      "bundles": [
+        "local"
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 .private
+/.agents/skills/
 /mise.local.toml
 /mise.*.local.toml
 /.botlake/world.db*
