@@ -2,7 +2,6 @@
 /mise.local.toml
 /mise.*.local.toml
 /.botlake/world.db*
-/.botlake/bun.lock
 .config/exercism
 .config/yarn
 

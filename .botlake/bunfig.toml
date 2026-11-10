@@ -1,0 +1,15 @@
+[install]
+registry = "https://registry.npmjs.org"
+linker = "isolated"
+minimumReleaseAge = 604800
+minimumReleaseAgeExcludes = [
+  "@botlake/core",
+  "@botlake/extension-agents",
+  "@botlake/extension-batteries",
+  "@botlake/extension-flags",
+  "@botlake/extension-identity",
+  "@botlake/extension-references",
+  "@botlake/extension-work",
+  "@botlake/extension-work-agents",
+  "@botlake/native-session"
+]
