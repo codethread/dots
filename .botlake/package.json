@@ -2,22 +2,8 @@
   "name": "dots-lake",
   "private": true,
   "type": "module",
-  "botlake": {
-    "name": "dots",
-    "extensions": [
-      "@botlake/extension-batteries",
-      "@botlake/extension-identity",
-      "./.botlake/src/flags.ts",
-      "./.botlake/src/references.ts",
-      "./.botlake/src/agents.ts",
-      "./.botlake/src/priming.ts",
-      "./.botlake/src/work.ts",
-      "./.botlake/src/work-agents.ts"
-    ],
-    "minimumCore": "0.2.0"
-  },
   "dependencies": {
-    "@botlake/core": "latest",
+    "@botlake/core": "https://raw.githubusercontent.com/codethread/botlake/fd8044ef4d340b50d02120eff285136b5aea6ced/vendor/botlake-cutover/botlake-core-0.2.0.tgz",
     "@botlake/native-session": "latest",
     "@botlake/extension-batteries": "latest",
     "@botlake/extension-identity": "latest",
@@ -27,5 +13,8 @@
     "@botlake/extension-work": "latest",
     "@botlake/extension-work-agents": "latest",
     "@botlake/extension-ct-config": "latest"
+  },
+  "overrides": {
+    "@botlake/core": "https://raw.githubusercontent.com/codethread/botlake/fd8044ef4d340b50d02120eff285136b5aea6ced/vendor/botlake-cutover/botlake-core-0.2.0.tgz"
   }
 }

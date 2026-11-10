@@ -409,9 +409,9 @@ oneshot = true
 boot_start = true
 retry = false
 
-# Botlake's host supervisor belongs to the workstation, not its source checkout.
+# The workstation supervisor starts each lake with its own installed Core.
 [daemons.botlake-supervisor]
-run = 'export PATH="$HOME/.local/bin:$PATH" BL_CORE="$HOME/.local/share/mise/installs/npm-botlake-core/latest/node_modules/@botlake/core"; exec botlake start'
+run = 'export PATH="$HOME/.local/bin:$PATH"; exec botlake start'
 ready_cmd = 'export PATH="$HOME/.local/bin:$PATH"; botlake status'
 retry = true
 boot_start = true
