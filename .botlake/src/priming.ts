@@ -1,1 +1,1 @@
-export { priming as default } from "ct-config";
+export { priming as default } from "@botlake/extension-ct-config";

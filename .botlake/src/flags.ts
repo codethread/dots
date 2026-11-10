@@ -1,1 +1,1 @@
-export { flags as default } from "ct-config";
+export { flags as default } from "@botlake/extension-ct-config";

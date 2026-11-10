@@ -1,1 +1,1 @@
-export { references as default } from "ct-config";
+export { references as default } from "@botlake/extension-ct-config";

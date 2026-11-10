@@ -1,1 +1,1 @@
-export { work as default } from "ct-config";
+export { work as default } from "@botlake/extension-ct-config";

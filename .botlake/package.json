@@ -26,6 +26,6 @@
     "@botlake/extension-agents": "latest",
     "@botlake/extension-work": "latest",
     "@botlake/extension-work-agents": "latest",
-    "ct-config": "file:../../projects/botlake/dist/private/ct-config-0.1.1.tgz"
+    "@botlake/extension-ct-config": "latest"
   }
 }
