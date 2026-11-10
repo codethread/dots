@@ -16,25 +16,15 @@
     ]
   },
   "dependencies": {
-    "@botlake/core": "file:../../projects/botlake/packages/core",
-    "@botlake/native-session": "file:../../projects/botlake/packages/native-session",
-    "@botlake/extension-batteries": "file:../../projects/botlake/extensions/batteries",
-    "@botlake/extension-identity": "file:../../projects/botlake/extensions/identity",
-    "@botlake/extension-flags": "file:../../projects/botlake/extensions/flags",
-    "@botlake/extension-references": "file:../../projects/botlake/extensions/references",
-    "@botlake/extension-agents": "file:../../projects/botlake/extensions/agents",
-    "@botlake/extension-work": "file:../../projects/botlake/extensions/work",
-    "@botlake/extension-work-agents": "file:../../projects/botlake/extensions/work-agents",
-    "ct-config": "file:../../projects/botlake/extensions/ct-config"
-  },
-  "overrides": {
-    "@botlake/core": "file:../../projects/botlake/packages/core",
-    "@botlake/native-session": "file:../../projects/botlake/packages/native-session",
-    "@botlake/extension-identity": "file:../../projects/botlake/extensions/identity",
-    "@botlake/extension-flags": "file:../../projects/botlake/extensions/flags",
-    "@botlake/extension-references": "file:../../projects/botlake/extensions/references",
-    "@botlake/extension-agents": "file:../../projects/botlake/extensions/agents",
-    "@botlake/extension-work": "file:../../projects/botlake/extensions/work",
-    "@botlake/extension-work-agents": "file:../../projects/botlake/extensions/work-agents"
+    "@botlake/core": "link:@botlake/core",
+    "@botlake/native-session": "link:@botlake/native-session",
+    "@botlake/extension-batteries": "link:@botlake/extension-batteries",
+    "@botlake/extension-identity": "link:@botlake/extension-identity",
+    "@botlake/extension-flags": "link:@botlake/extension-flags",
+    "@botlake/extension-references": "link:@botlake/extension-references",
+    "@botlake/extension-agents": "link:@botlake/extension-agents",
+    "@botlake/extension-work": "link:@botlake/extension-work",
+    "@botlake/extension-work-agents": "link:@botlake/extension-work-agents",
+    "ct-config": "link:ct-config"
   }
 }
