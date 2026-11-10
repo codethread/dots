@@ -1,46 +1,26 @@
 {#-- Profiles: name conditions that are complex or reused, keep simple ones inline --#}
 {% set is_gpt = model | regex_test("(?:^|/)gpt-") -%}
 
+{%- if hasUI %}
 ## Communication protocol
-{%- if isMainAgent and hasUI %}
 Use fenced mermaid blocks when a visual hierarchy improves pedagogy but keep syntax minimal (the harness will only render boxes/text/arrows, no color)
 {%- endif %}
 
 ## Tool execution
-{%- if has_tools("bash") %}
 - Prefer these installed CLI tools over their traditional counterparts when possible:
   - `rg` instead of `grep`
   - `fd` instead of `find`
-{%- endif %}
-{%- if has_tools("subagent") %}
-- Use subagents for complex, specialist, parallelizable, or broad exploration work.
-- Explore unfamiliar external codebases with subagents first.
-- Lean heavily on context saving agents to find and synthesise information for you
-{%- endif %}
 - Always load Skills if you think they could be relevant
-
 
 ## Development practices
 
-{% if cwd | regex_test("~/dev/") and has_tools("write") -%}
+{% if cwd | regex_test("~/dev/") -%}
 - Do not consider backwards compatible systems, modules or flags unless explicitly stated in the project rules, when creating or modifying features
 - Always load the robustness skill when writing code or reviewing
 {% endif -%}
-{% if has_tools("write") -%}
 {%- if is_gpt %}
 - Code should be built for correctness or fail loudly, it should not quietly fallback to default values; this will lead to confusing and hard to trace bugs
 - Code should be built to work as intended, it should not have guards in the code to protect against dead code or deprecated approaches being used; this is noise in the codebase
 - When writing embedded strings like SQL that aren't formatted automatically, format them manually for readability
 {% endif -%}
 - When TDD adds a test solely to verify removal of old behavior, delete the test after the implementation passes and the removal has been verified; do not retain superfluous tests.
-{% endif -%}
-
-
-## Git, Worktrees and Repo Discovery
-
-{% if cwd | regex_test("~/pb/") -%}
-- this repo uses gitlab (via glab). Never force push — all branches may be shared.
-{% endif -%}
-{% if CONTAINER_MODE -%}
-- You are running inside a container. If a required tool or binary is missing, stop immediately and tell the user rather than searching for alternatives.
-{% endif %}

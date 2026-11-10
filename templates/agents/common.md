@@ -6,6 +6,7 @@
 
 - Use `clone --help` when cloning external repositories.
     - `clone` vendors repositories in `~/dev/vendor` and personal repositories in `~/dev/projects`.
+- worktrees use `wktree -h` cli for all operations.
 
 ## Skills
 
