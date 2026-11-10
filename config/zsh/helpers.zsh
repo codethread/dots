@@ -2,6 +2,7 @@
 
 alias gl='git log --oneline --no-merges'
 alias gcp='git cherry-pick'
+alias finder='open -a Finder'
 
 _dots_git_main() {
   local ref
