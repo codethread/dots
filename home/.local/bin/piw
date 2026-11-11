@@ -14,14 +14,14 @@ piw options:
   -h, --help            show this help and pi's
 
 Default tools: read, bash, edit, write, interactive_shell, pi-internals,
-harness_metadata, subagent. Override with --tools.
+harness_metadata, subagent, fetch_content, web_search. Override with --tools.
 --model accepts provider/model; both --model=value and --model value work.
 Other Pi options pass through. Use -- for literal messages/files.
 
 EOF
 }
 
-typeset -a tools=(read bash edit write interactive_shell pi-internals harness_metadata subagent)
+typeset -a tools=(read bash edit write interactive_shell pi-internals harness_metadata subagent fetch_content web_search)
 typeset -a args=()
 dry_run=0 help=0 goals=0 mcp=0
 while (($#)); do

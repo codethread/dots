@@ -1,6 +1,6 @@
 {
   "$schema": "https://pi.dev/schemas/settings.schema.json",
-  "lastChangelogVersion": "1.5.0",
+  "lastChangelogVersion": "1.5.2",
   "theme": "rose-pine-dawn/rose-pine-moon",
   "quietStartup": true,
   "showHardwareCursor": true,
@@ -16,6 +16,8 @@
     "deepseek/deepseek-flash"
   ],
   "defaultTools": [
+    "+fetch_content",
+    "+web_search",
     "+mcp",
     "+codemode"
   ],
@@ -58,7 +60,7 @@
   "autocompleteMaxVisible": 10,
   "extensionChangelogVersions": {
     "{\"source\":\"npm:@narumitw/pi-goal\",\"scope\":\"user\"}": "0.55.0",
-    "{\"source\":\"npm:@narumitw/pi-btw\",\"scope\":\"user\"}": "0.63.5",
+    "{\"source\":\"npm:@narumitw/pi-btw\",\"scope\":\"user\"}": "0.63.7",
     "{\"source\":\"npm:@narumitw/pi-typesafe-compact\",\"scope\":\"user\"}": "0.1.3"
   }
 }
