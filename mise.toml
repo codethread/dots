@@ -49,7 +49,13 @@ set -e
 # Native bootstrap owns preview/status/update; tasks cover repo-specific workflows.
 [tasks.default]
 description = "Apply full workstation setup, skipping dirty repos"
+depends = ["install"]
 run = "mise bootstrap --skip-dirty"
+
+[tasks.install]
+description = "Install locked repository workspace dependencies"
+dir = "{{ config_root }}"
+run = "bun install --frozen-lockfile"
 
 [tasks.link]
 description = "Apply repository-managed symlinks and global agent instructions"

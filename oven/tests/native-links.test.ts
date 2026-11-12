@@ -39,7 +39,7 @@ if (gitCommonDirectory.exitCode !== 0) {
 const durableRepositoryRoot = dirname(gitCommonDirectory.stdout.toString().trim());
 
 const miseEnvironment = {
-	...process.env,
+	PATH: process.env.PATH,
 	HOME: temporaryHome,
 	XDG_CACHE_HOME: xdgCacheHome,
 	XDG_CONFIG_HOME: xdgConfigHome,

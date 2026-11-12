@@ -1,0 +1,4 @@
+# gh keeps macOS credentials in Keychain, not the hosts.yml mise reads directly.
+# Keep this global-only setting out of the project tools fragment.
+[settings.github]
+credential_command = 'gh auth token --hostname "$MISE_CREDENTIAL_HOST"'

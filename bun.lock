@@ -5,7 +5,7 @@
     "": {
       "name": "dots",
       "devDependencies": {
-        "@codethread/skillbox": "^0.2.1",
+        "@codethread/skillbox": "0.2.1",
         "oxfmt": "^0.70.0",
       },
     },
