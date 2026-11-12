@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@botlake/core": "https://raw.githubusercontent.com/codethread/botlake/fd8044ef4d340b50d02120eff285136b5aea6ced/vendor/botlake-cutover/botlake-core-0.2.0.tgz",
+    "@botlake/core": "0.2.1",
     "@botlake/native-session": "latest",
     "@botlake/extension-batteries": "latest",
     "@botlake/extension-identity": "latest",
@@ -15,6 +15,6 @@
     "@botlake/extension-ct-config": "latest"
   },
   "overrides": {
-    "@botlake/core": "https://raw.githubusercontent.com/codethread/botlake/fd8044ef4d340b50d02120eff285136b5aea6ced/vendor/botlake-cutover/botlake-core-0.2.0.tgz"
+    "@botlake/core": "0.2.1"
   }
 }

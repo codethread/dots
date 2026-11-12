@@ -5,6 +5,7 @@
     "": {
       "name": "dots",
       "devDependencies": {
+        "@codethread/skillbox": "^0.2.1",
         "oxfmt": "^0.70.0",
       },
     },
@@ -42,6 +43,8 @@
     "@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@2.3.15", "", { "os": "win32", "cpu": "arm64" }, "sha512-puMuenu/2brQdgqtQ7geNwQlNVxiABKEZJhMRX6AGWcmrMO8EObMXniFQywy2b81qmC+q+SDvlOpspNwz0WiOA=="],
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.3.15", "", { "os": "win32", "cpu": "x64" }, "sha512-kDZr/hgg+igo5Emi0LcjlgfkoGZtgIpJKhnvKTRmMBv6FF/3SDyEV4khBwqNebZIyMZTzvpca9sQNSXJ39pI2A=="],
+
+    "@codethread/skillbox": ["@codethread/skillbox@0.2.1", "", { "bin": { "skillbox": "bin/skillbox.mjs" } }, "sha512-5a7FLL9gd+b7SfLn/F7QjUfa8jbRaYNkBVSW4FhT6KWglIHW7xGFl9LmWsXXmB8rhOdfPUlcs0ViKFZwfSruRg=="],
 
     "@oxfmt/binding-android-arm-eabi": ["@oxfmt/binding-android-arm-eabi@0.70.0", "", { "os": "android", "cpu": "arm" }, "sha512-Xd7YO4/T2axEj6FTLcj4Why3mTBqFMg+x24xtorT4Lb2+1g82090GH0a/4U1m0pABGYiix2bq1pqkYrmV3f0Sw=="],
 
