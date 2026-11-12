@@ -265,7 +265,6 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 
 [bootstrap.repos]
 "~/dev/vendor/gitwatch" = { url = "https://github.com/gitwatch/gitwatch.git" }
-"~/sync/Alfred" = { url = "git@github.com:codethread/alfred.git" }
 "~/sync/images" = { url = "git@github.com:codethread/images.git" }
 # Pi's repo-owned settings already load this checkout as a local package.
 "~/dev/projects/agents" = { url = "git@github.com:codethread/agents.git" }
