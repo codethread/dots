@@ -68,9 +68,6 @@ enabled = false
 [plugins."browser@openai-bundled"]
 enabled = true
 
-[plugins."millstrand-identity@harnesses"]
-enabled = true
-
 [desktop]
 conversationDetailMode = "STEPS_COMMANDS"
 ambient-suggestions-enabled = false
@@ -110,6 +107,3 @@ enabled = false
 source_type = "git"
 source = "https://github.com/codethread/agents.git"
 
-[marketplaces.harnesses]
-source_type = "local"
-source = "{{ env.HOME }}/dev/projects/millhouse.spool/spools/harnesses"

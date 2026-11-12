@@ -26,9 +26,6 @@ source (if ($atuin | path exists) { $atuin } else { null })
 const carapace = "~/.local/cache/dots/shell/carapace.nu" | path expand
 source (if ($carapace | path exists) { $carapace } else { null })
 
-const strand_completions = "/opt/homebrew/Library/Taps/codethread/homebrew-millstrand/integrations/nushell/strand-completions.nu" | path expand
-source (if ($strand_completions | path exists) { $strand_completions } else { null })
-
 def get-package-scripts [] {
     open package.json | get scripts | items {|key,_| $key }
 }

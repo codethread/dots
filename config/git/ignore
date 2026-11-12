@@ -99,8 +99,5 @@ scratch.nu
 **/.lsp/.cache/
 **/.clj-kondo/.cache/
 
-# millstrand
-.millstrand/.land-merge-lock.acquire
-
 # mise
 mise.local.toml
