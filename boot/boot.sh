@@ -89,7 +89,7 @@ echo 'If this script fails it can be rerun.'
 # Start mise here so early .miserc.toml settings load before config discovery.
 cd "$DOTFILES"
 "$HOME/.local/bin/mise" trust "$DOTFILES/mise.toml"
-"$HOME/.local/bin/mise" -E "$MISE_ENV" bootstrap
+"$HOME/.local/bin/mise" -E "$MISE_ENV" bootstrap --update
 
 # Optional first-boot integration checks and editor plugin setup.
 nu \

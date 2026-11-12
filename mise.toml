@@ -48,9 +48,9 @@ set -e
 
 # Native bootstrap owns preview/status/update; tasks cover repo-specific workflows.
 [tasks.default]
-description = "Apply full workstation setup, skipping dirty repos"
+description = "Update repositories and apply full workstation setup"
 depends = ["install"]
-run = "mise bootstrap --skip-dirty"
+run = "mise bootstrap --update"
 
 [tasks.install]
 description = "Install locked repository workspace dependencies"
@@ -264,7 +264,6 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 "/tmp/claude" = { mode = "1777" }
 
 [bootstrap.repos]
-"~/dev/vendor/nu_scripts" = { url = "https://github.com/nushell/nu_scripts.git" }
 "~/dev/vendor/gitwatch" = { url = "https://github.com/gitwatch/gitwatch.git" }
 "~/sync/Alfred" = { url = "git@github.com:codethread/alfred.git" }
 "~/sync/images" = { url = "git@github.com:codethread/images.git" }

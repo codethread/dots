@@ -29,7 +29,6 @@ $env.ENV_CONVERSIONS = {
 $env.NU_LIB_DIRS = [
     ($nu.default-config-dir | path join "scripts")
     ($env.DOTFILES | path join "config/nushell/scripts")
-    ($nu.home-dir | path join "dev/vendor/nu_scripts/sourced")
 ]
 $env.NU_PLUGIN_DIRS = [$env.CARGO_BIN]
 

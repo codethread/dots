@@ -8,8 +8,6 @@ joinBySpace() {
 
 result=$(joinBySpace "$@")
 
-sep="\x1e" # https://github.com/nushell/nushell/commit/e892aad3f665002998abd1632115fc460134f7a7
-
 # run a given string of commands in nushell running in a minimal config
 # this minimises any startup time and removes ansi decorations, see https://github.com/nushell/nushell/pull/11494 and https://github.com/nushell/nushell/issues/11847 for more
 # this command also seems to wrap output with `|` characters
@@ -17,4 +15,4 @@ nu \
   --error-style 'plain' \
   --no-std-lib \
   --no-history \
-  -c "$result" # --include-path $(echo -e "${HOME}/.config/nushell/scripts${sep}${HOME}/work/me/workfiles/nu${sep}${HOME}/dev/vendor/nu_scripts/sourced") \
+  -c "$result"
