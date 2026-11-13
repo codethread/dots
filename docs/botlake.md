@@ -40,7 +40,9 @@ set -euo pipefail
 cd ~/dev/dots
 lakes="$(botlake lake list)"
 brew upgrade codethread/botlake/botlake
-mise daemons restart botlake-supervisor
+# Dev/work: restart the supervisor and UI together, before restoring lakes.
+# Personal: use only `mise daemons restart botlake-supervisor` here.
+mise daemons restart botlake-supervisor botlake-ui
 printf '%s\n' "$lakes" | jq -r '.[].path' | while IFS= read -r workspace; do
   botlake lake start --workspace "$workspace"
 done
@@ -49,10 +51,9 @@ botlake status
 
 For a restart without an upgrade, omit the `brew upgrade` line. This restores lakes, not terminated agent sessions or other processes. If a lake fails to start, fix its reported error and retry its `botlake lake start --workspace /absolute/workspace` command; the saved `$lakes` value remains available in that shell.
 
-On dev/work, refresh the UI after the supervisor handoff:
+On dev/work, restart both daemons in the **same invocation** as above. Pitchfork's `restart` also restarts dependencies: restarting `botlake-ui` separately after restoring lakes would replace the supervisor again and clear those lakes. Check the UI without another restart:
 
 ```sh
-mise daemons restart botlake-ui
 curl --fail http://127.0.0.1:4174/api/health
 ```
 
