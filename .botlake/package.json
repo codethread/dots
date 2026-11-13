@@ -6,18 +6,18 @@
 		"check": "bun run --cwd .. check:setup"
 	},
 	"dependencies": {
-		"@botlake/core": "0.3.3",
-		"@botlake/native-session": "0.3.3",
-		"@botlake/extension-batteries": "0.3.3",
-		"@botlake/extension-identity": "0.3.3",
-		"@botlake/extension-flags": "0.3.3",
-		"@botlake/extension-references": "0.3.3",
-		"@botlake/extension-agents": "0.3.3",
-		"@botlake/extension-work": "0.3.3",
-		"@botlake/extension-work-agents": "0.3.3",
-		"@botlake/extension-mail": "0.3.3",
-		"@botlake/extension-mail-agents": "0.3.3",
-		"@botlake/extension-mail-identity": "0.3.3",
-		"@botlake/extension-ct-config": "0.3.3"
+		"@botlake/core": "0.4.0",
+		"@botlake/native-session": "0.4.0",
+		"@botlake/extension-batteries": "0.4.0",
+		"@botlake/extension-identity": "0.4.0",
+		"@botlake/extension-flags": "0.4.0",
+		"@botlake/extension-references": "0.4.0",
+		"@botlake/extension-agents": "0.4.0",
+		"@botlake/extension-work": "0.4.0",
+		"@botlake/extension-work-agents": "0.4.0",
+		"@botlake/extension-mail": "0.4.0",
+		"@botlake/extension-mail-agents": "0.4.0",
+		"@botlake/extension-mail-identity": "0.4.0",
+		"@botlake/extension-ct-config": "0.4.0"
 	}
 }

@@ -23,7 +23,7 @@
 		"zod": "^4.6.7"
 	},
 	"overrides": {
-		"@botlake/core": "0.3.3"
+		"@botlake/core": "0.4.0"
 	},
 	"packageManager": "bun@1.4.2"
 }
