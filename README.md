@@ -13,6 +13,8 @@ curl -fsSL https://raw.githubusercontent.com/codethread/dots/main/boot/boot.sh |
 # Append `-p dev`, `-p work`, or `-p personal` after `--` to select a profile explicitly.
 ```
 
+[Botlake operations](docs/botlake.md) describes the Homebrew CLI and mise-managed supervisor, including upgrades and restarts.
+
 ## Checkout development
 
 With mise installed and this checkout trusted, run `mise run setup:repo` from the repository root to install the root Bun workspace (Oven and the Botlake lake) and activate `.githooks`. Unlike the default `mise run`, this does not converge the workstation. See [verification](docs/verification.md) for required checks; `mise run build` also checks repository setup and lake code.

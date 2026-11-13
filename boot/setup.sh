@@ -34,8 +34,8 @@ optional_integration 'Agent CLI setup' "$DOTFILES/home/.local/bin/mise-llm" inst
 
 # The pinned Todoist fork commits its generated parser; no goyacc step is needed.
 optional_integration 'Todoist build' /bin/bash -c 'cd "$HOME/dev/vendor/todoist" && go build -trimpath -o "$HOME/.local/bin/todoist" .'
-# Prepare Botlake’s CLI and workspace dependencies before dependent setup.
-( cd "$HOME/dev/projects/botlake" && mise run install )
+# Homebrew owns Botlake's CLIs. Only prepare its lake/plugin dependencies here.
+( cd "$HOME/dev/projects/botlake" && bun install --frozen-lockfile )
 # The agents repo owns its install/build/link steps behind its default mise task.
 ( cd "$HOME/dev/projects/agents" && mise run )
 

@@ -35,6 +35,8 @@ Vendor installers own Claude, Codex, Pi, and Pi-Bolt through [mise-llm](../home/
 
 Pitchfork owns daemon supervision; launchd starts its single durable supervisor. Separate LaunchAgents are reserved for macOS scheduling/lifecycle requirements, not duplicate daemon ownership. Their environments cannot depend on interactive shell activation.
 
+Homebrew owns the Botlake CLI binaries; the `botlake-supervisor` mise daemon uses their stable opt path. Do not also enable its Homebrew service. Source checkouts do not install global CLIs during bootstrap; each lake retains its own Core and extensions. See [Botlake operations](botlake.md) for upgrades, restart impact, and lake recovery.
+
 Login shells rebuild the [baseline environment](../config/env/base.sh); non-login children preserve the active project environment. Tmux imports that baseline through `config/env/emit.sh --tmux`, not interactive startup.
 
 [Theme](../oven/bin/theme.ts) applies locally before forwarding explicit mode/family to a selected host; the receiver never forwards. Failures retain local changes, so retry an explicit mode, not `toggle`. Rex is never auto-started and shares no sessions with tmux. Rex palettes follow customized Kitty palettes; preserve their [Rose Pine](../config/rex/themes/LICENSE-rose-pine) and [TokyoNight](../config/rex/themes/LICENSE-tokyonight) licenses.

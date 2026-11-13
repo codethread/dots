@@ -14,10 +14,8 @@ syncengine_path = "{{ env.HOME }}/.local/bin:/opt/homebrew/opt/coreutils/libexec
 # Tapped cask metadata evaluation requires Ruby 3+.
 [tools]
 ruby = "4.0"
-# Own published runtime: allow immediate releases without relaxing other tools.
-"npm:@botlake/core" = { version = "latest", minimum_release_age = "0s", allow_low_downloads = true }
 
-# Native bootstrap owns convergence. Hooks handle only repo-specific setup.
+# Native bootstrap owns convergence. Hooks handle prerequisites and repo setup.
 [bootstrap.hooks]
 # Cask status checks need Ruby, and PAM safety must be validated before files.
 # Install the remaining tools after built-in packages but before repositories,
@@ -26,7 +24,15 @@ pre-packages = [
   "mise install ruby",
   '"{{ config_root }}/boot/check-system.sh" --pre-packages',
 ]
-pre-repos = "mise install"
+# Let Homebrew resolve Botlake's cross-tap Bun dependency. Mise 2026.10.4's
+# native resolver incorrectly reuses Botlake's custom tap URL for that dependency.
+# This is the sole Botlake package installer, not a fallback; upgrades are explicit.
+pre-repos = '''
+set -eu
+mise install
+/opt/homebrew/bin/brew tap codethread/botlake https://github.com/codethread/botlake
+HOMEBREW_NO_INSTALL_UPGRADE=1 /opt/homebrew/bin/brew install codethread/botlake/botlake
+'''
 post-repos = '''
 DOTFILES="{{ config_root }}" \
 GIT_MAINTENANCE_REPOSITORIES="{{ vars.git_maintenance_repositories }}" \
@@ -421,10 +427,11 @@ oneshot = true
 boot_start = true
 retry = false
 
-# The workstation supervisor starts each lake with its own installed Core.
+# Homebrew owns both CLIs; Pitchfork alone owns supervision (not brew services).
+# Use the stable opt path, including in children; each lake still pins its Core.
 [daemons.botlake-supervisor]
-run = 'export PATH="$HOME/.local/bin:$PATH"; exec botlake start'
-ready_cmd = 'export PATH="$HOME/.local/bin:$PATH"; botlake status'
+run = 'export PATH="/opt/homebrew/opt/botlake/bin:$HOME/.local/bin:/opt/homebrew/bin:$PATH"; exec /opt/homebrew/opt/botlake/bin/botlake start'
+ready_cmd = '/opt/homebrew/opt/botlake/bin/botlake status'
 retry = true
 boot_start = true
 
