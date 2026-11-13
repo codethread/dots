@@ -4,7 +4,7 @@ botlake_ui_enabled = "true"
 
 [daemons.botlake-ui]
 init = '/opt/homebrew/opt/botlake/bin/botlake lake start --workspace "$HOME/dev/projects/botlake"'
-run = 'export PATH="/opt/homebrew/opt/botlake/bin:$HOME/.local/bin:/opt/homebrew/bin:$PATH"; cd "$HOME/dev/projects/botlake-ui" && exec bun server/index.ts --workspace "$HOME/dev/projects/botlake" --host 127.0.0.1 --port 4174'
+run = 'export PATH="/opt/homebrew/opt/botlake/bin:$HOME/.local/bin:/opt/homebrew/bin:$PATH"; cd "$HOME/dev/projects/botlake-ui" && exec bun run start --workspace "$HOME/dev/projects/botlake" --host 127.0.0.1 --port 4174'
 depends = ["botlake-supervisor"]
 ready_http = "http://127.0.0.1:4174/api/health"
 retry = true
