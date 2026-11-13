@@ -9,7 +9,11 @@ minimumReleaseAgeExcludes = [
   "@botlake/extension-batteries",
   "@botlake/extension-flags",
   "@botlake/extension-identity",
+  "@botlake/extension-mail",
+  "@botlake/extension-mail-agents",
+  "@botlake/extension-mail-identity",
   "@botlake/extension-references",
+  "@botlake/extension-ui",
   "@botlake/extension-work",
   "@botlake/extension-work-agents",
   "@botlake/native-session"
