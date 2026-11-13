@@ -61,6 +61,7 @@
   "extensionChangelogVersions": {
     "{\"source\":\"npm:@narumitw/pi-goal\",\"scope\":\"user\"}": "0.55.0",
     "{\"source\":\"npm:@narumitw/pi-btw\",\"scope\":\"user\"}": "0.63.7",
-    "{\"source\":\"npm:@narumitw/pi-typesafe-compact\",\"scope\":\"user\"}": "0.1.3"
+    "{\"source\":\"npm:@narumitw/pi-typesafe-compact\",\"scope\":\"user\"}": "0.1.3",
+    "{\"source\":\"../../dev/projects/agents\",\"scope\":\"user\"}": "0.1.0"
   }
 }
