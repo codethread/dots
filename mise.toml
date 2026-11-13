@@ -88,8 +88,16 @@ mise dot apply \
   "$HOME/.local/bin/tts"
 '''
 
+[tasks."setup:repo"]
+description = "Prepare this checkout without applying host configuration"
+run = '''
+bun install --frozen-lockfile
+git config core.hooksPath .githooks
+bun run changelog:check
+'''
+
 [tasks.build]
-description = "Install, test, typecheck, fix, and sync Oven docs"
+description = "Install and verify Oven, repository setup, and lake configuration"
 dir = "{{ config_root }}/oven"
 run = "mise run verify"
 

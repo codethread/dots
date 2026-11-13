@@ -1,16 +1,29 @@
 {
-  "name": "dots",
-  "private": true,
-  "workspaces": [
-    "oven"
-  ],
-  "scripts": {
-    "fmt": "oxfmt --disable-nested-config '**/*.{md,markdown}'",
-    "fmt:check": "oxfmt --check --disable-nested-config '**/*.{md,markdown}'"
-  },
-  "devDependencies": {
-    "@codethread/skillbox": "0.2.1",
-    "oxfmt": "^0.70.0"
-  },
-  "packageManager": "bun@1.4.2"
+	"name": "dots",
+	"private": true,
+	"workspaces": [
+		"oven",
+		".botlake"
+	],
+	"scripts": {
+		"fmt": "oxfmt --disable-nested-config '**/*.{md,markdown}'",
+		"fmt:check": "oxfmt --check --disable-nested-config '**/*.{md,markdown}'",
+		"changelog": "bun run scripts/changelog.ts",
+		"changelog:generate": "bun run scripts/changelog.ts --write",
+		"changelog:check": "bun run scripts/changelog.ts --check",
+		"check:setup": "biome check .botlake scripts tests/setup package.json biome.json tsconfig.json changelog.json && tsc --noEmit && bun test tests/setup && bun run changelog:check"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.15",
+		"@codethread/cli-changelog": "github:codethread/cli-changelog#c457e0a28686ce6349ce0956b1375635d53148d8",
+		"@codethread/skillbox": "0.2.1",
+		"@types/bun": "^1.4.4",
+		"oxfmt": "^0.70.0",
+		"typescript": "^5.9.3",
+		"zod": "^4.6.7"
+	},
+	"overrides": {
+		"@botlake/core": "0.2.1"
+	},
+	"packageManager": "bun@1.4.2"
 }

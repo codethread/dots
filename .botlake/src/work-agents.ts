@@ -1,1 +1,1 @@
-export { workAgents as default } from "@botlake/extension-ct-config";
+export {workAgents as default} from "@botlake/extension-ct-config";

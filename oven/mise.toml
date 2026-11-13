@@ -19,6 +19,6 @@ dir = "{{ config_root }}/.."
 run = "bun install --frozen-lockfile"
 
 [tasks.verify]
-description = "Test, typecheck, fix, and sync Oven docs"
+description = "Verify Oven and the root setup/lake package"
 depends = ["install"]
-run = "bun run verify"
+run = "bun run verify && bun run --cwd .. check:setup"

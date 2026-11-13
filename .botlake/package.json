@@ -1,20 +1,20 @@
 {
-  "name": "dots-lake",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@botlake/core": "0.2.1",
-    "@botlake/native-session": "latest",
-    "@botlake/extension-batteries": "latest",
-    "@botlake/extension-identity": "latest",
-    "@botlake/extension-flags": "latest",
-    "@botlake/extension-references": "latest",
-    "@botlake/extension-agents": "latest",
-    "@botlake/extension-work": "latest",
-    "@botlake/extension-work-agents": "latest",
-    "@botlake/extension-ct-config": "latest"
-  },
-  "overrides": {
-    "@botlake/core": "0.2.1"
-  }
+	"name": "dots-lake",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"check": "bun run --cwd .. check:setup"
+	},
+	"dependencies": {
+		"@botlake/core": "0.2.1",
+		"@botlake/native-session": "0.2.0",
+		"@botlake/extension-batteries": "0.2.0",
+		"@botlake/extension-identity": "0.2.0",
+		"@botlake/extension-flags": "0.2.0",
+		"@botlake/extension-references": "0.2.0",
+		"@botlake/extension-agents": "0.2.0",
+		"@botlake/extension-work": "0.2.0",
+		"@botlake/extension-work-agents": "0.2.0",
+		"@botlake/extension-ct-config": "0.2.0"
+	}
 }

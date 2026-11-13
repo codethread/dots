@@ -34,7 +34,7 @@ optional_integration 'Agent CLI setup' "$DOTFILES/home/.local/bin/mise-llm" inst
 
 # The pinned Todoist fork commits its generated parser; no goyacc step is needed.
 optional_integration 'Todoist build' /bin/bash -c 'cd "$HOME/dev/vendor/todoist" && go build -trimpath -o "$HOME/.local/bin/todoist" .'
-# Prepare Botlake’s CLI and independent npm lake before dependent setup.
+# Prepare Botlake’s CLI and workspace dependencies before dependent setup.
 ( cd "$HOME/dev/projects/botlake" && mise run install )
 # The agents repo owns its install/build/link steps behind its default mise task.
 ( cd "$HOME/dev/projects/agents" && mise run )
@@ -48,8 +48,6 @@ git -C "$DOTFILES" config core.hooksPath .githooks
   mise exec -- bun install --frozen-lockfile
 )
 
-# Install the independent lake from npm.
-( cd "$DOTFILES" && bun install --cwd .botlake --frozen-lockfile )
 if [ "$BOTLAKE_UI_ENABLED" = true ]; then
   (
     cd "$HOME/dev/projects/botlake-ui"

@@ -1,0 +1,18 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.3.15/schema.json",
+	"files": {
+		"includes": [
+			".botlake/**/*.ts",
+			".botlake/*.json",
+			"scripts/**/*.ts",
+			"tests/setup/**/*.ts",
+			"package.json",
+			"biome.json",
+			"tsconfig.json",
+			"changelog.json"
+		]
+	},
+	"formatter": { "lineWidth": 110 },
+	"javascript": { "formatter": { "bracketSpacing": false } },
+	"linter": { "enabled": true, "rules": { "recommended": true } }
+}

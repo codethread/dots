@@ -12,13 +12,15 @@ Check local links and heading anchors, instruction symlinks, and protected files
 
 ## Oven
 
-For Oven or root JavaScript workspace changes:
+For Oven or root JavaScript workspace changes (including `.botlake/`, repository setup scripts, and recorded changelog history):
 
 ```sh
 qlock exec --lock /tmp/agent-cpu.lock -w 180 -- mise run build
 ```
 
-This gate installs frozen dependencies, tests, typechecks, applies fixes, and regenerates Oven documentation; review its diff.
+This gate installs frozen dependencies, tests, typechecks, applies Oven fixes, and regenerates Oven documentation; review its diff. It also lints, formats-checks, typechecks, and tests root setup/lake code and checks generated changelog synchronization.
+
+For focused setup/lake verification, run `bun run check:setup`. `mise run setup:repo` prepares a checkout without applying workstation configuration; the default `mise run` remains host convergence.
 
 ## Neovim
 

@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"resolveJsonModule": true,
+		"verbatimModuleSyntax": true,
+		"strict": true,
+		"exactOptionalPropertyTypes": true,
+		"skipLibCheck": true,
+		"noEmit": true,
+		"types": ["bun"]
+	},
+	"include": [".botlake/**/*.ts", "scripts/**/*.ts", "tests/setup/**/*.ts"],
+	"exclude": ["node_modules", ".botlake/node_modules"]
+}
