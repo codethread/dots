@@ -29,6 +29,9 @@
       "source": "../../dev/projects/botlake/plugins/identity"
     },
     {
+      "source": "../../.local/share/work-botlake-hooks/plugins/mail"
+    },
+    {
       "source": "../../pb/adam.hall/workfiles/agents/plugins/admin"
     },
     {
