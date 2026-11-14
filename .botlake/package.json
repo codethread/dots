@@ -7,16 +7,16 @@
 	},
 	"dependencies": {
 		"@botlake/core": "0.4.0",
-		"@botlake/extension-agents": "0.4.0",
+		"@botlake/extension-agents": "0.4.1",
 		"@botlake/extension-batteries": "0.4.0",
-		"@botlake/extension-ct-config": "0.5.0",
+		"@botlake/extension-ct-config": "0.5.1",
 		"@botlake/extension-flags": "0.4.0",
 		"@botlake/extension-identity": "0.4.0",
 		"@botlake/extension-mail": "0.4.0",
-		"@botlake/extension-mail-agents": "0.4.0",
+		"@botlake/extension-mail-agents": "0.4.1",
 		"@botlake/extension-mail-identity": "0.4.0",
 		"@botlake/extension-references": "0.4.0",
-		"@botlake/extension-work": "0.4.0",
+		"@botlake/extension-work": "0.4.1",
 		"@botlake/extension-work-agents": "0.4.0",
 		"@botlake/native-session": "0.4.0"
 	}
