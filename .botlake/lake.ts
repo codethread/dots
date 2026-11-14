@@ -1,6 +1,6 @@
 import {createLake} from "@botlake/core";
 import batteriesExtension from "@botlake/extension-batteries";
-import {ui} from "@botlake/extension-ct-config";
+import {mail, mailAgents, mailIdentity, ui} from "@botlake/extension-ct-config";
 import identityExtension from "@botlake/extension-identity";
 import agents from "./src/agents.ts";
 import flags from "./src/flags.ts";
@@ -18,6 +18,9 @@ export const lake = createLake({
 		references,
 		agents,
 		priming,
+		mail,
+		mailIdentity,
+		mailAgents,
 		ui,
 		work,
 		workAgents,

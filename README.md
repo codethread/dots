@@ -13,7 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/codethread/dots/main/boot/boot.sh |
 # Append `-p dev`, `-p work`, or `-p personal` after `--` to select a profile explicitly.
 ```
 
-[Botlake operations](docs/botlake.md) describes the Homebrew CLI and mise-managed supervisor, including upgrades and restarts.
+[Botlake operations](docs/botlake.md) describes the Homebrew CLI and mise-managed supervisor, including upgrades and restarts. The repository lake selects Mail with identity links, automatic live delivery, and five-minute agent resumption.
 
 ## Checkout development
 
