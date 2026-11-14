@@ -71,7 +71,7 @@ end
 
 --[[stylua: ignore]] --format
 Keys.list({ mode = 'v' }, {
-	{ '<leader>y', 'copy to clipboard', function() require('codethread.clipper').copy_visual_selection() end                        },
+	{ '<leader>y', 'copy to clipboard', '"+y'                                                                                     },
 	{ 'ss'       , 'live'             , function() require('telescope-live-grep-args.shortcuts').grep_visual_selection() end        },
 	{ 'sr'       , 'find-replace'     , function() require('spectre').open_visual { select_word = true } end                        },
 	{ 'sr'       , 'find-replace'     , function () require('grug-far').open({ visualSelectionUsage = 'operate-within-range' }) end },
