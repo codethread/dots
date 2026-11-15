@@ -51,8 +51,7 @@ git -C "$DOTFILES" config core.hooksPath .githooks
 if [ "$BOTLAKE_UI_ENABLED" = true ]; then
   (
     cd "$HOME/dev/projects/botlake-ui"
-    pnpm install --frozen-lockfile
-    pnpm build
+    mise run bootstrap
   )
 fi
 # Registration persists across logins without starting/restarting any daemon.
