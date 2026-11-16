@@ -96,33 +96,10 @@ worktree_location = "nested"
 policy = "origin_default"
 
 # Deals Light UI: bootstrap normal ad hoc worktrees when they are created.
+# Workfiles renders the copy list into the repository's .wktree.toml.
 [[project]]
 name = "deals ui bootstrap"
 root = "~/pb/app/deals-light-ui"
-copy_mode_default = "symlink"
-copy = [
-	".env",
-	".rgignore",
-	".pi",
-	".botlake",
-	".codex",
-	".claude/settings.local.json",
-	# Personal Skillbox output; never link the team's whole .claude/skills tree.
-	".agents/skills",
-	".claude/skills/adam-pr-voice",
-	".claude/skills/code-review",
-	".claude/skills/code-review-retro",
-	".claude/skills/code-review-setup",
-	".claude/skills/figma-design-feedback",
-	".claude/skills/nurse-merge-request",
-	".claude/skills/playwright-cli",
-	".claude/skills/voice-orchestrator",
-	".claude/skills/web-local-dev",
-	".claude/skills/writing-react",
-	"mise.toml",
-	"AGENTS.md",
-	"CLAUDE.local.md",
-]
 command = '''
 ~/.local/bin/deals-light-boot
 notif worktree wk "$WK_CREATED" ready
