@@ -68,6 +68,7 @@ _dots_cl() {
     "*--thinking=[thinking level]:thinking:(${thinking[*]})" \
     '--permission-mode=[permission mode]:mode:(acceptEdits auto bypassPermissions manual dontAsk plan)' \
     '--settings=[session settings]:settings:_files -g "*.json"' \
+    '*--mcp=[MCP server to load]:mcp:(figma context7)' \
     '--add-dir=[extra directory]:directory:_directories' \
     -- '*:prompt: '
 }

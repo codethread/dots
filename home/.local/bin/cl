@@ -3,7 +3,8 @@
 #
 # The one entrypoint for people and tooling; shells only add shortcuts.
 # Defaults: skip permission prompts, `pairing` output style for interactive
-# sessions, claude.ai connectors off (shared settings.json), Artifact off
+# sessions, no MCP servers unless chosen with --mcp (--strict-mcp-config),
+# claude.ai connectors off (shared settings.json), Artifact off
 # (`enableArtifact` is one-way, so cl sets it per session), and appended
 # forge + sub-agent concurrency prompts. Other arguments pass to `claude`.
 
@@ -16,7 +17,11 @@ Usage: cl [cl options] [claude options] [prompt]
 
 cl options:
   -s, --safe                  keep permission prompts (default: skip them)
-      --mcp-work              enable claude.ai connectors (Atlassian, Microsoft 365, ...)
+      --mcp <name|json|file>  load an MCP server; repeatable (default: none)
+                              known names: figma, context7
+      --mcp-all               load every configured MCP server (no --strict-mcp-config)
+      --mcp-work              enable claude.ai connectors (Atlassian, Microsoft 365, ...);
+                              implies --mcp-all, as strict mode drops connectors
       --artifact              enable the Artifact tool (default: off)
   -m, --mine                  use the personal config dir ~/.config/claude
       --output-style <style>  session output style (default: pairing, unless --print)
@@ -32,19 +37,35 @@ EOF
 
 PROMPT_CONCURRENCY="Sub-agent concurrency: spawn multiple read-only agents freely (explore, research, etc), but only ever one mutating agent at a time. Don't run read-only agents alongside a mutating agent — they may read stale data."
 
+known_mcp() {
+    case $1 in
+        figma) echo '{"mcpServers":{"figma":{"type":"http","url":"https://mcp.figma.com/mcp"}}}' ;;
+        context7) echo '{"mcpServers":{"context7":{"type":"stdio","command":"bunx","args":["@upstash/context7-mcp"]}}}' ;;
+        *) return 1 ;;
+    esac
+}
+
 case ${1:-} in
     agents|attach|auth|auto-mode|doctor|gateway|import|install|logs|mcp|plugin|plugins|purge|respawn|rm|setup-token|stop|kill|ultrareview|update|upgrade)
         exec claude "$@" ;;
 esac
 
-safe=0 mcp_work=0 artifact=0 printing=0 dry_run=0 style='' settings='{}' user_prompt=''
-args=()
+safe=0 mcp_work=0 mcp_all=0 artifact=0 printing=0 dry_run=0 style='' settings='{}' user_prompt=''
+args=() mcps=()
 while (($#)); do
     case $1 in
-        --settings=*|--output-style=*|--append-system-prompt=*|--thinking=*)
+        --settings=*|--output-style=*|--append-system-prompt=*|--thinking=*|--mcp=*)
             set -- "${1%%=*}" "${1#*=}" "${@:2}"; continue ;;
         -s|--safe) safe=1 ;;
         --mcp-work) mcp_work=1 ;;
+        --mcp-all) mcp_all=1 ;;
+        --mcp)
+            (($# >= 2)) && [[ -n $2 ]] || { echo 'cl: --mcp requires a value' >&2; exit 2; }
+            if known_mcp "$2" >/dev/null; then mcps+=("$(known_mcp "$2")")
+            elif [[ -f $2 || $2 == '{'* ]]; then mcps+=("$2")
+            else echo "cl: unknown MCP '$2' (known: figma, context7; or a JSON file/string)" >&2; exit 2
+            fi
+            shift ;;
         --artifact) artifact=1 ;;
         -m|--mine) export CLAUDE_CONFIG_DIR="$HOME/.config/claude" ;;
         --dry-run) dry_run=1 ;;
@@ -96,6 +117,9 @@ prompts+=("$PROMPT_CONCURRENCY")
 cmd=(claude)
 ((safe)) || cmd+=(--dangerously-skip-permissions)
 [[ $settings == '{}' ]] || cmd+=(--settings "$settings")
+# --strict-mcp-config also drops claude.ai connectors, so --mcp-work skips it.
+((mcp_all || mcp_work)) || cmd+=(--strict-mcp-config)
+for mcp in "${mcps[@]}"; do cmd+=(--mcp-config "$mcp"); done
 cmd+=(--append-system-prompt "$(printf '%s\n' "${prompts[@]}")" "${args[@]}")
 
 if ((dry_run)); then
