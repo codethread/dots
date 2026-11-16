@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# :module: Codex launcher with thinking and Fast mode shortcuts
+# :module: Codex launcher with inline MCP, thinking and Fast mode shortcuts
 
 usage() {
   cat <<'EOF'
@@ -8,6 +8,9 @@ Usage: co [co options] [codex options] [prompt]
 
 co options:
       --thinking <level>  set model_reasoning_effort (low, medium, high, xhigh, max, ultra)
+      --mcp <name|json|file>  add session MCP servers; repeatable
+                              known names: figma, context7
+                              JSON format: {"mcpServers":{"name":{...}}}
       --fast            use the fast service tier
       --dry-run         print the codex command instead of running it
   -h, --help            show this help and codex's
@@ -18,13 +21,55 @@ Use -- to pass the remaining arguments through literally.
 EOF
 }
 
+# Convert cl-compatible JSON into Codex's TOML config overrides.
+mcp_config() {
+  local config
+  case $1 in
+    figma) config='{"mcpServers":{"figma":{"url":"https://mcp.figma.com/mcp"}}}' ;;
+    context7) config='{"mcpServers":{"context7":{"command":"bunx","args":["@upstash/context7-mcp"]}}}' ;;
+    *)
+      if [[ -f $1 ]]; then config=$(<"$1")
+      elif [[ $1 == '{'* ]]; then config=$1
+      else
+        print -u2 -- "co: unknown MCP '$1' (known: figma, context7; or a JSON file/string)"
+        return 2
+      fi ;;
+  esac
+  jq -er '
+    def toml:
+      if type == "object" then
+        "{" + (to_entries | map((.key | tojson) + "=" + (.value | toml)) | join(",")) + "}"
+      elif type == "array" then "[" + (map(toml) | join(",")) + "]"
+      elif type == "null" then error("MCP config cannot contain null")
+      else tojson end;
+    if type != "object" or (.mcpServers | type) != "object" or (.mcpServers | length) == 0
+    then error("--mcp requires a nonempty mcpServers object") else .mcpServers end
+    | to_entries[]
+    | if (.key | test("^[A-Za-z0-9_-]+$")) then .
+      else error("MCP server names must contain only letters, numbers, underscores or hyphens") end
+    | if (.value | type) != "object" then error("MCP server must be an object") else . end
+    | if .value.type == "stdio" or .value.type == "http" or (.value | has("type") | not)
+      then .value |= del(.type) else error("unsupported MCP transport: " + .value.type) end
+    | if .value | has("headers") then .value.http_headers = .value.headers | .value |= del(.headers) else . end
+    | "mcp_servers." + .key + "=" + (.value | toml)
+  ' <<<"$config"
+}
+
 typeset -a args=()
 dry_run=0 help=0
 while (($#)); do
   case $1 in
-    --thinking=*)
-      set -- --thinking "${1#*=}" "${@:2}"
+    --thinking=*|--mcp=*)
+      set -- "${1%%=*}" "${1#*=}" "${@:2}"
       continue ;;
+    --mcp)
+      if (($# < 2)) || [[ -z $2 || $2 == -* ]]; then
+        print -u2 -- 'co: --mcp requires a value'
+        exit 2
+      fi
+      configs=$(mcp_config "$2") || exit 2
+      for config in "${(@f)configs}"; do args+=(--config "$config"); done
+      shift ;;
     --thinking)
       if (($# < 2)) || [[ -z $2 || $2 == -* ]]; then
         print -u2 -- 'co: --thinking requires a value'

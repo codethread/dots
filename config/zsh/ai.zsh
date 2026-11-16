@@ -87,6 +87,7 @@ _dots_co() {
   local -a thinking=(low medium high xhigh max ultra)
   _dots_codex \
     "*--thinking=[thinking level]:thinking:(${thinking[*]})" \
+    '*--mcp=[MCP server to load]:mcp:(figma context7)' \
     '--fast[use the fast service tier]' \
     '--dry-run[print the codex command instead of running it]'
 }
