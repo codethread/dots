@@ -1,41 +1,79 @@
 {
-  "version": 1,
-  "skills": {
+  "version": 2,
+  "sources": {},
+  "bundles": {
+    "local": {
+      "members": [
+        {
+          "name": "align-agent-instructions",
+          "directory": "align-agent-instructions",
+          "source": ".",
+          "path": "skillbox/local/align-agent-instructions"
+        },
+        {
+          "name": "disk-cleanup",
+          "directory": "disk-cleanup",
+          "source": ".",
+          "path": "skillbox/local/disk-cleanup"
+        },
+        {
+          "name": "mise",
+          "directory": "mise",
+          "source": ".",
+          "path": "skillbox/local/mise"
+        },
+        {
+          "name": "mise-diff",
+          "directory": "mise-diff",
+          "source": ".",
+          "path": "skillbox/local/mise-diff"
+        },
+        {
+          "name": "neovim",
+          "directory": "neovim",
+          "source": ".",
+          "path": "skillbox/local/neovim"
+        },
+        {
+          "name": "pi-agent-instructions",
+          "directory": "pi-agent-instructions",
+          "source": ".",
+          "path": "skillbox/local/pi-agent-instructions"
+        }
+      ],
+      "sourceHash": "2a911a17a8468ab3c687cb1d10798db31cb259579b731bee6b1d1bca27b8285f"
+    }
+  },
+  "installed": {
     "align-agent-instructions": {
-      "source": "./skillbox",
-      "sourceType": "local",
-      "computedHash": "bfe18fd93afbd126da21efe6b14a6c30075c2a6d0e757aab51ed17b84960305c",
-      "installMode": "copy"
+      "bundle": "local",
+      "directory": "align-agent-instructions",
+      "hash": "c58d0c8075c3f92f5d3ce46b8abad26cd02f70c911a4c47e8cb013d761fd5174"
     },
     "disk-cleanup": {
-      "source": "./skillbox",
-      "sourceType": "local",
-      "computedHash": "16f404e6b758eb060a7bb555eff04ce7b8a9f59671418b49cbdd3b2f60a4e93b",
-      "installMode": "copy"
+      "bundle": "local",
+      "directory": "disk-cleanup",
+      "hash": "83112731c1fb2ae3ff776be541bc6ee6ce2ffa21a19de46486e8888508ba7b5e"
     },
     "mise": {
-      "source": "./skillbox",
-      "sourceType": "local",
-      "computedHash": "6575632da9c421b46aa470986182d4773cb6d4846ba7f7b5e49e05ed404d0dc3",
-      "installMode": "copy"
+      "bundle": "local",
+      "directory": "mise",
+      "hash": "b69ed6d080d2b500d5d2e4637764bcb1340f97d0055f2943de1df3c075a1bab6"
     },
     "mise-diff": {
-      "source": "./skillbox",
-      "sourceType": "local",
-      "computedHash": "d4e25b53d41428e8b35a115379ea6054e2dd5d1d885eb8d8bb8edcbecbaca5d2",
-      "installMode": "copy"
+      "bundle": "local",
+      "directory": "mise-diff",
+      "hash": "84709ea543d396651c7afbb6ced25af52e279ed581b715c6401074c98b17d32d"
     },
     "neovim": {
-      "source": "./skillbox",
-      "sourceType": "local",
-      "computedHash": "ccca11cce1eecfad41493ffb006cce8882ee4f36bfb1c7cef3012b99e38ace3b",
-      "installMode": "copy"
+      "bundle": "local",
+      "directory": "neovim",
+      "hash": "affbc4b69881ea78e8d920ce5178c38fa41db75f1e497ee1d75fcd8078a5cd2f"
     },
     "pi-agent-instructions": {
-      "source": "./skillbox",
-      "sourceType": "local",
-      "computedHash": "ee8f22422dfd8c6e83becf25e33180b6742d0e322a1516a361f0c9ffc9790710",
-      "installMode": "copy"
+      "bundle": "local",
+      "directory": "pi-agent-instructions",
+      "hash": "8a95fc7cee6d9b66c8d4ca352a61af0ede448ad7b214c6ab705bc3fdec66e498"
     }
   }
 }

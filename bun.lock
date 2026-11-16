@@ -7,7 +7,7 @@
       "devDependencies": {
         "@biomejs/biome": "2.3.15",
         "@codethread/cli-changelog": "github:codethread/cli-changelog#c457e0a28686ce6349ce0956b1375635d53148d8",
-        "@codethread/skillbox": "0.2.1",
+        "@codethread/skillbox": "0.3.0",
         "@types/bun": "^1.4.4",
         "oxfmt": "^0.70.0",
         "typescript": "^5.9.3",
@@ -100,7 +100,7 @@
 
     "@codethread/cli-changelog": ["@codethread/cli-changelog@github:codethread/cli-changelog#c457e0a", { "peerDependencies": { "zod": "^4.6.5" }, "bin": { "cli-changelog": "./src/cli.ts" } }, "codethread-cli-changelog-c457e0a", "sha512-TXlF66ztscwtNV7nUhax63y1AEnpVA1f8utblvs8+Fsd0URV9JrSXTZmSas3flpXHBTnx4N86feaRYS1t8aLnQ=="],
 
-    "@codethread/skillbox": ["@codethread/skillbox@0.2.1", "", { "bin": { "skillbox": "bin/skillbox.mjs" } }, "sha512-5a7FLL9gd+b7SfLn/F7QjUfa8jbRaYNkBVSW4FhT6KWglIHW7xGFl9LmWsXXmB8rhOdfPUlcs0ViKFZwfSruRg=="],
+    "@codethread/skillbox": ["@codethread/skillbox@0.3.0", "", { "bin": { "skillbox": "bin/skillbox.mjs" } }, "sha512-TlRQ0Z7ls/D7X1OeGj1GzxRzcJCiu5FAIBAbz2AnHyltRte5uivIs2vF++EZGxoUR4B5ozswDLk4PGvL3D9ACw=="],
 
     "@oxfmt/binding-android-arm-eabi": ["@oxfmt/binding-android-arm-eabi@0.70.0", "", { "os": "android", "cpu": "arm" }, "sha512-Xd7YO4/T2axEj6FTLcj4Why3mTBqFMg+x24xtorT4Lb2+1g82090GH0a/4U1m0pABGYiix2bq1pqkYrmV3f0Sw=="],
 

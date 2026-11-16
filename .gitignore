@@ -1,5 +1,7 @@
 .private
 /.agents/skills/
+/.claude/skills
+/skillbox/.prepare/
 /mise.local.toml
 /mise.*.local.toml
 /.botlake/world.db*

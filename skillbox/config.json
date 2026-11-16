@@ -1,10 +1,4 @@
 {
-  "sources": [
-    {
-      "source": ".",
-      "bundles": [
-        "local"
-      ]
-    }
-  ]
+  "sources": [],
+  "install": ["local"]
 }
