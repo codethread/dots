@@ -2,7 +2,7 @@ min_version = "2026.9.15"
 
 # Runtimes only: Biome and TypeScript are installed from the root bun.lock.
 [tools]
-bun = "1.4.2"
+bun = "1.4.4"
 node = "24.21.0"
 
 # Do not activate or install unrelated parent/global workstation tools in Oven.

@@ -8,7 +8,7 @@ node = "24"
 # Default JDK; projects can select their own vendor/version.
 java = "temurin-21"
 clj-kondo = "latest"
-bun = "1.4.2"
+bun = "1.4.4"
 go = "1.26"
 zig = "latest"
 deno = "latest"
