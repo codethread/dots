@@ -430,7 +430,8 @@ retry = false
 # Homebrew owns both CLIs; Pitchfork alone owns supervision (not brew services).
 # Use the stable opt path, including in children; each lake still pins its Core.
 [daemons.botlake-supervisor]
-run = 'export PATH="/opt/homebrew/opt/botlake/bin:$HOME/.local/bin:/opt/homebrew/bin:$PATH"; exec /opt/homebrew/opt/botlake/bin/botlake start'
+# Load the login baseline (including ~/.privates.sh): lakes and their agents inherit this environment.
+run = '. "$HOME/dev/dots/config/env/base.sh" && export PATH="/opt/homebrew/opt/botlake/bin:$PATH"; exec /opt/homebrew/opt/botlake/bin/botlake start'
 ready_cmd = '/opt/homebrew/opt/botlake/bin/botlake status'
 retry = true
 boot_start = true
