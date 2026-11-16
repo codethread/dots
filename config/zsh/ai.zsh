@@ -1,15 +1,16 @@
-# Pi shortcuts over home/.local/bin/piw, which owns shared tool defaults.
-alias pih='BL_AUDIENCE=human piw --model openai-codex/gpt-6-astra --thinking xhigh --goals --mcp'
-alias pio='BL_AUDIENCE=human piw --model anthropic/claude-opus-5-5 --thinking high --goals --mcp'
-alias pim='BL_AUDIENCE=human piw --model openai-codex/gpt-6.1-sol --thinking high --goals --mcp'
-alias pif='BL_AUDIENCE=human piw --model deepseek/deepseek-flash --thinking max'
-alias pil='BL_AUDIENCE=human piw --model openai-codex/gpt-6-luna --thinking xhigh'
+# Pi shortcuts default to Context7; codemode is selected per shortcut below.
+# Append --no-codemode or --no-mcp to override either default.
+alias pih='BL_AUDIENCE=human piw --model openai-codex/gpt-6-astra --thinking xhigh --goals --codemode --mcp context7'
+alias pio='BL_AUDIENCE=human piw --model anthropic/claude-opus-5-5 --thinking high --goals --codemode --mcp context7'
+alias pim='BL_AUDIENCE=human piw --model openai-codex/gpt-6.1-sol --thinking high --goals --codemode --mcp context7'
+alias pif='BL_AUDIENCE=human piw --model deepseek/deepseek-flash --thinking max --mcp context7'
+alias pil='BL_AUDIENCE=human piw --model openai-codex/gpt-6-luna --thinking xhigh --mcp context7'
 # Resolve per invocation: checkouts under $HOME/pb use Sonnet; elsewhere Sol.
 pis() {
   if [[ $PWD == $HOME/pb || $PWD == $HOME/pb/* ]]; then
-    BL_AUDIENCE=human piw --model anthropic/claude-sonnet-5-5 --thinking high --goals --mcp "$@"
+    BL_AUDIENCE=human piw --model anthropic/claude-sonnet-5-5 --thinking high --goals --codemode --mcp context7 "$@"
   else
-    BL_AUDIENCE=human piw --model openai-codex/gpt-6.1-sol --thinking xhigh --goals --mcp "$@"
+    BL_AUDIENCE=human piw --model openai-codex/gpt-6.1-sol --thinking xhigh --goals --codemode --mcp context7 "$@"
   fi
 }
 
@@ -52,7 +53,12 @@ _dots_pi() {
 _dots_piw() {
   _dots_pi \
     '--goals[enable goal tools]' \
-    '--mcp[enable mcp and codemode]' \
+    '*--mcp=[session MCP config]:mcp:(figma context7)' \
+    '*--mcp-config=[session MCP JSON or file]:config:_files -g "*.json"' \
+    '--mcp-all[load saved MCP servers]' \
+    '--no-mcp[clear MCP selections]' \
+    '--codemode[enable codemode independently of MCP]' \
+    '--no-codemode[disable codemode]' \
     '--dry-run[print the pi command instead of running it]'
 }
 

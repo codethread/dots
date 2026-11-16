@@ -9,7 +9,13 @@ Usage: piw [piw options] [pi options] [@files...] [messages...]
 piw options:
       --thinking <level>  set Pi's thinking level (off, minimal, low, medium, high, xhigh, max)
       --goals           enable goal_complete, goal_blocked, and goal_wait
-      --mcp             enable mcp and codemode
+      --mcp <name|json|file>  add session-only MCP servers; repeatable
+                              known names: figma, context7
+      --mcp-config <json|file>  load an MCP config; repeatable
+      --mcp-all         load saved MCP servers (default: no MCP servers)
+      --no-mcp          clear MCP selections, including shortcut defaults
+      --codemode        enable codemode independently of MCP servers
+      --no-codemode     disable codemode, including shortcut defaults
       --dry-run         print the pi command instead of running it
   -h, --help            show this help and pi's
 
@@ -17,16 +23,31 @@ Default tools: read, bash, edit, write, interactive_shell, pi-internals,
 harness_metadata, subagent, fetch_content, web_search. Override with --tools.
 --model accepts provider/model; both --model=value and --model value work.
 Other Pi options pass through. Use -- for literal messages/files.
+MCP configs use {"mcpServers":{...}}. Repeated names use the last config.
+Inline servers default to direct tools, or codemode exposure with --codemode.
+Explicit exposure/toolExposure in JSON is preserved. When MCP is enabled, saved
+Pi MCP configs also load and take precedence over session registrations; unlike
+cl, Pi has no strict-config mode. No MCP config files are changed.
+The agents Pi package supplies the --mcp-config flag.
+Use --no-codemode and --no-mcp after a shortcut to override its defaults.
 
 EOF
 }
 
 typeset -a tools=(read bash edit write interactive_shell pi-internals harness_metadata subagent fetch_content web_search)
-typeset -a args=()
-dry_run=0 help=0 goals=0 mcp=0
+known_mcp() {
+  case $1 in
+    figma) print -r -- '{"mcpServers":{"figma":{"type":"http","url":"https://mcp.figma.com/mcp"}}}' ;;
+    context7) print -r -- '{"mcpServers":{"context7":{"type":"stdio","command":"bunx","args":["@upstash/context7-mcp"]}}}' ;;
+    *) return 1 ;;
+  esac
+}
+
+typeset -a args=() mcps=() excluded=()
+dry_run=0 help=0 goals=0 mcp=0 codemode=0
 while (($#)); do
   case $1 in
-    --model=*|--thinking=*|--tools=*)
+    --model=*|--thinking=*|--tools=*|--mcp=*|--mcp-config=*|--exclude-tools=*)
       set -- "${1%%=*}" "${1#*=}" "${@:2}"
       continue ;;
     --model|--thinking|--tools)
@@ -42,8 +63,40 @@ while (($#)); do
       fi
       args+=("$1" "$2")
       shift ;;
+    --exclude-tools|-xt)
+      if (($# < 2)) || [[ -z $2 || $2 == -* ]]; then
+        print -u2 -- "piw: $1 requires a value"
+        exit 2
+      fi
+      excluded+=("$2")
+      shift ;;
     --goals) goals=1 ;;
-    --mcp) mcp=1 ;;
+    --codemode) codemode=1 ;;
+    --no-codemode) codemode=0 ;;
+    --mcp-all) mcp=1 ;;
+    --mcp|--mcp-config)
+      if (($# < 2)) || [[ -z $2 || $2 == -* ]]; then
+        print -u2 -- "piw: $1 requires a value"
+        exit 2
+      fi
+      if [[ $1 == --mcp ]] && config=$(known_mcp "$2"); then :
+      elif [[ -f $2 ]]; then config=$(cat -- "$2") || exit 2
+      elif [[ $2 == '{'* ]]; then config=$2
+      else
+        print -u2 -- "piw: unknown MCP '$2' (known: figma, context7; or a JSON file/string)"
+        exit 2
+      fi
+      config=$(print -r -- "$config" | jq -ces '
+        if length == 1 and (.[0] | type == "object")
+          and (.[0].mcpServers | type == "object" and length > 0)
+          and (.[0].mcpServers | all(.[]; type == "object"))
+        then .[0].mcpServers
+        else error("expected one object with a nonempty mcpServers object") end
+      ') || { print -u2 -- 'piw: invalid MCP config'; exit 2; }
+      mcps+=("$config")
+      mcp=1
+      shift ;;
+    --no-mcp) mcp=0; mcps=() ;;
     --dry-run) dry_run=1 ;;
     -h|--help) help=1; args+=("$1") ;;
     --) args+=("$@"); break ;;
@@ -53,11 +106,24 @@ while (($#)); do
 done
 
 ((goals)) && tools+=(goal_complete goal_blocked goal_wait)
-((mcp)) && tools+=(mcp codemode)
+((codemode)) && tools+=(codemode)
+((codemode)) || excluded+=(codemode)
+((mcp)) && tools+=('mcp__*')
 typeset -a cmd=(pi-bolt)
 case ${args[1]} in
   install|remove|uninstall|update|list|config|auth|mcp) ;;
-  *) cmd+=(--tools "${(j:,:)tools}") ;;
+  *)
+    ((mcp)) || cmd+=(--no-mcp)
+    if ((${#mcps})); then
+      exposure=direct
+      ((codemode)) && exposure=codemode
+      config=$(printf '%s\n' "${mcps[@]}" | jq -cs --arg exposure "$exposure" '
+        {mcpServers: (add | with_entries(.value = ({exposure: $exposure} + .value)))}
+      ') || exit 2
+      cmd+=(--mcp-config "$config")
+    fi
+    cmd+=(--tools "${(j:,:)tools}")
+    ((${#excluded})) && cmd+=(--exclude-tools "${(j:,:)excluded}") ;;
 esac
 cmd+=("${args[@]}")
 

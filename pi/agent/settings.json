@@ -17,9 +17,7 @@
   ],
   "defaultTools": [
     "+fetch_content",
-    "+web_search",
-    "+mcp",
-    "+codemode"
+    "+web_search"
   ],
   "packages": [
     {
