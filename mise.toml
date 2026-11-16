@@ -420,7 +420,8 @@ reduceMotion = true
 
 # Refresh independently of tmux. Pitchfork serializes scheduled runs.
 [daemons.codex-usage]
-run = 'export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH" CODEX_HOME="${CODEX_HOME:-$HOME/.config/codex}"; exec home/.local/bin/codex-usage-refresh'
+# The login baseline supplies PATH and CODEX_HOME.
+run = '. "$HOME/dev/dots/config/env/base.sh" && exec home/.local/bin/codex-usage-refresh'
 # Pitchfork cron includes seconds: run at second zero of every minute.
 cron = "0 * * * * *"
 oneshot = true
