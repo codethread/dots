@@ -2,6 +2,7 @@
 /.agents/skills/
 /.claude/skills
 /skillbox/.prepare/
+/skillbox/.local/
 /mise.local.toml
 /mise.*.local.toml
 /.botlake/world.db*

@@ -48,7 +48,7 @@
     "align-agent-instructions": {
       "bundle": "local",
       "directory": "align-agent-instructions",
-      "hash": "c58d0c8075c3f92f5d3ce46b8abad26cd02f70c911a4c47e8cb013d761fd5174"
+      "hash": "472f2631cc1843fbb7eb6de46d44a4f124a1a9bf1cee5739fdb0af590190d1d1"
     },
     "disk-cleanup": {
       "bundle": "local",
@@ -73,7 +73,7 @@
     "pi-agent-instructions": {
       "bundle": "local",
       "directory": "pi-agent-instructions",
-      "hash": "8a95fc7cee6d9b66c8d4ca352a61af0ede448ad7b214c6ab705bc3fdec66e498"
+      "hash": "3d0515940500d33c9c711805fcc23a4080ffd98f42ce090da0fe36664745a963"
     }
   }
 }
