@@ -16,7 +16,8 @@ return U.F {
 		build = 'deno task --quiet build:fast',
 		opts = {
 			ssh_port = 8080,
-			app = is_ssh and 'ssh' or 'webview',
+			app = 'ssh',
+			-- app = is_ssh and 'ssh' or 'webview',
 			theme = require('codethread.theme').mode(),
 		},
 		init = function()
