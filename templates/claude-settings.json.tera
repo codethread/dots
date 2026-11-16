@@ -45,6 +45,7 @@
       "ExitPlanMode",
       "ExitWorktree",
       "LSP",
+	  "ListAgents",
       "NotebookEdit",
 	  "ScheduleWakeup",
       "ShareOnboardingGuide",
