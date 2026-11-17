@@ -36,6 +36,8 @@ return {
 		opts = {
 			keymaps = {
 				view = {
+					quit = { 'q', '<leader>gh' }, -- Match the global file-history opener.
+					next_file = { ']f', '<Tab>' },
 					toggle_stage = '<leader>c',
 				},
 			},

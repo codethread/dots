@@ -116,15 +116,6 @@ function M.toggle_diagnostics()
 	end
 end
 
-function M.toggle_file_history()
-	local is_diff = vim.startswith(vim.fn.expand '%', 'diffview://')
-	if is_diff then
-		vim.cmd [[DiffviewClose]]
-	else
-		vim.cmd [[DiffviewFileHistory % --no-merges]]
-	end
-end
-
 function M.worktree_open_alt()
 	U.nush(
 		[[git worktree list | parse '{p} {sha} {branch}' | str trim | get p | to text]],

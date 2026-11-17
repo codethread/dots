@@ -55,7 +55,7 @@ Keys.tbl('<leader>', {
 		g = { 'Status', function() require('neogit').open {} end },
 		j = { 'Next Hunk', function() require('gitsigns').nav_hunk('next', { preview = true }) end },
 		k = { 'Prev Hunk', function() require('gitsigns').nav_hunk('prev', { preview = true }) end },
-		h = { 'File History', fns.toggle_file_history },
+		h = { 'File History', Cmd 'CodeDiff history %' },
 		l = { 'Blame', function() require('gitsigns').blame_line() end },
 		o = { 'Open changed file', Cmd 'Telescope git_status' },
 		p = { 'Preview Hunk', function() require('gitsigns').preview_hunk() end },
