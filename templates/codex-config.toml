@@ -8,6 +8,9 @@ model = "gpt-6-astra"
 approvals_reviewer = "user"
 service_tier = "default"
 
+[agents]
+max_concurrent_threads_per_session = 10
+
 [tui]
 notifications = false
 status_line = [

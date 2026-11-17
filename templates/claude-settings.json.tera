@@ -106,8 +106,15 @@
     "refreshInterval": 2
   },
   "enabledPlugins": {
+    "botlake-mail@botlake": true
   },
   "extraKnownMarketplaces": {
+    "botlake": {
+      "source": {
+        "source": "directory",
+        "path": env.HOME ~ "/dev/projects/botlake/out/plugins"
+      }
+    },
     "agents": {
       "source": {
         "source": "directory",
