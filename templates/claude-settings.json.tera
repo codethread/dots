@@ -106,7 +106,8 @@
     "refreshInterval": 2
   },
   "enabledPlugins": {
-    "botlake-mail@botlake": true
+    "botlake-mail@botlake": true,
+    "harness@agents": true
   },
   "extraKnownMarketplaces": {
     "botlake": {
