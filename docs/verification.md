@@ -135,7 +135,7 @@ Kitty/Rex/Neovim visuals, desktop appearance, and live forwarding require a user
 
 ## Bootstrap gaps
 
-Native dry-run prints hooks without executing them and does not recurse into workfiles. `boot/boot.sh`, `boot/setup.sh`, `boot/workfiles.sh`, and vendor integrations lack complete dry-run fixtures. Inspect an existing workfiles checkout separately with its `make plan` or `make status`.
+Native dry-run prints hooks without executing them and does not recurse into workfiles. `boot/boot.sh`, `boot/setup.sh`, `boot/workfiles.sh`, and vendor integrations lack complete dry-run fixtures. From an existing workfiles checkout, inspect its plan with `mise bootstrap --dry-run` and its state with `mise bootstrap status`.
 
 Real bootstrap installs/builds external projects, loads services, can push backups, restarts desktop processes, starts Botlake, and may change Tailscale serving or invoke workfiles.
 

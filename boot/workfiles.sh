@@ -36,4 +36,4 @@ fi
 # Existing checkouts are local input: no auth check, pull, reset, or clean.
 cd "$checkout"
 mise trust "$checkout"
-exec make
+exec mise bootstrap --skip-dirty
