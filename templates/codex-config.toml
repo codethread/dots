@@ -26,6 +26,9 @@ status_line_use_colors = true
 [notice]
 hide_rate_limit_model_nudge = true
 
+[plugins."botlake-mail@botlake"]
+enabled = true
+
 [plugins."coding@agents"]
 enabled = true
 
@@ -105,6 +108,10 @@ enabled = false
 [[skills.config]]
 path = "~/.config/.codex/skills/.system/skill-installer/SKILL.md"
 enabled = false
+
+[marketplaces.botlake]
+source_type = "local"
+source = "/Users/adamhall/dev/projects/botlake/out/plugins"
 
 [marketplaces.agents]
 source_type = "git"

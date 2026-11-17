@@ -26,6 +26,9 @@
     {
       "source": "../../dev/projects/botlake/plugins/identity"
     },
+    {
+      "source": "/Users/adamhall/dev/projects/botlake/out/plugins/botlake-mail"
+    },
     "npm:pi-nvim",
     "npm:@narumitw/pi-goal",
     "npm:@narumitw/pi-btw",
