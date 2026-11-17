@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 // :module: Claude Code statusline hook handler
 
+import {rename} from "node:fs/promises";
 import {$} from "bun";
 import {parseArgs} from "util";
 import {colorize} from "../shared/ansi";
@@ -68,11 +69,19 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 	const prefix = isGitRoot ? "" : "!";
 	const dirDisplay = `${prefix}${dirName}`;
 
+	const state = await readState(input.session_id);
 	const [branch, inContainer, identity] = await Promise.all([
 		getGitBranch(),
 		isInsideContainer(),
-		getStrandIdentity(input.cwd, input.session_id),
+		state.identity ? Promise.resolve(state.identity) : getBotlakeIdentity(input.cwd, input.session_id),
 	]);
+	const next = advanceState(
+		{...state, identity: identity ?? state.identity},
+		input.cost.total_api_duration_ms,
+		Date.now(),
+	);
+	if (next !== state) await writeState(input.session_id, next);
+	const lastMessage = next.lastMessageAt ? new Date(next.lastMessageAt) : null;
 
 	// Build dir | branch segment, wrapped in green [] if in container
 	const dirPart = inContainer
@@ -90,11 +99,6 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 		parts.push(colorize.green("[") + dirBranch + colorize.green("]"));
 	} else {
 		parts.push(dirBranch);
-	}
-
-	// Bound Millstrand identity, if this project and session are registered
-	if (identity) {
-		parts.push(colorize.blue(identity));
 	}
 
 	// Model name
@@ -120,9 +124,113 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 	}
 
 	parts.push(colorize.brightBlack(formatCost(input.cost.total_cost_usd)));
-	parts.push(colorize.brightBlack(formatTime(new Date())));
+	// Time of the last model response, not the wall clock: the prompt cache expires from here,
+	// and a static value means the statusline doesn't need to tick to stay correct.
+	// Shown only once a response has been observed this session.
+	if (lastMessage) parts.push(colorize.brightBlack(formatTime(lastMessage)));
 
-	return parts.join(" ");
+	if (!identity) return parts.join(" ");
+
+	// Botlake agent identity (formatted like the pi statusline), right-aligned when the width is known.
+	// If it can't fit in full, drop trailing segments (time, cost, context...) rather than clip it.
+	const right = colorize.blue(formatBotlakeIdentity(identity));
+	const width = await getTerminalWidth();
+	if (width) {
+		const budget = width - RENDER_MARGIN;
+		while (parts.length > 1 && visibleWidth(parts.join(" ")) + 1 + visibleWidth(right) > budget) {
+			parts.pop();
+		}
+	}
+	return joinRightAligned(parts.join(" "), right, width);
+}
+
+/**
+ * Claude Code renders the statusline in `width - 2` columns after its own 2-column left
+ * padding, so content gets `width - 4`; anything longer is clipped with an ellipsis.
+ * Measured against a live session (126 columns rendered in a 128-column terminal).
+ */
+const RENDER_MARGIN = 4;
+
+export function visibleWidth(text: string): number {
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: strip ANSI escape sequences
+	return [...text.replace(/\u001b\[[0-9;]*m/g, "")].length;
+}
+
+/** Pad between `left` and `right` so `right` ends at the terminal edge; one space when it doesn't fit. */
+export function joinRightAligned(left: string, right: string, width: number | null): string {
+	if (!width) return `${left} ${right}`;
+	const pad = width - RENDER_MARGIN - visibleWidth(left) - visibleWidth(right);
+	return `${left}${" ".repeat(Math.max(pad, 1))}${right}`;
+}
+
+/**
+ * Terminal width in columns, or null if unknown.
+ *
+ * The statusline runs with piped stdio and no controlling tty, so walk up the process
+ * tree to the first ancestor that owns a tty (Claude Code) and ask `stty` for its size.
+ */
+async function getTerminalWidth(): Promise<number | null> {
+	const direct = process.stdout.columns || Number(process.env.COLUMNS);
+	if (direct > 0) return direct;
+
+	try {
+		let pid = process.ppid;
+		for (let depth = 0; pid > 1 && depth < 6; depth++) {
+			const info = (await $`ps -o tty=,ppid= -p ${pid}`.quiet().nothrow().text()).trim().split(/\s+/);
+			const [tty, ppid] = info;
+			if (tty && tty !== "??" && tty !== "?") {
+				const dev = `/dev/${tty}`;
+				const size = (await $`stty size < ${dev}`.quiet().nothrow().text()).trim().split(/\s+/);
+				const cols = Number(size[1]);
+				return cols > 0 ? cols : null;
+			}
+			pid = Number(ppid);
+		}
+	} catch {}
+	return null;
+}
+
+const STATE_DIR = "/tmp/cc-statusline";
+
+/** Per-session values persisted between statusline runs. */
+export interface SessionState {
+	/** Botlake identity; stable for a session, so resolved once. */
+	identity?: string;
+	/** `cost.total_api_duration_ms` at the last run, to detect a new model response. */
+	apiMs?: number;
+	/** Epoch ms when `apiMs` last changed, i.e. roughly when the last response finished. */
+	lastMessageAt?: number;
+}
+
+/**
+ * Advance state with this run's API duration. A changed duration means a response landed
+ * since the last run, so stamp it; an unchanged one (timer refresh, resize) keeps the old stamp.
+ */
+export function advanceState(prev: SessionState, apiMs: number, now: number): SessionState {
+	if (prev.apiMs === undefined) return {...prev, apiMs};
+	if (prev.apiMs === apiMs) return prev;
+	return {...prev, apiMs, lastMessageAt: now};
+}
+
+function statePath(sessionId: string): string {
+	return `${STATE_DIR}/${sessionId.replace(/[^A-Za-z0-9_-]/g, "_")}.json`;
+}
+
+async function readState(sessionId: string): Promise<SessionState> {
+	try {
+		return (await Bun.file(statePath(sessionId)).json()) as SessionState;
+	} catch {
+		return {};
+	}
+}
+
+async function writeState(sessionId: string, state: SessionState): Promise<void> {
+	try {
+		const path = statePath(sessionId);
+		const tmp = `${path}.${process.pid}.tmp`;
+		await Bun.write(tmp, JSON.stringify(state)); // creates STATE_DIR
+		await rename(tmp, path); // atomic: concurrent runs never see a partial file
+	} catch {}
 }
 
 function branchMatchesWorktree(dirName: string, branch: string): boolean {
@@ -131,19 +239,35 @@ function branchMatchesWorktree(dirName: string, branch: string): boolean {
 	return dirName.slice(idx + 2) === branch;
 }
 
-async function getStrandIdentity(cwd: string, sessionId: string): Promise<string | null> {
-	try {
-		const mill = await $`mill weaver status --json`.cwd(cwd).quiet().nothrow();
-		if (mill.exitCode !== 0) return null;
+export function formatBotlakeIdentity(actor: string): string {
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: strip terminal control characters
+	return `bl: ${actor.replace(/[\u0000-\u001f\u007f]+/g, " ").trim()}`;
+}
 
-		const where = JSON.stringify(["=", ["attr", "identity/native-session-id"], sessionId]);
-		const identity =
-			await $`strand --cwd ${cwd} list --limit 1 --where ${where} | jq -r '.[0].attributes["identity/id"] // empty'`
-				.cwd(cwd)
-				.quiet()
-				.nothrow()
-				.text();
-		return identity.trim() || null;
+/**
+ * Resolve this Claude session's Botlake identity.
+ *
+ * `BL_ACTOR` is only exported to Bash tool calls (via CLAUDE_ENV_FILE), so the statusline
+ * process can't read it. Look the identity up by native session id instead.
+ */
+async function getBotlakeIdentity(cwd: string, sessionId: string): Promise<string | null> {
+	const script = `
+		const page = await api.call("node", {
+			command: "list",
+			where: q.and(
+				q.eq(q.attr("identity/session"), true),
+				q.eq(q.attr("identity/provider"), "claude"),
+				q.eq(q.attr("identity/native-session-id"), ${JSON.stringify(sessionId)})
+			),
+			lean: false,
+			limit: 2
+		});
+		return page.total === 1 ? page.nodes[0].attributes["identity/id"] : null;
+	`;
+	try {
+		const out = await $`botlake lake eval ${script}`.cwd(cwd).quiet().nothrow().text();
+		const identity: unknown = JSON.parse(out);
+		return typeof identity === "string" && identity.trim() ? identity : null;
 	} catch {
 		return null;
 	}
