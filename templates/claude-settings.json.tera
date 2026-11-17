@@ -105,25 +105,12 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": true,
-    "harness@agents": true,
-    "devflow@agents": false,
-    "coding@agents": true,
-    "claude-code-knowledge@claude-code-plugins": true,
-    "dev@claude-code-plugins": true,
-    "writing@agents": true
   },
   "extraKnownMarketplaces": {
     "agents": {
       "source": {
         "source": "directory",
         "path": env.HOME ~ "/dev/projects/agents"
-      }
-    },
-    "claude-code-plugins": {
-      "source": {
-        "source": "directory",
-        "path": env.HOME ~ "/dev/projects/claude-code-plugins"
       }
     }
   },

@@ -3,3 +3,4 @@
 ## Ways of working
 
 - Set `TMPDIR` to `/tmp/claude`.
+- use botlake agents, not claude subagents
