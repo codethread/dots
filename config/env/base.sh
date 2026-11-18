@@ -154,6 +154,8 @@ ct_path_append "$PI_CODING_AGENT_DIR/bin"
 # Global defaults without interactive activation; local wrappers stay first.
 ct_path_append "${MISE_DATA_DIR:-$XDG_DATA_HOME/mise}/shims"
 ct_path_append "$GOBIN"
+# mise sets GOBIN to its Go install for daemons, so keep the user bin reachable.
+ct_path_append "$GOPATH/bin"
 if [ "$ct_os" = Darwin ]; then
   ct_path_append /opt/homebrew/opt/coreutils/libexec/gnubin
   ct_path_append /opt/homebrew/bin
