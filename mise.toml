@@ -40,6 +40,24 @@ SYNCENGINE_PATH="{{ vars.syncengine_path }}" \
 BOTLAKE_UI_ENABLED="{{ vars.botlake_ui_enabled }}" \
 mise exec -- "{{ config_root }}/boot/setup.sh"
 '''
+# The cask only links the CLI; first use installs skills unless declined.
+# v0.15.5+ honors this choice across upgrades. SKIP_SETUP only affects curl installs.
+# https://github.com/zenbu-labs/terminal-browser/blob/v0.15.5/cli/src/setup.ts
+post-packages = '''
+set -eu
+state="${XDG_STATE_HOME:-$HOME/.local/state}/terminal-browser"
+mkdir -p "$state"
+printf 'no\n' > "$state/skills-choice"
+# Unlink only this tool's skills, including dangling links; never recursively delete.
+rm -f \
+  "${AGENT_SKILLS_HOME:-$HOME/.agents/skills}/terminal-browser" \
+  "$HOME/.claude/skills/terminal-browser" \
+  "$HOME/.codex/skills/terminal-browser" \
+  "$HOME/.cursor/skills/terminal-browser" \
+  "$HOME/.gemini/skills/terminal-browser" \
+  "$state/skills.links"
+'''
+
 # Start after native LaunchAgents load; warn and skip externally owned Botlake.
 post-tools = '"{{ config_root }}/boot/start-botlake.sh"'
 
@@ -235,6 +253,7 @@ vscode = "https://github.com/waynehoover/mise-vscode"
 
 "brew-cask:codethread/chatty/chatty" = { os = "macos" }
 "brew-cask:kitty" = { os = "macos" }
+"brew-cask:terminal-browser" = { os = "macos" }
 "brew-cask:nikitabobko/tap/aerospace" = { os = "macos" }
 "brew-cask:alfred" = { os = "macos" }
 "brew-cask:spotify" = { os = "macos" }
