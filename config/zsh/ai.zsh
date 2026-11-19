@@ -1,8 +1,8 @@
 # Pi shortcuts default to Context7; codemode is selected per shortcut below.
 # Append --no-codemode or --no-mcp to override either default.
-alias pih='BL_AUDIENCE=human piw --model openai-codex/gpt-6-astra --thinking xhigh --goals --codemode --mcp context7'
+alias pih='BL_AUDIENCE=human piw --model openai-codex/gpt-6.2-astra --thinking xhigh --goals --codemode --mcp context7'
 alias pio='BL_AUDIENCE=human piw --model anthropic/claude-opus-5-5 --thinking high --goals --codemode --mcp context7'
-alias pim='BL_AUDIENCE=human piw --model openai-codex/gpt-6.1-sol --thinking high --goals --codemode --mcp context7'
+alias pim='BL_AUDIENCE=human piw --model openai-codex/gpt-6.2-sol --thinking high --goals --codemode --mcp context7'
 alias pif='BL_AUDIENCE=human piw --model deepseek/deepseek-flash --thinking max --mcp context7'
 alias pil='BL_AUDIENCE=human piw --model openai-codex/gpt-6-luna --thinking xhigh --mcp context7'
 # Resolve per invocation: checkouts under $HOME/pb use Sonnet; elsewhere Sol.
@@ -10,7 +10,7 @@ pis() {
   if [[ $PWD == $HOME/pb || $PWD == $HOME/pb/* ]]; then
     BL_AUDIENCE=human piw --model anthropic/claude-sonnet-5-5 --thinking high --goals --codemode --mcp context7 "$@"
   else
-    BL_AUDIENCE=human piw --model openai-codex/gpt-6.1-sol --thinking xhigh --goals --codemode --mcp context7 "$@"
+    BL_AUDIENCE=human piw --model openai-codex/gpt-6.2-sol --thinking xhigh --goals --codemode --mcp context7 "$@"
   fi
 }
 
@@ -21,17 +21,17 @@ clo() { BL_AUDIENCE=human cl --model opus "$@"; }
 clh() { BL_AUDIENCE=human cl --model haiku "$@"; }
 
 # Codex defaults use --config so an explicit --model can override them.
-coa() { BL_AUDIENCE=human co --config 'model="gpt-6-astra"' --thinking xhigh "$@"; }
-cos() { BL_AUDIENCE=human co --config 'model="gpt-6.1-sol"' --thinking high "$@"; }
-com() { BL_AUDIENCE=human co --config 'model="gpt-6.1-sol"' --thinking medium --fast "$@"; }
+coa() { BL_AUDIENCE=human co --config 'model="gpt-6.2-astra"' --thinking xhigh "$@"; }
+cos() { BL_AUDIENCE=human co --config 'model="gpt-6.2-sol"' --thinking high "$@"; }
+com() { BL_AUDIENCE=human co --config 'model="gpt-6.2-sol"' --thinking medium --fast "$@"; }
 # Shadows /usr/bin/col; use `command col` for the text filter.
 col() { BL_AUDIENCE=human co --config 'model="gpt-6-luna"' --thinking high --fast "$@"; }
 
 # Completion helpers and registrations; this file is sourced after compinit.
 _dots_pi() {
   local -a models=(
-    openai-codex/gpt-6-astra
-    openai-codex/gpt-6.1-sol
+    openai-codex/gpt-6.2-astra
+    openai-codex/gpt-6.2-sol
     openai-codex/gpt-6-luna
     anthropic/claude-sonnet-5-5
     anthropic/claude-opus-5-5
@@ -81,7 +81,7 @@ _dots_cl() {
 
 _dots_codex() {
   # Visible models from `codex debug models`, refreshed 2026-10-13.
-  local -a models=(gpt-6.1-sol gpt-6-astra gpt-6-sol gpt-6-luna gpt-5.6-sol gpt-5.6-terra gpt-5.6-luna)
+  local -a models=(gpt-6.2-sol gpt-6.2-astra gpt-6-sol gpt-6-luna gpt-5.6-sol gpt-5.6-terra gpt-5.6-luna)
   _arguments -s -S \
     "(-m --model)-m+[model for the session]:model:(${models[*]})" \
     "(-m --model)--model=[model for the session]:model:(${models[*]})" \

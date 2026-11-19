@@ -536,7 +536,7 @@
   "workbench.editorAssociations": {
     "*.md": "vscode.markdown.preview.editor",
   },
-  "chat.viewSessions.orientation": "stacked",
   "chat.titleBar.openInAgentsWindow.enabled": false,
   "gitTreeCompare.diffMode": "full",
+  "chat.viewSessions.orientation": "stacked",
 }
