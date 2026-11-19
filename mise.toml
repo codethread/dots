@@ -160,7 +160,8 @@ env -i \
 
 # Explicit maintenance only; never run cleanup as part of bootstrap.
 [tasks."brew:cleanup"]
-description = "Remove old Homebrew versions and stale downloads (preview with --dry-run)"
+description = "Remove old Homebrew versions and stale downloads without autoremove (preview with --dry-run)"
+env.HOMEBREW_NO_AUTOREMOVE = "1"
 run = "brew cleanup"
 
 [tasks."llm:update"]

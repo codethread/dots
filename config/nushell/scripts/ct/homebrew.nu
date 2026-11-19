@@ -1,9 +1,9 @@
 # Homebrew utilities — packages are managed declaratively through mise.
 # These aliases are for maintenance tasks on the shared Homebrew casks/brews.
 
-export def brewclean [] {
-    brew cleanup
-    brew autoremove
+export def --wrapped brewclean [...args] {
+    cd $env.DOTFILES
+    ^mise run --skip-tools brew:cleanup ...$args
 }
 
 export alias brewdeps = brew deps --graph --installed

@@ -1,6 +1,6 @@
 ---
 name: disk-cleanup
-description: Reclaim workstation disk space by inspecting development checkouts, generated builds, dependency installs, XDG caches/state, old Rust and Node tooling, and container images. Use when asked to inspect developer disk usage, tidy a nearly full disk, remove regenerable developer data, or review cleanup candidates. A space-usage report alone does not authorize deletion.
+description: Reclaim workstation disk space by inspecting development checkouts, generated builds, dependency installs, user caches (including macOS ~/Library/Caches), XDG state, old tooling, and container images. Use when asked to inspect disk usage, remove regenerable files, or review cleanup candidates. A space-usage report alone does not authorize deletion.
 ---
 
 # Developer workstation cleanup
@@ -42,6 +42,22 @@ Read installed command help before choosing flags; package-manager behavior and 
 - **Rust:** discover `CARGO_HOME` and `RUSTUP_HOME`; use `rustup show`, override/configuration inspection and project `rust-toolchain*` files to identify required toolchains. Remove obsolete, inactive toolchains/components through rustup, not by deleting its internal trees. Offline documentation is an optional removable component; keep required compilers/targets. Downloaded registry sources/crates are caches unless locally edited or linked into active work; leave installed binaries and receipts alone. Rebuilding an inactive project may require reinstalling its pinned toolchain.
 - **Other tools:** separate mise downloads/Homebrew bottles, uv/pip caches, Go build caches, Nix download/evaluation caches and Clojure/LSP caches from actual tool installations, environments, package stores and configuration. Do not use tool upgrades, bootstrap, broad uninstall or system garbage collection as a substitute for bounded cache cleanup.
 - **Old executable versions:** preserve the current executable and every version referenced by symlinks, configuration or running processes. Remove only verified superseded versions. Smoke-check the retained executable afterward; run checks outside unrelated package-manager-enforced workspaces when needed.
+
+### macOS user caches
+
+With regenerable cleanup authorized, inventory `~/Library/Caches` by app/tool and inspect the largest eligible subtrees. It is in scope, but never clear it wholesale. Leave system-wide caches and privacy-protected paths alone; do not use `sudo` or bypass access controls.
+
+- Honor app exclusions by owner, not just directory name: include bundle IDs, helpers, updaters, alternate cache locations, and shared or nested paths (for example, Chrome under `Google`). Leave a shared subtree alone if you cannot separate protected content confidently. Record exclusions for the run rather than making them permanent machine assumptions.
+- Identify the owner and contents of each candidate. Prefer the app's own cache-only cleanup when its scope is clear. Otherwise select exact, reproducible subtrees or files (such as generated indexes or downloadable build headers). Avoid active apps, helpers, or builds using a candidate; do not quit apps or restart services to make cleanup possible without approval. No open handles alone does not prove a directory is disposable.
+- Keep browser profiles and sessions, offline downloads, pending updates and rollback files, installed tools, databases, and unexplained contents even when they live under `Caches`. Check canonical paths, symlinks, and live references immediately before removal. Re-measure free space and report what will be downloaded or rebuilt.
+- Handle Homebrew separately using the process below. A request to clear user caches is not permission to remove installed versions.
+
+### Homebrew via mise
+
+1. Identify the Homebrew prefix and cache, and read `brew help cleanup`. In the owning dots checkout, run `mise config` and `mise bootstrap packages status --json` with the machine's profile. On a work host, run the same checks separately from the owning Workfiles checkout; dots' work profile hands off to Workfiles but its status output does not include Workfiles' declarations. Preserve required formulae, casks, versions and pins across applicable profiles, including manual installs and bootstrap hooks (such as Botlake) that package status does not list.
+2. Record `brew list --formula --versions`, installed casks and `brew list --pinned`. From the dots checkout, preview with `mise run --skip-tools brew:cleanup --dry-run`. If the task is unavailable, use `HOMEBREW_NO_AUTOREMOVE=1 brew cleanup --dry-run`. The task disables Homebrew's implicit dependency autoremove: Brew knows its own receipts and dependencies, not mise's desired state or out-of-band consumers. Do not substitute `brew autoremove`, `brew bundle cleanup`, or `mise bootstrap packages apply` or `prune` for this process. A prune from one checkout does not know what the other checkout or its hooks own.
+3. Review proposed removals against the keep list, active services, and linked or directly referenced versions. Regular cleanup can remove old installed versions as well as stale downloads, and it can include downloads belonging to an excluded app. If the broad plan exceeds scope, preview again with only eligible formula or cask names appended, or stop if the requested scope cannot be isolated. Run only the authorized, reviewed command with `--dry-run` removed; keep `--skip-tools` and the no-autoremove protection. No upgrade, reinstall, or tap trust changes are needed for cleanup.
+4. Compare installed package and version inventories and mise package status afterward. Only the approved versions should disappear; smoke-check affected tools or services and measure free space.
 
 ### State is not a cache
 
