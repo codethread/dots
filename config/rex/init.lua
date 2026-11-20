@@ -355,7 +355,7 @@ rex.bind("ctrl+alt+z", "client.tab.previous")
 rex.bind("ctrl+alt+x", "client.tab.next")
 rex.bind("ctrl+alt+left", "client.tab.move", { direction = "backward" })
 rex.bind("ctrl+alt+right", "client.tab.move", { direction = "forward" })
-rex.bind("cmd+b", "client.setting.interface.toolbar.layout", { value = "right" })
+rex.bind("cmd+b", "client.tab_style.toggle")
 
 bind("shift+\\", "dots_split", { direction = "horizontal" })
 bind("-", "dots_split", { direction = "vertical" })
