@@ -1,0 +1,55 @@
+# Relative sources resolve from this fragment; anchor checkout paths explicitly.
+# Keep real destination directories so application-owned files remain local.
+[dotfile_groups.home]
+root = "../../home"
+target = "~"
+mode = "symlink-each"
+
+[dotfile_groups.config]
+root = "../../config"
+target = "~/.config"
+mode = "symlink-each"
+manifest = "git"
+exclude = ["**/_?*/**", ".gitignore", "README.md", "codex/AGENTS.md", "codex/CLAUDE.md"]
+
+[dotfile_groups.claude]
+root = "../../claude"
+target = "~/.claude"
+mode = "symlink-each"
+manifest = "git"
+exclude = ["**/_?*/**", ".gitignore", "README.md", "settings.json", "settings.local.json", "skills", "CLAUDE.md"]
+
+[dotfile_groups.pi]
+root = "../../pi"
+target = "~/.pi"
+mode = "symlink-each"
+manifest = "git"
+exclude = ["**/_?*/**", ".gitignore", "README.md"]
+
+[dotfiles."~/.claude/skills"]
+source = "../../home/.agents/skills"
+mode = "symlink-each"
+
+# Keep the official Pi launcher available for maintenance; use Pi-Bolt on PATH.
+[dotfiles."~/.local/bin/pi"]
+source = "~/.local/bin/pi-bolt"
+mode = "symlink"
+
+[dotfiles."~/.local/bin/gitwatch"]
+source = "~/dev/vendor/gitwatch/gitwatch.sh"
+mode = "symlink"
+
+# Matched wildcards preserve each stem, linking oven/bin/name.ts as name.
+[dotfiles."~/.local/bin/*"]
+source = "../../oven/bin/*.ts"
+mode = "symlink"
+
+[dotfiles."~/.claude/settings.json"]
+source = "../../templates/claude-settings.json.tera"
+mode = "template"
+
+# Own only source keys; preserve Codex's machine-local settings and state.
+[dotfiles."~/.config/codex/config.toml/shared"]
+source = "../../templates/codex-config.toml"
+merge = true
+template = "tera"

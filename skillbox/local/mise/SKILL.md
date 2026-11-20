@@ -86,7 +86,7 @@ Select environments with `mise -E work …`, `MISE_ENV=work`, or `.miserc.toml`.
 
 Discovery settings such as `env`, `auto_env`, and `env_conf_d` must be in `.miserc.toml` or the process environment because `mise.toml` loads too late. In 2026.10.4, platform environments and environment-suffixed `conf.d` fragments remain opt-in. Prefer hyphenated fragment names; dotted fragment names are in a staged migration.
 
-A single-file `conf.d/*.toml` fragment keeps the surrounding project's `config_root`. A `conf.d/<name>/mise.toml` folder fragment is its own config root. Relative sources, task directories, and `{{ config_root }}` follow that distinction.
+A single-file `conf.d/*.toml` fragment keeps the surrounding project's `config_root` for tasks and bootstrap templates. A `conf.d/<name>/mise.toml` folder fragment is its own config root. Native dotfile sources, group roots, and `read_file()` in dotfile templates resolve relative to the declaring file; use `../../` for checkout-relative paths in `.mise/conf.d/`.
 
 Layering is section-specific, not a recursive TOML merge. Tool and environment values merge by their documented keys; tasks, portable services, and LaunchAgents with the same name are documented as higher-precedence replacements of the declaration. Check the installed release's documentation or effective output for other named sections, including experimental daemons, before relying on replacement or field-wise merge behavior.
 

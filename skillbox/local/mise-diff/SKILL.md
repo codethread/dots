@@ -42,7 +42,7 @@ Reading `MISE_ENV` is sufficient to name an explicitly selected default; otherwi
 
 ## Codex: native merge, not an overlay
 
-Root `mise.toml` merges `templates/codex-config.toml` into `~/.config/codex/config.toml` through the `shared` edit. Use native commands directly if only this entry matters:
+The checkout's `.mise/conf.d/dotfiles.toml` merges `templates/codex-config.toml` into `~/.config/codex/config.toml` through the `shared` edit. Use native commands directly if only this entry matters:
 
 ```nu
 mise dot diff ~/.config/codex/config.toml/shared

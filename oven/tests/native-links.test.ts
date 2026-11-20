@@ -1,5 +1,5 @@
 import {afterAll, beforeAll, expect, test} from "bun:test";
-import {lstat, mkdtemp, readdir, readlink, rm} from "node:fs/promises";
+import {lstat, mkdtemp, readdir, realpath, rm} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {delimiter, dirname, join} from "node:path";
 
@@ -82,7 +82,7 @@ test("mise deploys every extensionless command link into an isolated home", asyn
 	for (const commandName of commandNames) {
 		const link = join(linksDirectory, commandName);
 		expect((await lstat(link)).isSymbolicLink(), commandName).toBe(true);
-		expect(await readlink(link), commandName).toBe(join(binDir, `${commandName}.ts`));
+		expect(await realpath(link), commandName).toBe(await realpath(join(binDir, `${commandName}.ts`)));
 	}
 });
 

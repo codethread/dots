@@ -1,0 +1,95 @@
+# Shared user macOS preferences.
+[bootstrap.macos.dock]
+autohide = true
+mru_spaces = false
+orientation = "left"
+tilesize = 50
+
+[bootstrap.macos.finder]
+preferred_view_style = "list"
+show_all_files = true
+show_extensions_warning = false
+show_status_bar = true
+sort_folders_first = true
+
+[bootstrap.macos.keyboard]
+initial_key_repeat = 12
+key_repeat = 2
+press_and_hold = false
+
+[bootstrap.macos.defaults.NSGlobalDomain]
+AppleShowAllExtensions = true
+AppleShowScrollBars = "WhenScrolling"
+NSAutomaticWindowAnimationsEnabled = false
+NSNavPanelExpandedStateForSaveMode = true
+
+[bootstrap.macos.defaults."com.apple.dock"]
+"expose-animation-duration" = 0.0
+"expose-group-apps" = true
+"static-only" = true
+
+[bootstrap.macos.defaults."com.apple.finder"]
+FXDefaultSearchScope = "SCcf"
+ShowExternalHardDrivesOnDesktop = true
+ShowHardDrivesOnDesktop = false
+ShowRecentTags = false
+ShowRemovableMediaOnDesktop = true
+"_FXShowPosixPathInTitle" = false
+
+[bootstrap.macos.defaults."com.apple.spaces"]
+"spans-displays" = false
+
+[bootstrap.macos.defaults."com.apple.universalaccess"]
+reduceMotion = true
+
+# One shared supervisor; projects register their own daemon definitions.
+[bootstrap.directories."~/.local/state/com.codethread.pitchfork"]
+
+[bootstrap.macos.launchd.agents.pitchfork]
+program = "{{ env.HOME }}/.local/bin/mise"
+args = ["exec", "--", "pitchfork", "supervisor", "run", "--boot"]
+working_directory = "~"
+run_at_load = true
+# An existing CLI-started supervisor exits this command successfully; don't loop
+# or force a takeover that would stop its running daemons.
+keep_alive_on_failure = true
+environment = { HOME = "{{ env.HOME }}", PATH = "{{ vars.syncengine_path }}", PITCHFORK_MISE_BIN = "{{ env.HOME }}/.local/bin/mise" }
+stdout_path = "~/.local/state/com.codethread.pitchfork/std.log"
+stderr_path = "~/.local/state/com.codethread.pitchfork/std.log"
+
+# Shared all-profile syncengine service.
+[bootstrap.directories."~/.local/state/com.codethread.syncengine"]
+
+[bootstrap.macos.launchd.agents.syncengine]
+program = "/bin/bash"
+args = ["-c", '''
+echo "Starting sync"
+
+directory="$HOME/sync"
+
+LOGDIR="$HOME/.local/state/com.codethread.syncengine"
+mkdir -p "$LOGDIR"
+mkdir -p "$directory"
+
+# An empty sync directory has no watchers.
+shopt -s nullglob
+for file in "$directory"/*; do
+  logfile="$LOGDIR/${file##*/}.log"
+  gitwatch -r origin -R "$file" >"$logfile" 2>&1 &
+  echo "Running syncengine on $file and logging to $logfile"
+done
+
+file="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Documents/Notes"
+if [ -d "$file" ]; then
+  logfile="$LOGDIR/notes.log"
+  gitwatch -r origin -R "$file" >"$logfile" 2>&1 &
+  echo "Running syncengine on $file and logging to $logfile"
+fi
+
+wait
+''']
+run_at_load = true
+# Start at login; no automatic restart after exit.
+environment = { HOME = "{{ env.HOME }}", PATH = "{{ vars.syncengine_path }}" }
+stdout_path = "~/.local/state/com.codethread.syncengine/std.log"
+stderr_path = "~/.local/state/com.codethread.syncengine/std.log"

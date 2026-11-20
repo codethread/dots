@@ -14,9 +14,13 @@ Dots converges an Apple Silicon Mac from a durable checkout: registered jobs emb
 
 ## Convergence and deployment
 
-Mise owns declarative state; [setup](../boot/setup.sh) prepares dependencies that native resources cannot. Checkout [`.mise/conf.d/`](../.mise/conf.d/) links expose tools/services before global links exist. Preserve the dependency order: PAM safety and Ruby before packages; remaining tools before repositories; repository builds, links, and daemon registration before dotfiles and LaunchAgents. Moving preparation to the final bootstrap task is too late. Failed phases leave earlier changes applied.
+Mise owns declarative state; [setup](../boot/setup.sh) prepares dependencies that native resources cannot. The root [`mise.toml`](../mise.toml) keeps tasks, shared settings, and bootstrap hooks. The checkout discovers [packages](../.mise/conf.d/packages.toml), [repositories](../.mise/conf.d/repos.toml), [dotfiles](../.mise/conf.d/dotfiles.toml), and [macOS preferences and LaunchAgents](../.mise/conf.d/macos.toml) in [`.mise/conf.d/`](../.mise/conf.d/), alongside links that expose tools before global links exist.
 
-The [home group](../mise.toml) includes untracked filesystem entries; Git-manifest groups deploy only indexed files. Stage additions before previewing them. Linked-file edits are immediate; additions and renames need another apply. Ordinary wildcard commands do not reconcile removals: retire the old target with an authorized `mise dot unapply ~/.local/bin/<old-command>` while its declaration and source still exist.
+[Dev services](../.mise/conf.d/services.dev.toml) load only on `dev`. The [Botlake UI definition](../.mise/conf.d/botlake-ui.dev.toml) also loads on `work` through a [sibling symlink](../.mise/conf.d/botlake-ui.work.toml).
+
+Preserve the dependency order: PAM safety and Ruby before packages; remaining tools before repositories; repository builds, links, and daemon registration before dotfiles and LaunchAgents. Moving preparation to the final bootstrap task is too late. Failed phases leave earlier changes applied.
+
+The [home group](../.mise/conf.d/dotfiles.toml) includes untracked filesystem entries; Git-manifest groups deploy only indexed files. Stage additions before previewing them. Linked-file edits are immediate; additions and renames need another apply. Ordinary wildcard commands do not reconcile removals: retire the old target with an authorized `mise dot unapply ~/.local/bin/<old-command>` while its declaration and source still exist.
 
 Keep destination directories real so application-owned credentials, sessions, and metadata survive deployment.
 

@@ -20,7 +20,7 @@ test("Homebrew provisions the CLIs used by the supervisor and UI", async () => {
 	expect(config.daemons["botlake-supervisor"]?.run).toContain(`exec ${botlake} start`);
 	expect(config.daemons["botlake-supervisor"]?.ready_cmd).toBe(`${botlake} status`);
 
-	const ui = Bun.TOML.parse(await Bun.file(new URL(".mise/botlake-ui.toml", root)).text()) as {
+	const ui = Bun.TOML.parse(await Bun.file(new URL(".mise/conf.d/botlake-ui.dev.toml", root)).text()) as {
 		daemons: Record<string, {init: string; run: string}>;
 	};
 	expect(ui.daemons["botlake-ui"]?.init).toStartWith(`${botlake} lake start`);
