@@ -72,6 +72,11 @@ set -e
 
 # Native bootstrap owns preview/status/update; tasks cover repo-specific workflows.
 [tasks.default]
+description = "Apply full workstation setup"
+depends = ["install"]
+run = "mise bootstrap --yes"
+
+[tasks.update]
 description = "Update repositories and apply full workstation setup"
 depends = ["install"]
 run = "mise bootstrap --update"
