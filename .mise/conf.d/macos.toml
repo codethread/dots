@@ -36,11 +36,18 @@ ShowRecentTags = false
 ShowRemovableMediaOnDesktop = true
 "_FXShowPosixPathInTitle" = false
 
+[bootstrap.macos.defaults."com.apple.screencapture"]
+# Screenshot resolves the tilde; mise stores the value as written.
+location = "~/Pictures"
+
 [bootstrap.macos.defaults."com.apple.spaces"]
 "spans-displays" = false
 
 [bootstrap.macos.defaults."com.apple.universalaccess"]
 reduceMotion = true
+
+[bootstrap.hooks]
+post-defaults = '/usr/bin/killall -q SystemUIServer Finder Dock || true'
 
 # One shared supervisor; projects register their own daemon definitions.
 [bootstrap.directories."~/.local/state/com.codethread.pitchfork"]
