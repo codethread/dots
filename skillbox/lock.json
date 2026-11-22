@@ -41,7 +41,7 @@
           "path": "skillbox/local/pi-agent-instructions"
         }
       ],
-      "sourceHash": "2a911a17a8468ab3c687cb1d10798db31cb259579b731bee6b1d1bca27b8285f"
+      "sourceHash": "c60ba328154d41dd619c701ddc13e184d1776aa0aecd1485b03c55ce8b0fe73c"
     }
   },
   "installed": {
@@ -53,17 +53,17 @@
     "disk-cleanup": {
       "bundle": "local",
       "directory": "disk-cleanup",
-      "hash": "83112731c1fb2ae3ff776be541bc6ee6ce2ffa21a19de46486e8888508ba7b5e"
+      "hash": "abda67887841aacbfe6ce6de435353344f564e11be1ee632b8c9ec9ee0410da1"
     },
     "mise": {
       "bundle": "local",
       "directory": "mise",
-      "hash": "b69ed6d080d2b500d5d2e4637764bcb1340f97d0055f2943de1df3c075a1bab6"
+      "hash": "8dfe4f628cc3572abd52e14c4195a573ed931d84cc7863f90c6c9d8c45a8a369"
     },
     "mise-diff": {
       "bundle": "local",
       "directory": "mise-diff",
-      "hash": "84709ea543d396651c7afbb6ced25af52e279ed581b715c6401074c98b17d32d"
+      "hash": "4331f5af38220452836e082f01c9e8e4ff6bc4436d539968b09380142f80bbcd"
     },
     "neovim": {
       "bundle": "local",
