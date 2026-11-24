@@ -2,12 +2,14 @@
 {# Agent and ListAgents are denied per session by cl: a deny here could not be lifted by its --agent-tool. #}
 {# claude.ai connectors are off by default. disableClaudeAiConnectors is any-source-true, but this env
    default can be overridden per session: --settings '{"env":{"ENABLE_CLAUDEAI_MCP_SERVERS":"true"}}'. #}
+{# TEST in Rex: CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1 was removed so Claude Code reports OSC 7501 program status
+   (working/blocked/done), which that variable disables. Claude manages the tab title again, which was irritating
+   in tmux (the reason the variable was set). Restore it if the Rex test fails or tmux regresses. #}
 {% set base = {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 999,
   "env": {
     "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
-    "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "1",
     "DISABLE_AUTOUPDATER": "1",
     "DISABLE_ERROR_REPORTING": "1",
     "DISABLE_FEEDBACK_COMMAND": "1",
