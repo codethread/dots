@@ -107,6 +107,7 @@
     "refreshInterval": 2
   },
   "enabledPlugins": {
+    "botlake-identity@botlake": true,
     "botlake-mail@botlake": true,
     "harness@agents": true
   },
