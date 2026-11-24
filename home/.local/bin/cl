@@ -4,9 +4,9 @@
 # The one entrypoint for people and tooling; shells only add shortcuts.
 # Defaults: skip permission prompts, `pairing` output style for interactive
 # sessions, no MCP servers unless chosen with --mcp (--strict-mcp-config),
-# claude.ai connectors off (shared settings.json), Artifact off
-# (`enableArtifact` is one-way, so cl sets it per session), and appended
-# forge + sub-agent concurrency prompts. Other arguments pass to `claude`.
+# claude.ai connectors off (shared settings.json), Artifact and agent tools off
+# (both are one-way, so cl sets them per session), and an appended forge prompt.
+# Other arguments pass to `claude`.
 
 set -euo pipefail
 
@@ -23,6 +23,7 @@ cl options:
       --mcp-work              enable claude.ai connectors (Atlassian, Microsoft 365, ...);
                               implies --mcp-all, as strict mode drops connectors
       --artifact              enable the Artifact tool (default: off)
+      --agent-tool            enable the Agent and ListAgents tools (default: off)
   -m, --mine                  use the personal config dir ~/.config/claude
       --output-style <style>  session output style (default: pairing, unless --print)
       --thinking <level>      set Claude's effort (low, medium, high, xhigh, max)
@@ -34,8 +35,6 @@ cl options:
 
 EOF
 }
-
-PROMPT_CONCURRENCY="Sub-agent concurrency: spawn multiple read-only agents freely (explore, research, etc), but only ever one mutating agent at a time. Don't run read-only agents alongside a mutating agent — they may read stale data."
 
 known_mcp() {
     case $1 in
@@ -50,7 +49,7 @@ case ${1:-} in
         exec claude "$@" ;;
 esac
 
-safe=0 mcp_work=0 mcp_all=0 artifact=0 printing=0 dry_run=0 style='' settings='{}' user_prompt=''
+safe=0 mcp_work=0 mcp_all=0 artifact=0 agent_tool=0 printing=0 dry_run=0 style='' settings='{}' user_prompt=''
 args=() mcps=()
 while (($#)); do
     case $1 in
@@ -67,6 +66,7 @@ while (($#)); do
             fi
             shift ;;
         --artifact) artifact=1 ;;
+        --agent-tool) agent_tool=1 ;;
         -m|--mine) export CLAUDE_CONFIG_DIR="$HOME/.config/claude" ;;
         --dry-run) dry_run=1 ;;
         -h|--help) usage; exec claude --help ;;
@@ -97,10 +97,13 @@ fi
 # env; only a higher-precedence settings source such as --settings re-enables them.
 # Artifact is the reverse: enableArtifact=false cannot be undone by any higher
 # source, so it is set here unless --artifact is given, not in the shared file.
-settings=$(jq -ce --arg style "$style" --argjson printing "$printing" --argjson mcp "$mcp_work" --argjson artifact "$artifact" '
+# permissions.deny is one-way too: no source or flag (--allowedTools, --tools)
+# lifts another source's deny, so the agent tools are denied here as well.
+settings=$(jq -ce --arg style "$style" --argjson printing "$printing" --argjson mcp "$mcp_work" --argjson artifact "$artifact" --argjson agent "$agent_tool" '
     (if type != "object" then error("--settings must be a JSON object or file") else . end)
     | (if $mcp == 1 then .env.ENABLE_CLAUDEAI_MCP_SERVERS = "true" else . end)
     | (if $artifact == 0 then .enableArtifact = false else . end)
+    | (if $agent == 0 then .permissions.deny = ((.permissions.deny // []) + ["Agent", "ListAgents"] | unique) else . end)
     | if $style != "" then .outputStyle = $style
       elif $printing == 0 and (has("outputStyle") | not) then .outputStyle = "pairing"
       else . end
@@ -111,16 +114,17 @@ case $(git remote get-url origin 2>/dev/null || true) in
     *github.com*) prompts+=("this repo uses github (via gh)") ;;
     ?*) prompts+=("this repo uses gitlab (via glab)") ;;
 esac
-prompts+=("$PROMPT_CONCURRENCY")
 [[ -z $user_prompt ]] || prompts+=("$user_prompt")
 
 cmd=(claude)
 ((safe)) || cmd+=(--dangerously-skip-permissions)
 [[ $settings == '{}' ]] || cmd+=(--settings "$settings")
 # --strict-mcp-config also drops claude.ai connectors, so --mcp-work skips it.
+# --mcp-config is variadic; the = form stops it swallowing the prompt.
 ((mcp_all || mcp_work)) || cmd+=(--strict-mcp-config)
-for mcp in "${mcps[@]}"; do cmd+=(--mcp-config "$mcp"); done
-cmd+=(--append-system-prompt "$(printf '%s\n' "${prompts[@]}")" "${args[@]}")
+for mcp in "${mcps[@]}"; do cmd+=("--mcp-config=$mcp"); done
+((${#prompts[@]} == 0)) || cmd+=(--append-system-prompt "$(printf '%s\n' "${prompts[@]}")")
+cmd+=("${args[@]}")
 
 if ((dry_run)); then
     [[ -z ${CLAUDE_CONFIG_DIR:-} ]] || printf 'CLAUDE_CONFIG_DIR=%q ' "$CLAUDE_CONFIG_DIR"
