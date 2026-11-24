@@ -539,4 +539,5 @@
   "chat.titleBar.openInAgentsWindow.enabled": false,
   "gitTreeCompare.diffMode": "full",
   "chat.viewSessions.orientation": "stacked",
+  "update.showReleaseNotes": false,
 }

@@ -124,6 +124,8 @@ async function formatStatusline(input: StatuslineInput): Promise<string> {
 	}
 
 	parts.push(colorize.brightBlack(formatCost(input.cost.total_cost_usd)));
+	const usage = formatRateLimits(input.rate_limits);
+	if (usage) parts.push(colorize.brightBlack(usage));
 	// Time of the last model response, not the wall clock: the prompt cache expires from here,
 	// and a static value means the statusline doesn't need to tick to stay correct.
 	// Shown only once a response has been observed this session.
@@ -306,6 +308,15 @@ function formatContextSize(tokens: number): string {
 
 function formatCost(usd: number): string {
 	return `$${usd.toFixed(2)}`;
+}
+
+/** `(session%/weekly%)`; a window the input doesn't report shows `-`, and none at all (e.g. API-key auth) shows nothing. */
+export function formatRateLimits(limits: StatuslineInput["rate_limits"]): string | null {
+	const session = limits?.five_hour?.used_percentage;
+	const weekly = limits?.seven_day?.used_percentage;
+	if (session === undefined && weekly === undefined) return null;
+	const pct = (v: number | undefined) => (v === undefined ? "-" : `${Math.round(v)}%`);
+	return `(${pct(session)}/${pct(weekly)})`;
 }
 
 function formatTime(date: Date): string {

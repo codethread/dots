@@ -1,5 +1,11 @@
 import {describe, expect, test} from "bun:test";
-import {advanceState, formatBotlakeIdentity, joinRightAligned, visibleWidth} from "../bin/cc-statusline";
+import {
+	advanceState,
+	formatBotlakeIdentity,
+	formatRateLimits,
+	joinRightAligned,
+	visibleWidth,
+} from "../bin/cc-statusline";
 
 describe("cc-statusline alignment", () => {
 	test("visibleWidth ignores ANSI colour codes", () => {
@@ -36,5 +42,23 @@ describe("advanceState", () => {
 	test("an unchanged duration keeps the same state object", () => {
 		const prev = {apiMs: 250, lastMessageAt: 9};
 		expect(advanceState(prev, 250, 99)).toBe(prev);
+	});
+});
+
+describe("formatRateLimits", () => {
+	const w = (used_percentage: number) => ({used_percentage, resets_at: 0});
+
+	test("shows session then weekly, rounded", () => {
+		expect(formatRateLimits({five_hour: w(23.4), seven_day: w(61.6)})).toBe("(23%/62%)");
+	});
+
+	test("marks a missing window with a dash", () => {
+		expect(formatRateLimits({five_hour: w(5)})).toBe("(5%/-)");
+		expect(formatRateLimits({seven_day: w(7)})).toBe("(-/7%)");
+	});
+
+	test("shows nothing when no limits are reported", () => {
+		expect(formatRateLimits(undefined)).toBeNull();
+		expect(formatRateLimits({})).toBeNull();
 	});
 });
